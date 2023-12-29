@@ -1,6 +1,7 @@
 use clap::Parser;
 
 mod commands;
+mod http_api;
 mod lan_api;
 mod version_info;
 
@@ -14,12 +15,14 @@ pub struct Args {
 #[derive(clap::Parser, Debug)]
 pub enum SubCommand {
     LanDisco(commands::lan_disco::LanDiscoCommand),
+    ListHttp(commands::list_http::ListHttpCommand),
 }
 
 impl Args {
     pub async fn run(&self) -> anyhow::Result<()> {
         match &self.cmd {
             SubCommand::LanDisco(cmd) => cmd.run(self).await,
+            SubCommand::ListHttp(cmd) => cmd.run(self).await,
         }
     }
 }

@@ -1,0 +1,1273 @@
+{
+  "code": 200,
+  "message": "success",
+  "data": [
+    {
+      "sku": "H6601",
+      "device": "9D:FA:85:EB:D3:00:8B:FF",
+      "capabilities": [
+        {
+          "type": "devices.capabilities.on_off",
+          "instance": "powerSwitch",
+          "parameters": {
+            "dataType": "ENUM",
+            "options": [
+              {
+                "name": "on",
+                "value": 1
+              },
+              {
+                "name": "off",
+                "value": 0
+              }
+            ]
+          }
+        },
+        {
+          "type": "devices.capabilities.toggle",
+          "instance": "gradientToggle",
+          "parameters": {
+            "dataType": "ENUM",
+            "options": [
+              {
+                "name": "on",
+                "value": 1
+              },
+              {
+                "name": "off",
+                "value": 0
+              }
+            ]
+          }
+        },
+        {
+          "type": "devices.capabilities.range",
+          "instance": "brightness",
+          "parameters": {
+            "unit": "unit.percent",
+            "dataType": "INTEGER",
+            "range": {
+              "min": 1,
+              "max": 100,
+              "precision": 1
+            }
+          }
+        },
+        {
+          "type": "devices.capabilities.segment_color_setting",
+          "instance": "segmentedColorRgb",
+          "parameters": {
+            "dataType": "STRUCT",
+            "fields": [
+              {
+                "fieldName": "segment",
+                "dataType": "Array",
+                "options": [
+                  {
+                    "value": 0
+                  },
+                  {
+                    "value": 1
+                  },
+                  {
+                    "value": 2
+                  },
+                  {
+                    "value": 3
+                  },
+                  {
+                    "value": 4
+                  },
+                  {
+                    "value": 5
+                  },
+                  {
+                    "value": 6
+                  },
+                  {
+                    "value": 7
+                  },
+                  {
+                    "value": 8
+                  },
+                  {
+                    "value": 9
+                  },
+                  {
+                    "value": 10
+                  },
+                  {
+                    "value": 11
+                  },
+                  {
+                    "value": 12
+                  },
+                  {
+                    "value": 13
+                  },
+                  {
+                    "value": 14
+                  }
+                ],
+                "required": true
+              },
+              {
+                "fieldName": "rgb",
+                "dataType": "INTEGER",
+                "range": {
+                  "min": 0,
+                  "max": 16777215,
+                  "precision": 1
+                },
+                "required": true
+              }
+            ]
+          }
+        },
+        {
+          "type": "devices.capabilities.color_setting",
+          "instance": "colorRgb",
+          "parameters": {
+            "dataType": "INTEGER",
+            "range": {
+              "min": 0,
+              "max": 16777215,
+              "precision": 1
+            }
+          }
+        },
+        {
+          "type": "devices.capabilities.color_setting",
+          "instance": "colorTemperatureK",
+          "parameters": {
+            "dataType": "INTEGER",
+            "range": {
+              "min": 2000,
+              "max": 9000,
+              "precision": 1
+            }
+          }
+        },
+        {
+          "type": "devices.capabilities.dynamic_scene",
+          "instance": "lightScene",
+          "parameters": {
+            "dataType": "ENUM",
+            "options": [
+              {
+                "name": "Tudum",
+                "value": 3054
+              },
+              {
+                "name": "Party",
+                "value": 3055
+              },
+              {
+                "name": "Dance Party",
+                "value": 3056
+              },
+              {
+                "name": "Dine Together",
+                "value": 3057
+              },
+              {
+                "name": "Dating",
+                "value": 3058
+              },
+              {
+                "name": "Adventure",
+                "value": 3059
+              },
+              {
+                "name": "Technology",
+                "value": 3060
+              },
+              {
+                "name": "Sports",
+                "value": 3061
+              },
+              {
+                "name": "Dreamlike",
+                "value": 3062
+              },
+              {
+                "name": "Dynamic",
+                "value": 3063
+              },
+              {
+                "name": "Blossom",
+                "value": 3064
+              },
+              {
+                "name": "Christmas",
+                "value": 3065
+              },
+              {
+                "name": "Halloween",
+                "value": 3066
+              },
+              {
+                "name": "Fireworks",
+                "value": 3067
+              },
+              {
+                "name": "Ghost",
+                "value": 3068
+              },
+              {
+                "name": "Easter",
+                "value": 3069
+              },
+              {
+                "name": "Valentine's Day",
+                "value": 3070
+              },
+              {
+                "name": "Spin",
+                "value": 3071
+              },
+              {
+                "name": "Stacking",
+                "value": 3072
+              },
+              {
+                "name": "Shoot",
+                "value": 3073
+              },
+              {
+                "name": "Racing",
+                "value": 3074
+              },
+              {
+                "name": "Poker",
+                "value": 3075
+              },
+              {
+                "name": "Crossing",
+                "value": 3076
+              },
+              {
+                "name": "Fight",
+                "value": 3077
+              },
+              {
+                "name": "Electro Dance",
+                "value": 3078
+              },
+              {
+                "name": "Swing",
+                "value": 3079
+              },
+              {
+                "name": "Candy Crush",
+                "value": 3080
+              },
+              {
+                "name": "Portal",
+                "value": 3081
+              },
+              {
+                "name": "Freeze",
+                "value": 3082
+              },
+              {
+                "name": "Excited",
+                "value": 3083
+              },
+              {
+                "name": "Tension",
+                "value": 3084
+              },
+              {
+                "name": "Fright",
+                "value": 3085
+              },
+              {
+                "name": "Energetic",
+                "value": 3086
+              },
+              {
+                "name": "Doubt",
+                "value": 3087
+              },
+              {
+                "name": "Meditation",
+                "value": 3088
+              },
+              {
+                "name": "Daze",
+                "value": 3089
+              },
+              {
+                "name": "Action",
+                "value": 3090
+              },
+              {
+                "name": "Rivalry",
+                "value": 3091
+              },
+              {
+                "name": "Puzzle Game",
+                "value": 3092
+              },
+              {
+                "name": "Shooting Game",
+                "value": 3093
+              },
+              {
+                "name": "Racing Game",
+                "value": 3094
+              },
+              {
+                "name": "Card Playing",
+                "value": 3095
+              }
+            ]
+          }
+        },
+        {
+          "type": "devices.capabilities.music_setting",
+          "instance": "musicMode",
+          "parameters": {
+            "dataType": "STRUCT",
+            "fields": [
+              {
+                "fieldName": "musicMode",
+                "dataType": "ENUM",
+                "options": [
+                  {
+                    "name": "Energic",
+                    "value": 5
+                  },
+                  {
+                    "name": "Rhythm",
+                    "value": 3
+                  },
+                  {
+                    "name": "Spectrum",
+                    "value": 6
+                  },
+                  {
+                    "name": "Rolling",
+                    "value": 4
+                  }
+                ],
+                "required": true
+              },
+              {
+                "unit": "unit.percent",
+                "fieldName": "sensitivity",
+                "dataType": "INTEGER",
+                "range": {
+                  "min": 0,
+                  "max": 100,
+                  "precision": 1
+                },
+                "required": true
+              },
+              {
+                "fieldName": "autoColor",
+                "dataType": "ENUM",
+                "options": [
+                  {
+                    "name": "on",
+                    "value": 1
+                  },
+                  {
+                    "name": "off",
+                    "value": 0
+                  }
+                ],
+                "required": false
+              },
+              {
+                "unit": "unit.percent",
+                "fieldName": "rgb",
+                "dataType": "INTEGER",
+                "range": {
+                  "min": 0,
+                  "max": 16777215,
+                  "precision": 1
+                },
+                "required": true
+              }
+            ]
+          }
+        },
+        {
+          "type": "devices.capabilities.dynamic_scene",
+          "instance": "diyScene",
+          "parameters": {
+            "dataType": "ENUM",
+            "options": [
+              {
+                "name": "Fade",
+                "value": 8216567
+              }
+            ]
+          }
+        },
+        {
+          "type": "devices.capabilities.dynamic_scene",
+          "instance": "snapshot",
+          "parameters": {
+            "dataType": "ENUM",
+            "options": [
+              {
+                "name": "Sunrise",
+                "value": 0
+              },
+              {
+                "name": "Sunset",
+                "value": 1
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "sku": "H605C",
+      "device": "69:EC:D1:37:36:39:24:4B",
+      "capabilities": [
+        {
+          "type": "devices.capabilities.on_off",
+          "instance": "powerSwitch",
+          "parameters": {
+            "dataType": "ENUM",
+            "options": [
+              {
+                "name": "on",
+                "value": 1
+              },
+              {
+                "name": "off",
+                "value": 0
+              }
+            ]
+          }
+        },
+        {
+          "type": "devices.capabilities.toggle",
+          "instance": "gradientToggle",
+          "parameters": {
+            "dataType": "ENUM",
+            "options": [
+              {
+                "name": "on",
+                "value": 1
+              },
+              {
+                "name": "off",
+                "value": 0
+              }
+            ]
+          }
+        },
+        {
+          "type": "devices.capabilities.range",
+          "instance": "brightness",
+          "parameters": {
+            "unit": "unit.percent",
+            "dataType": "INTEGER",
+            "range": {
+              "min": 1,
+              "max": 100,
+              "precision": 1
+            }
+          }
+        },
+        {
+          "type": "devices.capabilities.segment_color_setting",
+          "instance": "segmentedColorRgb",
+          "parameters": {
+            "dataType": "STRUCT",
+            "fields": [
+              {
+                "fieldName": "segment",
+                "dataType": "Array",
+                "options": [
+                  {
+                    "value": 0
+                  },
+                  {
+                    "value": 1
+                  },
+                  {
+                    "value": 2
+                  },
+                  {
+                    "value": 3
+                  },
+                  {
+                    "value": 4
+                  },
+                  {
+                    "value": 5
+                  },
+                  {
+                    "value": 6
+                  },
+                  {
+                    "value": 7
+                  },
+                  {
+                    "value": 8
+                  },
+                  {
+                    "value": 9
+                  },
+                  {
+                    "value": 10
+                  },
+                  {
+                    "value": 11
+                  },
+                  {
+                    "value": 12
+                  },
+                  {
+                    "value": 13
+                  },
+                  {
+                    "value": 14
+                  }
+                ],
+                "required": true
+              },
+              {
+                "fieldName": "rgb",
+                "dataType": "INTEGER",
+                "range": {
+                  "min": 0,
+                  "max": 16777215,
+                  "precision": 1
+                },
+                "required": true
+              }
+            ]
+          }
+        },
+        {
+          "type": "devices.capabilities.color_setting",
+          "instance": "colorRgb",
+          "parameters": {
+            "dataType": "INTEGER",
+            "range": {
+              "min": 0,
+              "max": 16777215,
+              "precision": 1
+            }
+          }
+        },
+        {
+          "type": "devices.capabilities.color_setting",
+          "instance": "colorTemperatureK",
+          "parameters": {
+            "dataType": "INTEGER",
+            "range": {
+              "min": 2000,
+              "max": 9000,
+              "precision": 1
+            }
+          }
+        },
+        {
+          "type": "devices.capabilities.dynamic_scene",
+          "instance": "lightScene",
+          "parameters": {
+            "dataType": "ENUM",
+            "options": [
+              {
+                "name": "Tudum",
+                "value": 3054
+              },
+              {
+                "name": "Party",
+                "value": 3055
+              },
+              {
+                "name": "Dance Party",
+                "value": 3056
+              },
+              {
+                "name": "Dine Together",
+                "value": 3057
+              },
+              {
+                "name": "Dating",
+                "value": 3058
+              },
+              {
+                "name": "Adventure",
+                "value": 3059
+              },
+              {
+                "name": "Technology",
+                "value": 3060
+              },
+              {
+                "name": "Sports",
+                "value": 3061
+              },
+              {
+                "name": "Dreamlike",
+                "value": 3062
+              },
+              {
+                "name": "Dynamic",
+                "value": 3063
+              },
+              {
+                "name": "Blossom",
+                "value": 3064
+              },
+              {
+                "name": "Christmas",
+                "value": 3065
+              },
+              {
+                "name": "Halloween",
+                "value": 3066
+              },
+              {
+                "name": "Fireworks",
+                "value": 3067
+              },
+              {
+                "name": "Ghost",
+                "value": 3068
+              },
+              {
+                "name": "Easter",
+                "value": 3069
+              },
+              {
+                "name": "Valentine's Day",
+                "value": 3070
+              },
+              {
+                "name": "Spin",
+                "value": 3071
+              },
+              {
+                "name": "Stacking",
+                "value": 3072
+              },
+              {
+                "name": "Shoot",
+                "value": 3073
+              },
+              {
+                "name": "Racing",
+                "value": 3074
+              },
+              {
+                "name": "Poker",
+                "value": 3075
+              },
+              {
+                "name": "Crossing",
+                "value": 3076
+              },
+              {
+                "name": "Fight",
+                "value": 3077
+              },
+              {
+                "name": "Electro Dance",
+                "value": 3078
+              },
+              {
+                "name": "Swing",
+                "value": 3079
+              },
+              {
+                "name": "Candy Crush",
+                "value": 3080
+              },
+              {
+                "name": "Portal",
+                "value": 3081
+              },
+              {
+                "name": "Freeze",
+                "value": 3082
+              },
+              {
+                "name": "Excited",
+                "value": 3083
+              },
+              {
+                "name": "Tension",
+                "value": 3084
+              },
+              {
+                "name": "Fright",
+                "value": 3085
+              },
+              {
+                "name": "Energetic",
+                "value": 3086
+              },
+              {
+                "name": "Doubt",
+                "value": 3087
+              },
+              {
+                "name": "Meditation",
+                "value": 3088
+              },
+              {
+                "name": "Daze",
+                "value": 3089
+              },
+              {
+                "name": "Action",
+                "value": 3090
+              },
+              {
+                "name": "Rivalry",
+                "value": 3091
+              },
+              {
+                "name": "Puzzle Game",
+                "value": 3092
+              },
+              {
+                "name": "Shooting Game",
+                "value": 3093
+              },
+              {
+                "name": "Racing Game",
+                "value": 3094
+              },
+              {
+                "name": "Card Playing",
+                "value": 3095
+              }
+            ]
+          }
+        },
+        {
+          "type": "devices.capabilities.music_setting",
+          "instance": "musicMode",
+          "parameters": {
+            "dataType": "STRUCT",
+            "fields": [
+              {
+                "fieldName": "musicMode",
+                "dataType": "ENUM",
+                "options": [
+                  {
+                    "name": "Energic",
+                    "value": 5
+                  },
+                  {
+                    "name": "Rhythm",
+                    "value": 3
+                  },
+                  {
+                    "name": "Spectrum",
+                    "value": 4
+                  },
+                  {
+                    "name": "Rolling",
+                    "value": 6
+                  }
+                ],
+                "required": true
+              },
+              {
+                "unit": "unit.percent",
+                "fieldName": "sensitivity",
+                "dataType": "INTEGER",
+                "range": {
+                  "min": 0,
+                  "max": 100,
+                  "precision": 1
+                },
+                "required": true
+              },
+              {
+                "fieldName": "autoColor",
+                "dataType": "ENUM",
+                "options": [
+                  {
+                    "name": "on",
+                    "value": 1
+                  },
+                  {
+                    "name": "off",
+                    "value": 0
+                  }
+                ],
+                "required": false
+              },
+              {
+                "fieldName": "rgb",
+                "dataType": "INTEGER",
+                "range": {
+                  "min": 0,
+                  "max": 16777215,
+                  "precision": 1
+                },
+                "required": true
+              }
+            ]
+          }
+        },
+        {
+          "type": "devices.capabilities.dynamic_setting",
+          "instance": "diyScene",
+          "parameters": {
+            "dataType": "ENUM",
+            "options": [
+              {
+                "name": "fade",
+                "value": 8216567
+              }
+            ]
+          }
+        },
+        {
+          "type": "devices.capabilities.dynamic_scene",
+          "instance": "snapshot",
+          "parameters": {
+            "dataType": "ENUM",
+            "options": [
+              {
+                "name": "color scene",
+                "value": 465503
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "sku": "H7055",
+      "device": "B6:21:C3:37:34:32:33:86",
+      "capabilities": [
+        {
+          "type": "devices.capabilities.on_off",
+          "instance": "powerSwitch",
+          "parameters": {
+            "dataType": "ENUM",
+            "options": [
+              {
+                "name": "on",
+                "value": 1
+              },
+              {
+                "name": "off",
+                "value": 0
+              }
+            ]
+          }
+        },
+        {
+          "type": "devices.capabilities.toggle",
+          "instance": "gradientToggle",
+          "parameters": {
+            "dataType": "ENUM",
+            "options": [
+              {
+                "name": "on",
+                "value": 1
+              },
+              {
+                "name": "off",
+                "value": 0
+              }
+            ]
+          }
+        },
+        {
+          "type": "devices.capabilities.range",
+          "instance": "brightness",
+          "parameters": {
+            "unit": "unit.percent",
+            "dataType": "INTEGER",
+            "range": {
+              "min": 1,
+              "max": 100,
+              "precision": 1
+            }
+          }
+        },
+        {
+          "type": "devices.capabilities.segment_color_setting",
+          "instance": "segmentedColorRgb",
+          "parameters": {
+            "dataType": "STRUCT",
+            "fields": [
+              {
+                "fieldName": "segment",
+                "dataType": "Array",
+                "options": [
+                  {
+                    "value": 0
+                  },
+                  {
+                    "value": 1
+                  },
+                  {
+                    "value": 2
+                  },
+                  {
+                    "value": 3
+                  },
+                  {
+                    "value": 4
+                  },
+                  {
+                    "value": 5
+                  },
+                  {
+                    "value": 6
+                  },
+                  {
+                    "value": 7
+                  },
+                  {
+                    "value": 8
+                  },
+                  {
+                    "value": 9
+                  },
+                  {
+                    "value": 10
+                  },
+                  {
+                    "value": 11
+                  },
+                  {
+                    "value": 12
+                  },
+                  {
+                    "value": 13
+                  },
+                  {
+                    "value": 14
+                  }
+                ],
+                "required": true
+              },
+              {
+                "fieldName": "rgb",
+                "dataType": "INTEGER",
+                "range": {
+                  "min": 0,
+                  "max": 16777215,
+                  "precision": 1
+                },
+                "required": true
+              }
+            ]
+          }
+        },
+        {
+          "type": "devices.capabilities.color_setting",
+          "instance": "colorRgb",
+          "parameters": {
+            "dataType": "INTEGER",
+            "range": {
+              "min": 0,
+              "max": 16777215,
+              "precision": 1
+            }
+          }
+        },
+        {
+          "type": "devices.capabilities.color_setting",
+          "instance": "colorTemperatureK",
+          "parameters": {
+            "dataType": "INTEGER",
+            "range": {
+              "min": 2000,
+              "max": 9000,
+              "precision": 1
+            }
+          }
+        },
+        {
+          "type": "devices.capabilities.dynamic_scene",
+          "instance": "lightScene",
+          "parameters": {
+            "dataType": "ENUM",
+            "options": [
+              {
+                "name": "Tudum",
+                "value": 3054
+              },
+              {
+                "name": "Party",
+                "value": 3055
+              },
+              {
+                "name": "Dance Party",
+                "value": 3056
+              },
+              {
+                "name": "Dine Together",
+                "value": 3057
+              },
+              {
+                "name": "Dating",
+                "value": 3058
+              },
+              {
+                "name": "Adventure",
+                "value": 3059
+              },
+              {
+                "name": "Technology",
+                "value": 3060
+              },
+              {
+                "name": "Sports",
+                "value": 3061
+              },
+              {
+                "name": "Dreamlike",
+                "value": 3062
+              },
+              {
+                "name": "Dynamic",
+                "value": 3063
+              },
+              {
+                "name": "Blossom",
+                "value": 3064
+              },
+              {
+                "name": "Christmas",
+                "value": 3065
+              },
+              {
+                "name": "Halloween",
+                "value": 3066
+              },
+              {
+                "name": "Fireworks",
+                "value": 3067
+              },
+              {
+                "name": "Ghost",
+                "value": 3068
+              },
+              {
+                "name": "Easter",
+                "value": 3069
+              },
+              {
+                "name": "Valentine's Day",
+                "value": 3070
+              },
+              {
+                "name": "Spin",
+                "value": 3071
+              },
+              {
+                "name": "Stacking",
+                "value": 3072
+              },
+              {
+                "name": "Shoot",
+                "value": 3073
+              },
+              {
+                "name": "Racing",
+                "value": 3074
+              },
+              {
+                "name": "Poker",
+                "value": 3075
+              },
+              {
+                "name": "Crossing",
+                "value": 3076
+              },
+              {
+                "name": "Fight",
+                "value": 3077
+              },
+              {
+                "name": "Electro Dance",
+                "value": 3078
+              },
+              {
+                "name": "Swing",
+                "value": 3079
+              },
+              {
+                "name": "Candy Crush",
+                "value": 3080
+              },
+              {
+                "name": "Portal",
+                "value": 3081
+              },
+              {
+                "name": "Freeze",
+                "value": 3082
+              },
+              {
+                "name": "Excited",
+                "value": 3083
+              },
+              {
+                "name": "Tension",
+                "value": 3084
+              },
+              {
+                "name": "Fright",
+                "value": 3085
+              },
+              {
+                "name": "Energetic",
+                "value": 3086
+              },
+              {
+                "name": "Doubt",
+                "value": 3087
+              },
+              {
+                "name": "Meditation",
+                "value": 3088
+              },
+              {
+                "name": "Daze",
+                "value": 3089
+              },
+              {
+                "name": "Action",
+                "value": 3090
+              },
+              {
+                "name": "Rivalry",
+                "value": 3091
+              },
+              {
+                "name": "Puzzle Game",
+                "value": 3092
+              },
+              {
+                "name": "Shooting Game",
+                "value": 3093
+              },
+              {
+                "name": "Racing Game",
+                "value": 3094
+              },
+              {
+                "name": "Card Playing",
+                "value": 3095
+              }
+            ]
+          }
+        },
+        {
+          "type": "devices.capabilities.music_setting",
+          "instance": "musicMode",
+          "parameters": {
+            "dataType": "STRUCT",
+            "fields": [
+              {
+                "fieldName": "musicMode",
+                "dataType": "ENUM",
+                "options": [
+                  {
+                    "name": "Energic",
+                    "value": 5
+                  },
+                  {
+                    "name": "Rhythm",
+                    "value": 3
+                  },
+                  {
+                    "name": "Spectrum",
+                    "value": 6
+                  },
+                  {
+                    "name": "Rolling",
+                    "value": 4
+                  }
+                ],
+                "required": true
+              },
+              {
+                "unit": "unit.percent",
+                "fieldName": "sensitivity",
+                "dataType": "INTEGER",
+                "range": {
+                  "min": 0,
+                  "max": 100,
+                  "precision": 1
+                },
+                "required": true
+              },
+              {
+                "fieldName": "autoColor",
+                "dataType": "ENUM",
+                "options": [
+                  {
+                    "name": "on",
+                    "value": 1
+                  },
+                  {
+                    "name": "off",
+                    "value": 0
+                  }
+                ],
+                "required": false
+              },
+              {
+                "unit": "unit.percent",
+                "fieldName": "rgb",
+                "dataType": "INTEGER",
+                "range": {
+                  "min": 0,
+                  "max": 16777215,
+                  "precision": 1
+                },
+                "required": true
+              }
+            ]
+          }
+        },
+        {
+          "type": "devices.capabilities.dynamic_scene",
+          "instance": "diyScene",
+          "parameters": {
+            "dataType": "ENUM",
+            "options": [
+              {
+                "name": "Fade",
+                "value": 8216567
+              }
+            ]
+          }
+        },
+        {
+          "type": "devices.capabilities.dynamic_scene",
+          "instance": "snapshot",
+          "parameters": {
+            "dataType": "ENUM",
+            "options": [
+              {
+                "name": "Sunrise",
+                "value": 0
+              },
+              {
+                "name": "Sunset",
+                "value": 1
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
