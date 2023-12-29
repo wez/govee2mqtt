@@ -1,7 +1,14 @@
 use anyhow::Context;
-use serde::Deserialize;
+use reqwest::Method;
+use serde::de::DeserializeOwned;
+use serde::{Deserialize, Serialize};
+use serde_json::Value as JsonValue;
+use sqlite_cache::{Cache, CacheConfig};
+use std::future::Future;
+use std::path::PathBuf;
 use std::time::Duration;
 
+// <https://developer.govee.com/reference/get-you-devices>
 const SERVER: &str = "https://openapi.api.govee.com";
 
 fn endpoint(url: &str) -> String {
@@ -10,28 +17,139 @@ fn endpoint(url: &str) -> String {
 
 pub struct GoveeApiClient {
     key: String,
+    cache: Cache,
+}
+
+async fn cache_get<T, Fut>(
+    cache: &Cache,
+    key: &str,
+    ttl: Duration,
+    future: Fut,
+) -> anyhow::Result<T>
+where
+    T: Serialize + DeserializeOwned + std::fmt::Debug,
+    Fut: Future<Output = anyhow::Result<T>>,
+{
+    let topic = cache.topic("http-api")?;
+    let (updater, current_value) = topic.get_for_update(key).await?;
+    if let Some(current) = current_value {
+        let result: T = serde_json::from_slice(&current.data)?;
+        return Ok(result);
+    }
+
+    let value: T = future.await?;
+    let data = serde_json::to_string_pretty(&value)?;
+    updater.write(data.as_bytes(), ttl)?;
+
+    Ok(value)
 }
 
 impl GoveeApiClient {
-    pub fn new<K: Into<String>>(key: K) -> Self {
-        Self { key: key.into() }
+    pub fn new<K: Into<String>>(key: K) -> anyhow::Result<Self> {
+        let cache_dir = std::env::var("GOVEE_CACHE_DIR")
+            .ok()
+            .map(PathBuf::from)
+            .or_else(|| dirs_next::cache_dir())
+            .ok_or_else(|| anyhow::anyhow!("failed to resolve cache dir"))?;
+
+        let cache_file = cache_dir.join("govee-rs-cache.sqlite");
+        let cache = Cache::new(
+            CacheConfig::default(),
+            sqlite_cache::rusqlite::Connection::open(cache_file)?,
+        )?;
+
+        Ok(Self {
+            key: key.into(),
+            cache,
+        })
     }
 
     pub async fn get_devices(&self) -> anyhow::Result<Vec<HttpDeviceInfo>> {
-        let url = endpoint("/router/api/v1/user/devices");
-        let resp: GetDevicesResponse = self.get_request_with_json_response(url).await?;
-        Ok(resp.data)
+        cache_get(
+            &self.cache,
+            "device-list",
+            Duration::from_secs(900),
+            async {
+                let url = endpoint("/router/api/v1/user/devices");
+                let resp: GetDevicesResponse = self.get_request_with_json_response(url).await?;
+                Ok(resp.data)
+            },
+        )
+        .await
+    }
+
+    pub async fn get_device_state(
+        &self,
+        device: &HttpDeviceInfo,
+    ) -> anyhow::Result<HttpDeviceState> {
+        let url = endpoint("/router/api/v1/device/state");
+        let request = GetDeviceStateRequest {
+            request_id: "uuid".to_string(),
+            payload: GetDeviceStateRequestPayload {
+                sku: device.sku.to_string(),
+                device: device.device.to_string(),
+            },
+        };
+
+        let resp: GetDeviceStateResponse = self
+            .request_with_json_response(Method::POST, url, &request)
+            .await?;
+
+        Ok(resp.payload)
     }
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Serialize, Debug)]
+struct GetDeviceStateRequest {
+    #[serde(rename = "requestId")]
+    pub request_id: String,
+    pub payload: GetDeviceStateRequestPayload,
+}
+
+#[derive(Serialize, Debug)]
+struct GetDeviceStateRequestPayload {
+    pub sku: String,
+    pub device: String,
+}
+
+#[derive(Deserialize, Serialize, Debug)]
+#[serde(deny_unknown_fields)]
+struct GetDeviceStateResponse {
+    #[serde(rename = "requestId")]
+    pub request_id: String,
+    pub code: u32,
+    #[serde(rename = "msg")]
+    pub message: String,
+    pub payload: HttpDeviceState,
+}
+
+#[derive(Deserialize, Serialize, Debug)]
+#[serde(deny_unknown_fields)]
+pub struct HttpDeviceState {
+    pub sku: String,
+    pub device: String,
+    pub capabilities: Vec<DeviceCapabilityState>,
+}
+
+#[derive(Deserialize, Serialize, Debug)]
+#[serde(tag = "type")]
+#[serde(deny_unknown_fields)]
+pub struct DeviceCapabilityState {
+    #[serde(rename = "type")]
+    pub kind: DeviceCapabilityKind,
+    pub instance: String,
+    pub state: JsonValue,
+}
+
+#[derive(Deserialize, Serialize, Debug)]
+#[serde(deny_unknown_fields)]
 struct GetDevicesResponse {
     pub code: u32,
     pub message: String,
     pub data: Vec<HttpDeviceInfo>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Serialize, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct HttpDeviceInfo {
     pub sku: String,
@@ -43,7 +161,7 @@ pub struct HttpDeviceInfo {
     pub capabilities: Vec<DeviceCapability>,
 }
 
-#[derive(Deserialize, Debug, Default)]
+#[derive(Deserialize, Serialize, Debug, Default)]
 pub enum DeviceType {
     #[serde(rename = "devices.types.light")]
     #[default]
@@ -66,9 +184,11 @@ pub enum DeviceType {
     IceMaker,
     #[serde(rename = "devices.types.aroma_diffuser")]
     AromaDiffuser,
+    #[serde(other)]
+    Other,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Serialize, Debug)]
 pub enum DeviceCapabilityKind {
     #[serde(rename = "devices.capabilities.on_off")]
     OnOff,
@@ -92,10 +212,14 @@ pub enum DeviceCapabilityKind {
     DynamicSetting,
     #[serde(rename = "devices.capabilities.temperature_setting")]
     TemperatureSetting,
+    #[serde(rename = "devices.capabilities.online")]
+    Online,
+    #[serde(other)]
+    Other,
 }
 
-#[derive(Deserialize, Debug)]
-#[serde(tag = "type")]
+#[derive(Deserialize, Serialize, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct DeviceCapability {
     #[serde(rename = "type")]
     pub kind: DeviceCapabilityKind,
@@ -103,7 +227,7 @@ pub struct DeviceCapability {
     pub parameters: DeviceParameters,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Serialize, Debug)]
 #[serde(tag = "dataType")]
 #[serde(deny_unknown_fields)]
 pub enum DeviceParameters {
@@ -128,7 +252,7 @@ pub enum DeviceParameters {
     },
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Serialize, Debug)]
 // No deny_unknown_fields here, because we embed via flatten
 pub struct StructField {
     #[serde(rename = "fieldName")]
@@ -140,21 +264,21 @@ pub struct StructField {
     pub required: bool,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Serialize, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct ElementRange {
     pub min: u32,
     pub max: u32,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Serialize, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct ArraySize {
     pub min: u32,
     pub max: u32,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Serialize, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct IntegerRange {
     pub min: u32,
@@ -162,14 +286,14 @@ pub struct IntegerRange {
     pub precision: u32,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Serialize, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct EnumOption {
     pub name: String,
     pub value: u32,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Serialize, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct ArrayOption {
     pub value: u32,
@@ -195,7 +319,7 @@ impl GoveeApiClient {
         let response = reqwest::Client::builder()
             .timeout(Duration::from_secs(60))
             .build()?
-            .request(reqwest::Method::GET, url)
+            .request(Method::GET, url)
             .header("Govee-API-Key", &self.key)
             .send()
             .await?;
@@ -232,7 +356,8 @@ impl GoveeApiClient {
         B: serde::Serialize,
         R: serde::de::DeserializeOwned,
     >(
-        method: reqwest::Method,
+        &self,
+        method: Method,
         url: T,
         body: &B,
     ) -> anyhow::Result<R> {
@@ -240,6 +365,7 @@ impl GoveeApiClient {
             .timeout(Duration::from_secs(60))
             .build()?
             .request(method, url)
+            .header("Govee-API-Key", &self.key)
             .json(body)
             .send()
             .await?;
@@ -273,6 +399,95 @@ impl GoveeApiClient {
 #[cfg(test)]
 mod test {
     use super::*;
+
+    const GET_DEVICE_STATE_EXAMPLE: &str = include_str!("../test-data/get_device_state.json");
+
+    #[test]
+    fn get_device_state() {
+        let resp: GetDeviceStateResponse = serde_json::from_str(&GET_DEVICE_STATE_EXAMPLE).unwrap();
+        k9::snapshot!(
+            resp,
+            r#"
+GetDeviceStateResponse {
+    request_id: "uuid",
+    code: 200,
+    message: "success",
+    payload: HttpDeviceState {
+        sku: "H7143",
+        device: "52:8B:D4:AD:FC:45:5D:FE",
+        capabilities: [
+            DeviceCapabilityState {
+                kind: Online,
+                instance: "online",
+                state: Object {
+                    "value": Bool(false),
+                },
+            },
+            DeviceCapabilityState {
+                kind: OnOff,
+                instance: "powerSwitch",
+                state: Object {
+                    "value": Number(0),
+                },
+            },
+            DeviceCapabilityState {
+                kind: Toggle,
+                instance: "warmMistToggle",
+                state: Object {
+                    "value": Number(0),
+                },
+            },
+            DeviceCapabilityState {
+                kind: WorkMode,
+                instance: "workMode",
+                state: Object {
+                    "value": Object {
+                        "modeValue": Number(9),
+                        "workMode": Number(3),
+                    },
+                },
+            },
+            DeviceCapabilityState {
+                kind: Range,
+                instance: "humidity",
+                state: Object {
+                    "value": String(""),
+                },
+            },
+            DeviceCapabilityState {
+                kind: Toggle,
+                instance: "nightlightToggle",
+                state: Object {
+                    "value": Number(1),
+                },
+            },
+            DeviceCapabilityState {
+                kind: Range,
+                instance: "brightness",
+                state: Object {
+                    "value": Number(5),
+                },
+            },
+            DeviceCapabilityState {
+                kind: ColorSetting,
+                instance: "colorRgb",
+                state: Object {
+                    "value": Number(16777215),
+                },
+            },
+            DeviceCapabilityState {
+                kind: Mode,
+                instance: "nightlightScene",
+                state: Object {
+                    "value": Number(5),
+                },
+            },
+        ],
+    },
+}
+"#
+        );
+    }
 
     const LIST_DEVICES_EXAMPLE: &str = include_str!("../test-data/list_devices.json");
     const LIST_DEVICES_EXAMPLE2: &str = include_str!("../test-data/list_devices_2.json");

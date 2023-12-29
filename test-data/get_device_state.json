@@ -1,0 +1,77 @@
+{
+    "requestId": "uuid",
+    "msg": "success",
+    "code": 200,
+    "payload": {
+        "sku": "H7143",
+        "device": "52:8B:D4:AD:FC:45:5D:FE",
+        "capabilities": [
+            {
+                "type": "devices.capabilities.online",
+                "instance": "online",
+                "state": {
+                    "value": false
+                }
+            },
+            {
+                "type": "devices.capabilities.on_off",
+                "instance": "powerSwitch",
+                "state": {
+                    "value": 0
+                }
+            },
+            {
+                "type": "devices.capabilities.toggle",
+                "instance": "warmMistToggle",
+                "state": {
+                    "value": 0
+                }
+            },
+            {
+                "type": "devices.capabilities.work_mode",
+                "instance": "workMode",
+                "state": {
+                    "value": {
+                        "workMode": 3,
+                        "modeValue": 9
+                    }
+                }
+            },
+            {
+                "type": "devices.capabilities.range",
+                "instance": "humidity",
+                "state": {
+                    "value": ""
+                }
+            },
+            {
+                "type": "devices.capabilities.toggle",
+                "instance": "nightlightToggle",
+                "state": {
+                    "value": 1
+                }
+            },
+            {
+                "type": "devices.capabilities.range",
+                "instance": "brightness",
+                "state": {
+                    "value": 5
+                }
+            },
+            {
+                "type": "devices.capabilities.color_setting",
+                "instance": "colorRgb",
+                "state": {
+                    "value": 16777215
+                }
+            },
+            {
+                "type": "devices.capabilities.mode",
+                "instance": "nightlightScene",
+                "state": {
+                    "value": 5
+                }
+            }
+        ]
+    }
+}
