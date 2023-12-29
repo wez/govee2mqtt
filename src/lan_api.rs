@@ -1,8 +1,6 @@
 use anyhow::Context;
 use serde::{Deserialize, Serialize};
-use std::net::IpAddr;
-use std::net::Ipv4Addr;
-use std::net::SocketAddr;
+use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::net::UdpSocket;

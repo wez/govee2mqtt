@@ -12,6 +12,13 @@ serde = {version="1.0.147", features=["derive"]}
 anyhow = "1"
 log = "0.4.20"
 env_logger = "0.10.1"
+govee-api = "1.3.2"
+dotenvy = "0.15.7"
+color-backtrace = "0.6.1"
+chrono = "0.4.31"
+chrono-tz = "0.8.5"
+iana-time-zone = "0.1.58"
+clap = { version = "4.4.12", features = ["derive"] }
 
 [dev-dependencies]
 anyhow = "1"
