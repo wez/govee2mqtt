@@ -10,6 +10,10 @@ use tokio::time::Instant;
 
 // <https://app-h5.govee.com/user-manual/wlan-guide>
 
+const SCAN_PORT: u16 = 4001;
+const LISTEN_PORT: u16 = 4002;
+const CMD_PORT: u16 = 4003;
+
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(tag = "cmd", content = "data")]
 pub enum Request {
@@ -63,8 +67,8 @@ pub struct LanDevice {
 }
 
 impl LanDevice {
-    pub fn with_scan(info: ScannedDevice, mut addr: SocketAddr) -> Self {
-        addr.set_port(4003);
+    pub fn with_scan(info: ScannedDevice, addr: IpAddr) -> Self {
+        let addr = SocketAddr::from((addr, CMD_PORT));
         Self { info, addr }
     }
 
@@ -119,7 +123,7 @@ async fn lan_disco(inner: Arc<ClientInner>) -> anyhow::Result<Receiver<LanDevice
     mcast.set_multicast_loop_v4(false)?;
     mcast.join_multicast_v4(Ipv4Addr::new(239, 255, 255, 250), Ipv4Addr::UNSPECIFIED)?;
 
-    let listen = UdpSocket::bind("0.0.0.0:4002").await?;
+    let listen = UdpSocket::bind(("0.0.0.0", LISTEN_PORT)).await?;
     let (tx, rx) = channel(8);
 
     async fn send_scan(mcast: &UdpSocket) -> anyhow::Result<()> {
@@ -130,7 +134,7 @@ async fn lan_disco(inner: Arc<ClientInner>) -> anyhow::Result<Receiver<LanDevice
         })
         .expect("to serialize scan message");
         mcast
-            .send_to(scan.as_bytes(), "239.255.255.250:4001")
+            .send_to(scan.as_bytes(), ("239.255.255.250", SCAN_PORT))
             .await?;
         Ok(())
     }
@@ -143,19 +147,17 @@ async fn lan_disco(inner: Arc<ClientInner>) -> anyhow::Result<Receiver<LanDevice
     ) -> anyhow::Result<()> {
         let response: ResponseWrapper = serde_json::from_slice(data)
             .with_context(|| format!("Parsing: {}", String::from_utf8_lossy(data)))?;
-        match response.msg {
-            Response::Scan(info) => {
-                tx.send(LanDevice::with_scan(info, addr)).await?;
+
+        let mut mux = inner.mux.lock().await;
+        mux.retain(|l| !l.tx.is_closed());
+        for l in mux.iter() {
+            if l.addr == addr.ip() {
+                l.tx.send(response.msg.clone()).await.ok();
             }
-            msg => {
-                let mut mux = inner.mux.lock().await;
-                mux.retain(|l| !l.tx.is_closed());
-                for l in mux.iter() {
-                    if l.addr == addr.ip() {
-                        l.tx.send(msg.clone()).await.ok();
-                    }
-                }
-            }
+        }
+
+        if let Response::Scan(info) = response.msg {
+            tx.send(LanDevice::with_scan(info, addr.ip())).await?;
         }
 
         Ok(())
@@ -211,18 +213,42 @@ impl Client {
         Ok((Self { inner }, rx))
     }
 
-    async fn add_listener(&self, device: &LanDevice) -> anyhow::Result<Receiver<Response>> {
+    async fn add_listener(&self, addr: IpAddr) -> anyhow::Result<Receiver<Response>> {
         let (tx, rx) = channel(1);
         let mut mux = self.inner.mux.lock().await;
-        mux.push(ClientListener {
-            addr: device.addr.ip(),
-            tx,
-        });
+        mux.push(ClientListener { addr, tx });
         Ok(rx)
     }
 
+    /// Interrogate `addr` by sending a scan request to it.
+    /// If it is a Govee device that supports the lan protocol,
+    /// this method will yield a LanDevice representing it.
+    /// In addition, its details will be routed via the discovery
+    /// receiver.
+    pub async fn scan_ip(&self, addr: IpAddr) -> anyhow::Result<LanDevice> {
+        let mut rx = self.add_listener(addr).await?;
+        let client = UdpSocket::bind("0.0.0.0:0").await?;
+        let scan = serde_json::to_string(&RequestMessage {
+            msg: Request::Scan {
+                account_topic: AccountTopic::Reserve,
+            },
+        })
+        .expect("to serialize scan message");
+        client.send_to(scan.as_bytes(), (addr, SCAN_PORT)).await?;
+        loop {
+            match tokio::time::timeout(Duration::from_secs(10), rx.recv()).await {
+                Ok(Some(Response::Scan(info))) => {
+                    return Ok(LanDevice::with_scan(info, addr));
+                }
+                Ok(Some(_)) => {}
+                Ok(None) => anyhow::bail!("listener thread terminated"),
+                Err(_) => anyhow::bail!("timeout waiting for response"),
+            }
+        }
+    }
+
     pub async fn query_status(&self, device: &LanDevice) -> anyhow::Result<DeviceStatus> {
-        let mut rx = self.add_listener(device).await?;
+        let mut rx = self.add_listener(device.addr.ip()).await?;
         device.send_request(Request::DevStatus {}).await?;
         loop {
             match tokio::time::timeout(Duration::from_secs(10), rx.recv()).await {
