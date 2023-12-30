@@ -15,6 +15,8 @@ enum SubCommand {
     On,
     Off,
     Brightness { percent: u8 },
+    Temperature { kelvin: u32 },
+    Color { color: csscolorparser::Color },
 }
 
 impl LanControlCommand {
@@ -32,6 +34,15 @@ impl LanControlCommand {
             }
             SubCommand::Brightness { percent } => {
                 device.send_brightness(*percent).await?;
+            }
+            SubCommand::Temperature { kelvin } => {
+                device.send_color_temperature_kelvin(*kelvin).await?;
+            }
+            SubCommand::Color { color } => {
+                let [r, g, b, _a] = color.to_rgba8();
+                device
+                    .send_color_rgb(crate::lan_api::DeviceColor { r, g, b })
+                    .await?;
             }
         }
 

@@ -66,6 +66,12 @@ pub enum Request {
     Turn { value: u8 },
     #[serde(rename = "brightness")]
     Brightness { value: u8 },
+    #[serde(rename = "colorwc")]
+    Color {
+        color: DeviceColor,
+        #[serde(rename = "colorTemInKelvin")]
+        color_temperature_kelvin: u32,
+    },
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -107,6 +113,25 @@ impl LanDevice {
     pub async fn send_brightness(&self, percent: u8) -> anyhow::Result<()> {
         self.send_request(Request::Brightness { value: percent })
             .await
+    }
+
+    pub async fn send_color_rgb(&self, color: DeviceColor) -> anyhow::Result<()> {
+        self.send_request(Request::Color {
+            color,
+            color_temperature_kelvin: 0,
+        })
+        .await
+    }
+
+    pub async fn send_color_temperature_kelvin(
+        &self,
+        color_temperature_kelvin: u32,
+    ) -> anyhow::Result<()> {
+        self.send_request(Request::Color {
+            color: DeviceColor { r: 0, g: 0, b: 0 },
+            color_temperature_kelvin,
+        })
+        .await
     }
 }
 
