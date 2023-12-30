@@ -22,6 +22,42 @@ const CMD_PORT: u16 = 4003;
 /// The multicast group of which govee LAN-API enabled devices are members
 const MULTICAST: IpAddr = IpAddr::V4(Ipv4Addr::new(239, 255, 255, 250));
 
+#[derive(clap::Parser, Debug)]
+pub struct LanDiscoArguments {
+    /// Prevent the use of the default multicast broadcast address
+    #[arg(long, global = true)]
+    pub no_multicast: bool,
+
+    /// Enumerate all interfaces, and for each one that has
+    /// a broadcast address, broadcast to it
+    #[arg(long, global = true)]
+    pub broadcast_all: bool,
+
+    /// Broadcast to the global broadcast address 255.255.255.255
+    #[arg(long, global = true)]
+    pub global_broadcast: bool,
+
+    /// Addresses to scan. May be broadcast addresses or individual
+    /// IP addresses
+    #[arg(long, global = true)]
+    pub scan: Vec<IpAddr>,
+
+    /// How long to wait for discovery to complete, in seconds
+    #[arg(long, default_value_t = 15, global = true)]
+    pub disco_timeout: u64,
+}
+
+impl LanDiscoArguments {
+    pub fn to_disco_options(&self) -> DiscoOptions {
+        DiscoOptions {
+            enable_multicast: !self.no_multicast,
+            additional_addresses: self.scan.clone(),
+            broadcast_all_interfaces: self.broadcast_all,
+            global_broadcast: self.global_broadcast,
+        }
+    }
+}
+
 pub struct DiscoOptions {
     /// Use the MULTICAST address defined in the LAN protocol
     pub enable_multicast: bool,

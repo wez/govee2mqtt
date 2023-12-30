@@ -1,4 +1,7 @@
+use crate::http_api::GoveeApiArguments;
+use crate::lan_api::LanDiscoArguments;
 use clap::Parser;
+use std::str::FromStr;
 
 mod cache;
 mod commands;
@@ -7,8 +10,13 @@ mod lan_api;
 mod version_info;
 
 #[derive(clap::Parser, Debug)]
-#[command(version = version_info::govee_version())]
+#[command(version = version_info::govee_version(),  propagate_version=true)]
 pub struct Args {
+    #[command(flatten)]
+    api_args: GoveeApiArguments,
+    #[command(flatten)]
+    lan_disco_args: LanDiscoArguments,
+
     #[command(subcommand)]
     cmd: SubCommand,
 }
@@ -18,6 +26,7 @@ pub enum SubCommand {
     LanControl(commands::lan_control::LanControlCommand),
     LanDisco(commands::lan_disco::LanDiscoCommand),
     ListHttp(commands::list_http::ListHttpCommand),
+    HttpControl(commands::http_control::HttpControlCommand),
 }
 
 impl Args {
@@ -26,7 +35,23 @@ impl Args {
             SubCommand::LanControl(cmd) => cmd.run(self).await,
             SubCommand::LanDisco(cmd) => cmd.run(self).await,
             SubCommand::ListHttp(cmd) => cmd.run(self).await,
+            SubCommand::HttpControl(cmd) => cmd.run(self).await,
         }
+    }
+}
+
+pub fn opt_env_var<T: FromStr>(name: &str) -> anyhow::Result<Option<T>>
+where
+    <T as FromStr>::Err: std::fmt::Display,
+{
+    match std::env::var(name) {
+        Ok(p) => {
+            Ok(Some(p.parse().map_err(|err| {
+                anyhow::anyhow!("parsing ${name}: {err:#}")
+            })?))
+        }
+        Err(std::env::VarError::NotPresent) => Ok(None),
+        Err(err) => anyhow::bail!("${name} is invalid: {err:#}"),
     }
 }
 

@@ -1,4 +1,5 @@
 use crate::cache::{cache_get, CacheGetOptions};
+use crate::opt_env_var;
 use anyhow::Context;
 use reqwest::Method;
 use serde::{Deserialize, Serialize};
@@ -11,6 +12,37 @@ const ONE_WEEK: Duration = Duration::from_secs(86400 * 7);
 
 fn endpoint(url: &str) -> String {
     format!("{SERVER}{url}")
+}
+
+#[derive(clap::Parser, Debug)]
+pub struct GoveeApiArguments {
+    /// The Govee API Key. If not passed here, it will be read from
+    /// the GOVEE_API_KEY environment variable.
+    #[arg(long, global = true)]
+    pub api_key: Option<String>,
+}
+
+impl GoveeApiArguments {
+    pub fn opt_api_key(&self) -> anyhow::Result<Option<String>> {
+        match &self.api_key {
+            Some(key) => Ok(Some(key.to_string())),
+            None => opt_env_var("GOVEE_API_KEY"),
+        }
+    }
+
+    pub fn api_key(&self) -> anyhow::Result<String> {
+        self.opt_api_key()?.ok_or_else(|| {
+            anyhow::anyhow!(
+                "Please specify the api key either via the \
+                --api-key parameter or by setting $GOVEE_API_KEY"
+            )
+        })
+    }
+
+    pub fn api_client(&self) -> anyhow::Result<GoveeApiClient> {
+        let key = self.api_key()?;
+        Ok(GoveeApiClient::new(key))
+    }
 }
 
 pub struct GoveeApiClient {
@@ -40,6 +72,44 @@ impl GoveeApiClient {
         .await
     }
 
+    pub async fn get_device_by_id<I: AsRef<str>>(&self, id: I) -> anyhow::Result<HttpDeviceInfo> {
+        let id = id.as_ref();
+        let devices = self.get_devices().await?;
+        for d in devices {
+            if d.device == id {
+                return Ok(d);
+            }
+        }
+        anyhow::bail!("device {id} not found");
+    }
+
+    pub async fn control_device<V: Into<JsonValue>>(
+        &self,
+        device: &HttpDeviceInfo,
+        capability: &DeviceCapability,
+        value: V,
+    ) -> anyhow::Result<ControlDeviceResponseCapability> {
+        let url = endpoint("/router/api/v1/device/control");
+        let request = ControlDeviceRequest {
+            request_id: "uuid".to_string(),
+            payload: ControlDevicePayload {
+                sku: device.sku.to_string(),
+                device: device.device.to_string(),
+                capability: ControlDeviceCapability {
+                    kind: capability.kind,
+                    instance: capability.instance.to_string(),
+                    value: value.into(),
+                },
+            },
+        };
+
+        let resp: ControlDeviceResponse = self
+            .request_with_json_response(Method::POST, url, &request)
+            .await?;
+
+        Ok(resp.capability)
+    }
+
     #[allow(unused)]
     pub async fn get_device_state(
         &self,
@@ -60,6 +130,49 @@ impl GoveeApiClient {
 
         Ok(resp.payload)
     }
+}
+
+#[derive(Serialize, Debug)]
+struct ControlDeviceRequest {
+    #[serde(rename = "requestId")]
+    pub request_id: String,
+    pub payload: ControlDevicePayload,
+}
+
+#[derive(Serialize, Debug)]
+struct ControlDevicePayload {
+    pub sku: String,
+    pub device: String,
+    pub capability: ControlDeviceCapability,
+}
+
+#[derive(Serialize, Debug)]
+struct ControlDeviceCapability {
+    #[serde(rename = "type")]
+    pub kind: DeviceCapabilityKind,
+    pub instance: String,
+    pub value: JsonValue,
+}
+
+#[derive(Deserialize, Debug)]
+#[allow(dead_code)]
+struct ControlDeviceResponse {
+    #[serde(rename = "requestId")]
+    pub request_id: String,
+    pub code: u32,
+    #[serde(rename = "msg")]
+    pub message: String,
+
+    pub capability: ControlDeviceResponseCapability,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct ControlDeviceResponseCapability {
+    #[serde(rename = "type")]
+    pub kind: DeviceCapabilityKind,
+    pub instance: String,
+    pub value: JsonValue,
+    pub state: JsonValue,
 }
 
 #[derive(Serialize, Debug)]
@@ -122,6 +235,12 @@ pub struct HttpDeviceInfo {
     #[serde(default, rename = "type")]
     pub device_type: DeviceType,
     pub capabilities: Vec<DeviceCapability>,
+}
+
+impl HttpDeviceInfo {
+    pub fn capability_by_instance(&self, instance: &str) -> Option<&DeviceCapability> {
+        self.capabilities.iter().find(|c| c.instance == instance)
+    }
 }
 
 #[derive(Deserialize, Serialize, Debug, Default, Clone, Copy)]
@@ -188,6 +307,17 @@ pub struct DeviceCapability {
     pub kind: DeviceCapabilityKind,
     pub instance: String,
     pub parameters: DeviceParameters,
+}
+
+impl DeviceCapability {
+    pub fn enum_parameter_by_name(&self, name: &str) -> Option<u32> {
+        match &self.parameters {
+            DeviceParameters::Enum { options } => {
+                options.iter().find(|e| e.name == name).map(|e| e.value)
+            }
+            _ => None,
+        }
+    }
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]

@@ -1,49 +1,20 @@
-use crate::lan_api::{Client, DiscoOptions};
+use crate::lan_api::Client;
 use std::collections::HashSet;
-use std::net::IpAddr;
 use tokio::time::{Duration, Instant};
 
 #[derive(clap::Parser, Debug)]
-pub struct LanDiscoCommand {
-    /// Prevent the use of the default multicast broadcast address
-    #[arg(long)]
-    pub no_multicast: bool,
-
-    /// Enumerate all interfaces, and for each one that has
-    /// a broadcast address, broadcast to it
-    #[arg(long)]
-    pub broadcast_all: bool,
-
-    /// Broadcast to the global broadcast address 255.255.255.255
-    #[arg(long)]
-    pub global_broadcast: bool,
-
-    /// Addresses to scan. May be broadcast addresses or individual
-    /// IP addresses
-    #[arg(long)]
-    pub scan: Vec<IpAddr>,
-
-    /// How long to wait for discovery to complete, in seconds
-    #[arg(long, default_value = "15")]
-    timeout: u64,
-}
+pub struct LanDiscoCommand {}
 
 impl LanDiscoCommand {
-    pub async fn run(&self, _args: &crate::Args) -> anyhow::Result<()> {
-        let options = DiscoOptions {
-            enable_multicast: !self.no_multicast,
-            additional_addresses: self.scan.clone(),
-            broadcast_all_interfaces: self.broadcast_all,
-            global_broadcast: self.global_broadcast,
-        };
-
+    pub async fn run(&self, args: &crate::Args) -> anyhow::Result<()> {
+        let options = args.lan_disco_args.to_disco_options();
         if options.is_empty() {
             anyhow::bail!("Discovery options are empty");
         }
 
         let (client, mut scan) = Client::new(options).await?;
 
-        let deadline = Instant::now() + Duration::from_secs(self.timeout);
+        let deadline = Instant::now() + Duration::from_secs(args.lan_disco_args.disco_timeout);
 
         let mut devices = HashSet::new();
 
