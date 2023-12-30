@@ -30,6 +30,7 @@ impl GoveeApiClient {
         .await
     }
 
+    #[allow(unused)]
     pub async fn get_device_state(
         &self,
         device: &HttpDeviceInfo,
@@ -278,7 +279,6 @@ impl GoveeApiClient {
 
         let status = response.status();
         if !status.is_success() {
-            let url = response.url().clone();
             let body_bytes = response.bytes().await.with_context(|| {
                 format!(
                     "request status {}: {}, and failed to read response body",
@@ -303,6 +303,7 @@ impl GoveeApiClient {
         })
     }
 
+    #[allow(unused)]
     async fn request_with_json_response<
         T: reqwest::IntoUrl,
         B: serde::Serialize,

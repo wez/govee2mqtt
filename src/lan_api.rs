@@ -352,6 +352,7 @@ impl Client {
     /// this method will yield a LanDevice representing it.
     /// In addition, its details will be routed via the discovery
     /// receiver.
+    #[allow(unused)]
     pub async fn scan_ip(&self, addr: IpAddr) -> anyhow::Result<LanDevice> {
         let mut rx = self.add_listener(addr).await?;
 

@@ -29,7 +29,7 @@ pub struct LanDiscoCommand {
 }
 
 impl LanDiscoCommand {
-    pub async fn run(&self, args: &crate::Args) -> anyhow::Result<()> {
+    pub async fn run(&self, _args: &crate::Args) -> anyhow::Result<()> {
         let options = DiscoOptions {
             enable_multicast: !self.no_multicast,
             additional_addresses: self.scan.clone(),
