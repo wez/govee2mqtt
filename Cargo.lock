@@ -535,6 +535,7 @@ dependencies = [
  "dotenvy",
  "env_logger",
  "iana-time-zone",
+ "if-addrs",
  "k9",
  "log",
  "reqwest",
@@ -708,6 +709,16 @@ checksum = "634d9b1461af396cad843f47fdba5597a4f9e6ddd4bfb6ff5d85028c25cb12f6"
 dependencies = [
  "unicode-bidi",
  "unicode-normalization",
+]
+
+[[package]]
+name = "if-addrs"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5ad1fe622fcc3ccd2bc6d08f7485577535a15af46be880abb7535e5f3a4c322d"
+dependencies = [
+ "libc",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
