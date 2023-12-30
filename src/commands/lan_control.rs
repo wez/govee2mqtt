@@ -14,6 +14,7 @@ pub struct LanControlCommand {
 enum SubCommand {
     On,
     Off,
+    Brightness { percent: u8 },
 }
 
 impl LanControlCommand {
@@ -28,6 +29,9 @@ impl LanControlCommand {
             }
             SubCommand::Off => {
                 device.send_turn(false).await?;
+            }
+            SubCommand::Brightness { percent } => {
+                device.send_brightness(*percent).await?;
             }
         }
 

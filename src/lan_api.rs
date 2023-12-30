@@ -64,6 +64,8 @@ pub enum Request {
     DevStatus {},
     #[serde(rename = "turn")]
     Turn { value: u8 },
+    #[serde(rename = "brightness")]
+    Brightness { value: u8 },
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -100,6 +102,11 @@ impl LanDevice {
             value: if on { 1 } else { 0 },
         })
         .await
+    }
+
+    pub async fn send_brightness(&self, percent: u8) -> anyhow::Result<()> {
+        self.send_request(Request::Brightness { value: percent })
+            .await
     }
 }
 
