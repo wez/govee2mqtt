@@ -10,7 +10,12 @@ impl ListHttpCommand {
         let client = GoveeApiClient::new(key)?;
         let devices = client.get_devices().await?;
         for d in devices {
-            log::info!("{}", d.device_name);
+            println!(
+                "{sku:<7} {id} {name}",
+                sku = d.sku,
+                id = d.device,
+                name = d.device_name
+            );
 
             /*
             let state = client.get_device_state(&d).await?;
