@@ -62,6 +62,8 @@ pub enum Request {
     Scan { account_topic: AccountTopic },
     #[serde(rename = "devStatus")]
     DevStatus {},
+    #[serde(rename = "turn")]
+    Turn { value: u8 },
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -82,6 +84,23 @@ pub struct LanDevice {
     pub wifi_version_hard: String,
     #[serde(rename = "wifiVersionSoft")]
     pub wifi_version_soft: String,
+}
+
+impl LanDevice {
+    pub async fn send_request(&self, msg: Request) -> anyhow::Result<()> {
+        let client = udp_socket_for_target(self.ip).await?;
+        let data = serde_json::to_string(&RequestMessage { msg })?;
+        client.send_to(data.as_bytes(), (self.ip, CMD_PORT)).await?;
+
+        Ok(())
+    }
+
+    pub async fn send_turn(&self, on: bool) -> anyhow::Result<()> {
+        self.send_request(Request::Turn {
+            value: if on { 1 } else { 0 },
+        })
+        .await
+    }
 }
 
 fn boolean_int<'de, D: serde::de::Deserializer<'de>>(deserializer: D) -> Result<bool, D::Error> {
@@ -112,16 +131,6 @@ pub struct DeviceColor {
     pub r: u8,
     pub g: u8,
     pub b: u8,
-}
-
-impl LanDevice {
-    pub async fn send_request(&self, msg: Request) -> anyhow::Result<()> {
-        let client = udp_socket_for_target(self.ip).await?;
-        let data = serde_json::to_string(&RequestMessage { msg })?;
-        client.send_to(data.as_bytes(), (self.ip, CMD_PORT)).await?;
-
-        Ok(())
-    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -352,7 +361,6 @@ impl Client {
     /// this method will yield a LanDevice representing it.
     /// In addition, its details will be routed via the discovery
     /// receiver.
-    #[allow(unused)]
     pub async fn scan_ip(&self, addr: IpAddr) -> anyhow::Result<LanDevice> {
         let mut rx = self.add_listener(addr).await?;
 

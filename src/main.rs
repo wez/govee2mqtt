@@ -15,6 +15,7 @@ pub struct Args {
 
 #[derive(clap::Parser, Debug)]
 pub enum SubCommand {
+    LanControl(commands::lan_control::LanControlCommand),
     LanDisco(commands::lan_disco::LanDiscoCommand),
     ListHttp(commands::list_http::ListHttpCommand),
 }
@@ -22,6 +23,7 @@ pub enum SubCommand {
 impl Args {
     pub async fn run(&self) -> anyhow::Result<()> {
         match &self.cmd {
+            SubCommand::LanControl(cmd) => cmd.run(self).await,
             SubCommand::LanDisco(cmd) => cmd.run(self).await,
             SubCommand::ListHttp(cmd) => cmd.run(self).await,
         }
