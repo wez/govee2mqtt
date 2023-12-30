@@ -1,4 +1,4 @@
-use crate::cache::cache_get;
+use crate::cache::{cache_get, CacheGetOptions};
 use anyhow::Context;
 use reqwest::Method;
 use serde::{Deserialize, Serialize};
@@ -7,6 +7,7 @@ use std::time::Duration;
 
 // <https://developer.govee.com/reference/get-you-devices>
 const SERVER: &str = "https://openapi.api.govee.com";
+const ONE_WEEK: Duration = Duration::from_secs(86400 * 7);
 
 fn endpoint(url: &str) -> String {
     format!("{SERVER}{url}")
@@ -22,11 +23,20 @@ impl GoveeApiClient {
     }
 
     pub async fn get_devices(&self) -> anyhow::Result<Vec<HttpDeviceInfo>> {
-        cache_get("http-api", "device-list", Duration::from_secs(900), async {
-            let url = endpoint("/router/api/v1/user/devices");
-            let resp: GetDevicesResponse = self.get_request_with_json_response(url).await?;
-            Ok(resp.data)
-        })
+        cache_get(
+            CacheGetOptions {
+                topic: "http-api",
+                key: "device-list",
+                soft_ttl: Duration::from_secs(900),
+                hard_ttl: ONE_WEEK,
+                negative_ttl: Duration::from_secs(60),
+            },
+            async {
+                let url = endpoint("/router/api/v1/user/devices");
+                let resp: GetDevicesResponse = self.get_request_with_json_response(url).await?;
+                Ok(resp.data)
+            },
+        )
         .await
     }
 
@@ -102,7 +112,7 @@ struct GetDevicesResponse {
     pub data: Vec<HttpDeviceInfo>,
 }
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct HttpDeviceInfo {
     pub sku: String,
@@ -114,7 +124,7 @@ pub struct HttpDeviceInfo {
     pub capabilities: Vec<DeviceCapability>,
 }
 
-#[derive(Deserialize, Serialize, Debug, Default)]
+#[derive(Deserialize, Serialize, Debug, Default, Clone, Copy)]
 pub enum DeviceType {
     #[serde(rename = "devices.types.light")]
     #[default]
@@ -141,7 +151,7 @@ pub enum DeviceType {
     Other,
 }
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, Clone, Copy)]
 pub enum DeviceCapabilityKind {
     #[serde(rename = "devices.capabilities.on_off")]
     OnOff,
@@ -171,7 +181,7 @@ pub enum DeviceCapabilityKind {
     Other,
 }
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct DeviceCapability {
     #[serde(rename = "type")]
@@ -180,7 +190,7 @@ pub struct DeviceCapability {
     pub parameters: DeviceParameters,
 }
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(tag = "dataType")]
 #[serde(deny_unknown_fields)]
 pub enum DeviceParameters {
@@ -205,7 +215,7 @@ pub enum DeviceParameters {
     },
 }
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 // No deny_unknown_fields here, because we embed via flatten
 pub struct StructField {
     #[serde(rename = "fieldName")]
@@ -217,21 +227,21 @@ pub struct StructField {
     pub required: bool,
 }
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct ElementRange {
     pub min: u32,
     pub max: u32,
 }
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct ArraySize {
     pub min: u32,
     pub max: u32,
 }
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct IntegerRange {
     pub min: u32,
@@ -239,14 +249,14 @@ pub struct IntegerRange {
     pub precision: u32,
 }
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct EnumOption {
     pub name: String,
     pub value: u32,
 }
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct ArrayOption {
     pub value: u32,
