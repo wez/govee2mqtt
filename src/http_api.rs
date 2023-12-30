@@ -1,11 +1,8 @@
+use crate::cache::cache_get;
 use anyhow::Context;
 use reqwest::Method;
-use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use serde_json::Value as JsonValue;
-use sqlite_cache::{Cache, CacheConfig};
-use std::future::Future;
-use std::path::PathBuf;
 use std::time::Duration;
 
 // <https://developer.govee.com/reference/get-you-devices>
@@ -17,64 +14,19 @@ fn endpoint(url: &str) -> String {
 
 pub struct GoveeApiClient {
     key: String,
-    cache: Cache,
-}
-
-async fn cache_get<T, Fut>(
-    cache: &Cache,
-    key: &str,
-    ttl: Duration,
-    future: Fut,
-) -> anyhow::Result<T>
-where
-    T: Serialize + DeserializeOwned + std::fmt::Debug,
-    Fut: Future<Output = anyhow::Result<T>>,
-{
-    let topic = cache.topic("http-api")?;
-    let (updater, current_value) = topic.get_for_update(key).await?;
-    if let Some(current) = current_value {
-        let result: T = serde_json::from_slice(&current.data)?;
-        return Ok(result);
-    }
-
-    let value: T = future.await?;
-    let data = serde_json::to_string_pretty(&value)?;
-    updater.write(data.as_bytes(), ttl)?;
-
-    Ok(value)
 }
 
 impl GoveeApiClient {
-    pub fn new<K: Into<String>>(key: K) -> anyhow::Result<Self> {
-        let cache_dir = std::env::var("GOVEE_CACHE_DIR")
-            .ok()
-            .map(PathBuf::from)
-            .or_else(|| dirs_next::cache_dir())
-            .ok_or_else(|| anyhow::anyhow!("failed to resolve cache dir"))?;
-
-        let cache_file = cache_dir.join("govee-rs-cache.sqlite");
-        let cache = Cache::new(
-            CacheConfig::default(),
-            sqlite_cache::rusqlite::Connection::open(cache_file)?,
-        )?;
-
-        Ok(Self {
-            key: key.into(),
-            cache,
-        })
+    pub fn new<K: Into<String>>(key: K) -> Self {
+        Self { key: key.into() }
     }
 
     pub async fn get_devices(&self) -> anyhow::Result<Vec<HttpDeviceInfo>> {
-        cache_get(
-            &self.cache,
-            "device-list",
-            Duration::from_secs(900),
-            async {
-                let url = endpoint("/router/api/v1/user/devices");
-                let resp: GetDevicesResponse = self.get_request_with_json_response(url).await?;
-                Ok(resp.data)
-            },
-        )
+        cache_get("http-api", "device-list", Duration::from_secs(900), async {
+            let url = endpoint("/router/api/v1/user/devices");
+            let resp: GetDevicesResponse = self.get_request_with_json_response(url).await?;
+            Ok(resp.data)
+        })
         .await
     }
 

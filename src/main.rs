@@ -1,5 +1,6 @@
 use clap::Parser;
 
+mod cache;
 mod commands;
 mod http_api;
 mod lan_api;
