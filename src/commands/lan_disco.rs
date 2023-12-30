@@ -1,5 +1,7 @@
 use crate::lan_api::{Client, DiscoOptions};
+use std::collections::HashSet;
 use std::net::IpAddr;
+use tokio::time::{Duration, Instant};
 
 #[derive(clap::Parser, Debug)]
 pub struct LanDiscoCommand {
@@ -20,6 +22,10 @@ pub struct LanDiscoCommand {
     /// IP addresses
     #[arg(long)]
     pub scan: Vec<IpAddr>,
+
+    /// How long to wait for discovery to complete, in seconds
+    #[arg(long, default_value = "15")]
+    timeout: u64,
 }
 
 impl LanDiscoCommand {
@@ -31,13 +37,44 @@ impl LanDiscoCommand {
             global_broadcast: self.global_broadcast,
         };
 
+        if options.is_empty() {
+            anyhow::bail!("Discovery options are empty");
+        }
+
         let (client, mut scan) = Client::new(options).await?;
 
-        while let Some(device) = scan.recv().await {
-            log::info!("{device:?}");
+        let deadline = Instant::now() + Duration::from_secs(self.timeout);
 
-            if let Ok(resp) = client.query_status(&device).await {
-                log::info!("Got status: {resp:?}");
+        let mut devices = HashSet::new();
+
+        while let Ok(Some(device)) = tokio::time::timeout_at(deadline, scan.recv()).await {
+            if !devices.contains(&device) {
+                let status = match client.query_status(&device).await {
+                    Ok(status) => {
+                        if status.on {
+                            format!(
+                                "{pct}% #{r:02x}{g:02x}{b:02x} {k}k",
+                                pct = status.brightness,
+                                r = status.color.r,
+                                g = status.color.g,
+                                b = status.color.b,
+                                k = status.color_temperature_kelvin
+                            )
+                        } else {
+                            "off".to_string()
+                        }
+                    }
+                    Err(err) => format!("{err:#}"),
+                };
+
+                println!(
+                    "{ip:<15} {sku:<7} {id} {status}",
+                    ip = device.ip,
+                    sku = device.sku,
+                    id = device.device
+                );
+
+                devices.insert(device);
             }
         }
         Ok(())

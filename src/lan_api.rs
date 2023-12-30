@@ -1,6 +1,7 @@
 use anyhow::Context;
 use if_addrs::IfAddr;
 use serde::{Deserialize, Serialize};
+use serde_json::Value as JsonValue;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr};
 use std::sync::Arc;
 use std::time::Duration;
@@ -34,6 +35,15 @@ pub struct DiscoOptions {
     pub global_broadcast: bool,
 }
 
+impl DiscoOptions {
+    pub fn is_empty(&self) -> bool {
+        !self.enable_multicast
+            && self.additional_addresses.is_empty()
+            && !self.broadcast_all_interfaces
+            && !self.global_broadcast
+    }
+}
+
 impl Default for DiscoOptions {
     fn default() -> Self {
         Self {
@@ -59,7 +69,7 @@ struct RequestMessage {
     msg: Request,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]
 pub struct LanDevice {
     pub ip: IpAddr,
     pub device: String,
@@ -74,10 +84,23 @@ pub struct LanDevice {
     pub wifi_version_soft: String,
 }
 
+fn boolean_int<'de, D: serde::de::Deserializer<'de>>(deserializer: D) -> Result<bool, D::Error> {
+    Ok(match serde::de::Deserialize::deserialize(deserializer)? {
+        JsonValue::Bool(b) => b,
+        JsonValue::Number(num) => {
+            num.as_i64()
+                .ok_or(serde::de::Error::custom("Invalid number"))?
+                != 0
+        }
+        JsonValue::Null => false,
+        _ => return Err(serde::de::Error::custom("Wrong type, expected boolean")),
+    })
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct DeviceStatus {
-    #[serde(rename = "onOff")]
-    pub on_off: u8,
+    #[serde(rename = "onOff", deserialize_with = "boolean_int")]
+    pub on: bool,
     pub brightness: u8,
     pub color: DeviceColor,
     #[serde(rename = "colorTemInKelvin")]
