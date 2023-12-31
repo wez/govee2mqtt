@@ -130,6 +130,71 @@ impl GoveeApiClient {
 
         Ok(resp.payload)
     }
+
+    pub async fn get_device_scenes(
+        &self,
+        device: &HttpDeviceInfo,
+    ) -> anyhow::Result<Vec<DeviceCapability>> {
+        let key = format!("scene-list-{}-{}", device.sku, device.device);
+        cache_get(
+            CacheGetOptions {
+                topic: "http-api",
+                key: &key,
+                soft_ttl: Duration::from_secs(120),
+                hard_ttl: ONE_WEEK,
+                negative_ttl: Duration::from_secs(60),
+            },
+            async {
+                let url = endpoint("/router/api/v1/device/scenes");
+                let request = GetDeviceScenesRequest {
+                    request_id: "uuid".to_string(),
+                    payload: GetDeviceScenesPayload {
+                        sku: device.sku.to_string(),
+                        device: device.device.to_string(),
+                    },
+                };
+
+                let resp: GetDeviceScenesResponse = self
+                    .request_with_json_response(Method::POST, url, &request)
+                    .await?;
+
+                Ok(resp.payload.capabilities)
+            },
+        )
+        .await
+    }
+}
+
+#[derive(Deserialize, Serialize, Debug)]
+#[serde(deny_unknown_fields)]
+struct GetDeviceScenesResponse {
+    #[serde(rename = "requestId")]
+    pub request_id: String,
+    pub code: u32,
+    #[serde(rename = "msg")]
+    pub message: String,
+    pub payload: GetDeviceScenesResponsePayload,
+}
+
+#[derive(Deserialize, Serialize, Debug)]
+#[serde(deny_unknown_fields)]
+struct GetDeviceScenesResponsePayload {
+    pub sku: String,
+    pub device: String,
+    pub capabilities: Vec<DeviceCapability>,
+}
+
+#[derive(Serialize, Debug)]
+struct GetDeviceScenesRequest {
+    #[serde(rename = "requestId")]
+    pub request_id: String,
+    pub payload: GetDeviceScenesPayload,
+}
+
+#[derive(Serialize, Debug)]
+struct GetDeviceScenesPayload {
+    pub sku: String,
+    pub device: String,
 }
 
 #[derive(Serialize, Debug)]
@@ -312,9 +377,10 @@ pub struct DeviceCapability {
 impl DeviceCapability {
     pub fn enum_parameter_by_name(&self, name: &str) -> Option<u32> {
         match &self.parameters {
-            DeviceParameters::Enum { options } => {
-                options.iter().find(|e| e.name == name).map(|e| e.value)
-            }
+            DeviceParameters::Enum { options } => options
+                .iter()
+                .find(|e| e.name == name && e.value.is_i64())
+                .map(|e| e.value.as_i64().expect("i64") as u32),
             _ => None,
         }
     }
@@ -383,7 +449,7 @@ pub struct IntegerRange {
 #[serde(deny_unknown_fields)]
 pub struct EnumOption {
     pub name: String,
-    pub value: u32,
+    pub value: JsonValue,
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
@@ -492,6 +558,492 @@ impl GoveeApiClient {
 #[cfg(test)]
 mod test {
     use super::*;
+
+    const SCENE_LIST: &str = include_str!("../test-data/scenes.json");
+
+    #[test]
+    fn get_device_scenes() {
+        let resp: GetDeviceScenesResponse = serde_json::from_str(&SCENE_LIST).unwrap();
+        k9::snapshot!(
+            resp,
+            r#"
+GetDeviceScenesResponse {
+    request_id: "uuid",
+    code: 200,
+    message: "success",
+    payload: GetDeviceScenesResponsePayload {
+        sku: "H6072",
+        device: "AA:BB:CC:DD:EE:AA:BB:FF",
+        capabilities: [
+            DeviceCapability {
+                kind: DynamicScene,
+                instance: "lightScene",
+                parameters: Enum {
+                    options: [
+                        EnumOption {
+                            name: "rainbow B",
+                            value: Object {
+                                "id": Number(7691),
+                                "paramId": Number(11837),
+                            },
+                        },
+                        EnumOption {
+                            name: "Sunrise",
+                            value: Object {
+                                "id": Number(1606),
+                                "paramId": Number(1681),
+                            },
+                        },
+                        EnumOption {
+                            name: "Sunset",
+                            value: Object {
+                                "id": Number(1607),
+                                "paramId": Number(1682),
+                            },
+                        },
+                        EnumOption {
+                            name: "Ocean",
+                            value: Object {
+                                "id": Number(1608),
+                                "paramId": Number(1683),
+                            },
+                        },
+                        EnumOption {
+                            name: "Forest",
+                            value: Object {
+                                "id": Number(1609),
+                                "paramId": Number(1684),
+                            },
+                        },
+                        EnumOption {
+                            name: "Sunset Glow",
+                            value: Object {
+                                "id": Number(1610),
+                                "paramId": Number(1685),
+                            },
+                        },
+                        EnumOption {
+                            name: "Ripple",
+                            value: Object {
+                                "id": Number(1611),
+                                "paramId": Number(1686),
+                            },
+                        },
+                        EnumOption {
+                            name: "Rainbow",
+                            value: Object {
+                                "id": Number(1612),
+                                "paramId": Number(1687),
+                            },
+                        },
+                        EnumOption {
+                            name: "Meteor",
+                            value: Object {
+                                "id": Number(1613),
+                                "paramId": Number(1688),
+                            },
+                        },
+                        EnumOption {
+                            name: "Aurora",
+                            value: Object {
+                                "id": Number(1614),
+                                "paramId": Number(1689),
+                            },
+                        },
+                        EnumOption {
+                            name: "Karst Cave",
+                            value: Object {
+                                "id": Number(1615),
+                                "paramId": Number(1690),
+                            },
+                        },
+                        EnumOption {
+                            name: "Glacier",
+                            value: Object {
+                                "id": Number(1616),
+                                "paramId": Number(1691),
+                            },
+                        },
+                        EnumOption {
+                            name: "Lake",
+                            value: Object {
+                                "id": Number(1617),
+                                "paramId": Number(1692),
+                            },
+                        },
+                        EnumOption {
+                            name: "Fire",
+                            value: Object {
+                                "id": Number(1618),
+                                "paramId": Number(1693),
+                            },
+                        },
+                        EnumOption {
+                            name: "Journey of Flowers",
+                            value: Object {
+                                "id": Number(1619),
+                                "paramId": Number(1694),
+                            },
+                        },
+                        EnumOption {
+                            name: "Downpour",
+                            value: Object {
+                                "id": Number(1620),
+                                "paramId": Number(1695),
+                            },
+                        },
+                        EnumOption {
+                            name: "Rustling leaves",
+                            value: Object {
+                                "id": Number(1621),
+                                "paramId": Number(1696),
+                            },
+                        },
+                        EnumOption {
+                            name: "Wave",
+                            value: Object {
+                                "id": Number(1622),
+                                "paramId": Number(1697),
+                            },
+                        },
+                        EnumOption {
+                            name: "Morning",
+                            value: Object {
+                                "id": Number(1623),
+                                "paramId": Number(1698),
+                            },
+                        },
+                        EnumOption {
+                            name: "Night",
+                            value: Object {
+                                "id": Number(1624),
+                                "paramId": Number(1699),
+                            },
+                        },
+                        EnumOption {
+                            name: "Cherry blossoms",
+                            value: Object {
+                                "id": Number(1625),
+                                "paramId": Number(1700),
+                            },
+                        },
+                        EnumOption {
+                            name: "Movie",
+                            value: Object {
+                                "id": Number(1626),
+                                "paramId": Number(1701),
+                            },
+                        },
+                        EnumOption {
+                            name: "Leisure",
+                            value: Object {
+                                "id": Number(1627),
+                                "paramId": Number(1702),
+                            },
+                        },
+                        EnumOption {
+                            name: "Night Light",
+                            value: Object {
+                                "id": Number(1628),
+                                "paramId": Number(1703),
+                            },
+                        },
+                        EnumOption {
+                            name: "Romantic",
+                            value: Object {
+                                "id": Number(1629),
+                                "paramId": Number(1704),
+                            },
+                        },
+                        EnumOption {
+                            name: "Fireworks",
+                            value: Object {
+                                "id": Number(1630),
+                                "paramId": Number(1705),
+                            },
+                        },
+                        EnumOption {
+                            name: "Tunnel",
+                            value: Object {
+                                "id": Number(1631),
+                                "paramId": Number(1706),
+                            },
+                        },
+                        EnumOption {
+                            name: "Drinks",
+                            value: Object {
+                                "id": Number(1632),
+                                "paramId": Number(1707),
+                            },
+                        },
+                        EnumOption {
+                            name: "Work",
+                            value: Object {
+                                "id": Number(1633),
+                                "paramId": Number(1708),
+                            },
+                        },
+                        EnumOption {
+                            name: "Study",
+                            value: Object {
+                                "id": Number(1634),
+                                "paramId": Number(1709),
+                            },
+                        },
+                        EnumOption {
+                            name: "Candy",
+                            value: Object {
+                                "id": Number(1635),
+                                "paramId": Number(1710),
+                            },
+                        },
+                        EnumOption {
+                            name: "Breathe",
+                            value: Object {
+                                "id": Number(1636),
+                                "paramId": Number(1711),
+                            },
+                        },
+                        EnumOption {
+                            name: "Gradient",
+                            value: Object {
+                                "id": Number(1637),
+                                "paramId": Number(1712),
+                            },
+                        },
+                        EnumOption {
+                            name: "Energetic",
+                            value: Object {
+                                "id": Number(1638),
+                                "paramId": Number(1713),
+                            },
+                        },
+                        EnumOption {
+                            name: "Dreamlike",
+                            value: Object {
+                                "id": Number(1639),
+                                "paramId": Number(1714),
+                            },
+                        },
+                        EnumOption {
+                            name: "Dreamland",
+                            value: Object {
+                                "id": Number(1640),
+                                "paramId": Number(1715),
+                            },
+                        },
+                        EnumOption {
+                            name: "Fight",
+                            value: Object {
+                                "id": Number(1641),
+                                "paramId": Number(1716),
+                            },
+                        },
+                        EnumOption {
+                            name: "Light",
+                            value: Object {
+                                "id": Number(1642),
+                                "paramId": Number(1717),
+                            },
+                        },
+                        EnumOption {
+                            name: "Tenderness",
+                            value: Object {
+                                "id": Number(1643),
+                                "paramId": Number(1718),
+                            },
+                        },
+                        EnumOption {
+                            name: "Warm",
+                            value: Object {
+                                "id": Number(1644),
+                                "paramId": Number(1719),
+                            },
+                        },
+                        EnumOption {
+                            name: "Cheerful",
+                            value: Object {
+                                "id": Number(1645),
+                                "paramId": Number(1720),
+                            },
+                        },
+                        EnumOption {
+                            name: "Rush",
+                            value: Object {
+                                "id": Number(1646),
+                                "paramId": Number(1721),
+                            },
+                        },
+                        EnumOption {
+                            name: "Profound",
+                            value: Object {
+                                "id": Number(1647),
+                                "paramId": Number(1722),
+                            },
+                        },
+                        EnumOption {
+                            name: "Daze",
+                            value: Object {
+                                "id": Number(1648),
+                                "paramId": Number(1723),
+                            },
+                        },
+                        EnumOption {
+                            name: "Halloween",
+                            value: Object {
+                                "id": Number(1649),
+                                "paramId": Number(1724),
+                            },
+                        },
+                        EnumOption {
+                            name: "Christmas",
+                            value: Object {
+                                "id": Number(1650),
+                                "paramId": Number(1725),
+                            },
+                        },
+                        EnumOption {
+                            name: "Party",
+                            value: Object {
+                                "id": Number(1651),
+                                "paramId": Number(1726),
+                            },
+                        },
+                        EnumOption {
+                            name: "Celebration",
+                            value: Object {
+                                "id": Number(1652),
+                                "paramId": Number(1727),
+                            },
+                        },
+                        EnumOption {
+                            name: "Ghost",
+                            value: Object {
+                                "id": Number(1653),
+                                "paramId": Number(1728),
+                            },
+                        },
+                        EnumOption {
+                            name: "Poppin",
+                            value: Object {
+                                "id": Number(1664),
+                                "paramId": Number(1739),
+                            },
+                        },
+                        EnumOption {
+                            name: "Swing",
+                            value: Object {
+                                "id": Number(1665),
+                                "paramId": Number(1740),
+                            },
+                        },
+                        EnumOption {
+                            name: "Racing",
+                            value: Object {
+                                "id": Number(1666),
+                                "paramId": Number(1741),
+                            },
+                        },
+                        EnumOption {
+                            name: "Flash",
+                            value: Object {
+                                "id": Number(1667),
+                                "paramId": Number(1742),
+                            },
+                        },
+                        EnumOption {
+                            name: "Marbles",
+                            value: Object {
+                                "id": Number(1668),
+                                "paramId": Number(1743),
+                            },
+                        },
+                        EnumOption {
+                            name: "Split",
+                            value: Object {
+                                "id": Number(1669),
+                                "paramId": Number(1744),
+                            },
+                        },
+                        EnumOption {
+                            name: "Stacking",
+                            value: Object {
+                                "id": Number(1654),
+                                "paramId": Number(1729),
+                            },
+                        },
+                        EnumOption {
+                            name: "Greedy Snake",
+                            value: Object {
+                                "id": Number(1655),
+                                "paramId": Number(1730),
+                            },
+                        },
+                        EnumOption {
+                            name: "Bouncing Ball",
+                            value: Object {
+                                "id": Number(1656),
+                                "paramId": Number(1731),
+                            },
+                        },
+                        EnumOption {
+                            name: "Strike",
+                            value: Object {
+                                "id": Number(1657),
+                                "paramId": Number(1732),
+                            },
+                        },
+                        EnumOption {
+                            name: "Bubble",
+                            value: Object {
+                                "id": Number(1658),
+                                "paramId": Number(1733),
+                            },
+                        },
+                        EnumOption {
+                            name: "Crossing",
+                            value: Object {
+                                "id": Number(1659),
+                                "paramId": Number(1734),
+                            },
+                        },
+                        EnumOption {
+                            name: "Electro Dance",
+                            value: Object {
+                                "id": Number(1660),
+                                "paramId": Number(1735),
+                            },
+                        },
+                        EnumOption {
+                            name: "Flow",
+                            value: Object {
+                                "id": Number(1661),
+                                "paramId": Number(1736),
+                            },
+                        },
+                        EnumOption {
+                            name: "Accumulation",
+                            value: Object {
+                                "id": Number(1662),
+                                "paramId": Number(1737),
+                            },
+                        },
+                        EnumOption {
+                            name: "Release",
+                            value: Object {
+                                "id": Number(1663),
+                                "paramId": Number(1738),
+                            },
+                        },
+                    ],
+                },
+            },
+        ],
+    },
+}
+"#
+        );
+    }
 
     const GET_DEVICE_STATE_EXAMPLE: &str = include_str!("../test-data/get_device_state.json");
 
@@ -608,11 +1160,11 @@ GetDevicesResponse {
                         options: [
                             EnumOption {
                                 name: "on",
-                                value: 1,
+                                value: Number(1),
                             },
                             EnumOption {
                                 name: "off",
-                                value: 0,
+                                value: Number(0),
                             },
                         ],
                     },
@@ -624,11 +1176,11 @@ GetDevicesResponse {
                         options: [
                             EnumOption {
                                 name: "on",
-                                value: 1,
+                                value: Number(1),
                             },
                             EnumOption {
                                 name: "off",
-                                value: 0,
+                                value: Number(0),
                             },
                         ],
                     },
@@ -773,27 +1325,27 @@ GetDevicesResponse {
                                     options: [
                                         EnumOption {
                                             name: "Energic",
-                                            value: 1,
+                                            value: Number(1),
                                         },
                                         EnumOption {
                                             name: "Rhythm",
-                                            value: 2,
+                                            value: Number(2),
                                         },
                                         EnumOption {
                                             name: "Bounce",
-                                            value: 3,
+                                            value: Number(3),
                                         },
                                         EnumOption {
                                             name: "Hopping",
-                                            value: 4,
+                                            value: Number(4),
                                         },
                                         EnumOption {
                                             name: "Strike",
-                                            value: 5,
+                                            value: Number(5),
                                         },
                                         EnumOption {
                                             name: "Vibrate",
-                                            value: 6,
+                                            value: Number(6),
                                         },
                                     ],
                                 },
@@ -819,11 +1371,11 @@ GetDevicesResponse {
                                     options: [
                                         EnumOption {
                                             name: "on",
-                                            value: 1,
+                                            value: Number(1),
                                         },
                                         EnumOption {
                                             name: "off",
-                                            value: 0,
+                                            value: Number(0),
                                         },
                                     ],
                                 },
@@ -873,11 +1425,11 @@ GetDevicesResponse {
                         options: [
                             EnumOption {
                                 name: "on",
-                                value: 1,
+                                value: Number(1),
                             },
                             EnumOption {
                                 name: "off",
-                                value: 0,
+                                value: Number(0),
                             },
                         ],
                     },
@@ -889,11 +1441,11 @@ GetDevicesResponse {
                         options: [
                             EnumOption {
                                 name: "on",
-                                value: 1,
+                                value: Number(1),
                             },
                             EnumOption {
                                 name: "off",
-                                value: 0,
+                                value: Number(0),
                             },
                         ],
                     },
@@ -1038,27 +1590,27 @@ GetDevicesResponse {
                                     options: [
                                         EnumOption {
                                             name: "Energic",
-                                            value: 1,
+                                            value: Number(1),
                                         },
                                         EnumOption {
                                             name: "Rhythm",
-                                            value: 2,
+                                            value: Number(2),
                                         },
                                         EnumOption {
                                             name: "Bounce",
-                                            value: 3,
+                                            value: Number(3),
                                         },
                                         EnumOption {
                                             name: "Hopping",
-                                            value: 4,
+                                            value: Number(4),
                                         },
                                         EnumOption {
                                             name: "Strike",
-                                            value: 5,
+                                            value: Number(5),
                                         },
                                         EnumOption {
                                             name: "Vibrate",
-                                            value: 6,
+                                            value: Number(6),
                                         },
                                     ],
                                 },
@@ -1084,11 +1636,11 @@ GetDevicesResponse {
                                     options: [
                                         EnumOption {
                                             name: "on",
-                                            value: 1,
+                                            value: Number(1),
                                         },
                                         EnumOption {
                                             name: "off",
-                                            value: 0,
+                                            value: Number(0),
                                         },
                                     ],
                                 },
@@ -1138,11 +1690,11 @@ GetDevicesResponse {
                         options: [
                             EnumOption {
                                 name: "on",
-                                value: 1,
+                                value: Number(1),
                             },
                             EnumOption {
                                 name: "off",
-                                value: 0,
+                                value: Number(0),
                             },
                         ],
                     },
@@ -1154,11 +1706,11 @@ GetDevicesResponse {
                         options: [
                             EnumOption {
                                 name: "on",
-                                value: 1,
+                                value: Number(1),
                             },
                             EnumOption {
                                 name: "off",
-                                value: 0,
+                                value: Number(0),
                             },
                         ],
                     },
@@ -1303,47 +1855,47 @@ GetDevicesResponse {
                                     options: [
                                         EnumOption {
                                             name: "Energic",
-                                            value: 1,
+                                            value: Number(1),
                                         },
                                         EnumOption {
                                             name: "Rhythm",
-                                            value: 2,
+                                            value: Number(2),
                                         },
                                         EnumOption {
                                             name: "Spectrum",
-                                            value: 3,
+                                            value: Number(3),
                                         },
                                         EnumOption {
                                             name: "Rolling",
-                                            value: 4,
+                                            value: Number(4),
                                         },
                                         EnumOption {
                                             name: "Separation",
-                                            value: 5,
+                                            value: Number(5),
                                         },
                                         EnumOption {
                                             name: "Hopping",
-                                            value: 6,
+                                            value: Number(6),
                                         },
                                         EnumOption {
                                             name: "PianoKeys",
-                                            value: 7,
+                                            value: Number(7),
                                         },
                                         EnumOption {
                                             name: "Fountain",
-                                            value: 8,
+                                            value: Number(8),
                                         },
                                         EnumOption {
                                             name: "DayAndNight",
-                                            value: 9,
+                                            value: Number(9),
                                         },
                                         EnumOption {
                                             name: "Sprouting",
-                                            value: 10,
+                                            value: Number(10),
                                         },
                                         EnumOption {
                                             name: "Shiny",
-                                            value: 11,
+                                            value: Number(11),
                                         },
                                     ],
                                 },
@@ -1369,11 +1921,11 @@ GetDevicesResponse {
                                     options: [
                                         EnumOption {
                                             name: "on",
-                                            value: 1,
+                                            value: Number(1),
                                         },
                                         EnumOption {
                                             name: "off",
-                                            value: 0,
+                                            value: Number(0),
                                         },
                                     ],
                                 },
@@ -1423,11 +1975,11 @@ GetDevicesResponse {
                         options: [
                             EnumOption {
                                 name: "on",
-                                value: 1,
+                                value: Number(1),
                             },
                             EnumOption {
                                 name: "off",
-                                value: 0,
+                                value: Number(0),
                             },
                         ],
                     },
@@ -1439,11 +1991,11 @@ GetDevicesResponse {
                         options: [
                             EnumOption {
                                 name: "on",
-                                value: 1,
+                                value: Number(1),
                             },
                             EnumOption {
                                 name: "off",
-                                value: 0,
+                                value: Number(0),
                             },
                         ],
                     },
@@ -1588,47 +2140,47 @@ GetDevicesResponse {
                                     options: [
                                         EnumOption {
                                             name: "Energic",
-                                            value: 1,
+                                            value: Number(1),
                                         },
                                         EnumOption {
                                             name: "Rhythm",
-                                            value: 2,
+                                            value: Number(2),
                                         },
                                         EnumOption {
                                             name: "Spectrum",
-                                            value: 3,
+                                            value: Number(3),
                                         },
                                         EnumOption {
                                             name: "Rolling",
-                                            value: 4,
+                                            value: Number(4),
                                         },
                                         EnumOption {
                                             name: "Separation",
-                                            value: 5,
+                                            value: Number(5),
                                         },
                                         EnumOption {
                                             name: "Hopping",
-                                            value: 6,
+                                            value: Number(6),
                                         },
                                         EnumOption {
                                             name: "PianoKeys",
-                                            value: 7,
+                                            value: Number(7),
                                         },
                                         EnumOption {
                                             name: "Fountain",
-                                            value: 8,
+                                            value: Number(8),
                                         },
                                         EnumOption {
                                             name: "DayAndNight",
-                                            value: 9,
+                                            value: Number(9),
                                         },
                                         EnumOption {
                                             name: "Sprouting",
-                                            value: 10,
+                                            value: Number(10),
                                         },
                                         EnumOption {
                                             name: "Shiny",
-                                            value: 11,
+                                            value: Number(11),
                                         },
                                     ],
                                 },
@@ -1654,11 +2206,11 @@ GetDevicesResponse {
                                     options: [
                                         EnumOption {
                                             name: "on",
-                                            value: 1,
+                                            value: Number(1),
                                         },
                                         EnumOption {
                                             name: "off",
-                                            value: 0,
+                                            value: Number(0),
                                         },
                                     ],
                                 },
@@ -1708,11 +2260,11 @@ GetDevicesResponse {
                         options: [
                             EnumOption {
                                 name: "on",
-                                value: 1,
+                                value: Number(1),
                             },
                             EnumOption {
                                 name: "off",
-                                value: 0,
+                                value: Number(0),
                             },
                         ],
                     },
@@ -1724,11 +2276,11 @@ GetDevicesResponse {
                         options: [
                             EnumOption {
                                 name: "on",
-                                value: 1,
+                                value: Number(1),
                             },
                             EnumOption {
                                 name: "off",
-                                value: 0,
+                                value: Number(0),
                             },
                         ],
                     },
@@ -1871,47 +2423,47 @@ GetDevicesResponse {
                                     options: [
                                         EnumOption {
                                             name: "Energic",
-                                            value: 1,
+                                            value: Number(1),
                                         },
                                         EnumOption {
                                             name: "Rhythm",
-                                            value: 2,
+                                            value: Number(2),
                                         },
                                         EnumOption {
                                             name: "Spectrum",
-                                            value: 3,
+                                            value: Number(3),
                                         },
                                         EnumOption {
                                             name: "Rolling",
-                                            value: 4,
+                                            value: Number(4),
                                         },
                                         EnumOption {
                                             name: "Separation",
-                                            value: 5,
+                                            value: Number(5),
                                         },
                                         EnumOption {
                                             name: "Hopping",
-                                            value: 6,
+                                            value: Number(6),
                                         },
                                         EnumOption {
                                             name: "PianoKeys",
-                                            value: 7,
+                                            value: Number(7),
                                         },
                                         EnumOption {
                                             name: "Fountain",
-                                            value: 8,
+                                            value: Number(8),
                                         },
                                         EnumOption {
                                             name: "DayandNight",
-                                            value: 9,
+                                            value: Number(9),
                                         },
                                         EnumOption {
                                             name: "Sprouting",
-                                            value: 10,
+                                            value: Number(10),
                                         },
                                         EnumOption {
                                             name: "Shiny",
-                                            value: 11,
+                                            value: Number(11),
                                         },
                                     ],
                                 },
@@ -1937,11 +2489,11 @@ GetDevicesResponse {
                                     options: [
                                         EnumOption {
                                             name: "on",
-                                            value: 1,
+                                            value: Number(1),
                                         },
                                         EnumOption {
                                             name: "off",
-                                            value: 0,
+                                            value: Number(0),
                                         },
                                     ],
                                 },
@@ -1991,11 +2543,11 @@ GetDevicesResponse {
                         options: [
                             EnumOption {
                                 name: "on",
-                                value: 1,
+                                value: Number(1),
                             },
                             EnumOption {
                                 name: "off",
-                                value: 0,
+                                value: Number(0),
                             },
                         ],
                     },
@@ -2015,11 +2567,11 @@ GetDevicesResponse {
                         options: [
                             EnumOption {
                                 name: "on",
-                                value: 1,
+                                value: Number(1),
                             },
                             EnumOption {
                                 name: "off",
-                                value: 0,
+                                value: Number(0),
                             },
                         ],
                     },
@@ -2122,11 +2674,11 @@ GetDevicesResponse {
                                     options: [
                                         EnumOption {
                                             name: "Dynamic",
-                                            value: 1,
+                                            value: Number(1),
                                         },
                                         EnumOption {
                                             name: "Calm",
-                                            value: 2,
+                                            value: Number(2),
                                         },
                                     ],
                                 },
@@ -2152,11 +2704,11 @@ GetDevicesResponse {
                                     options: [
                                         EnumOption {
                                             name: "on",
-                                            value: 1,
+                                            value: Number(1),
                                         },
                                         EnumOption {
                                             name: "off",
-                                            value: 0,
+                                            value: Number(0),
                                         },
                                     ],
                                 },
@@ -2206,11 +2758,11 @@ GetDevicesResponse {
                         options: [
                             EnumOption {
                                 name: "on",
-                                value: 1,
+                                value: Number(1),
                             },
                             EnumOption {
                                 name: "off",
-                                value: 0,
+                                value: Number(0),
                             },
                         ],
                     },
@@ -2222,11 +2774,11 @@ GetDevicesResponse {
                         options: [
                             EnumOption {
                                 name: "on",
-                                value: 1,
+                                value: Number(1),
                             },
                             EnumOption {
                                 name: "off",
-                                value: 0,
+                                value: Number(0),
                             },
                         ],
                     },
@@ -2371,27 +2923,27 @@ GetDevicesResponse {
                                     options: [
                                         EnumOption {
                                             name: "Energic",
-                                            value: 1,
+                                            value: Number(1),
                                         },
                                         EnumOption {
                                             name: "Rhythm",
-                                            value: 2,
+                                            value: Number(2),
                                         },
                                         EnumOption {
                                             name: "Bounce",
-                                            value: 3,
+                                            value: Number(3),
                                         },
                                         EnumOption {
                                             name: "Hopping",
-                                            value: 4,
+                                            value: Number(4),
                                         },
                                         EnumOption {
                                             name: "Strike",
-                                            value: 5,
+                                            value: Number(5),
                                         },
                                         EnumOption {
                                             name: "Vibrate",
-                                            value: 6,
+                                            value: Number(6),
                                         },
                                     ],
                                 },
@@ -2417,11 +2969,11 @@ GetDevicesResponse {
                                     options: [
                                         EnumOption {
                                             name: "on",
-                                            value: 1,
+                                            value: Number(1),
                                         },
                                         EnumOption {
                                             name: "off",
-                                            value: 0,
+                                            value: Number(0),
                                         },
                                     ],
                                 },
@@ -2471,11 +3023,11 @@ GetDevicesResponse {
                         options: [
                             EnumOption {
                                 name: "on",
-                                value: 1,
+                                value: Number(1),
                             },
                             EnumOption {
                                 name: "off",
-                                value: 0,
+                                value: Number(0),
                             },
                         ],
                     },
@@ -2487,11 +3039,11 @@ GetDevicesResponse {
                         options: [
                             EnumOption {
                                 name: "on",
-                                value: 1,
+                                value: Number(1),
                             },
                             EnumOption {
                                 name: "off",
-                                value: 0,
+                                value: Number(0),
                             },
                         ],
                     },
@@ -2636,27 +3188,27 @@ GetDevicesResponse {
                                     options: [
                                         EnumOption {
                                             name: "Energic",
-                                            value: 1,
+                                            value: Number(1),
                                         },
                                         EnumOption {
                                             name: "Rhythm",
-                                            value: 2,
+                                            value: Number(2),
                                         },
                                         EnumOption {
                                             name: "Bounce",
-                                            value: 3,
+                                            value: Number(3),
                                         },
                                         EnumOption {
                                             name: "Hopping",
-                                            value: 4,
+                                            value: Number(4),
                                         },
                                         EnumOption {
                                             name: "Strike",
-                                            value: 5,
+                                            value: Number(5),
                                         },
                                         EnumOption {
                                             name: "Vibrate",
-                                            value: 6,
+                                            value: Number(6),
                                         },
                                     ],
                                 },
@@ -2682,11 +3234,11 @@ GetDevicesResponse {
                                     options: [
                                         EnumOption {
                                             name: "on",
-                                            value: 1,
+                                            value: Number(1),
                                         },
                                         EnumOption {
                                             name: "off",
-                                            value: 0,
+                                            value: Number(0),
                                         },
                                     ],
                                 },
@@ -2736,11 +3288,11 @@ GetDevicesResponse {
                         options: [
                             EnumOption {
                                 name: "on",
-                                value: 1,
+                                value: Number(1),
                             },
                             EnumOption {
                                 name: "off",
-                                value: 0,
+                                value: Number(0),
                             },
                         ],
                     },
@@ -2752,11 +3304,11 @@ GetDevicesResponse {
                         options: [
                             EnumOption {
                                 name: "on",
-                                value: 1,
+                                value: Number(1),
                             },
                             EnumOption {
                                 name: "off",
-                                value: 0,
+                                value: Number(0),
                             },
                         ],
                     },
@@ -2901,27 +3453,27 @@ GetDevicesResponse {
                                     options: [
                                         EnumOption {
                                             name: "Energic",
-                                            value: 1,
+                                            value: Number(1),
                                         },
                                         EnumOption {
                                             name: "Rhythm",
-                                            value: 2,
+                                            value: Number(2),
                                         },
                                         EnumOption {
                                             name: "Bounce",
-                                            value: 3,
+                                            value: Number(3),
                                         },
                                         EnumOption {
                                             name: "Hopping",
-                                            value: 4,
+                                            value: Number(4),
                                         },
                                         EnumOption {
                                             name: "Strike",
-                                            value: 5,
+                                            value: Number(5),
                                         },
                                         EnumOption {
                                             name: "Vibrate",
-                                            value: 6,
+                                            value: Number(6),
                                         },
                                     ],
                                 },
@@ -2947,11 +3499,11 @@ GetDevicesResponse {
                                     options: [
                                         EnumOption {
                                             name: "on",
-                                            value: 1,
+                                            value: Number(1),
                                         },
                                         EnumOption {
                                             name: "off",
-                                            value: 0,
+                                            value: Number(0),
                                         },
                                     ],
                                 },
@@ -3017,11 +3569,11 @@ GetDevicesResponse {
                         options: [
                             EnumOption {
                                 name: "on",
-                                value: 1,
+                                value: Number(1),
                             },
                             EnumOption {
                                 name: "off",
-                                value: 0,
+                                value: Number(0),
                             },
                         ],
                     },
@@ -3033,11 +3585,11 @@ GetDevicesResponse {
                         options: [
                             EnumOption {
                                 name: "on",
-                                value: 1,
+                                value: Number(1),
                             },
                             EnumOption {
                                 name: "off",
-                                value: 0,
+                                value: Number(0),
                             },
                         ],
                     },
@@ -3163,171 +3715,171 @@ GetDevicesResponse {
                         options: [
                             EnumOption {
                                 name: "Tudum",
-                                value: 3054,
+                                value: Number(3054),
                             },
                             EnumOption {
                                 name: "Party",
-                                value: 3055,
+                                value: Number(3055),
                             },
                             EnumOption {
                                 name: "Dance Party",
-                                value: 3056,
+                                value: Number(3056),
                             },
                             EnumOption {
                                 name: "Dine Together",
-                                value: 3057,
+                                value: Number(3057),
                             },
                             EnumOption {
                                 name: "Dating",
-                                value: 3058,
+                                value: Number(3058),
                             },
                             EnumOption {
                                 name: "Adventure",
-                                value: 3059,
+                                value: Number(3059),
                             },
                             EnumOption {
                                 name: "Technology",
-                                value: 3060,
+                                value: Number(3060),
                             },
                             EnumOption {
                                 name: "Sports",
-                                value: 3061,
+                                value: Number(3061),
                             },
                             EnumOption {
                                 name: "Dreamlike",
-                                value: 3062,
+                                value: Number(3062),
                             },
                             EnumOption {
                                 name: "Dynamic",
-                                value: 3063,
+                                value: Number(3063),
                             },
                             EnumOption {
                                 name: "Blossom",
-                                value: 3064,
+                                value: Number(3064),
                             },
                             EnumOption {
                                 name: "Christmas",
-                                value: 3065,
+                                value: Number(3065),
                             },
                             EnumOption {
                                 name: "Halloween",
-                                value: 3066,
+                                value: Number(3066),
                             },
                             EnumOption {
                                 name: "Fireworks",
-                                value: 3067,
+                                value: Number(3067),
                             },
                             EnumOption {
                                 name: "Ghost",
-                                value: 3068,
+                                value: Number(3068),
                             },
                             EnumOption {
                                 name: "Easter",
-                                value: 3069,
+                                value: Number(3069),
                             },
                             EnumOption {
                                 name: "Valentine's Day",
-                                value: 3070,
+                                value: Number(3070),
                             },
                             EnumOption {
                                 name: "Spin",
-                                value: 3071,
+                                value: Number(3071),
                             },
                             EnumOption {
                                 name: "Stacking",
-                                value: 3072,
+                                value: Number(3072),
                             },
                             EnumOption {
                                 name: "Shoot",
-                                value: 3073,
+                                value: Number(3073),
                             },
                             EnumOption {
                                 name: "Racing",
-                                value: 3074,
+                                value: Number(3074),
                             },
                             EnumOption {
                                 name: "Poker",
-                                value: 3075,
+                                value: Number(3075),
                             },
                             EnumOption {
                                 name: "Crossing",
-                                value: 3076,
+                                value: Number(3076),
                             },
                             EnumOption {
                                 name: "Fight",
-                                value: 3077,
+                                value: Number(3077),
                             },
                             EnumOption {
                                 name: "Electro Dance",
-                                value: 3078,
+                                value: Number(3078),
                             },
                             EnumOption {
                                 name: "Swing",
-                                value: 3079,
+                                value: Number(3079),
                             },
                             EnumOption {
                                 name: "Candy Crush",
-                                value: 3080,
+                                value: Number(3080),
                             },
                             EnumOption {
                                 name: "Portal",
-                                value: 3081,
+                                value: Number(3081),
                             },
                             EnumOption {
                                 name: "Freeze",
-                                value: 3082,
+                                value: Number(3082),
                             },
                             EnumOption {
                                 name: "Excited",
-                                value: 3083,
+                                value: Number(3083),
                             },
                             EnumOption {
                                 name: "Tension",
-                                value: 3084,
+                                value: Number(3084),
                             },
                             EnumOption {
                                 name: "Fright",
-                                value: 3085,
+                                value: Number(3085),
                             },
                             EnumOption {
                                 name: "Energetic",
-                                value: 3086,
+                                value: Number(3086),
                             },
                             EnumOption {
                                 name: "Doubt",
-                                value: 3087,
+                                value: Number(3087),
                             },
                             EnumOption {
                                 name: "Meditation",
-                                value: 3088,
+                                value: Number(3088),
                             },
                             EnumOption {
                                 name: "Daze",
-                                value: 3089,
+                                value: Number(3089),
                             },
                             EnumOption {
                                 name: "Action",
-                                value: 3090,
+                                value: Number(3090),
                             },
                             EnumOption {
                                 name: "Rivalry",
-                                value: 3091,
+                                value: Number(3091),
                             },
                             EnumOption {
                                 name: "Puzzle Game",
-                                value: 3092,
+                                value: Number(3092),
                             },
                             EnumOption {
                                 name: "Shooting Game",
-                                value: 3093,
+                                value: Number(3093),
                             },
                             EnumOption {
                                 name: "Racing Game",
-                                value: 3094,
+                                value: Number(3094),
                             },
                             EnumOption {
                                 name: "Card Playing",
-                                value: 3095,
+                                value: Number(3095),
                             },
                         ],
                     },
@@ -3343,19 +3895,19 @@ GetDevicesResponse {
                                     options: [
                                         EnumOption {
                                             name: "Energic",
-                                            value: 5,
+                                            value: Number(5),
                                         },
                                         EnumOption {
                                             name: "Rhythm",
-                                            value: 3,
+                                            value: Number(3),
                                         },
                                         EnumOption {
                                             name: "Spectrum",
-                                            value: 6,
+                                            value: Number(6),
                                         },
                                         EnumOption {
                                             name: "Rolling",
-                                            value: 4,
+                                            value: Number(4),
                                         },
                                     ],
                                 },
@@ -3381,11 +3933,11 @@ GetDevicesResponse {
                                     options: [
                                         EnumOption {
                                             name: "on",
-                                            value: 1,
+                                            value: Number(1),
                                         },
                                         EnumOption {
                                             name: "off",
-                                            value: 0,
+                                            value: Number(0),
                                         },
                                     ],
                                 },
@@ -3415,7 +3967,7 @@ GetDevicesResponse {
                         options: [
                             EnumOption {
                                 name: "Fade",
-                                value: 8216567,
+                                value: Number(8216567),
                             },
                         ],
                     },
@@ -3427,11 +3979,11 @@ GetDevicesResponse {
                         options: [
                             EnumOption {
                                 name: "Sunrise",
-                                value: 0,
+                                value: Number(0),
                             },
                             EnumOption {
                                 name: "Sunset",
-                                value: 1,
+                                value: Number(1),
                             },
                         ],
                     },
@@ -3451,11 +4003,11 @@ GetDevicesResponse {
                         options: [
                             EnumOption {
                                 name: "on",
-                                value: 1,
+                                value: Number(1),
                             },
                             EnumOption {
                                 name: "off",
-                                value: 0,
+                                value: Number(0),
                             },
                         ],
                     },
@@ -3467,11 +4019,11 @@ GetDevicesResponse {
                         options: [
                             EnumOption {
                                 name: "on",
-                                value: 1,
+                                value: Number(1),
                             },
                             EnumOption {
                                 name: "off",
-                                value: 0,
+                                value: Number(0),
                             },
                         ],
                     },
@@ -3597,171 +4149,171 @@ GetDevicesResponse {
                         options: [
                             EnumOption {
                                 name: "Tudum",
-                                value: 3054,
+                                value: Number(3054),
                             },
                             EnumOption {
                                 name: "Party",
-                                value: 3055,
+                                value: Number(3055),
                             },
                             EnumOption {
                                 name: "Dance Party",
-                                value: 3056,
+                                value: Number(3056),
                             },
                             EnumOption {
                                 name: "Dine Together",
-                                value: 3057,
+                                value: Number(3057),
                             },
                             EnumOption {
                                 name: "Dating",
-                                value: 3058,
+                                value: Number(3058),
                             },
                             EnumOption {
                                 name: "Adventure",
-                                value: 3059,
+                                value: Number(3059),
                             },
                             EnumOption {
                                 name: "Technology",
-                                value: 3060,
+                                value: Number(3060),
                             },
                             EnumOption {
                                 name: "Sports",
-                                value: 3061,
+                                value: Number(3061),
                             },
                             EnumOption {
                                 name: "Dreamlike",
-                                value: 3062,
+                                value: Number(3062),
                             },
                             EnumOption {
                                 name: "Dynamic",
-                                value: 3063,
+                                value: Number(3063),
                             },
                             EnumOption {
                                 name: "Blossom",
-                                value: 3064,
+                                value: Number(3064),
                             },
                             EnumOption {
                                 name: "Christmas",
-                                value: 3065,
+                                value: Number(3065),
                             },
                             EnumOption {
                                 name: "Halloween",
-                                value: 3066,
+                                value: Number(3066),
                             },
                             EnumOption {
                                 name: "Fireworks",
-                                value: 3067,
+                                value: Number(3067),
                             },
                             EnumOption {
                                 name: "Ghost",
-                                value: 3068,
+                                value: Number(3068),
                             },
                             EnumOption {
                                 name: "Easter",
-                                value: 3069,
+                                value: Number(3069),
                             },
                             EnumOption {
                                 name: "Valentine's Day",
-                                value: 3070,
+                                value: Number(3070),
                             },
                             EnumOption {
                                 name: "Spin",
-                                value: 3071,
+                                value: Number(3071),
                             },
                             EnumOption {
                                 name: "Stacking",
-                                value: 3072,
+                                value: Number(3072),
                             },
                             EnumOption {
                                 name: "Shoot",
-                                value: 3073,
+                                value: Number(3073),
                             },
                             EnumOption {
                                 name: "Racing",
-                                value: 3074,
+                                value: Number(3074),
                             },
                             EnumOption {
                                 name: "Poker",
-                                value: 3075,
+                                value: Number(3075),
                             },
                             EnumOption {
                                 name: "Crossing",
-                                value: 3076,
+                                value: Number(3076),
                             },
                             EnumOption {
                                 name: "Fight",
-                                value: 3077,
+                                value: Number(3077),
                             },
                             EnumOption {
                                 name: "Electro Dance",
-                                value: 3078,
+                                value: Number(3078),
                             },
                             EnumOption {
                                 name: "Swing",
-                                value: 3079,
+                                value: Number(3079),
                             },
                             EnumOption {
                                 name: "Candy Crush",
-                                value: 3080,
+                                value: Number(3080),
                             },
                             EnumOption {
                                 name: "Portal",
-                                value: 3081,
+                                value: Number(3081),
                             },
                             EnumOption {
                                 name: "Freeze",
-                                value: 3082,
+                                value: Number(3082),
                             },
                             EnumOption {
                                 name: "Excited",
-                                value: 3083,
+                                value: Number(3083),
                             },
                             EnumOption {
                                 name: "Tension",
-                                value: 3084,
+                                value: Number(3084),
                             },
                             EnumOption {
                                 name: "Fright",
-                                value: 3085,
+                                value: Number(3085),
                             },
                             EnumOption {
                                 name: "Energetic",
-                                value: 3086,
+                                value: Number(3086),
                             },
                             EnumOption {
                                 name: "Doubt",
-                                value: 3087,
+                                value: Number(3087),
                             },
                             EnumOption {
                                 name: "Meditation",
-                                value: 3088,
+                                value: Number(3088),
                             },
                             EnumOption {
                                 name: "Daze",
-                                value: 3089,
+                                value: Number(3089),
                             },
                             EnumOption {
                                 name: "Action",
-                                value: 3090,
+                                value: Number(3090),
                             },
                             EnumOption {
                                 name: "Rivalry",
-                                value: 3091,
+                                value: Number(3091),
                             },
                             EnumOption {
                                 name: "Puzzle Game",
-                                value: 3092,
+                                value: Number(3092),
                             },
                             EnumOption {
                                 name: "Shooting Game",
-                                value: 3093,
+                                value: Number(3093),
                             },
                             EnumOption {
                                 name: "Racing Game",
-                                value: 3094,
+                                value: Number(3094),
                             },
                             EnumOption {
                                 name: "Card Playing",
-                                value: 3095,
+                                value: Number(3095),
                             },
                         ],
                     },
@@ -3777,19 +4329,19 @@ GetDevicesResponse {
                                     options: [
                                         EnumOption {
                                             name: "Energic",
-                                            value: 5,
+                                            value: Number(5),
                                         },
                                         EnumOption {
                                             name: "Rhythm",
-                                            value: 3,
+                                            value: Number(3),
                                         },
                                         EnumOption {
                                             name: "Spectrum",
-                                            value: 4,
+                                            value: Number(4),
                                         },
                                         EnumOption {
                                             name: "Rolling",
-                                            value: 6,
+                                            value: Number(6),
                                         },
                                     ],
                                 },
@@ -3815,11 +4367,11 @@ GetDevicesResponse {
                                     options: [
                                         EnumOption {
                                             name: "on",
-                                            value: 1,
+                                            value: Number(1),
                                         },
                                         EnumOption {
                                             name: "off",
-                                            value: 0,
+                                            value: Number(0),
                                         },
                                     ],
                                 },
@@ -3847,7 +4399,7 @@ GetDevicesResponse {
                         options: [
                             EnumOption {
                                 name: "fade",
-                                value: 8216567,
+                                value: Number(8216567),
                             },
                         ],
                     },
@@ -3859,7 +4411,7 @@ GetDevicesResponse {
                         options: [
                             EnumOption {
                                 name: "color scene",
-                                value: 465503,
+                                value: Number(465503),
                             },
                         ],
                     },
@@ -3879,11 +4431,11 @@ GetDevicesResponse {
                         options: [
                             EnumOption {
                                 name: "on",
-                                value: 1,
+                                value: Number(1),
                             },
                             EnumOption {
                                 name: "off",
-                                value: 0,
+                                value: Number(0),
                             },
                         ],
                     },
@@ -3895,11 +4447,11 @@ GetDevicesResponse {
                         options: [
                             EnumOption {
                                 name: "on",
-                                value: 1,
+                                value: Number(1),
                             },
                             EnumOption {
                                 name: "off",
-                                value: 0,
+                                value: Number(0),
                             },
                         ],
                     },
@@ -4025,171 +4577,171 @@ GetDevicesResponse {
                         options: [
                             EnumOption {
                                 name: "Tudum",
-                                value: 3054,
+                                value: Number(3054),
                             },
                             EnumOption {
                                 name: "Party",
-                                value: 3055,
+                                value: Number(3055),
                             },
                             EnumOption {
                                 name: "Dance Party",
-                                value: 3056,
+                                value: Number(3056),
                             },
                             EnumOption {
                                 name: "Dine Together",
-                                value: 3057,
+                                value: Number(3057),
                             },
                             EnumOption {
                                 name: "Dating",
-                                value: 3058,
+                                value: Number(3058),
                             },
                             EnumOption {
                                 name: "Adventure",
-                                value: 3059,
+                                value: Number(3059),
                             },
                             EnumOption {
                                 name: "Technology",
-                                value: 3060,
+                                value: Number(3060),
                             },
                             EnumOption {
                                 name: "Sports",
-                                value: 3061,
+                                value: Number(3061),
                             },
                             EnumOption {
                                 name: "Dreamlike",
-                                value: 3062,
+                                value: Number(3062),
                             },
                             EnumOption {
                                 name: "Dynamic",
-                                value: 3063,
+                                value: Number(3063),
                             },
                             EnumOption {
                                 name: "Blossom",
-                                value: 3064,
+                                value: Number(3064),
                             },
                             EnumOption {
                                 name: "Christmas",
-                                value: 3065,
+                                value: Number(3065),
                             },
                             EnumOption {
                                 name: "Halloween",
-                                value: 3066,
+                                value: Number(3066),
                             },
                             EnumOption {
                                 name: "Fireworks",
-                                value: 3067,
+                                value: Number(3067),
                             },
                             EnumOption {
                                 name: "Ghost",
-                                value: 3068,
+                                value: Number(3068),
                             },
                             EnumOption {
                                 name: "Easter",
-                                value: 3069,
+                                value: Number(3069),
                             },
                             EnumOption {
                                 name: "Valentine's Day",
-                                value: 3070,
+                                value: Number(3070),
                             },
                             EnumOption {
                                 name: "Spin",
-                                value: 3071,
+                                value: Number(3071),
                             },
                             EnumOption {
                                 name: "Stacking",
-                                value: 3072,
+                                value: Number(3072),
                             },
                             EnumOption {
                                 name: "Shoot",
-                                value: 3073,
+                                value: Number(3073),
                             },
                             EnumOption {
                                 name: "Racing",
-                                value: 3074,
+                                value: Number(3074),
                             },
                             EnumOption {
                                 name: "Poker",
-                                value: 3075,
+                                value: Number(3075),
                             },
                             EnumOption {
                                 name: "Crossing",
-                                value: 3076,
+                                value: Number(3076),
                             },
                             EnumOption {
                                 name: "Fight",
-                                value: 3077,
+                                value: Number(3077),
                             },
                             EnumOption {
                                 name: "Electro Dance",
-                                value: 3078,
+                                value: Number(3078),
                             },
                             EnumOption {
                                 name: "Swing",
-                                value: 3079,
+                                value: Number(3079),
                             },
                             EnumOption {
                                 name: "Candy Crush",
-                                value: 3080,
+                                value: Number(3080),
                             },
                             EnumOption {
                                 name: "Portal",
-                                value: 3081,
+                                value: Number(3081),
                             },
                             EnumOption {
                                 name: "Freeze",
-                                value: 3082,
+                                value: Number(3082),
                             },
                             EnumOption {
                                 name: "Excited",
-                                value: 3083,
+                                value: Number(3083),
                             },
                             EnumOption {
                                 name: "Tension",
-                                value: 3084,
+                                value: Number(3084),
                             },
                             EnumOption {
                                 name: "Fright",
-                                value: 3085,
+                                value: Number(3085),
                             },
                             EnumOption {
                                 name: "Energetic",
-                                value: 3086,
+                                value: Number(3086),
                             },
                             EnumOption {
                                 name: "Doubt",
-                                value: 3087,
+                                value: Number(3087),
                             },
                             EnumOption {
                                 name: "Meditation",
-                                value: 3088,
+                                value: Number(3088),
                             },
                             EnumOption {
                                 name: "Daze",
-                                value: 3089,
+                                value: Number(3089),
                             },
                             EnumOption {
                                 name: "Action",
-                                value: 3090,
+                                value: Number(3090),
                             },
                             EnumOption {
                                 name: "Rivalry",
-                                value: 3091,
+                                value: Number(3091),
                             },
                             EnumOption {
                                 name: "Puzzle Game",
-                                value: 3092,
+                                value: Number(3092),
                             },
                             EnumOption {
                                 name: "Shooting Game",
-                                value: 3093,
+                                value: Number(3093),
                             },
                             EnumOption {
                                 name: "Racing Game",
-                                value: 3094,
+                                value: Number(3094),
                             },
                             EnumOption {
                                 name: "Card Playing",
-                                value: 3095,
+                                value: Number(3095),
                             },
                         ],
                     },
@@ -4205,19 +4757,19 @@ GetDevicesResponse {
                                     options: [
                                         EnumOption {
                                             name: "Energic",
-                                            value: 5,
+                                            value: Number(5),
                                         },
                                         EnumOption {
                                             name: "Rhythm",
-                                            value: 3,
+                                            value: Number(3),
                                         },
                                         EnumOption {
                                             name: "Spectrum",
-                                            value: 6,
+                                            value: Number(6),
                                         },
                                         EnumOption {
                                             name: "Rolling",
-                                            value: 4,
+                                            value: Number(4),
                                         },
                                     ],
                                 },
@@ -4243,11 +4795,11 @@ GetDevicesResponse {
                                     options: [
                                         EnumOption {
                                             name: "on",
-                                            value: 1,
+                                            value: Number(1),
                                         },
                                         EnumOption {
                                             name: "off",
-                                            value: 0,
+                                            value: Number(0),
                                         },
                                     ],
                                 },
@@ -4277,7 +4829,7 @@ GetDevicesResponse {
                         options: [
                             EnumOption {
                                 name: "Fade",
-                                value: 8216567,
+                                value: Number(8216567),
                             },
                         ],
                     },
@@ -4289,11 +4841,11 @@ GetDevicesResponse {
                         options: [
                             EnumOption {
                                 name: "Sunrise",
-                                value: 0,
+                                value: Number(0),
                             },
                             EnumOption {
                                 name: "Sunset",
-                                value: 1,
+                                value: Number(1),
                             },
                         ],
                     },

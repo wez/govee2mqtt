@@ -1,0 +1,475 @@
+{
+  "requestId": "uuid",
+  "msg": "success",
+  "code": 200,
+  "payload": {
+    "sku": "H6072",
+    "device": "AA:BB:CC:DD:EE:AA:BB:FF",
+    "capabilities": [
+      {
+        "type": "devices.capabilities.dynamic_scene",
+        "instance": "lightScene",
+        "parameters": {
+          "dataType": "ENUM",
+          "options": [
+            {
+              "name": "rainbow B",
+              "value": {
+                "paramId": 11837,
+                "id": 7691
+              }
+            },
+            {
+              "name": "Sunrise",
+              "value": {
+                "paramId": 1681,
+                "id": 1606
+              }
+            },
+            {
+              "name": "Sunset",
+              "value": {
+                "paramId": 1682,
+                "id": 1607
+              }
+            },
+            {
+              "name": "Ocean",
+              "value": {
+                "paramId": 1683,
+                "id": 1608
+              }
+            },
+            {
+              "name": "Forest",
+              "value": {
+                "paramId": 1684,
+                "id": 1609
+              }
+            },
+            {
+              "name": "Sunset Glow",
+              "value": {
+                "paramId": 1685,
+                "id": 1610
+              }
+            },
+            {
+              "name": "Ripple",
+              "value": {
+                "paramId": 1686,
+                "id": 1611
+              }
+            },
+            {
+              "name": "Rainbow",
+              "value": {
+                "paramId": 1687,
+                "id": 1612
+              }
+            },
+            {
+              "name": "Meteor",
+              "value": {
+                "paramId": 1688,
+                "id": 1613
+              }
+            },
+            {
+              "name": "Aurora",
+              "value": {
+                "paramId": 1689,
+                "id": 1614
+              }
+            },
+            {
+              "name": "Karst Cave",
+              "value": {
+                "paramId": 1690,
+                "id": 1615
+              }
+            },
+            {
+              "name": "Glacier",
+              "value": {
+                "paramId": 1691,
+                "id": 1616
+              }
+            },
+            {
+              "name": "Lake",
+              "value": {
+                "paramId": 1692,
+                "id": 1617
+              }
+            },
+            {
+              "name": "Fire",
+              "value": {
+                "paramId": 1693,
+                "id": 1618
+              }
+            },
+            {
+              "name": "Journey of Flowers",
+              "value": {
+                "paramId": 1694,
+                "id": 1619
+              }
+            },
+            {
+              "name": "Downpour",
+              "value": {
+                "paramId": 1695,
+                "id": 1620
+              }
+            },
+            {
+              "name": "Rustling leaves",
+              "value": {
+                "paramId": 1696,
+                "id": 1621
+              }
+            },
+            {
+              "name": "Wave",
+              "value": {
+                "paramId": 1697,
+                "id": 1622
+              }
+            },
+            {
+              "name": "Morning",
+              "value": {
+                "paramId": 1698,
+                "id": 1623
+              }
+            },
+            {
+              "name": "Night",
+              "value": {
+                "paramId": 1699,
+                "id": 1624
+              }
+            },
+            {
+              "name": "Cherry blossoms",
+              "value": {
+                "paramId": 1700,
+                "id": 1625
+              }
+            },
+            {
+              "name": "Movie",
+              "value": {
+                "paramId": 1701,
+                "id": 1626
+              }
+            },
+            {
+              "name": "Leisure",
+              "value": {
+                "paramId": 1702,
+                "id": 1627
+              }
+            },
+            {
+              "name": "Night Light",
+              "value": {
+                "paramId": 1703,
+                "id": 1628
+              }
+            },
+            {
+              "name": "Romantic",
+              "value": {
+                "paramId": 1704,
+                "id": 1629
+              }
+            },
+            {
+              "name": "Fireworks",
+              "value": {
+                "paramId": 1705,
+                "id": 1630
+              }
+            },
+            {
+              "name": "Tunnel",
+              "value": {
+                "paramId": 1706,
+                "id": 1631
+              }
+            },
+            {
+              "name": "Drinks",
+              "value": {
+                "paramId": 1707,
+                "id": 1632
+              }
+            },
+            {
+              "name": "Work",
+              "value": {
+                "paramId": 1708,
+                "id": 1633
+              }
+            },
+            {
+              "name": "Study",
+              "value": {
+                "paramId": 1709,
+                "id": 1634
+              }
+            },
+            {
+              "name": "Candy",
+              "value": {
+                "paramId": 1710,
+                "id": 1635
+              }
+            },
+            {
+              "name": "Breathe",
+              "value": {
+                "paramId": 1711,
+                "id": 1636
+              }
+            },
+            {
+              "name": "Gradient",
+              "value": {
+                "paramId": 1712,
+                "id": 1637
+              }
+            },
+            {
+              "name": "Energetic",
+              "value": {
+                "paramId": 1713,
+                "id": 1638
+              }
+            },
+            {
+              "name": "Dreamlike",
+              "value": {
+                "paramId": 1714,
+                "id": 1639
+              }
+            },
+            {
+              "name": "Dreamland",
+              "value": {
+                "paramId": 1715,
+                "id": 1640
+              }
+            },
+            {
+              "name": "Fight",
+              "value": {
+                "paramId": 1716,
+                "id": 1641
+              }
+            },
+            {
+              "name": "Light",
+              "value": {
+                "paramId": 1717,
+                "id": 1642
+              }
+            },
+            {
+              "name": "Tenderness",
+              "value": {
+                "paramId": 1718,
+                "id": 1643
+              }
+            },
+            {
+              "name": "Warm",
+              "value": {
+                "paramId": 1719,
+                "id": 1644
+              }
+            },
+            {
+              "name": "Cheerful",
+              "value": {
+                "paramId": 1720,
+                "id": 1645
+              }
+            },
+            {
+              "name": "Rush",
+              "value": {
+                "paramId": 1721,
+                "id": 1646
+              }
+            },
+            {
+              "name": "Profound",
+              "value": {
+                "paramId": 1722,
+                "id": 1647
+              }
+            },
+            {
+              "name": "Daze",
+              "value": {
+                "paramId": 1723,
+                "id": 1648
+              }
+            },
+            {
+              "name": "Halloween",
+              "value": {
+                "paramId": 1724,
+                "id": 1649
+              }
+            },
+            {
+              "name": "Christmas",
+              "value": {
+                "paramId": 1725,
+                "id": 1650
+              }
+            },
+            {
+              "name": "Party",
+              "value": {
+                "paramId": 1726,
+                "id": 1651
+              }
+            },
+            {
+              "name": "Celebration",
+              "value": {
+                "paramId": 1727,
+                "id": 1652
+              }
+            },
+            {
+              "name": "Ghost",
+              "value": {
+                "paramId": 1728,
+                "id": 1653
+              }
+            },
+            {
+              "name": "Poppin",
+              "value": {
+                "paramId": 1739,
+                "id": 1664
+              }
+            },
+            {
+              "name": "Swing",
+              "value": {
+                "paramId": 1740,
+                "id": 1665
+              }
+            },
+            {
+              "name": "Racing",
+              "value": {
+                "paramId": 1741,
+                "id": 1666
+              }
+            },
+            {
+              "name": "Flash",
+              "value": {
+                "paramId": 1742,
+                "id": 1667
+              }
+            },
+            {
+              "name": "Marbles",
+              "value": {
+                "paramId": 1743,
+                "id": 1668
+              }
+            },
+            {
+              "name": "Split",
+              "value": {
+                "paramId": 1744,
+                "id": 1669
+              }
+            },
+            {
+              "name": "Stacking",
+              "value": {
+                "paramId": 1729,
+                "id": 1654
+              }
+            },
+            {
+              "name": "Greedy Snake",
+              "value": {
+                "paramId": 1730,
+                "id": 1655
+              }
+            },
+            {
+              "name": "Bouncing Ball",
+              "value": {
+                "paramId": 1731,
+                "id": 1656
+              }
+            },
+            {
+              "name": "Strike",
+              "value": {
+                "paramId": 1732,
+                "id": 1657
+              }
+            },
+            {
+              "name": "Bubble",
+              "value": {
+                "paramId": 1733,
+                "id": 1658
+              }
+            },
+            {
+              "name": "Crossing",
+              "value": {
+                "paramId": 1734,
+                "id": 1659
+              }
+            },
+            {
+              "name": "Electro Dance",
+              "value": {
+                "paramId": 1735,
+                "id": 1660
+              }
+            },
+            {
+              "name": "Flow",
+              "value": {
+                "paramId": 1736,
+                "id": 1661
+              }
+            },
+            {
+              "name": "Accumulation",
+              "value": {
+                "paramId": 1737,
+                "id": 1662
+              }
+            },
+            {
+              "name": "Release",
+              "value": {
+                "paramId": 1738,
+                "id": 1663
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

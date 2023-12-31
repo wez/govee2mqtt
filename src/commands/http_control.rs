@@ -13,9 +13,24 @@ pub struct HttpControlCommand {
 enum SubCommand {
     On,
     Off,
-    Brightness { percent: u8 },
-    Temperature { kelvin: u32 },
-    Color { color: csscolorparser::Color },
+    Brightness {
+        percent: u8,
+    },
+    Temperature {
+        kelvin: u32,
+    },
+    Color {
+        color: csscolorparser::Color,
+    },
+    Scene {
+        /// List available scenes
+        #[arg(long)]
+        list: bool,
+
+        /// Name of a scene to activate
+        #[arg(required_unless_present = "list")]
+        scene: Option<String>,
+    },
 }
 
 impl HttpControlCommand {
@@ -81,6 +96,32 @@ impl HttpControlCommand {
                 let value = ((r as u32) << 16) | ((g as u32) << 8) | (b as u32);
                 let result = client.control_device(&device, &cap, value).await?;
                 println!("{result:#?}");
+            }
+
+            SubCommand::Scene { list: _, scene } => {
+                let scene_caps = client.get_device_scenes(&device).await?;
+
+                for cap in scene_caps {
+                    match &cap.parameters {
+                        DeviceParameters::Enum { options } => {
+                            for opt in options {
+                                if let Some(scene) = scene.as_deref() {
+                                    if scene.eq_ignore_ascii_case(&opt.name) {
+                                        let result = client
+                                            .control_device(&device, &cap, opt.value.clone())
+                                            .await?;
+                                        println!("{result:#?}");
+                                        return Ok(());
+                                    }
+                                    continue;
+                                }
+
+                                println!("{}", opt.name);
+                            }
+                        }
+                        _ => anyhow::bail!("unexpected type {cap:#?}"),
+                    }
+                }
             }
         }
 
