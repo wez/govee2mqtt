@@ -108,6 +108,8 @@ pub enum Request {
         #[serde(rename = "colorTemInKelvin")]
         color_temperature_kelvin: u32,
     },
+    #[serde(rename = "ptReal")]
+    PtReal { command: Vec<String> },
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -155,6 +157,13 @@ impl LanDevice {
         self.send_request(Request::Color {
             color,
             color_temperature_kelvin: 0,
+        })
+        .await
+    }
+
+    pub async fn send_real(&self, command: &str) -> anyhow::Result<()> {
+        self.send_request(Request::PtReal {
+            command: vec![command.to_string()],
         })
         .await
     }
