@@ -212,7 +212,7 @@ impl GoveeUndocumentedApi {
         Ok(resp.data.token)
     }
 
-    pub async fn get_scenes_for_device(&self, sku: &str) -> anyhow::Result<()> {
+    pub async fn get_scenes_for_device(sku: &str) -> anyhow::Result<Vec<LightEffectCategory>> {
         let response = reqwest::Client::builder()
             .timeout(Duration::from_secs(10))
             .build()?
@@ -224,7 +224,32 @@ impl GoveeUndocumentedApi {
             .send()
             .await?;
 
-        Ok(())
+        let status = response.status();
+        if !status.is_success() {
+            let body_bytes = response.bytes().await.with_context(|| {
+                format!(
+                    "request status {}: {}, and failed to read response body",
+                    status.as_u16(),
+                    status.canonical_reason().unwrap_or("")
+                )
+            })?;
+            anyhow::bail!(
+                "request status {}: {}. Response body: {}",
+                status.as_u16(),
+                status.canonical_reason().unwrap_or(""),
+                String::from_utf8_lossy(&body_bytes)
+            );
+        }
+
+        let resp: LightEffectLibraryResponse = json_body(response).await.with_context(|| {
+            format!(
+                "request status {}: {}",
+                status.as_u16(),
+                status.canonical_reason().unwrap_or("")
+            )
+        })?;
+
+        Ok(resp.data.categories)
     }
 
     pub async fn get_saved_one_click_shortcuts(
@@ -275,6 +300,70 @@ impl GoveeUndocumentedApi {
 
         Ok(resp.data.components)
     }
+}
+
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+#[serde(deny_unknown_fields)]
+pub struct LightEffectLibraryResponse {
+    pub data: LightEffectLibraryCategoryList,
+    pub message: String,
+    pub status: u32,
+}
+
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+#[serde(deny_unknown_fields)]
+pub struct LightEffectLibraryCategoryList {
+    pub categories: Vec<LightEffectCategory>,
+    pub support_speed: u8,
+}
+
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+#[serde(deny_unknown_fields)]
+pub struct LightEffectCategory {
+    pub category_id: u32,
+    pub category_name: String,
+    pub scenes: Vec<LightEffectScene>,
+}
+
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+#[serde(deny_unknown_fields)]
+pub struct LightEffectScene {
+    pub scene_id: u32,
+    pub icon_urls: Vec<String>,
+    pub scene_name: String,
+    pub analytic_name: String,
+    pub scene_type: u32,
+    pub scene_code: u32,
+    pub scence_category_id: u32,
+    pub pop_up_prompt: u32,
+    pub scenes_hint: String,
+    /// Eg: min/max applicable device version constraints
+    pub rule: JsonValue,
+    pub light_effects: Vec<LightEffectEntry>,
+    pub voice_url: String,
+    pub create_time: u64,
+}
+
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+#[serde(deny_unknown_fields)]
+pub struct LightEffectEntry {
+    pub scence_param_id: u32,
+    pub scence_name: String,
+    /// base64 encoded
+    pub scence_param: String,
+    pub scene_code: u16,
+    pub special_effect: Vec<JsonValue>,
+    pub cmd_version: u32,
+    pub scene_type: u32,
+    pub diy_effect_code: Vec<JsonValue>,
+    pub diy_effect_str: String,
+    pub rules: Vec<JsonValue>,
+    pub speed_info: JsonValue,
 }
 
 #[derive(Deserialize, Debug)]
@@ -559,6 +648,14 @@ mod test {
     fn get_one_click() {
         let resp: OneClickResponse =
             serde_json::from_str(include_str!("../test-data/undoc-one-click.json")).unwrap();
+        k9::assert_matches_snapshot!(format!("{resp:#?}"));
+    }
+
+    #[test]
+    fn light_effect_library() {
+        let resp: LightEffectLibraryResponse =
+            serde_json::from_str(include_str!("../test-data/light-effect-library-h6072.json"))
+                .unwrap();
         k9::assert_matches_snapshot!(format!("{resp:#?}"));
     }
 }
