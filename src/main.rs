@@ -7,6 +7,7 @@ mod cache;
 mod commands;
 mod http_api;
 mod lan_api;
+mod undoc_api;
 mod version_info;
 
 #[derive(clap::Parser, Debug)]

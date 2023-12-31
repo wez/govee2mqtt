@@ -161,11 +161,9 @@ impl LanDevice {
         .await
     }
 
-    pub async fn send_real(&self, command: &str) -> anyhow::Result<()> {
-        self.send_request(Request::PtReal {
-            command: vec![command.to_string()],
-        })
-        .await
+    pub async fn send_real(&self, commands: Vec<String>) -> anyhow::Result<()> {
+        self.send_request(Request::PtReal { command: commands })
+            .await
     }
 
     pub async fn send_color_temperature_kelvin(
@@ -180,7 +178,9 @@ impl LanDevice {
     }
 }
 
-fn boolean_int<'de, D: serde::de::Deserializer<'de>>(deserializer: D) -> Result<bool, D::Error> {
+pub fn boolean_int<'de, D: serde::de::Deserializer<'de>>(
+    deserializer: D,
+) -> Result<bool, D::Error> {
     Ok(match serde::de::Deserialize::deserialize(deserializer)? {
         JsonValue::Bool(b) => b,
         JsonValue::Number(num) => {

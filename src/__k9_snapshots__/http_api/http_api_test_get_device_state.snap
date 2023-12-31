@@ -1,0 +1,77 @@
+GetDeviceStateResponse {
+    request_id: "uuid",
+    code: 200,
+    message: "success",
+    payload: HttpDeviceState {
+        sku: "H7143",
+        device: "52:8B:D4:AD:FC:45:5D:FE",
+        capabilities: [
+            DeviceCapabilityState {
+                kind: Online,
+                instance: "online",
+                state: Object {
+                    "value": Bool(false),
+                },
+            },
+            DeviceCapabilityState {
+                kind: OnOff,
+                instance: "powerSwitch",
+                state: Object {
+                    "value": Number(0),
+                },
+            },
+            DeviceCapabilityState {
+                kind: Toggle,
+                instance: "warmMistToggle",
+                state: Object {
+                    "value": Number(0),
+                },
+            },
+            DeviceCapabilityState {
+                kind: WorkMode,
+                instance: "workMode",
+                state: Object {
+                    "value": Object {
+                        "modeValue": Number(9),
+                        "workMode": Number(3),
+                    },
+                },
+            },
+            DeviceCapabilityState {
+                kind: Range,
+                instance: "humidity",
+                state: Object {
+                    "value": String(""),
+                },
+            },
+            DeviceCapabilityState {
+                kind: Toggle,
+                instance: "nightlightToggle",
+                state: Object {
+                    "value": Number(1),
+                },
+            },
+            DeviceCapabilityState {
+                kind: Range,
+                instance: "brightness",
+                state: Object {
+                    "value": Number(5),
+                },
+            },
+            DeviceCapabilityState {
+                kind: ColorSetting,
+                instance: "colorRgb",
+                state: Object {
+                    "value": Number(16777215),
+                },
+            },
+            DeviceCapabilityState {
+                kind: Mode,
+                instance: "nightlightScene",
+                state: Object {
+                    "value": Number(5),
+                },
+            },
+        ],
+    },
+}

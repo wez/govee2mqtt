@@ -1,0 +1,237 @@
+{
+  "data": {
+    "components": [
+      {
+        "canDisable": null,
+        "canManage": 1,
+        "componentId": 1234,
+        "environments": [],
+        "name": "Environment Information",
+        "type": 4
+      },
+      {
+        "canDisable": 0,
+        "canManage": 0,
+        "componentId": 1234,
+        "guideUrl": "https://d1f2504ijhdyjw.cloudfront.net/mp4/a7cdba10f8a30785265447a16cbfcc27-oneClick.mp4",
+        "name": "Default",
+        "oneClicks": [
+          {
+            "desc": "",
+            "execRules": [],
+            "groupId": 0,
+            "groupName": "",
+            "iotRules": [
+              {
+                "deviceObj": {
+                  "bleAddress": "",
+                  "bleName": "Govee_H6072_3411",
+                  "device": "xx:34:11",
+                  "deviceSplicingStatus": 0,
+                  "feastId": 0,
+                  "feastName": "",
+                  "feastType": 0,
+                  "goodsType": 30,
+                  "ic": 66,
+                  "ic_sub_1": 0,
+                  "ic_sub_2": 0,
+                  "isFeast": 0,
+                  "name": "Study Floor Lamp 1",
+                  "pactCode": 1,
+                  "pactType": 2,
+                  "settings": null,
+                  "sku": "H6072",
+                  "spec": "",
+                  "subDevice": "",
+                  "subDeviceNum": 0,
+                  "subDevices": {},
+                  "topic": "GD/",
+                  "versionHard": "3.02.00",
+                  "versionSoft": "2.04.05",
+                  "wifiHardVersion": "1.00.10",
+                  "wifiSoftVersion": "1.02.11"
+                },
+                "rule": [
+                  {
+                    "blueMsg": "{\n  \"type\" : \"switch\",\n  \"bleCmd\" : \"MwEBAAAAAAAAAAAAAAAAAAAAADM=\"\n}",
+                    "cmdType": 0,
+                    "cmdVal": "{\n  \"open\" : 1\n}",
+                    "deviceType": 2,
+                    "iotMsg": "{\"msg\":{\"transaction\":\"v_1704000430613857\",\"data\":{\"val\":1},\"accountTopic\":\"GA\\/\",\"type\":1,\"cmdVersion\":1,\"cmd\":\"turn\"}}"
+                  },
+                  {
+                    "blueMsg": "{\n  \"bleCmd\" : \"owABCAIDGhQAAAEAAf\\/\\/AAAAAKU=,owEA\\/zIB\\/\\/8AAAAAAAAAA0dQAHo=,owIAEAAB\\/\\/8AAAAAAvsUEP9\\/AM0=,owP\\/fwD\\/AAD\\/AAD\\/FgD\\/FgD\\/AN8=,owQA\\/38A\\/38A\\/\\/8A\\/\\/8A\\/\\/8A\\/1g=,owX\\/AP\\/\\/AP\\/\\/AP\\/\\/AAAAAAAAAFk=,owYCIGQAAAEAAf\\/\\/AAD\\/\\/wIAMtM=,o\\/8DBoH+B7T\\/AAD\\/AAAAAAAAAZQ=\",\n  \"modeCmd\" : \"MwUEMwgAAAAAAAAAAAAAAAAAAAk=\",\n  \"type\" : \"scene\",\n  \"switchCmd\" : \"MwEBAAAAAAAAAAAAAAAAAAAAADM=\"\n}",
+                    "cmdType": 3,
+                    "cmdVal": "{\n  \"scenesCode\" : 2099,\n  \"scenceId\" : 1606,\n  \"scenesStr\" : \"Sunrise\",\n  \"scenceParamId\" : 1681\n}",
+                    "deviceType": 2,
+                    "iotMsg": "{\"msg\":{\"transaction\":\"v_1704000406594520\",\"data\":{\"command\":[\"owABCAIDGhQAAAEAAf\\/\\/AAAAAKU=\",\"owEA\\/zIB\\/\\/8AAAAAAAAAA0dQAHo=\",\"owIAEAAB\\/\\/8AAAAAAvsUEP9\\/AM0=\",\"owP\\/fwD\\/AAD\\/AAD\\/FgD\\/FgD\\/AN8=\",\"owQA\\/38A\\/38A\\/\\/8A\\/\\/8A\\/\\/8A\\/1g=\",\"owX\\/AP\\/\\/AP\\/\\/AP\\/\\/AAAAAAAAAFk=\",\"owYCIGQAAAEAAf\\/\\/AAD\\/\\/wIAMtM=\",\"o\\/8DBoH+B7T\\/AAD\\/AAAAAAAAAZQ=\",\"MwUEMwgAAAAAAAAAAAAAAAAAAAk=\"]},\"accountTopic\":\"GA\\/\",\"type\":1,\"cmdVersion\":1,\"cmd\":\"ptReal\"}}"
+                  }
+                ]
+              }
+            ],
+            "name": "woot",
+            "planType": 0,
+            "presetId": 0,
+            "presetState": 0,
+            "siriEngineId": 1234,
+            "type": 0
+          }
+        ],
+        "type": 1
+      },
+      {
+        "canDisable": 1,
+        "canManage": 1,
+        "componentId": 1234,
+        "guideUrl": "https://d1f2504ijhdyjw.cloudfront.net/mp4/a7cdba10f8a30785265447a16cbfcc27-oneClick.mp4",
+        "name": "Daily",
+        "oneClicks": [
+          {
+            "desc": "",
+            "execRules": [
+              {
+                "actionPresetId": 12344,
+                "devices": [
+                  {
+                    "bleAddress": "",
+                    "bleName": "Govee_H6072_5225",
+                    "device": "52:25",
+                    "deviceName": "Primary Bed Hers",
+                    "deviceTopic": "GD/",
+                    "goodsType": 30,
+                    "imgUrl": "https://d1f2504ijhdyjw.cloudfront.net/sku-img/814c890088f34da331e1eecf8ea46fc2-add_list_type_device_6072.png",
+                    "pactCode": 1,
+                    "pactType": 2,
+                    "rule": {
+                      "blueMsg": "",
+                      "effectCommand": "",
+                      "iotMsg": "",
+                      "name": "Turn on the lights",
+                      "onOff": "1",
+                      "onOffIotMsg": null
+                    },
+                    "sku": "H6072",
+                    "versionHard": "3.02.00",
+                    "versionSoft": "2.04.05",
+                    "wifiHardVersion": "1.02.00",
+                    "wifiSoftVersion": "2.05.08"
+                  }
+                ],
+                "imgUrl": "",
+                "name": "Turn On",
+                "showType": 0,
+                "skuType": 1
+              }
+            ],
+            "groupId": 0,
+            "groupName": "",
+            "name": "Get Home",
+            "planType": 0,
+            "presetId": 1101,
+            "presetState": 1,
+            "siriEngineId": 0,
+            "type": 1
+          }
+        ],
+        "type": 1
+      },
+      {
+        "canDisable": null,
+        "canManage": 1,
+        "componentId": 23424,
+        "feastType": 2,
+        "feasts": [
+          {
+            "devices": [],
+            "enable": 1,
+            "feastId": -1,
+            "feastMainDevice": {},
+            "gId": -1,
+            "groupId": 0,
+            "name": "Scenic DreamView",
+            "presetId": 1,
+            "presetState": 1,
+            "type": 13
+          }
+        ],
+        "h5Url": "https://app-h5.govee.com/user-manual/dreamview-intro",
+        "mainDevice": {
+          "bleAddress": null,
+          "bleName": null,
+          "device": ":11",
+          "goodsType": 30,
+          "ic": null,
+          "ic_sub_1": null,
+          "ic_sub_2": null,
+          "name": null,
+          "pactCode": null,
+          "pactType": null,
+          "sku": "H6072",
+          "spec": null,
+          "subDevice": null,
+          "subDevices": null,
+          "topic": null,
+          "versionHard": null,
+          "versionSoft": null,
+          "wifiHardVersion": null,
+          "wifiSoftVersion": null
+        },
+        "name": "DreamView",
+        "type": 2,
+        "videoUrl": "https://app-h5.govee.com/user-manual/faq/voice-guide?updateTime=21"
+      },
+      {
+        "canDisable": null,
+        "canManage": 1,
+        "componentId": 12312312,
+        "groups": [
+          {
+            "accountId": 123444,
+            "devices": [
+              {
+                "bleAddress": ":35:29",
+                "bleName": "Govee_H6072_3529",
+                "device": ":35:29",
+                "feastId": null,
+                "feastName": null,
+                "feastType": null,
+                "goodsType": 30,
+                "ic": 66,
+                "ic_sub_1": 0,
+                "ic_sub_2": 0,
+                "isFeast": null,
+                "name": "Study Floor Lamp 2",
+                "pactCode": 1,
+                "pactType": 2,
+                "secretCode": null,
+                "settings": null,
+                "sku": "H6072",
+                "spec": "",
+                "subDevice": "",
+                "subDevices": {},
+                "topic": "GD/",
+                "versionHard": "3.02.00",
+                "versionSoft": "2.04.05",
+                "wifiHardVersion": "1.00.10",
+                "wifiSoftVersion": "1.02.11"
+              }
+            ],
+            "enable": 1,
+            "gId": 1234,
+            "isBasedGroup": 1,
+            "name": "Study Floor Lamp",
+            "presetId": 0,
+            "presetState": 0,
+            "presetStatus": null,
+            "type": 8
+          }
+        ],
+        "guideUrl": "https://d1f2504ijhdyjw.cloudfront.net/mp4/14656fc5953a4a05adbd880cbd9d2a42-group.mp4",
+        "name": "Group",
+        "type": 3
+      }
+    ]
+  },
+  "message": "Success",
+  "status": 200
+}

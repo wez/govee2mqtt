@@ -1,0 +1,221 @@
+{
+  "devices": [
+    {
+      "attributesId": 4,
+      "device": "47:13:CF:00:00:00:00:25",
+      "deviceExt": {
+        "deviceSettings": "{\"wifiName\":\"MySSID\",\"address\":\"CF:00:00:00:00:25\",\"bleName\":\"Govee_H6072_5225\",\"topic\":\"GD/\",\"wifiMac\":\"\",\"pactType\":2,\"pactCode\":1,\"wifiSoftVersion\":\"2.05.08\",\"wifiHardVersion\":\"1.02.00\",\"ic\":66,\"boilWaterCompletedNotiOnOff\":1,\"completionNotiOnOff\":1,\"autoShutDownOnOff\":1,\"sku\":\"H6072\",\"device\":\"47:13:CF:00:00:00:00:25\",\"deviceName\":\"Primary Bed Hers\",\"versionHard\":\"3.02.00\",\"versionSoft\":\"2.04.05\",\"playState\":false}",
+        "extResources": "{\"skuUrl\":\"https://d1f2504ijhdyjw.cloudfront.net/sku-img/814c890088f34da331e1eecf8ea46fc2-add_list_type_device_6072.png\",\"headOnImg\":\"https://d1f2504ijhdyjw.cloudfront.net/sku-img/7136846363c3c97ce15fe516fd176366-new_light_title_6072_on%403x.png\",\"headOffImg\":\"https://d1f2504ijhdyjw.cloudfront.net/sku-img/7704c288c48f0b39033a5a28aedf473c-new_light_title_6072_off%403x.png\",\"ext\":\"\",\"ic\":66}",
+        "lastDeviceData": "{\"online\":false}"
+      },
+      "deviceName": "Primary Bed Hers",
+      "goodsType": 30,
+      "groupId": 1001,
+      "pactCode": 1,
+      "pactType": 2,
+      "share": 0,
+      "sku": "H6072",
+      "spec": "",
+      "supportScene": 0,
+      "versionHard": "3.02.00",
+      "versionSoft": "2.04.05"
+    },
+    {
+      "attributesId": 4,
+      "device": "02:EC:CF:00:00:00:00:48",
+      "deviceExt": {
+        "deviceSettings": "{\"wifiName\":\"MySSID\",\"address\":\"CF:00:00:00:00:48\",\"bleName\":\"Govee_H6072_5048\",\"topic\":\"GD/\",\"wifiMac\":\"\",\"pactType\":2,\"pactCode\":1,\"wifiSoftVersion\":\"2.05.08\",\"wifiHardVersion\":\"1.02.00\",\"ic\":66,\"boilWaterCompletedNotiOnOff\":1,\"completionNotiOnOff\":1,\"autoShutDownOnOff\":1,\"sku\":\"H6072\",\"device\":\"02:EC:CF:00:00:00:00:48\",\"deviceName\":\"Primary Bed His\",\"versionHard\":\"3.02.00\",\"versionSoft\":\"2.04.05\",\"playState\":false}",
+        "extResources": "{\"skuUrl\":\"https://d1f2504ijhdyjw.cloudfront.net/sku-img/814c890088f34da331e1eecf8ea46fc2-add_list_type_device_6072.png\",\"headOnImg\":\"https://d1f2504ijhdyjw.cloudfront.net/sku-img/7136846363c3c97ce15fe516fd176366-new_light_title_6072_on%403x.png\",\"headOffImg\":\"https://d1f2504ijhdyjw.cloudfront.net/sku-img/7704c288c48f0b39033a5a28aedf473c-new_light_title_6072_off%403x.png\",\"ext\":\"\",\"ic\":66}",
+        "lastDeviceData": "{\"online\":false}"
+      },
+      "deviceName": "Primary Bed His",
+      "goodsType": 30,
+      "groupId": 1001,
+      "pactCode": 1,
+      "pactType": 2,
+      "share": 0,
+      "sku": "H6072",
+      "spec": "",
+      "supportScene": 0,
+      "versionHard": "3.02.00",
+      "versionSoft": "2.04.05"
+    },
+    {
+      "attributesId": 4,
+      "device": "51:2A:D1:00:00:00:00:93",
+      "deviceExt": {
+        "deviceSettings": "{\"wifiName\":\"MySSID\",\"address\":\"D1:00:00:00:00:93\",\"bleName\":\"Govee_H6072_3193\",\"topic\":\"GD/\",\"wifiMac\":\"\",\"pactType\":2,\"pactCode\":1,\"wifiSoftVersion\":\"2.05.08\",\"wifiHardVersion\":\"1.02.00\",\"ic\":66,\"boilWaterCompletedNotiOnOff\":1,\"completionNotiOnOff\":1,\"autoShutDownOnOff\":1,\"sku\":\"H6072\",\"device\":\"51:2A:D1:00:00:00:00:93\",\"deviceName\":\"Study Floor Lamp 4\",\"versionHard\":\"3.02.00\",\"versionSoft\":\"2.04.05\",\"playState\":false}",
+        "extResources": "{\"skuUrl\":\"https://d1f2504ijhdyjw.cloudfront.net/sku-img/814c890088f34da331e1eecf8ea46fc2-add_list_type_device_6072.png\",\"headOnImg\":\"https://d1f2504ijhdyjw.cloudfront.net/sku-img/7136846363c3c97ce15fe516fd176366-new_light_title_6072_on%403x.png\",\"headOffImg\":\"https://d1f2504ijhdyjw.cloudfront.net/sku-img/7704c288c48f0b39033a5a28aedf473c-new_light_title_6072_off%403x.png\",\"ext\":\"\",\"ic\":66}",
+        "lastDeviceData": "{\"online\":false}"
+      },
+      "deviceName": "Study Floor Lamp 4",
+      "goodsType": 30,
+      "groupId": 1003,
+      "pactCode": 1,
+      "pactType": 2,
+      "share": 0,
+      "sku": "H6072",
+      "spec": "",
+      "supportScene": 0,
+      "versionHard": "3.02.00",
+      "versionSoft": "2.04.05"
+    },
+    {
+      "attributesId": 10,
+      "device": "",
+      "deviceExt": {
+        "deviceSettings": "{\"wifiName\":\"MySSID\",\"address\":\"\",\"bleName\":\"Govee_H6058_163C\",\"topic\":\"GD/\",\"wifiMac\":\"\",\"pactType\":1,\"pactCode\":1,\"wifiSoftVersion\":\"2.00.20\",\"wifiHardVersion\":\"1.02.00\",\"ic\":0,\"secretCode\":\"\",\"boilWaterCompletedNotiOnOff\":1,\"completionNotiOnOff\":1,\"autoShutDownOnOff\":1,\"sku\":\"H6058\",\"device\":\"\",\"deviceName\":\"Portable Table Lamp\",\"versionHard\":\"3.02.02\",\"versionSoft\":\"1.01.13\",\"playState\":false}",
+        "extResources": "{\"skuUrl\":\"https://d1f2504ijhdyjw.cloudfront.net/sku-img/57f63144484399b4bcdc6dc52699fe0a-add_list_type_device_6058.png\",\"headOnImg\":\"https://d1f2504ijhdyjw.cloudfront.net/sku-img/ac98ae14313d12a1d8cc092d733b00dc-new_light_title_6058_on.png\",\"headOffImg\":\"https://d1f2504ijhdyjw.cloudfront.net/sku-img/259fee05d104c051c3f5fee3e0860dc3-new_light_title_6058_off.png\",\"ext\":\"\",\"ic\":0}",
+        "lastDeviceData": "{\"online\":false}"
+      },
+      "deviceName": "Portable Table Lamp",
+      "goodsType": 59,
+      "groupId": 1001,
+      "pactCode": 1,
+      "pactType": 1,
+      "share": 0,
+      "sku": "H6058",
+      "spec": "",
+      "supportScene": 0,
+      "versionHard": "3.02.02",
+      "versionSoft": "1.01.13"
+    },
+    {
+      "attributesId": 25,
+      "device": "",
+      "deviceExt": {
+        "deviceSettings": "{\"wifiName\":\"MySSID\",\"address\":\"\",\"bleName\":\"Govee_H610A_0C6F\",\"topic\":\"GD/\",\"wifiMac\":\"\",\"pactType\":1,\"pactCode\":1,\"wifiSoftVersion\":\"2.05.08\",\"wifiHardVersion\":\"1.02.00\",\"ic\":24,\"secretCode\":\"\",\"ic_sub_1\":12,\"ic_sub_2\":12,\"boilWaterCompletedNotiOnOff\":1,\"completionNotiOnOff\":1,\"autoShutDownOnOff\":1,\"sku\":\"H610A\",\"device\":\"\",\"deviceName\":\"Govee Glide Lively 1\",\"versionHard\":\"3.01.01\",\"versionSoft\":\"1.01.08\",\"playState\":false}",
+        "extResources": "{\"skuUrl\":\"https://d1f2504ijhdyjw.cloudfront.net/sku-img/94adc398352f030d3b818ae8c2a805dd-add_list_type_device_610a.png\",\"headOnImg\":\"\",\"headOffImg\":\"\",\"ext\":\"\",\"ic\":24}",
+        "lastDeviceData": "{\"online\":false}"
+      },
+      "deviceName": "Govee Glide Lively 1",
+      "goodsType": 80,
+      "groupId": 0,
+      "pactCode": 1,
+      "pactType": 1,
+      "share": 0,
+      "sku": "H610A",
+      "spec": "",
+      "supportScene": 1,
+      "versionHard": "3.01.01",
+      "versionSoft": "1.01.08"
+    },
+    {
+      "attributesId": 1,
+      "device": "",
+      "deviceExt": {
+        "deviceSettings": "{\"wifiName\":\"MySSID\",\"address\":\"\",\"bleName\":\"GBK_H61A2_0D17\",\"topic\":\"GD/\",\"wifiMac\":\"\",\"pactType\":2,\"pactCode\":1,\"wifiSoftVersion\":\"2.05.08\",\"wifiHardVersion\":\"1.02.00\",\"ic\":70,\"secretCode\":\"\",\"boilWaterCompletedNotiOnOff\":1,\"completionNotiOnOff\":1,\"autoShutDownOnOff\":1,\"sku\":\"H61A2\",\"device\":\"\",\"deviceName\":\"Study Neon\",\"versionHard\":\"2.01.02\",\"versionSoft\":\"2.07.01\",\"playState\":false}",
+        "extResources": "{\"skuUrl\":\"https://d1f2504ijhdyjw.cloudfront.net/sku-img/2ed98b3cef79220b2e982f423b205418-add_list_type_device_61a2.png\",\"headOnImg\":\"https://d1f2504ijhdyjw.cloudfront.net/sku-img/8ff325193c130aa2b232bbc65f391b48-new_light_title_61a0_on.png\",\"headOffImg\":\"https://d1f2504ijhdyjw.cloudfront.net/sku-img/22e9bd69bc85f3a271ed997bc9fbb699-new_light_title_61a0_off.png\",\"ext\":\"\",\"ic\":70}",
+        "lastDeviceData": "{\"online\":false}"
+      },
+      "deviceName": "Study Neon",
+      "goodsType": 71,
+      "groupId": 1003,
+      "pactCode": 1,
+      "pactType": 2,
+      "share": 0,
+      "sku": "H61A2",
+      "spec": "",
+      "supportScene": 1,
+      "versionHard": "2.01.02",
+      "versionSoft": "2.07.01"
+    },
+    {
+      "attributesId": 1,
+      "device": "",
+      "deviceExt": {
+        "deviceSettings": "{\"wifiName\":\"MySSID\",\"address\":\"\",\"bleName\":\"GBK_H619A_DA4B\",\"topic\":\"GD/\",\"wifiMac\":\"\",\"pactType\":2,\"pactCode\":1,\"wifiSoftVersion\":\"2.05.08\",\"wifiHardVersion\":\"1.02.00\",\"ic\":20,\"secretCode\":\"\",\"boilWaterCompletedNotiOnOff\":1,\"completionNotiOnOff\":1,\"autoShutDownOnOff\":1,\"sku\":\"H619A\",\"device\":\"\",\"deviceName\":\"Primary Headboard\",\"versionHard\":\"2.01.02\",\"versionSoft\":\"2.07.01\",\"playState\":false}",
+        "extResources": "{\"skuUrl\":\"https://d1f2504ijhdyjw.cloudfront.net/sku-img/eb8e4f41a30bfebb249c884209460525-add_list_type_device_619ac.png\",\"headOnImg\":\"https://d1f2504ijhdyjw.cloudfront.net/sku-img/eed1b442fc5d3aaa28563ded4284e057-new_light_title_6160_on.png\",\"headOffImg\":\"https://d1f2504ijhdyjw.cloudfront.net/sku-img/cb48afdb8618c2ddfd8fe16673336af0-new_light_title_6160_off.png\",\"ext\":\"\",\"ic\":20}",
+        "lastDeviceData": "{\"online\":false}"
+      },
+      "deviceName": "Primary Headboard",
+      "goodsType": 75,
+      "groupId": 1001,
+      "pactCode": 1,
+      "pactType": 2,
+      "share": 0,
+      "sku": "H619A",
+      "spec": "",
+      "supportScene": 1,
+      "versionHard": "2.01.02",
+      "versionSoft": "2.07.01"
+    },
+    {
+      "attributesId": 1,
+      "device": "",
+      "deviceExt": {
+        "deviceSettings": "{\"wifiName\":\"MySSID\",\"address\":\"\",\"bleName\":\"GBK_H619A_CDF5\",\"topic\":\"GD/\",\"wifiMac\":\"\",\"pactType\":2,\"pactCode\":1,\"wifiSoftVersion\":\"2.05.08\",\"wifiHardVersion\":\"1.02.00\",\"ic\":20,\"secretCode\":\"\",\"boilWaterCompletedNotiOnOff\":1,\"completionNotiOnOff\":1,\"autoShutDownOnOff\":1,\"sku\":\"H619A\",\"device\":\"\",\"deviceName\":\"H619A_CDF5\",\"versionHard\":\"2.01.02\",\"versionSoft\":\"2.06.06\",\"playState\":false}",
+        "extResources": "{\"skuUrl\":\"https://d1f2504ijhdyjw.cloudfront.net/sku-img/eb8e4f41a30bfebb249c884209460525-add_list_type_device_619ac.png\",\"headOnImg\":\"https://d1f2504ijhdyjw.cloudfront.net/sku-img/eed1b442fc5d3aaa28563ded4284e057-new_light_title_6160_on.png\",\"headOffImg\":\"https://d1f2504ijhdyjw.cloudfront.net/sku-img/cb48afdb8618c2ddfd8fe16673336af0-new_light_title_6160_off.png\",\"ext\":\"\",\"ic\":20}",
+        "lastDeviceData": "{\"online\":false}"
+      },
+      "deviceName": "H619A_CDF5",
+      "goodsType": 75,
+      "groupId": 0,
+      "pactCode": 1,
+      "pactType": 2,
+      "share": 0,
+      "sku": "H619A",
+      "spec": "",
+      "supportScene": 1,
+      "versionHard": "2.01.02",
+      "versionSoft": "2.06.06"
+    },
+    {
+      "attributesId": 4,
+      "device": "",
+      "deviceExt": {
+        "deviceSettings": "{\"wifiName\":\"MySSID\",\"address\":\"\",\"bleName\":\"Govee_H6072_3529\",\"topic\":\"GD/\",\"wifiMac\":\"\",\"pactType\":2,\"pactCode\":1,\"wifiSoftVersion\":\"1.02.11\",\"wifiHardVersion\":\"1.00.10\",\"ic\":66,\"boilWaterCompletedNotiOnOff\":1,\"completionNotiOnOff\":1,\"autoShutDownOnOff\":1,\"sku\":\"H6072\",\"device\":\"9\",\"deviceName\":\"Study Floor Lamp 2\",\"versionHard\":\"3.02.00\",\"versionSoft\":\"2.04.05\",\"playState\":false}",
+        "extResources": "{\"skuUrl\":\"https://d1f2504ijhdyjw.cloudfront.net/sku-img/814c890088f34da331e1eecf8ea46fc2-add_list_type_device_6072.png\",\"headOnImg\":\"https://d1f2504ijhdyjw.cloudfront.net/sku-img/7136846363c3c97ce15fe516fd176366-new_light_title_6072_on%403x.png\",\"headOffImg\":\"https://d1f2504ijhdyjw.cloudfront.net/sku-img/7704c288c48f0b39033a5a28aedf473c-new_light_title_6072_off%403x.png\",\"ext\":\"\",\"ic\":66}",
+        "lastDeviceData": "{\"online\":false}"
+      },
+      "deviceName": "Study Floor Lamp 2",
+      "goodsType": 30,
+      "groupId": 1003,
+      "pactCode": 1,
+      "pactType": 2,
+      "share": 0,
+      "sku": "H6072",
+      "spec": "",
+      "supportScene": 0,
+      "versionHard": "3.02.00",
+      "versionSoft": "2.04.05"
+    },
+    {
+      "attributesId": 4,
+      "device": "",
+      "deviceExt": {
+        "deviceSettings": "{\"wifiName\":\"MySSID\",\"address\":\"\",\"bleName\":\"Govee_H6072_3411\",\"topic\":\"GD/\",\"wifiMac\":\"\",\"pactType\":2,\"pactCode\":1,\"wifiSoftVersion\":\"1.02.11\",\"wifiHardVersion\":\"1.00.10\",\"ic\":66,\"boilWaterCompletedNotiOnOff\":1,\"completionNotiOnOff\":1,\"autoShutDownOnOff\":1,\"sku\":\"H6072\",\"device\":\"\",\"deviceName\":\"Study Floor Lamp 1\",\"versionHard\":\"3.02.00\",\"versionSoft\":\"2.04.05\",\"playState\":false}",
+        "extResources": "{\"skuUrl\":\"https://d1f2504ijhdyjw.cloudfront.net/sku-img/814c890088f34da331e1eecf8ea46fc2-add_list_type_device_6072.png\",\"headOnImg\":\"https://d1f2504ijhdyjw.cloudfront.net/sku-img/7136846363c3c97ce15fe516fd176366-new_light_title_6072_on%403x.png\",\"headOffImg\":\"https://d1f2504ijhdyjw.cloudfront.net/sku-img/7704c288c48f0b39033a5a28aedf473c-new_light_title_6072_off%403x.png\",\"ext\":\"\",\"ic\":66}",
+        "lastDeviceData": "{\"online\":false}"
+      },
+      "deviceName": "Study Floor Lamp 1",
+      "goodsType": 30,
+      "groupId": 1003,
+      "pactCode": 1,
+      "pactType": 2,
+      "share": 0,
+      "sku": "H6072",
+      "spec": "",
+      "supportScene": 0,
+      "versionHard": "3.02.00",
+      "versionSoft": "2.04.05"
+    }
+  ],
+  "groups": [
+    {
+      "groupId": 1001,
+      "groupName": "Bedroom"
+    },
+    {
+      "groupId": 1002,
+      "groupName": "Living Room"
+    },
+    {
+      "groupId": 1003,
+      "groupName": "Study"
+    }
+  ],
+  "message": "",
+  "status": 200
+}
+

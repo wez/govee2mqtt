@@ -32,6 +32,7 @@ enum SubCommand {
         #[arg(value_parser=maybe_hex::<u8>)]
         data: Vec<u8>,
     },
+    ShowOneClick {},
 }
 
 impl LanControlCommand {
@@ -59,7 +60,54 @@ impl LanControlCommand {
                     .send_color_rgb(crate::lan_api::DeviceColor { r, g, b })
                     .await?;
             }
+            SubCommand::ShowOneClick {} => {
+                use crate::undoc_api::GoveeUndocumentedApi;
+                let client = GoveeUndocumentedApi::new(
+                    std::env::var("GOVEE_EMAIL")?,
+                    std::env::var("GOVEE_PASSWORD")?,
+                );
+                let token = client.login_community().await?;
+                println!("{token:?}");
+                client.get_saved_one_click_shortcuts(&token).await?;
+            }
             SubCommand::Command { data } => {
+                /*
+                use crate::undoc_api::GoveeUndocumentedApi;
+                let client = GoveeUndocumentedApi::new(
+                    std::env::var("GOVEE_EMAIL")?,
+                    std::env::var("GOVEE_PASSWORD")?,
+                );
+                */
+
+                /*
+                {
+                let token = client.login_account().await?;
+                client.get_device_list(&token).await?;
+                return Ok(());
+                }
+                */
+
+                /*
+                 */
+
+                /*
+                let simple = vec!["MwUEMwgAAAAAAAAAAAAAAAAAAAk=".to_string()];
+
+                let maybe = vec![
+                    "owABCAIDGhQAAAEAAf//AAAAAKU=".to_string(),
+                    "owEA/zIB//8AAAAAAAAAA0dQAHo=".to_string(),
+                    "owIAEAAB//8AAAAAAvsUEP9/AM0=".to_string(),
+                    "owP/fwD/AAD/AAD/FgD/FgD/AN8=".to_string(),
+                    "owQA/38A/38A//8A//8A//8A/1g=".to_string(),
+                    "owX/AP//AP//AP//AAAAAAAAAFk=".to_string(),
+                    "owYCIGQAAAEAAf//AAD//wIAMtM=".to_string(),
+                    "o/8DBoH+B7T/AAD/AAAAAAAAAZQ=".to_string(),
+                ];
+                device.send_real(maybe).await?;
+
+                return Ok(());
+                */
+
                 println!("data: {data:x?}");
                 let mut data = data.to_vec();
                 let mut checksum = 0u8;
@@ -71,7 +119,7 @@ impl LanControlCommand {
                 println!("packet: {data:x?}");
                 let encoded = data_encoding::BASE64.encode(&data);
                 println!("encoded: {encoded}");
-                device.send_real(&encoded).await?;
+                device.send_real(vec![encoded]).await?;
             }
         }
 
