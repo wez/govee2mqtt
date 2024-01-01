@@ -1,6 +1,10 @@
+use crate::ble::GoveeBlePacket;
 use crate::lan_api::{Client, DiscoOptions};
+use crate::undoc_api::GoveeUndocumentedApi;
 use clap_num::maybe_hex;
+use std::collections::BTreeMap;
 use std::net::IpAddr;
+use uncased::Uncased;
 
 #[derive(clap::Parser, Debug)]
 pub struct LanControlCommand {
@@ -33,6 +37,15 @@ enum SubCommand {
         data: Vec<u8>,
     },
     ShowOneClick {},
+    Scene {
+        /// List available scenes
+        #[arg(long)]
+        list: bool,
+
+        /// Name of a scene to activate
+        #[arg(required_unless_present = "list")]
+        scene: Option<String>,
+    },
 }
 
 impl LanControlCommand {
@@ -70,54 +83,37 @@ impl LanControlCommand {
                 println!("{token:?}");
                 client.get_saved_one_click_shortcuts(&token).await?;
             }
+            SubCommand::Scene { list, scene } => {
+                let mut scene_code_by_name = BTreeMap::new();
+                for category in GoveeUndocumentedApi::get_scenes_for_device(&device.sku).await? {
+                    for scene in category.scenes {
+                        for effect in scene.light_effects {
+                            if effect.scene_code != 0 {
+                                scene_code_by_name
+                                    .insert(Uncased::new(scene.scene_name), effect.scene_code);
+                                break;
+                            }
+                        }
+                    }
+                }
+                if *list {
+                    for name in scene_code_by_name.keys() {
+                        println!("{name}");
+                    }
+                } else {
+                    let scene = Uncased::new(scene.clone().expect("scene if not list"));
+                    if let Some(code) = scene_code_by_name.get(&scene) {
+                        println!("Do something!");
+                        let encoded = GoveeBlePacket::scene_code(*code).base64();
+                        println!("Computed {encoded}");
+                        device.send_real(vec![encoded]).await?;
+                    } else {
+                        anyhow::bail!("scene {scene} not found");
+                    }
+                }
+            }
             SubCommand::Command { data } => {
-                /*
-                use crate::undoc_api::GoveeUndocumentedApi;
-                let client = GoveeUndocumentedApi::new(
-                    std::env::var("GOVEE_EMAIL")?,
-                    std::env::var("GOVEE_PASSWORD")?,
-                );
-                */
-
-                /*
-                {
-                let token = client.login_account().await?;
-                client.get_device_list(&token).await?;
-                return Ok(());
-                }
-                */
-
-                /*
-                 */
-
-                /*
-                let simple = vec!["MwUEMwgAAAAAAAAAAAAAAAAAAAk=".to_string()];
-
-                let maybe = vec![
-                    "owABCAIDGhQAAAEAAf//AAAAAKU=".to_string(),
-                    "owEA/zIB//8AAAAAAAAAA0dQAHo=".to_string(),
-                    "owIAEAAB//8AAAAAAvsUEP9/AM0=".to_string(),
-                    "owP/fwD/AAD/AAD/FgD/FgD/AN8=".to_string(),
-                    "owQA/38A/38A//8A//8A//8A/1g=".to_string(),
-                    "owX/AP//AP//AP//AAAAAAAAAFk=".to_string(),
-                    "owYCIGQAAAEAAf//AAD//wIAMtM=".to_string(),
-                    "o/8DBoH+B7T/AAD/AAAAAAAAAZQ=".to_string(),
-                ];
-                device.send_real(maybe).await?;
-
-                return Ok(());
-                */
-
-                println!("data: {data:x?}");
-                let mut data = data.to_vec();
-                let mut checksum = 0u8;
-                data.resize(19, 0);
-                for &b in &data {
-                    checksum = checksum ^ b;
-                }
-                data.push(checksum);
-                println!("packet: {data:x?}");
-                let encoded = data_encoding::BASE64.encode(&data);
+                let encoded = GoveeBlePacket::with_bytes(data.to_vec()).finish().base64();
                 println!("encoded: {encoded}");
                 device.send_real(vec![encoded]).await?;
             }

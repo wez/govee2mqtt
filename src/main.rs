@@ -3,6 +3,7 @@ use crate::lan_api::LanDiscoArguments;
 use clap::Parser;
 use std::str::FromStr;
 
+mod ble;
 mod cache;
 mod commands;
 mod http_api;

@@ -13,6 +13,8 @@ use uuid::Uuid;
 // <https://github.com/constructorfleet/homebridge-ultimate-govee/blob/main/src/data/clients/RestClient.ts>
 
 const APP_VERSION: &str = "5.6.01";
+const ONE_DAY: Duration = Duration::from_secs(86400);
+const ONE_WEEK: Duration = Duration::from_secs(86400 * 7);
 
 fn user_agent() -> String {
     format!(
@@ -213,43 +215,61 @@ impl GoveeUndocumentedApi {
     }
 
     pub async fn get_scenes_for_device(sku: &str) -> anyhow::Result<Vec<LightEffectCategory>> {
-        let response = reqwest::Client::builder()
-            .timeout(Duration::from_secs(10))
-            .build()?
-            .request(
-                Method::GET,
-                "https://app2.govee.com/appsku/v1/light-effect-libraries?sku={sku}",
-            )
-            .header("appVersion", APP_VERSION)
-            .send()
-            .await?;
+        let key = format!("scenes-{sku}");
 
-        let status = response.status();
-        if !status.is_success() {
-            let body_bytes = response.bytes().await.with_context(|| {
-                format!(
-                    "request status {}: {}, and failed to read response body",
-                    status.as_u16(),
-                    status.canonical_reason().unwrap_or("")
-                )
-            })?;
-            anyhow::bail!(
-                "request status {}: {}. Response body: {}",
-                status.as_u16(),
-                status.canonical_reason().unwrap_or(""),
-                String::from_utf8_lossy(&body_bytes)
-            );
-        }
+        cache_get(
+            CacheGetOptions {
+                topic: "undoc-api",
+                key: &key,
+                soft_ttl: ONE_DAY,
+                hard_ttl: ONE_WEEK,
+                negative_ttl: Duration::from_secs(1),
+            },
+            async {
+                let response = reqwest::Client::builder()
+                    .timeout(Duration::from_secs(10))
+                    .build()?
+                    .request(
+                        Method::GET,
+                        format!(
+                            "https://app2.govee.com/appsku/v1/light-effect-libraries?sku={sku}"
+                        ),
+                    )
+                    .header("AppVersion", APP_VERSION)
+                    .header("User-Agent", user_agent())
+                    .send()
+                    .await?;
 
-        let resp: LightEffectLibraryResponse = json_body(response).await.with_context(|| {
-            format!(
-                "request status {}: {}",
-                status.as_u16(),
-                status.canonical_reason().unwrap_or("")
-            )
-        })?;
+                let status = response.status();
+                if !status.is_success() {
+                    let body_bytes = response.bytes().await.with_context(|| {
+                        format!(
+                            "request status {}: {}, and failed to read response body",
+                            status.as_u16(),
+                            status.canonical_reason().unwrap_or("")
+                        )
+                    })?;
+                    anyhow::bail!(
+                        "request status {}: {}. Response body: {}",
+                        status.as_u16(),
+                        status.canonical_reason().unwrap_or(""),
+                        String::from_utf8_lossy(&body_bytes)
+                    );
+                }
 
-        Ok(resp.data.categories)
+                let resp: LightEffectLibraryResponse =
+                    json_body(response).await.with_context(|| {
+                        format!(
+                            "request status {}: {}",
+                            status.as_u16(),
+                            status.canonical_reason().unwrap_or("")
+                        )
+                    })?;
+
+                Ok(resp.data.categories)
+            },
+        )
+        .await
     }
 
     pub async fn get_saved_one_click_shortcuts(
@@ -319,7 +339,7 @@ pub struct LightEffectLibraryCategoryList {
     pub support_speed: u8,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 #[serde(deny_unknown_fields)]
 pub struct LightEffectCategory {
@@ -328,7 +348,7 @@ pub struct LightEffectCategory {
     pub scenes: Vec<LightEffectScene>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 #[serde(deny_unknown_fields)]
 pub struct LightEffectScene {
@@ -348,7 +368,7 @@ pub struct LightEffectScene {
     pub create_time: u64,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 #[serde(deny_unknown_fields)]
 pub struct LightEffectEntry {
