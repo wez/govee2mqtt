@@ -34,6 +34,7 @@ pub enum SubCommand {
     ListHttp(commands::list_http::ListHttpCommand),
     List(commands::list::ListCommand),
     HttpControl(commands::http_control::HttpControlCommand),
+    Serve(commands::serve::ServeCommand),
 }
 
 impl Args {
@@ -44,6 +45,7 @@ impl Args {
             SubCommand::ListHttp(cmd) => cmd.run(self).await,
             SubCommand::HttpControl(cmd) => cmd.run(self).await,
             SubCommand::List(cmd) => cmd.run(self).await,
+            SubCommand::Serve(cmd) => cmd.run(self).await,
         }
     }
 }
