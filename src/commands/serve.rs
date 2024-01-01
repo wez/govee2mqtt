@@ -1,5 +1,5 @@
 use crate::lan_api::Client as LanClient;
-use crate::service::http::spawn_http_server;
+use crate::service::http::run_http_server;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
@@ -41,8 +41,12 @@ impl ServeCommand {
                 device.set_undoc_device_info(entry, room_name);
             }
 
+            // TODO: subscribe to AWS IoT mqtt
+
             state.set_undoc_client(client).await;
         }
+
+        // Now start discovery
 
         let options = args.lan_disco_args.to_disco_options();
         if !options.is_empty() {
@@ -69,10 +73,8 @@ impl ServeCommand {
             });
         }
 
-        spawn_http_server(state.clone(), self.http_port).await?;
+        // TODO: start advertising on local mqtt
 
-        tokio::time::sleep(Duration::from_secs(86400)).await; // FIXME: wait for other stuff
-
-        Ok(())
+        run_http_server(state.clone(), self.http_port).await
     }
 }

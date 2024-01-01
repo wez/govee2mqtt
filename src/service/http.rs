@@ -39,7 +39,7 @@ async fn list_devices(State(state): State<StateHandle>) -> Result<Response, Resp
     Ok(Json(devices).into_response())
 }
 
-pub async fn spawn_http_server(state: StateHandle, port: u16) -> anyhow::Result<()> {
+pub async fn run_http_server(state: StateHandle, port: u16) -> anyhow::Result<()> {
     let app = Router::new()
         .route("/api/devices", get(list_devices))
         .with_state(state);
@@ -47,11 +47,9 @@ pub async fn spawn_http_server(state: StateHandle, port: u16) -> anyhow::Result<
     let listener = tokio::net::TcpListener::bind(("0.0.0.0", port)).await?;
     let addr = listener.local_addr()?;
     log::info!("http server addr is {addr:?}");
-    tokio::spawn(async {
-        if let Err(err) = axum::serve(listener, app).await {
-            log::error!("http server stopped: {err:#}");
-        }
-    });
+    if let Err(err) = axum::serve(listener, app).await {
+        log::error!("http server stopped: {err:#}");
+    }
 
     Ok(())
 }
