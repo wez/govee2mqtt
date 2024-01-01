@@ -29,6 +29,7 @@ pub enum SubCommand {
     LanControl(commands::lan_control::LanControlCommand),
     LanDisco(commands::lan_disco::LanDiscoCommand),
     ListHttp(commands::list_http::ListHttpCommand),
+    List(commands::list::ListCommand),
     HttpControl(commands::http_control::HttpControlCommand),
 }
 
@@ -39,6 +40,7 @@ impl Args {
             SubCommand::LanDisco(cmd) => cmd.run(self).await,
             SubCommand::ListHttp(cmd) => cmd.run(self).await,
             SubCommand::HttpControl(cmd) => cmd.run(self).await,
+            SubCommand::List(cmd) => cmd.run(self).await,
         }
     }
 }

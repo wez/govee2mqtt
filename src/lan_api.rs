@@ -43,7 +43,7 @@ pub struct LanDiscoArguments {
     pub scan: Vec<IpAddr>,
 
     /// How long to wait for discovery to complete, in seconds
-    #[arg(long, default_value_t = 15, global = true)]
+    #[arg(long, default_value_t = 3, global = true)]
     pub disco_timeout: u64,
 }
 

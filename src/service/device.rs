@@ -1,6 +1,7 @@
 use crate::http_api::HttpDeviceInfo;
 use crate::lan_api::{DeviceStatus as LanDeviceStatus, LanDevice};
 use chrono::{DateTime, Utc};
+use std::net::IpAddr;
 
 #[derive(Default, Clone, Debug)]
 pub struct Device {
@@ -60,6 +61,10 @@ impl Device {
         let mut name = format!("{}_{}", self.sku, &self.id[18..]);
         name.retain(|c| c != ':');
         name
+    }
+
+    pub fn ip_addr(&self) -> Option<IpAddr> {
+        self.lan_device.as_ref().map(|device| device.ip)
     }
 
     /// Update the LAN device information
