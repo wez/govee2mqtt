@@ -49,6 +49,70 @@ impl GoveeUndocumentedApi {
     }
 
     #[allow(unused)]
+    pub async fn get_iot_key(&self, token: &str) -> anyhow::Result<IotKey> {
+        cache_get(
+            CacheGetOptions {
+                topic: "undoc-api",
+                key: "iot-key",
+                soft_ttl: ONE_DAY,
+                hard_ttl: ONE_WEEK,
+                negative_ttl: Duration::from_secs(1),
+            },
+            async {
+                let response = reqwest::Client::builder()
+                    .timeout(Duration::from_secs(30))
+                    .build()?
+                    .request(Method::GET, "https://app2.govee.com/app/v1/account/iot/key")
+                    .header("Authorization", format!("Bearer {token}"))
+                    .header("appVersion", APP_VERSION)
+                    .header("clientId", &self.client_id)
+                    .header("clientType", "1")
+                    .header("iotVersion", "0")
+                    .header("timestamp", ms_timestamp())
+                    .header("User-Agent", user_agent())
+                    .send()
+                    .await?;
+
+                let status = response.status();
+                if !status.is_success() {
+                    let body_bytes = response.bytes().await.with_context(|| {
+                        format!(
+                            "request status {}: {}, and failed to read response body",
+                            status.as_u16(),
+                            status.canonical_reason().unwrap_or("")
+                        )
+                    })?;
+                    anyhow::bail!(
+                        "request status {}: {}. Response body: {}",
+                        status.as_u16(),
+                        status.canonical_reason().unwrap_or(""),
+                        String::from_utf8_lossy(&body_bytes)
+                    );
+                }
+
+                #[derive(Deserialize, Debug)]
+                #[allow(non_snake_case, dead_code)]
+                struct Response {
+                    data: IotKey,
+                    message: String,
+                    status: u64,
+                }
+
+                let resp: Response = json_body(response).await.with_context(|| {
+                    format!(
+                        "request status {}: {}",
+                        status.as_u16(),
+                        status.canonical_reason().unwrap_or("")
+                    )
+                })?;
+
+                Ok(resp.data)
+            },
+        )
+        .await
+    }
+
+    #[allow(unused)]
     pub async fn login_account(&self) -> anyhow::Result<LoginAccountResponse> {
         let response = reqwest::Client::builder()
             .timeout(Duration::from_secs(30))
@@ -98,12 +162,11 @@ impl GoveeUndocumentedApi {
             status: u64,
         }
 
-        println!("Login result: {}", serde_json::to_string_pretty(&resp)?);
         Ok(resp.client)
     }
 
     #[allow(unused)]
-    pub async fn get_device_list(&self, token: &str) -> anyhow::Result<()> {
+    pub async fn get_device_list(&self, token: &str) -> anyhow::Result<DevicesResponse> {
         let response = reqwest::Client::builder()
             .timeout(Duration::from_secs(30))
             .build()?
@@ -138,7 +201,7 @@ impl GoveeUndocumentedApi {
             );
         }
 
-        let resp: JsonValue = json_body(response).await.with_context(|| {
+        let resp: DevicesResponse = json_body(response).await.with_context(|| {
             format!(
                 "request status {}: {}",
                 status.as_u16(),
@@ -146,13 +209,7 @@ impl GoveeUndocumentedApi {
             )
         })?;
 
-        std::fs::write(
-            "/tmp/govee-devices.json",
-            serde_json::to_string_pretty(&resp)?,
-        )?;
-
-        println!("{resp:#?}");
-        Ok(())
+        Ok(resp)
     }
 
     /// Login to community-api.govee.com and return the bearer token
@@ -321,6 +378,16 @@ impl GoveeUndocumentedApi {
 
         Ok(resp.data.components)
     }
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone)]
+#[serde(deny_unknown_fields)]
+#[serde(rename_all = "camelCase")]
+pub struct IotKey {
+    pub endpoint: String,
+    pub log: String,
+    pub p12: String,
+    pub p12_pass: String,
 }
 
 #[derive(Deserialize, Debug)]
@@ -528,23 +595,25 @@ pub struct OneClickIotRuleDevice {
 }
 
 #[derive(Deserialize, Serialize, Debug)]
-#[allow(non_snake_case, dead_code)]
+#[serde(rename_all = "camelCase")]
 pub struct LoginAccountResponse {
-    A: String,
-    B: String,
-    accountId: u64,
+    #[serde(rename = "A")]
+    pub a: String,
+    #[serde(rename = "B")]
+    pub b: String,
+    pub account_id: u64,
     /// this is the client id that we passed in
-    client: String,
-    isSavvyUser: bool,
-    refreshToken: Option<String>,
-    clientName: Option<String>,
-    pushToken: Option<String>,
-    versionCode: Option<String>,
-    versionName: Option<String>,
-    sysVersion: Option<String>,
-    token: String,
-    tokenExpireCycle: u32,
-    topic: String,
+    pub client: String,
+    pub is_savvy_user: bool,
+    pub refresh_token: Option<String>,
+    pub client_name: Option<String>,
+    pub push_token: Option<String>,
+    pub version_code: Option<String>,
+    pub version_name: Option<String>,
+    pub sys_version: Option<String>,
+    pub token: String,
+    pub token_expire_cycle: u32,
+    pub topic: String,
 }
 
 #[derive(Deserialize, Debug)]

@@ -1,9 +1,11 @@
 use crate::ble::GoveeBlePacket;
 use crate::lan_api::{Client, DiscoOptions};
 use crate::undoc_api::GoveeUndocumentedApi;
+use anyhow::Context;
 use clap_num::maybe_hex;
 use std::collections::BTreeMap;
 use std::net::IpAddr;
+use std::time::Duration;
 use uncased::Uncased;
 
 #[derive(clap::Parser, Debug)]
@@ -37,6 +39,7 @@ enum SubCommand {
         data: Vec<u8>,
     },
     ShowOneClick {},
+    Iot {},
     Scene {
         /// List available scenes
         #[arg(long)]
@@ -72,6 +75,64 @@ impl LanControlCommand {
                 device
                     .send_color_rgb(crate::lan_api::DeviceColor { r, g, b })
                     .await?;
+            }
+            SubCommand::Iot {} => {
+                let client = GoveeUndocumentedApi::new(
+                    std::env::var("GOVEE_EMAIL")?,
+                    std::env::var("GOVEE_PASSWORD")?,
+                );
+                let acct = client.login_account().await?;
+                println!("{acct:#?}");
+                let res = client.get_iot_key(&acct.token).await?;
+                println!("{res:#?}");
+
+                let key_bytes = data_encoding::BASE64.decode(res.p12.as_bytes())?;
+
+                let container = p12::PFX::parse(&key_bytes).context("PFX::parse")?;
+                for key in container.key_bags(&res.p12_pass).context("key_bags")? {
+                    let priv_key =
+                        openssl::pkey::PKey::private_key_from_der(&key).context("from_der")?;
+                    let pem = priv_key
+                        .private_key_to_pem_pkcs8()
+                        .context("to_pem_pkcs8")?;
+                    std::fs::write("/dev/shm/govee.iot.key", &pem)?;
+                }
+                for cert in container.cert_bags(&res.p12_pass).context("cert_bags")? {
+                    let cert = openssl::x509::X509::from_der(&cert).context("x509 from der")?;
+                    let pem = cert.to_pem().context("cert.to_pem")?;
+                    std::fs::write("/dev/shm/govee.iot.cert", &pem)?;
+                }
+
+                let client = mosquitto_rs::Client::with_id(
+                    &format!("AP/{account_id}/foo", account_id = acct.account_id),
+                    true,
+                )
+                .context("new client")?;
+                client
+                    .configure_tls(
+                        Some("AmazonRootCA1.pem"),
+                        None::<&std::path::Path>,
+                        Some("/dev/shm/govee.iot.cert"),
+                        Some("/dev/shm/govee.iot.key"),
+                        None,
+                    )
+                    .context("configure_tls")?;
+                let status = client
+                    .connect(&res.endpoint, 8883, Duration::from_secs(10), None)
+                    .await
+                    .context("connect")?;
+                println!("Connection: {status:?}");
+
+                let subscriptions = client.subscriber().expect("first and only");
+
+                client
+                    .subscribe(&acct.topic, mosquitto_rs::QoS::AtMostOnce)
+                    .await?;
+
+                while let Ok(msg) = subscriptions.recv().await {
+                    let payload = String::from_utf8_lossy(&msg.payload);
+                    println!("{} -> {payload}", msg.topic);
+                }
             }
             SubCommand::ShowOneClick {} => {
                 let client = GoveeUndocumentedApi::new(
