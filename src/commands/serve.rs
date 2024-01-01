@@ -1,9 +1,8 @@
-use crate::service::http::spawn_http_server;
 use crate::lan_api::Client as LanClient;
+use crate::service::http::spawn_http_server;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
-use tokio::time::Instant;
 
 #[derive(clap::Parser, Debug)]
 pub struct ServeCommand {
@@ -25,6 +24,8 @@ impl ServeCommand {
                 let mut device = state.device_mut(&info.sku, &info.device).await;
                 device.set_http_device_info(info);
             }
+
+            state.set_platform_client(client).await;
         }
         if let Ok(client) = args.undoc_args.api_client() {
             log::info!("Querying undocumented API for device + room list");
@@ -39,18 +40,20 @@ impl ServeCommand {
                 let room_name = group_by_id.get(&entry.group_id).map(|name| name.as_str());
                 device.set_undoc_device_info(entry, room_name);
             }
+
+            state.set_undoc_client(client).await;
         }
 
         let options = args.lan_disco_args.to_disco_options();
         if !options.is_empty() {
             log::info!("Starting LAN discovery");
-            let deadline = Instant::now() + Duration::from_secs(args.lan_disco_args.disco_timeout);
             let state = state.clone();
             let (client, mut scan) = LanClient::new(options).await?;
+
+            state.set_lan_client(client.clone()).await;
+
             tokio::spawn(async move {
-                while let Ok(Some(lan_device)) =
-                    tokio::time::timeout_at(deadline, scan.recv()).await
-                {
+                while let Some(lan_device) = scan.recv().await {
                     state
                         .device_mut(&lan_device.sku, &lan_device.device)
                         .await

@@ -243,6 +243,7 @@ struct ClientInner {
     mux: Mutex<Vec<ClientListener>>,
 }
 
+#[derive(Clone)]
 pub struct Client {
     inner: Arc<ClientInner>,
 }

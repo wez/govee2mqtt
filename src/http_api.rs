@@ -45,6 +45,7 @@ impl GoveeApiArguments {
     }
 }
 
+#[derive(Clone)]
 pub struct GoveeApiClient {
     key: String,
 }

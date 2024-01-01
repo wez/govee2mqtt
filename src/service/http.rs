@@ -13,7 +13,8 @@ fn generic<T: ToString + std::fmt::Display>(err: T) -> Response {
 }
 
 async fn list_devices(State(state): State<StateHandle>) -> Result<Response, Response> {
-    let devices = state.devices().await;
+    let mut devices = state.devices().await;
+    devices.sort_by_key(|d| (d.room_name().map(|name| name.to_string()), d.name()));
 
     #[derive(Serialize)]
     struct DeviceItem {

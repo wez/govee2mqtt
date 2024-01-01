@@ -85,6 +85,7 @@ impl UndocApiArguments {
     }
 }
 
+#[derive(Clone)]
 pub struct GoveeUndocumentedApi {
     email: String,
     password: String,
