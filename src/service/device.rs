@@ -18,6 +18,15 @@ pub struct Device {
 
     pub http_device_info: Option<HttpDeviceInfo>,
     pub last_http_device_update: Option<DateTime<Utc>>,
+
+    pub undoc_device_info: Option<UndocDeviceInfo>,
+    pub last_undoc_device_info_update: Option<DateTime<Utc>>,
+}
+
+#[derive(Debug, Clone)]
+pub struct UndocDeviceInfo {
+    pub room_name: Option<String>,
+    pub entry: crate::undoc_api::DeviceEntry,
 }
 
 impl Device {
@@ -53,6 +62,13 @@ impl Device {
         None
     }
 
+    pub fn room_name(&self) -> Option<&str> {
+        if let Some(info) = &self.undoc_device_info {
+            return info.room_name.as_deref();
+        }
+        None
+    }
+
     /// compute a name from the SKU and the last couple of bytes from the
     /// device id, similar to the device name that would show up in a BLE
     /// scan, or the default name for the device if not otherwise configured
@@ -82,6 +98,18 @@ impl Device {
     pub fn set_http_device_info(&mut self, info: HttpDeviceInfo) {
         self.http_device_info.replace(info);
         self.last_http_device_update.replace(Utc::now());
+    }
+
+    pub fn set_undoc_device_info(
+        &mut self,
+        entry: crate::undoc_api::DeviceEntry,
+        room_name: Option<&str>,
+    ) {
+        self.undoc_device_info.replace(UndocDeviceInfo {
+            entry,
+            room_name: room_name.map(|s| s.to_string()),
+        });
+        self.last_undoc_device_info_update.replace(Utc::now());
     }
 }
 

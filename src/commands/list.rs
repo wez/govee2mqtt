@@ -1,4 +1,5 @@
 use crate::lan_api::Client as LanClient;
+use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::time::Instant;
@@ -53,24 +54,41 @@ impl ListCommand {
                 device.set_http_device_info(info);
             }
         }
+        if let Ok(client) = args.undoc_args.api_client() {
+            let acct = client.login_account().await?;
+            let info = client.get_device_list(&acct.token).await?;
+            let mut group_by_id = HashMap::new();
+            for group in info.groups {
+                group_by_id.insert(group.group_id, group.group_name);
+            }
+            for entry in info.devices {
+                let mut device = state.device_mut(&entry.sku, &entry.device).await;
+                let room_name = group_by_id.get(&entry.group_id).map(|name| name.as_str());
+                device.set_undoc_device_info(entry, room_name);
+            }
+        }
 
         if let Some(disco) = disco {
             disco.await?;
         }
 
         let mut devices = state.devices().await;
-        devices.sort_by_key(|d| d.name());
+        devices.sort_by_key(|d| (d.room_name().map(|name| name.to_string()), d.name()));
 
         for d in devices {
             println!(
-                "{sku:<7} {id} {ip:<15} {name}",
+                "{sku:<7} {id} {ip:<15} {name} {room}",
                 sku = d.sku,
                 id = d.id,
                 ip = d
                     .ip_addr()
                     .map(|ip| ip.to_string())
                     .unwrap_or(String::new()),
-                name = d.name()
+                name = d.name(),
+                room = d
+                    .room_name()
+                    .map(|room| format!("({room})"))
+                    .unwrap_or_else(|| String::new()),
             );
         }
 

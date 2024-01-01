@@ -1,6 +1,7 @@
 use crate::cache::{cache_get, CacheGetOptions};
 use crate::http_api::json_body;
 use crate::lan_api::boolean_int;
+use crate::opt_env_var;
 use anyhow::Context;
 use reqwest::Method;
 use serde::de::DeserializeOwned;
@@ -27,6 +28,61 @@ fn ms_timestamp() -> String {
         .expect("unix epoch in the past")
         .as_millis()
         .to_string()
+}
+
+#[derive(clap::Parser, Debug)]
+pub struct UndocApiArguments {
+    /// The email address you registered with Govee.
+    /// If not passed here, it will be read from
+    /// the GOVEE_EMAIL environment variable.
+    #[arg(long, global = true)]
+    pub govee_email: Option<String>,
+
+    /// The password for your Govee account.
+    /// If not passed here, it will be read from
+    /// the GOVEE_PASSWORD environment variable.
+    #[arg(long, global = true)]
+    pub govee_password: Option<String>,
+}
+
+impl UndocApiArguments {
+    pub fn opt_email(&self) -> anyhow::Result<Option<String>> {
+        match &self.govee_email {
+            Some(key) => Ok(Some(key.to_string())),
+            None => opt_env_var("GOVEE_EMAIL"),
+        }
+    }
+
+    pub fn email(&self) -> anyhow::Result<String> {
+        self.opt_email()?.ok_or_else(|| {
+            anyhow::anyhow!(
+                "Please specify the govee account email either via the \
+                --govee-email parameter or by setting $GOVEE_EMAIL"
+            )
+        })
+    }
+
+    pub fn opt_password(&self) -> anyhow::Result<Option<String>> {
+        match &self.govee_password {
+            Some(key) => Ok(Some(key.to_string())),
+            None => opt_env_var("GOVEE_PASSWORD"),
+        }
+    }
+
+    pub fn password(&self) -> anyhow::Result<String> {
+        self.opt_password()?.ok_or_else(|| {
+            anyhow::anyhow!(
+                "Please specify the govee account password either via the \
+                --govee-password parameter or by setting $GOVEE_PASSWORD"
+            )
+        })
+    }
+
+    pub fn api_client(&self) -> anyhow::Result<GoveeUndocumentedApi> {
+        let email = self.email()?;
+        let password = self.password()?;
+        Ok(GoveeUndocumentedApi::new(email, password))
+    }
 }
 
 pub struct GoveeUndocumentedApi {
@@ -56,7 +112,7 @@ impl GoveeUndocumentedApi {
                 key: "iot-key",
                 soft_ttl: ONE_DAY,
                 hard_ttl: ONE_WEEK,
-                negative_ttl: Duration::from_secs(1),
+                negative_ttl: Duration::from_secs(10),
             },
             async {
                 let response = reqwest::Client::builder()
@@ -112,60 +168,70 @@ impl GoveeUndocumentedApi {
         .await
     }
 
-    #[allow(unused)]
     pub async fn login_account(&self) -> anyhow::Result<LoginAccountResponse> {
-        let response = reqwest::Client::builder()
-            .timeout(Duration::from_secs(30))
-            .build()?
-            .request(
-                Method::POST,
-                "https://app2.govee.com/account/rest/account/v1/login",
-            )
-            .json(&serde_json::json!({
-                "email": self.email,
-                "password": self.password,
-                "client": &self.client_id,
-            }))
-            .send()
-            .await?;
+        cache_get(
+            CacheGetOptions {
+                topic: "undoc-api",
+                key: "account-info",
+                soft_ttl: ONE_DAY,
+                hard_ttl: ONE_WEEK,
+                negative_ttl: Duration::from_secs(10),
+            },
+            async {
+                let response = reqwest::Client::builder()
+                    .timeout(Duration::from_secs(30))
+                    .build()?
+                    .request(
+                        Method::POST,
+                        "https://app2.govee.com/account/rest/account/v1/login",
+                    )
+                    .json(&serde_json::json!({
+                        "email": self.email,
+                        "password": self.password,
+                        "client": &self.client_id,
+                    }))
+                    .send()
+                    .await?;
 
-        let status = response.status();
-        if !status.is_success() {
-            let body_bytes = response.bytes().await.with_context(|| {
-                format!(
-                    "request status {}: {}, and failed to read response body",
-                    status.as_u16(),
-                    status.canonical_reason().unwrap_or("")
-                )
-            })?;
-            anyhow::bail!(
-                "request status {}: {}. Response body: {}",
-                status.as_u16(),
-                status.canonical_reason().unwrap_or(""),
-                String::from_utf8_lossy(&body_bytes)
-            );
-        }
+                let status = response.status();
+                if !status.is_success() {
+                    let body_bytes = response.bytes().await.with_context(|| {
+                        format!(
+                            "request status {}: {}, and failed to read response body",
+                            status.as_u16(),
+                            status.canonical_reason().unwrap_or("")
+                        )
+                    })?;
+                    anyhow::bail!(
+                        "request status {}: {}. Response body: {}",
+                        status.as_u16(),
+                        status.canonical_reason().unwrap_or(""),
+                        String::from_utf8_lossy(&body_bytes)
+                    );
+                }
 
-        let resp: Response = json_body(response).await.with_context(|| {
-            format!(
-                "request status {}: {}",
-                status.as_u16(),
-                status.canonical_reason().unwrap_or("")
-            )
-        })?;
+                let resp: Response = json_body(response).await.with_context(|| {
+                    format!(
+                        "request status {}: {}",
+                        status.as_u16(),
+                        status.canonical_reason().unwrap_or("")
+                    )
+                })?;
 
-        #[derive(Deserialize, Serialize, Debug)]
-        #[allow(non_snake_case, dead_code)]
-        struct Response {
-            client: LoginAccountResponse,
-            message: String,
-            status: u64,
-        }
+                #[derive(Deserialize, Serialize, Debug)]
+                #[allow(non_snake_case, dead_code)]
+                struct Response {
+                    client: LoginAccountResponse,
+                    message: String,
+                    status: u64,
+                }
 
-        Ok(resp.client)
+                Ok(resp.client)
+            },
+        )
+        .await
     }
 
-    #[allow(unused)]
     pub async fn get_device_list(&self, token: &str) -> anyhow::Result<DevicesResponse> {
         let response = reqwest::Client::builder()
             .timeout(Duration::from_secs(30))
@@ -594,7 +660,7 @@ pub struct OneClickIotRuleDevice {
     pub wifi_hard_version: String,
 }
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct LoginAccountResponse {
     #[serde(rename = "A")]
@@ -632,7 +698,7 @@ pub struct GroupEntry {
     pub group_name: String,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 #[serde(deny_unknown_fields)]
 pub struct DeviceEntry {
@@ -652,7 +718,7 @@ pub struct DeviceEntry {
     pub version_hard: String,
     pub version_soft: String,
 }
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 #[serde(deny_unknown_fields)]
 pub struct DeviceEntryExt {
@@ -664,7 +730,7 @@ pub struct DeviceEntryExt {
     pub last_device_data: LastDeviceData,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 #[serde(deny_unknown_fields)]
 pub struct DeviceSettings {
@@ -697,7 +763,7 @@ pub struct DeviceSettings {
     pub play_state: bool,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 #[serde(deny_unknown_fields)]
 pub struct ExtResources {
@@ -708,7 +774,7 @@ pub struct ExtResources {
     pub ic: u32,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 #[serde(deny_unknown_fields)]
 pub struct LastDeviceData {

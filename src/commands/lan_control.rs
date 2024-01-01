@@ -52,7 +52,7 @@ enum SubCommand {
 }
 
 impl LanControlCommand {
-    pub async fn run(&self, _args: &crate::Args) -> anyhow::Result<()> {
+    pub async fn run(&self, args: &crate::Args) -> anyhow::Result<()> {
         let (client, _scan) = Client::new(DiscoOptions::default()).await?;
 
         let device = client.scan_ip(self.ip).await?;
@@ -77,10 +77,7 @@ impl LanControlCommand {
                     .await?;
             }
             SubCommand::Iot {} => {
-                let client = GoveeUndocumentedApi::new(
-                    std::env::var("GOVEE_EMAIL")?,
-                    std::env::var("GOVEE_PASSWORD")?,
-                );
+                let client = args.undoc_args.api_client()?;
                 let acct = client.login_account().await?;
                 println!("{acct:#?}");
                 let res = client.get_iot_key(&acct.token).await?;
@@ -135,10 +132,7 @@ impl LanControlCommand {
                 }
             }
             SubCommand::ShowOneClick {} => {
-                let client = GoveeUndocumentedApi::new(
-                    std::env::var("GOVEE_EMAIL")?,
-                    std::env::var("GOVEE_PASSWORD")?,
-                );
+                let client = args.undoc_args.api_client()?;
                 let token = client.login_community().await?;
                 let res = client.get_saved_one_click_shortcuts(&token).await?;
                 println!("{res:#?}");
