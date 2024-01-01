@@ -1,5 +1,4 @@
 use crate::lan_api::Client;
-use std::collections::HashSet;
 use tokio::time::{Duration, Instant};
 
 #[derive(clap::Parser, Debug)]
@@ -16,12 +15,17 @@ impl LanDiscoCommand {
 
         let deadline = Instant::now() + Duration::from_secs(args.lan_disco_args.disco_timeout);
 
-        let mut devices = HashSet::new();
+        let state = crate::service::state::State::new();
 
-        while let Ok(Some(device)) = tokio::time::timeout_at(deadline, scan.recv()).await {
-            if !devices.contains(&device) {
-                let status = match client.query_status(&device).await {
+        while let Ok(Some(lan_device)) = tokio::time::timeout_at(deadline, scan.recv()).await {
+            if !state.device_by_id(&lan_device.device).await.is_some() {
+                let mut device = state.device_mut(&lan_device.sku, &lan_device.device).await;
+
+                device.set_lan_device(lan_device.clone());
+
+                let status = match client.query_status(&lan_device).await {
                     Ok(status) => {
+                        device.set_lan_device_status(status.clone());
                         if status.on {
                             format!(
                                 "{pct}% #{r:02x}{g:02x}{b:02x} {k}k",
@@ -39,13 +43,11 @@ impl LanDiscoCommand {
                 };
 
                 println!(
-                    "{ip:<15} {sku:<7} {id} {status}",
-                    ip = device.ip,
-                    sku = device.sku,
-                    id = device.device
+                    "{ip:<15} {name:<10} {id} {status}",
+                    ip = lan_device.ip,
+                    name = device.computed_name(),
+                    id = device.id,
                 );
-
-                devices.insert(device);
             }
         }
         Ok(())
