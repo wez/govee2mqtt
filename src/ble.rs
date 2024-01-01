@@ -20,6 +20,7 @@ impl GoveeBlePacket {
     }
 
     /// Compute a Power On/Off packet
+    #[allow(unused)]
     pub fn power(on: bool) -> Self {
         Self(vec![0x33, 0x01, if on { 1 } else { 0x00 }]).finish()
     }

@@ -1,7 +1,6 @@
 use crate::cache::{cache_get, CacheGetOptions};
 use crate::http_api::json_body;
 use crate::lan_api::boolean_int;
-use crate::opt_env_var;
 use anyhow::Context;
 use reqwest::Method;
 use serde::de::DeserializeOwned;
@@ -49,6 +48,7 @@ impl GoveeUndocumentedApi {
         }
     }
 
+    #[allow(unused)]
     pub async fn login_account(&self) -> anyhow::Result<LoginAccountResponse> {
         let response = reqwest::Client::builder()
             .timeout(Duration::from_secs(30))
@@ -102,6 +102,7 @@ impl GoveeUndocumentedApi {
         Ok(resp.client)
     }
 
+    #[allow(unused)]
     pub async fn get_device_list(&self, token: &str) -> anyhow::Result<()> {
         let response = reqwest::Client::builder()
             .timeout(Duration::from_secs(30))

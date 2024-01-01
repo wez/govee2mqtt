@@ -74,14 +74,13 @@ impl LanControlCommand {
                     .await?;
             }
             SubCommand::ShowOneClick {} => {
-                use crate::undoc_api::GoveeUndocumentedApi;
                 let client = GoveeUndocumentedApi::new(
                     std::env::var("GOVEE_EMAIL")?,
                     std::env::var("GOVEE_PASSWORD")?,
                 );
                 let token = client.login_community().await?;
-                println!("{token:?}");
-                client.get_saved_one_click_shortcuts(&token).await?;
+                let res = client.get_saved_one_click_shortcuts(&token).await?;
+                println!("{res:#?}");
             }
             SubCommand::Scene { list, scene } => {
                 let mut scene_code_by_name = BTreeMap::new();
