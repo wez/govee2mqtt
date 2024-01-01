@@ -23,6 +23,12 @@ pub struct Device {
     pub last_undoc_device_info_update: Option<DateTime<Utc>>,
 }
 
+impl std::fmt::Display for Device {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(fmt, "{} ({})", self.name(), self.id)
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct UndocDeviceInfo {
     pub room_name: Option<String>,

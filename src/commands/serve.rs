@@ -2,7 +2,6 @@ use crate::lan_api::Client as LanClient;
 use crate::service::http::run_http_server;
 use std::collections::HashMap;
 use std::sync::Arc;
-use std::time::Duration;
 
 #[derive(clap::Parser, Debug)]
 pub struct ServeCommand {
