@@ -26,6 +26,10 @@ impl State {
         })
     }
 
+    pub async fn devices(&self) -> Vec<Device> {
+        self.devices_by_id.lock().await.values().cloned().collect()
+    }
+
     /// Returns an immutable copy of the specified Device
     pub async fn device_by_id(&self, id: &str) -> Option<Device> {
         let devices = self.devices_by_id.lock().await;

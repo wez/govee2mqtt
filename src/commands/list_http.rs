@@ -4,21 +4,22 @@ pub struct ListHttpCommand {}
 impl ListHttpCommand {
     pub async fn run(&self, args: &crate::Args) -> anyhow::Result<()> {
         let client = args.api_args.api_client()?;
-        let devices = client.get_devices().await?;
-        for d in devices {
+        let state = crate::service::state::State::new();
+
+        for info in client.get_devices().await? {
+            let mut device = state.device_mut(&info.sku, &info.device).await;
+            device.set_http_device_info(info);
+        }
+
+        for d in state.devices().await {
             println!(
                 "{sku:<7} {id} {name}",
                 sku = d.sku,
-                id = d.device,
-                name = d.device_name
+                id = d.id,
+                name = d.name()
             );
-
-            /*
-            let state = client.get_device_state(&d).await?;
-            log::info!("state: {state:#?}");
-            break;
-            */
         }
+
         Ok(())
     }
 }

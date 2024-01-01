@@ -1,3 +1,4 @@
+use crate::http_api::HttpDeviceInfo;
 use crate::lan_api::{DeviceStatus as LanDeviceStatus, LanDevice};
 use chrono::{DateTime, Utc};
 use std::net::IpAddr;
@@ -7,8 +8,6 @@ pub struct Device {
     pub sku: String,
     pub id: String,
 
-    /// Name assigned via the Govee App
-    pub govee_name: Option<String>,
     /// The name of the group assigned in the Govee App
     pub room: Option<String>,
 
@@ -19,7 +18,12 @@ pub struct Device {
     /// or explicit probing by IP address
     pub lan_device: Option<LanDevice>,
     pub last_lan_device_update: Option<DateTime<Utc>>,
+
     pub lan_device_status: Option<LanDeviceStatus>,
+    pub last_lan_device_status_update: Option<DateTime<Utc>>,
+
+    pub http_device_info: Option<HttpDeviceInfo>,
+    pub last_http_device_update: Option<DateTime<Utc>>,
 }
 
 impl Device {
@@ -41,10 +45,18 @@ impl Device {
     /// the default name for the device if not otherwise configured in the
     /// Govee App.
     pub fn name(&self) -> String {
-        match &self.govee_name {
-            Some(name) => name.to_string(),
-            None => self.computed_name(),
+        if let Some(name) = self.govee_name() {
+            return name.to_string();
         }
+        self.computed_name()
+    }
+
+    /// Returns the name defined for the device in the Govee App
+    pub fn govee_name(&self) -> Option<&str> {
+        if let Some(info) = &self.http_device_info {
+            return Some(&info.device_name);
+        }
+        None
     }
 
     /// compute a name from the SKU and the last couple of bytes from the
@@ -55,11 +67,6 @@ impl Device {
         let mut name = format!("{}_{}", self.sku, &self.id[18..]);
         name.retain(|c| c != ':');
         name
-    }
-
-    /// Sets the assigned name
-    pub fn set_govee_name<N: Into<String>>(&mut self, name: N) {
-        self.govee_name.replace(name.into());
     }
 
     /// Sets the room
@@ -81,7 +88,12 @@ impl Device {
     /// Update the LAN device status information
     pub fn set_lan_device_status(&mut self, status: LanDeviceStatus) {
         self.lan_device_status.replace(status);
-        self.last_lan_device_update.replace(Utc::now());
+        self.last_lan_device_status_update.replace(Utc::now());
+    }
+
+    pub fn set_http_device_info(&mut self, info: HttpDeviceInfo) {
+        self.http_device_info.replace(info);
+        self.last_http_device_update.replace(Utc::now());
     }
 }
 
