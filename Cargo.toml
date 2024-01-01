@@ -29,7 +29,7 @@ data-encoding = "2.5.0"
 clap-num = "1.0.2"
 uuid = { version = "1.6.1", features = ["v5"] }
 uncased = "0.9.9"
-mosquitto-rs = "0.7.0"
+mosquitto-rs = "0.8.0"
 openssl = "0.10.62"
 p12 = "0.6.3"
 
