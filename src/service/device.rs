@@ -1,18 +1,11 @@
 use crate::http_api::HttpDeviceInfo;
 use crate::lan_api::{DeviceStatus as LanDeviceStatus, LanDevice};
 use chrono::{DateTime, Utc};
-use std::net::IpAddr;
 
 #[derive(Default, Clone, Debug)]
 pub struct Device {
     pub sku: String,
     pub id: String,
-
-    /// The name of the group assigned in the Govee App
-    pub room: Option<String>,
-
-    /// The IP address as found via LAN discovery or other means
-    pub ip_addr: Option<IpAddr>,
 
     /// Probed LAN device information, found either via discovery
     /// or explicit probing by IP address
@@ -67,16 +60,6 @@ impl Device {
         let mut name = format!("{}_{}", self.sku, &self.id[18..]);
         name.retain(|c| c != ':');
         name
-    }
-
-    /// Sets the room
-    pub fn set_room<N: Into<String>>(&mut self, room: N) {
-        self.room.replace(room.into());
-    }
-
-    /// Sets the IP address
-    pub fn set_ip_addr(&mut self, ip_addr: IpAddr) {
-        self.ip_addr.replace(ip_addr);
     }
 
     /// Update the LAN device information
