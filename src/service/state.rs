@@ -96,12 +96,26 @@ impl State {
             return lan_dev.send_turn(on).await;
         }
 
+        if let Some(client) = self.get_platform_client().await {
+            if let Some(info) = &device.http_device_info {
+                client.set_power_state(info, on).await?;
+                return Ok(());
+            }
+        }
+
         anyhow::bail!("Unable to control power state for {device}");
     }
 
     pub async fn device_set_brightness(&self, device: &Device, percent: u8) -> anyhow::Result<()> {
         if let Some(lan_dev) = &device.lan_device {
             return lan_dev.send_brightness(percent).await;
+        }
+
+        if let Some(client) = self.get_platform_client().await {
+            if let Some(info) = &device.http_device_info {
+                client.set_brightness(info, percent).await?;
+                return Ok(());
+            }
         }
         anyhow::bail!("Unable to control brightness for {device}");
     }
@@ -113,6 +127,13 @@ impl State {
     ) -> anyhow::Result<()> {
         if let Some(lan_dev) = &device.lan_device {
             return lan_dev.send_color_temperature_kelvin(kelvin).await;
+        }
+
+        if let Some(client) = self.get_platform_client().await {
+            if let Some(info) = &device.http_device_info {
+                client.set_color_temperature(info, kelvin).await?;
+                return Ok(());
+            }
         }
         anyhow::bail!("Unable to control color temperature for {device}");
     }
@@ -128,6 +149,13 @@ impl State {
             return lan_dev
                 .send_color_rgb(crate::lan_api::DeviceColor { r, g, b })
                 .await;
+        }
+
+        if let Some(client) = self.get_platform_client().await {
+            if let Some(info) = &device.http_device_info {
+                client.set_color_rgb(info, r, g, b).await?;
+                return Ok(());
+            }
         }
         anyhow::bail!("Unable to control color for {device}");
     }

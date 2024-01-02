@@ -1,4 +1,4 @@
-use crate::http_api::{DeviceParameters, EnumOption, IntegerRange};
+use crate::http_api::{DeviceParameters, EnumOption};
 use uncased::Uncased;
 
 #[derive(clap::Parser, Debug)]
@@ -10,7 +10,7 @@ pub struct HttpControlCommand {
     cmd: SubCommand,
 }
 
-#[derive(clap::Parser, Debug)]
+#[derive(clap::Parser, Debug, PartialEq)]
 enum SubCommand {
     On,
     Off,
@@ -59,51 +59,19 @@ impl HttpControlCommand {
 
         match &self.cmd {
             SubCommand::On | SubCommand::Off => {
-                let cap = device
-                    .capability_by_instance("powerSwitch")
-                    .ok_or_else(|| anyhow::anyhow!("device has no powerSwitch"))?;
-
-                let value = cap
-                    .enum_parameter_by_name(match &self.cmd {
-                        SubCommand::On => "on",
-                        SubCommand::Off => "off",
-                        _ => unreachable!(),
-                    })
-                    .ok_or_else(|| anyhow::anyhow!("powerSwitch has no on/off!?"))?;
-
-                println!("value: {value}");
-
-                let result = client.control_device(&device, &cap, value).await?;
+                let result = client
+                    .set_power_state(&device, self.cmd == SubCommand::On)
+                    .await?;
                 println!("{result:#?}");
             }
 
             SubCommand::Brightness { percent } => {
-                let cap = device
-                    .capability_by_instance("brightness")
-                    .ok_or_else(|| anyhow::anyhow!("device has no brightness"))?;
-                let value = match &cap.parameters {
-                    DeviceParameters::Integer {
-                        range: IntegerRange { min, max, .. },
-                        ..
-                    } => (*percent as u32).max(*min).min(*max),
-                    _ => anyhow::bail!("unexpected parameter type for brightness"),
-                };
-                let result = client.control_device(&device, &cap, value).await?;
+                let result = client.set_brightness(&device, *percent).await?;
                 println!("{result:#?}");
             }
 
             SubCommand::Temperature { kelvin } => {
-                let cap = device
-                    .capability_by_instance("colorTemperatureK")
-                    .ok_or_else(|| anyhow::anyhow!("device has no colorTemperatureK"))?;
-                let value = match &cap.parameters {
-                    DeviceParameters::Integer {
-                        range: IntegerRange { min, max, .. },
-                        ..
-                    } => (*kelvin).max(*min).min(*max),
-                    _ => anyhow::bail!("unexpected parameter type for colorTemperatureK"),
-                };
-                let result = client.control_device(&device, &cap, value).await?;
+                let result = client.set_color_temperature(&device, *kelvin).await?;
                 println!("{result:#?}");
             }
 

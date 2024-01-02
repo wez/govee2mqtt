@@ -205,6 +205,72 @@ impl GoveeApiClient {
         }
         anyhow::bail!("Scene '{scene}' is not available for this device");
     }
+
+    pub async fn set_power_state(
+        &self,
+        device: &HttpDeviceInfo,
+        on: bool,
+    ) -> anyhow::Result<ControlDeviceResponseCapability> {
+        let cap = device
+            .capability_by_instance("powerSwitch")
+            .ok_or_else(|| anyhow::anyhow!("device has no powerSwitch"))?;
+
+        let value = cap
+            .enum_parameter_by_name(if on { "on" } else { "off" })
+            .ok_or_else(|| anyhow::anyhow!("powerSwitch has no on/off!?"))?;
+
+        self.control_device(&device, &cap, value).await
+    }
+
+    pub async fn set_brightness(
+        &self,
+        device: &HttpDeviceInfo,
+        percent: u8,
+    ) -> anyhow::Result<ControlDeviceResponseCapability> {
+        let cap = device
+            .capability_by_instance("brightness")
+            .ok_or_else(|| anyhow::anyhow!("device has no brightness"))?;
+        let value = match &cap.parameters {
+            DeviceParameters::Integer {
+                range: IntegerRange { min, max, .. },
+                ..
+            } => (percent as u32).max(*min).min(*max),
+            _ => anyhow::bail!("unexpected parameter type for brightness"),
+        };
+        self.control_device(&device, &cap, value).await
+    }
+
+    pub async fn set_color_temperature(
+        &self,
+        device: &HttpDeviceInfo,
+        kelvin: u32,
+    ) -> anyhow::Result<ControlDeviceResponseCapability> {
+        let cap = device
+            .capability_by_instance("colorTemperatureK")
+            .ok_or_else(|| anyhow::anyhow!("device has no colorTemperatureK"))?;
+        let value = match &cap.parameters {
+            DeviceParameters::Integer {
+                range: IntegerRange { min, max, .. },
+                ..
+            } => (kelvin).max(*min).min(*max),
+            _ => anyhow::bail!("unexpected parameter type for colorTemperatureK"),
+        };
+        self.control_device(&device, &cap, value).await
+    }
+
+    pub async fn set_color_rgb(
+        &self,
+        device: &HttpDeviceInfo,
+        r: u8,
+        g: u8,
+        b: u8,
+    ) -> anyhow::Result<ControlDeviceResponseCapability> {
+        let cap = device
+            .capability_by_instance("colorRgb")
+            .ok_or_else(|| anyhow::anyhow!("device has no colorRgb"))?;
+        let value = ((r as u32) << 16) | ((g as u32) << 8) | (b as u32);
+        self.control_device(&device, &cap, value).await
+    }
 }
 
 #[derive(Deserialize, Serialize, Debug)]
