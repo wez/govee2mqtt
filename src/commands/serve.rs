@@ -1,3 +1,4 @@
+use crate::version_info::govee_version;
 use crate::lan_api::Client as LanClient;
 use crate::service::device::Device;
 use crate::service::http::run_http_server;
@@ -103,6 +104,7 @@ async fn periodic_state_poll(state: StateHandle) -> anyhow::Result<()> {
 
 impl ServeCommand {
     pub async fn run(&self, args: &crate::Args) -> anyhow::Result<()> {
+        log::info!("Starting service. version {}", govee_version());
         let state = Arc::new(crate::service::state::State::new());
 
         // First, use the HTTP APIs to determine the list of devices and
