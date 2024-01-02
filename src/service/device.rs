@@ -40,6 +40,9 @@ pub struct DeviceState {
     /// Whether the device is powered on
     pub on: bool,
 
+    /// Whether the device is connected to the Govee cloud
+    pub online: Option<bool>,
+
     /// The color temperature in kelvin
     pub kelvin: u32,
 
@@ -154,6 +157,7 @@ impl Device {
 
         Some(DeviceState {
             on: status.on,
+            online: None,
             brightness: status.brightness,
             color: status.color,
             kelvin: status.color_temperature_kelvin,
@@ -166,6 +170,7 @@ impl Device {
         let updated = self.last_http_device_state_update?;
         let state = self.http_device_state.as_ref()?;
 
+        let mut online = None;
         let mut on = false;
         let mut brightness = 0;
         let mut color = DeviceColor::default();
@@ -174,6 +179,10 @@ impl Device {
         #[derive(serde::Deserialize)]
         struct IntegerValueState {
             value: u32,
+        }
+        #[derive(serde::Deserialize)]
+        struct BoolValueState {
+            value: bool,
         }
 
         for cap in &state.capabilities {
@@ -197,11 +206,16 @@ impl Device {
                     }
                     _ => {}
                 }
+            } else if cap.instance == "online" {
+                if let Ok(value) = serde_json::from_value::<BoolValueState>(cap.state.clone()) {
+                    online.replace(value.value);
+                }
             }
         }
 
         Some(DeviceState {
             on,
+            online,
             brightness,
             color,
             kelvin,
