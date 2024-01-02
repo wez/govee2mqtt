@@ -193,7 +193,7 @@ pub fn boolean_int<'de, D: serde::de::Deserializer<'de>>(
     })
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct DeviceStatus {
     #[serde(rename = "onOff", deserialize_with = "boolean_int")]
     pub on: bool,

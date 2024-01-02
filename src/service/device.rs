@@ -1,5 +1,5 @@
-use crate::platform_api::{HttpDeviceInfo, HttpDeviceState};
 use crate::lan_api::{DeviceColor, DeviceStatus as LanDeviceStatus, LanDevice};
+use crate::platform_api::{HttpDeviceInfo, HttpDeviceState};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::net::IpAddr;
@@ -25,6 +25,9 @@ pub struct Device {
 
     pub undoc_device_info: Option<UndocDeviceInfo>,
     pub last_undoc_device_info_update: Option<DateTime<Utc>>,
+
+    pub iot_device_status: Option<LanDeviceStatus>,
+    pub last_iot_device_status_update: Option<DateTime<Utc>>,
 }
 
 impl std::fmt::Display for Device {
@@ -129,6 +132,11 @@ impl Device {
         self.last_lan_device_status_update.replace(Utc::now());
     }
 
+    pub fn set_iot_device_status(&mut self, status: LanDeviceStatus) {
+        self.iot_device_status.replace(status);
+        self.last_iot_device_status_update.replace(Utc::now());
+    }
+
     pub fn set_http_device_info(&mut self, info: HttpDeviceInfo) {
         self.http_device_info.replace(info);
         self.last_http_device_update.replace(Utc::now());
@@ -149,6 +157,21 @@ impl Device {
             room_name: room_name.map(|s| s.to_string()),
         });
         self.last_undoc_device_info_update.replace(Utc::now());
+    }
+
+    pub fn compute_iot_device_state(&self) -> Option<DeviceState> {
+        let updated = self.last_iot_device_status_update?;
+        let status = self.iot_device_status.as_ref()?;
+
+        Some(DeviceState {
+            on: status.on,
+            online: None,
+            brightness: status.brightness,
+            color: status.color,
+            kelvin: status.color_temperature_kelvin,
+            source: "AWS IoT API",
+            updated,
+        })
     }
 
     pub fn compute_lan_device_state(&self) -> Option<DeviceState> {
@@ -232,6 +255,9 @@ impl Device {
             candidates.push(state);
         }
         if let Some(state) = self.compute_http_device_state() {
+            candidates.push(state);
+        }
+        if let Some(state) = self.compute_iot_device_state() {
             candidates.push(state);
         }
 

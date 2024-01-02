@@ -1,6 +1,7 @@
 use crate::lan_api::Client as LanClient;
 use crate::service::device::Device;
 use crate::service::http::run_http_server;
+use crate::service::iot::start_iot_client;
 use crate::service::state::StateHandle;
 use anyhow::Context;
 use chrono::Utc;
@@ -100,7 +101,7 @@ impl ServeCommand {
                 device.set_undoc_device_info(entry, room_name);
             }
 
-            // TODO: subscribe to AWS IoT mqtt
+            start_iot_client(args, state.clone()).await?;
 
             state.set_undoc_client(client).await;
         }

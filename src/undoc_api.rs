@@ -1,12 +1,13 @@
 use crate::cache::{cache_get, CacheGetOptions};
-use crate::platform_api::json_body;
 use crate::lan_api::boolean_int;
 use crate::opt_env_var;
+use crate::platform_api::json_body;
 use anyhow::Context;
 use reqwest::Method;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use serde_json::Value as JsonValue;
+use std::path::PathBuf;
 use std::time::Duration;
 use uuid::Uuid;
 
@@ -43,6 +44,18 @@ pub struct UndocApiArguments {
     /// the GOVEE_PASSWORD environment variable.
     #[arg(long, global = true)]
     pub govee_password: Option<String>,
+
+    /// Where to store the AWS IoT key file.
+    #[arg(long, global = true, default_value = "/dev/shm/govee.iot.key")]
+    pub govee_iot_key: PathBuf,
+
+    /// Where to store the AWS IoT certificate file.
+    #[arg(long, global = true, default_value = "/dev/shm/govee.iot.cert")]
+    pub govee_iot_cert: PathBuf,
+
+    /// Where to find the AWS root CA certificate
+    #[arg(long, global = true, default_value = "AmazonRootCA1.pem")]
+    pub amazon_root_ca: PathBuf,
 }
 
 impl UndocApiArguments {
