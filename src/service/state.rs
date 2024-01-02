@@ -1,6 +1,7 @@
 use crate::lan_api::Client as LanClient;
 use crate::platform_api::GoveeApiClient;
 use crate::service::device::Device;
+use crate::service::iot::IotClient;
 use crate::undoc_api::GoveeUndocumentedApi;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -12,6 +13,7 @@ pub struct State {
     lan_client: Mutex<Option<LanClient>>,
     platform_client: Mutex<Option<GoveeApiClient>>,
     undoc_client: Mutex<Option<GoveeUndocumentedApi>>,
+    iot_client: Mutex<Option<IotClient>>,
 }
 
 pub type StateHandle = Arc<State>;
@@ -65,6 +67,14 @@ impl State {
         }
 
         None
+    }
+
+    pub async fn set_iot_client(&self, client: IotClient) {
+        self.iot_client.lock().await.replace(client);
+    }
+
+    pub async fn get_iot_client(&self) -> Option<IotClient> {
+        self.iot_client.lock().await.clone()
     }
 
     pub async fn set_lan_client(&self, client: LanClient) {

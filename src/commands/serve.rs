@@ -19,7 +19,17 @@ pub struct ServeCommand {
 async fn poll_single_device(state: &StateHandle, device: &Device) -> anyhow::Result<()> {
     let now = Utc::now();
 
-    let needs_update = match device.device_state() {
+    let can_update = match &device.last_polled {
+        None => true,
+        Some(last) => now - last > chrono::Duration::seconds(900),
+    };
+
+    if !can_update {
+        return Ok(());
+    }
+
+    let device_state = device.device_state();
+    let needs_update = match &device_state {
         None => true,
         Some(state) => now - state.updated > chrono::Duration::seconds(900),
     };
@@ -37,6 +47,26 @@ async fn poll_single_device(state: &StateHandle, device: &Device) -> anyhow::Res
         return Ok(());
     }
 
+    if let Some(iot) = state.get_iot_client().await {
+        if let Some(info) = device.undoc_device_info.clone() {
+            log::info!("requesting update via mqtt {device} {device_state:?}");
+            iot.request_status_update(&info.entry)
+                .await
+                .context("iot request status update")?;
+
+            // The response will come in async via the mqtt loop in iot.rs
+            // However, if the device is offline, nothing will change our state.
+            // Let's explicitly mark the device as having been polled so that
+            // we don't keep sending a request every minute.
+            state
+                .device_mut(&device.sku, &device.id)
+                .await
+                .set_last_polled();
+
+            return Ok(());
+        }
+    }
+
     if let Some(client) = state.get_platform_client().await {
         if let Some(info) = &device.http_device_info {
             let http_state = client
@@ -44,10 +74,10 @@ async fn poll_single_device(state: &StateHandle, device: &Device) -> anyhow::Res
                 .await
                 .context("get_device_state")?;
             log::trace!("updated state for {device}");
-            state
-                .device_mut(&device.sku, &device.id)
-                .await
-                .set_http_device_state(http_state);
+
+            let mut device = state.device_mut(&device.sku, &device.id).await;
+            device.set_http_device_state(http_state);
+            device.set_last_polled();
         }
     } else {
         log::trace!(

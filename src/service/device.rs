@@ -28,6 +28,8 @@ pub struct Device {
 
     pub iot_device_status: Option<LanDeviceStatus>,
     pub last_iot_device_status_update: Option<DateTime<Utc>>,
+
+    pub last_polled: Option<DateTime<Utc>>,
 }
 
 impl std::fmt::Display for Device {
@@ -118,6 +120,10 @@ impl Device {
 
     pub fn ip_addr(&self) -> Option<IpAddr> {
         self.lan_device.as_ref().map(|device| device.ip)
+    }
+
+    pub fn set_last_polled(&mut self) {
+        self.last_polled.replace(Utc::now());
     }
 
     /// Update the LAN device information
@@ -262,6 +268,7 @@ impl Device {
         }
 
         candidates.sort_by(|a, b| a.updated.cmp(&b.updated));
+
         candidates.pop()
     }
 }

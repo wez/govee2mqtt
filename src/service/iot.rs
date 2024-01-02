@@ -1,9 +1,40 @@
 use crate::lan_api::DeviceColor;
 use crate::service::state::StateHandle;
+use crate::undoc_api::{ms_timestamp, DeviceEntry};
 use crate::Args;
 use anyhow::Context;
+use mosquitto_rs::QoS;
 use serde::Deserialize;
 use std::time::Duration;
+
+#[derive(Clone)]
+pub struct IotClient {
+    client: mosquitto_rs::Client,
+}
+
+impl IotClient {
+    pub async fn request_status_update(&self, device: &DeviceEntry) -> anyhow::Result<()> {
+        let device_topic = &device.device_ext.device_settings.topic;
+
+        self.client
+            .publish(
+                device_topic,
+                serde_json::to_string(&serde_json::json!({
+                    "msg": {
+                        "cmd": "status",
+                        "cmdVersion": 2,
+                        "transaction": format!("v_{}000", ms_timestamp()),
+                        "type": 0,
+                    }
+                }))?,
+                QoS::AtMostOnce,
+                false,
+            )
+            .await?;
+
+        Ok(())
+    }
+}
 
 pub async fn start_iot_client(args: &Args, state: StateHandle) -> anyhow::Result<()> {
     let client = args.undoc_args.api_client()?;
@@ -53,6 +84,8 @@ pub async fn start_iot_client(args: &Args, state: StateHandle) -> anyhow::Result
     client
         .subscribe(&acct.topic, mosquitto_rs::QoS::AtMostOnce)
         .await?;
+
+    state.set_iot_client(IotClient { client }).await;
 
     tokio::spawn(async move {
         log::info!("Waiting for data from IoT");
@@ -104,7 +137,6 @@ pub async fn start_iot_client(args: &Args, state: StateHandle) -> anyhow::Result
         }
 
         log::info!("IoT loop terminated");
-        drop(client); // keep the client alive. TODO: wrap it up and put it in State
         Ok::<(), anyhow::Error>(())
     });
 

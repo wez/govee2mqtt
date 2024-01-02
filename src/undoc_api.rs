@@ -23,7 +23,7 @@ fn user_agent() -> String {
     )
 }
 
-fn ms_timestamp() -> String {
+pub fn ms_timestamp() -> String {
     std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .expect("unix epoch in the past")
