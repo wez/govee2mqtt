@@ -1,4 +1,4 @@
-use crate::http_api::GoveeApiArguments;
+use crate::platform_api::GoveeApiArguments;
 use crate::lan_api::LanDiscoArguments;
 use crate::undoc_api::UndocApiArguments;
 use clap::Parser;
@@ -7,7 +7,7 @@ use std::str::FromStr;
 mod ble;
 mod cache;
 mod commands;
-mod http_api;
+mod platform_api;
 mod lan_api;
 mod service;
 mod undoc_api;

@@ -1,5 +1,5 @@
 use crate::cache::{cache_get, CacheGetOptions};
-use crate::http_api::json_body;
+use crate::platform_api::json_body;
 use crate::lan_api::boolean_int;
 use crate::opt_env_var;
 use anyhow::Context;

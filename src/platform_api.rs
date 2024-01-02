@@ -6,7 +6,13 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value as JsonValue;
 use std::time::Duration;
 
+// This file implements the Govee Platform API V1 as described at:
 // <https://developer.govee.com/reference/get-you-devices>
+//
+// It is NOT the same thing as the older, but confusingly versioned
+// with a higher number, Govee HTTP API v2 that is described at
+// <https://govee.readme.io/reference/getlightdeviceinfo>
+
 const SERVER: &str = "https://openapi.api.govee.com";
 const ONE_WEEK: Duration = Duration::from_secs(86400 * 7);
 

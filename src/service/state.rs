@@ -1,4 +1,4 @@
-use crate::http_api::GoveeApiClient;
+use crate::platform_api::GoveeApiClient;
 use crate::lan_api::Client as LanClient;
 use crate::service::device::Device;
 use crate::undoc_api::GoveeUndocumentedApi;

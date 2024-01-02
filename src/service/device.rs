@@ -1,4 +1,4 @@
-use crate::http_api::{HttpDeviceInfo, HttpDeviceState};
+use crate::platform_api::{HttpDeviceInfo, HttpDeviceState};
 use crate::lan_api::{DeviceColor, DeviceStatus as LanDeviceStatus, LanDevice};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
