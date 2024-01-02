@@ -141,7 +141,7 @@ impl GoveeApiClient {
             CacheGetOptions {
                 topic: "http-api",
                 key: &key,
-                soft_ttl: Duration::from_secs(120),
+                soft_ttl: Duration::from_secs(300),
                 hard_ttl: ONE_WEEK,
                 negative_ttl: Duration::from_secs(60),
             },

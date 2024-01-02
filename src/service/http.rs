@@ -7,6 +7,7 @@ use axum::routing::{get, post};
 use axum::{Json, Router};
 use serde::Serialize;
 use std::net::IpAddr;
+use uncased::Uncased;
 
 fn response_with_code<T: ToString + std::fmt::Display>(code: StatusCode, err: T) -> Response {
     if !code.is_success() {
@@ -41,6 +42,7 @@ async fn resolve_device(state: &StateHandle, id: &str) -> Result<Device, Respons
         .ok_or_else(|| not_found(format!("device '{id}' not found")))
 }
 
+/// Returns a json array of device information
 async fn list_devices(State(state): State<StateHandle>) -> Result<Response, Response> {
     let mut devices = state.devices().await;
     devices.sort_by_key(|d| (d.room_name().map(|name| name.to_string()), d.name()));
@@ -68,6 +70,7 @@ async fn list_devices(State(state): State<StateHandle>) -> Result<Response, Resp
     Ok(Json(devices).into_response())
 }
 
+/// Turns on a given device
 async fn device_power_on(
     State(state): State<StateHandle>,
     Path(id): Path<String>,
@@ -82,6 +85,7 @@ async fn device_power_on(
     Ok(response_with_code(StatusCode::OK, "ok"))
 }
 
+/// Turns off a given device
 async fn device_power_off(
     State(state): State<StateHandle>,
     Path(id): Path<String>,
@@ -96,6 +100,7 @@ async fn device_power_off(
     Ok(response_with_code(StatusCode::OK, "ok"))
 }
 
+/// Sets the brightness level of a given device
 async fn device_set_brightness(
     State(state): State<StateHandle>,
     Path((id, level)): Path<(String, u8)>,
@@ -110,6 +115,7 @@ async fn device_set_brightness(
     Ok(response_with_code(StatusCode::OK, "ok"))
 }
 
+/// Sets the color temperature of a given device
 async fn device_set_color_temperature(
     State(state): State<StateHandle>,
     Path((id, kelvin)): Path<(String, u32)>,
@@ -124,6 +130,7 @@ async fn device_set_color_temperature(
     Ok(response_with_code(StatusCode::OK, "ok"))
 }
 
+/// Sets the RGB color of a given device
 async fn device_set_color(
     State(state): State<StateHandle>,
     Path((id, color)): Path<(String, String)>,
@@ -142,6 +149,7 @@ async fn device_set_color(
     Ok(response_with_code(StatusCode::OK, "ok"))
 }
 
+/// Activates the named scene for a given device
 async fn device_set_scene(
     State(state): State<StateHandle>,
     Path((id, scene)): Path<(String, String)>,
@@ -154,6 +162,26 @@ async fn device_set_scene(
         .map_err(generic)?;
 
     Ok(response_with_code(StatusCode::OK, "ok"))
+}
+
+/// Returns a JSON array of the available scene names for a given device
+async fn device_list_scenes(
+    State(state): State<StateHandle>,
+    Path(id): Path<String>,
+) -> Result<Response, Response> {
+    let device = resolve_device(&state, &id).await?;
+
+    let mut scenes: Vec<_> = state
+        .device_list_scenes(&device)
+        .await
+        .map_err(generic)?
+        .into_iter()
+        .map(Uncased::new)
+        .collect();
+    scenes.sort();
+    let scenes: Vec<_> = scenes.into_iter().map(|u| u.into_string()).collect();
+
+    Ok(Json(scenes).into_response())
 }
 
 pub async fn run_http_server(state: StateHandle, port: u16) -> anyhow::Result<()> {
@@ -171,6 +199,7 @@ pub async fn run_http_server(state: StateHandle, port: u16) -> anyhow::Result<()
         )
         .route("/api/device/:id/color/:color", get(device_set_color))
         .route("/api/device/:id/scene/:scene", get(device_set_scene))
+        .route("/api/device/:id/scenes", get(device_list_scenes))
         .with_state(state);
 
     let listener = tokio::net::TcpListener::bind(("0.0.0.0", port)).await?;
