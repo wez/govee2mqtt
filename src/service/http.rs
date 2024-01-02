@@ -7,6 +7,7 @@ use axum::routing::{get, post};
 use axum::{Json, Router};
 use serde::Serialize;
 use std::net::IpAddr;
+use tower_http::services::ServeDir;
 use uncased::Uncased;
 
 fn response_with_code<T: ToString + std::fmt::Display>(code: StatusCode, err: T) -> Response {
@@ -186,6 +187,10 @@ async fn device_list_scenes(
     Ok(Json(scenes).into_response())
 }
 
+async fn redirect_to_index() -> Response {
+    axum::response::Redirect::to("/assets/index.html").into_response()
+}
+
 pub async fn run_http_server(state: StateHandle, port: u16) -> anyhow::Result<()> {
     let app = Router::new()
         .route("/api/devices", get(list_devices))
@@ -202,6 +207,8 @@ pub async fn run_http_server(state: StateHandle, port: u16) -> anyhow::Result<()
         .route("/api/device/:id/color/:color", get(device_set_color))
         .route("/api/device/:id/scene/:scene", get(device_set_scene))
         .route("/api/device/:id/scenes", get(device_list_scenes))
+        .route("/", get(redirect_to_index))
+        .nest_service("/assets", ServeDir::new("assets"))
         .with_state(state);
 
     let listener = tokio::net::TcpListener::bind(("0.0.0.0", port)).await?;
