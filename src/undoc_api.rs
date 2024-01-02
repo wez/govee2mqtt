@@ -717,6 +717,7 @@ pub struct GroupEntry {
 #[serde(deny_unknown_fields)]
 pub struct DeviceEntry {
     pub attributes_id: u32,
+    pub device_id: Option<u32>,
     pub device: String,
     pub device_ext: DeviceEntryExt,
     pub device_name: String,
@@ -782,8 +783,10 @@ pub struct DeviceSettings {
 #[serde(deny_unknown_fields)]
 pub struct ExtResources {
     pub sku_url: String,
+    pub head_on_img_new: Option<String>,
     pub head_on_img: String,
     pub head_off_img: String,
+    pub head_off_img_new: Option<String>,
     pub ext: String,
     pub ic: u32,
 }
