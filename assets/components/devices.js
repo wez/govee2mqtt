@@ -3,54 +3,6 @@ import { styleMap} from "lit/directives/style-map.js";
 import { Task } from '@lit/task';
 import { timeAgo } from './timeago.js';
 
-function render_item(item) {
-
-  const styles =  {
-    backgroundColor: item.state ? `rgb(${item.state.color.r}, ${item.state.color.g}, ${item.state.color.b})` : null,
-  };
-
-  const updated = item.state ?
-    html`${timeAgo(new Date(item.state.updated))}` : html``;
-
-  const source = item.state ?
-    html`<span class="badge rounded-pill text-bg-info">${item.state.source}</span>` : html``;
-
-  return html`
-              <tr>
-                <td>${item.name}</td>
-                <td>${item.room}</td>
-                <td>${item.ip}</td>
-                <td>${item.sku}</td>
-                <td><span class="badge" style=${styleMap(styles)}>&nbsp;</span> ${item.state?.on ? "on" : "off"}</td>
-                <td><tt>${item.id}</tt></td>
-                <td style="width: 10em">${updated}</td>
-                <td>${source}</td>
-              </tr>
-              `;
-}
-
-function render_device_list(devices) {
-    return html`
-        <table class='table'>
-          <thead>
-            <tr>
-              <th scope="col">Name</th>
-              <th scope="col">Room</th>
-              <th scope="col">IP</th>
-              <th scope="col">SKU</th>
-              <th scope="col">State</th>
-              <th scope="col">ID</th>
-              <th scope="col">Last Updated</th>
-              <th scope="col">Source</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${devices.map(render_item)}
-          </tbody>
-        </table>
-          `;
-}
-
 export class DeviceList extends LitElement {
   timer;
   deviceList;
@@ -83,11 +35,11 @@ export class DeviceList extends LitElement {
         if (this.deviceList === undefined) {
           return html`<p>Loading devices...</p>`;
         }
-        return render_device_list(this.deviceList);
+        return this._render_device_list(this.deviceList);
       },
       complete: (devices) => {
         this.deviceList = devices;
-        return render_device_list(this.deviceList);
+        return this._render_device_list(this.deviceList);
       }
     });
   }
@@ -120,6 +72,69 @@ export class DeviceList extends LitElement {
   connectedCallback() {
     super.connectedCallback();
     this.ensureTimerStarted();
+  }
+
+  _set_power_on(e) {
+    const device_id = e.target.dataset.id;
+    const power = e.target.checked ? 'on' : 'off';
+    fetch(`/api/device/${device_id}/power/${power}`);
+  }
+
+  _render_item = (item) => {
+    const styles =  {
+      backgroundColor: item.state ? `rgb(${item.state.color.r}, ${item.state.color.g}, ${item.state.color.b})` : null,
+    };
+
+    const updated = item.state ?
+      html`${timeAgo(new Date(item.state.updated))}` : html``;
+
+    const source = item.state ?
+      html`<span class="badge rounded-pill text-bg-info">${item.state.source}</span>` : html``;
+
+    const power_switch = html`
+    <span class="form-switch"><input
+      data-id=${item.id}
+      class="form-check-input"
+      type="checkbox"
+      role="switch"
+      @click=${this._set_power_on}
+      ?checked=${item.state?.on}
+    ></span>`;
+
+    return html`
+        <tr>
+          <td>${item.name}</td>
+          <td>${item.room}</td>
+          <td>${item.ip}</td>
+          <td>${item.sku}</td>
+          <td><span class="badge" style=${styleMap(styles)}>&nbsp;</span> ${power_switch}</td>
+          <td><tt>${item.id}</tt></td>
+          <td style="width: 10em">${updated}</td>
+          <td>${source}</td>
+        </tr>
+        `;
+  }
+
+  _render_device_list = (devices) => {
+    return html`
+        <table class='table'>
+          <thead>
+            <tr>
+              <th scope="col">Name</th>
+              <th scope="col">Room</th>
+              <th scope="col">IP</th>
+              <th scope="col">SKU</th>
+              <th scope="col">State</th>
+              <th scope="col">ID</th>
+              <th scope="col">Last Updated</th>
+              <th scope="col">Source</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${devices.map(this._render_item)}
+          </tbody>
+        </table>
+          `;
   }
 }
 
