@@ -1,13 +1,73 @@
 use crate::lan_api::Client as LanClient;
+use crate::service::device::Device;
 use crate::service::http::run_http_server;
+use crate::service::state::StateHandle;
+use anyhow::Context;
+use chrono::Utc;
 use std::collections::HashMap;
 use std::sync::Arc;
+use tokio::time::Duration;
 
 #[derive(clap::Parser, Debug)]
 pub struct ServeCommand {
     /// The port on which the HTTP API will listen
     #[arg(long, default_value_t = 8056)]
     http_port: u16,
+}
+
+async fn poll_single_device(state: &StateHandle, device: &Device) -> anyhow::Result<()> {
+    let now = Utc::now();
+
+    let needs_update = match device.device_state() {
+        None => true,
+        Some(state) => now - state.updated > chrono::Duration::seconds(900),
+    };
+
+    if !needs_update {
+        return Ok(());
+    }
+
+    // Don't interrogate via HTTP if we can use the LAN.
+    // If we have LAN and the device is stale, it is likely
+    // offline and there is little sense in burning up request
+    // quota to the platform API for it
+    if device.lan_device.is_some() {
+        log::trace!("LAN-available device {device} needs a status update; it's likely offline.");
+        return Ok(());
+    }
+
+    if let Some(client) = state.get_platform_client().await {
+        if let Some(info) = &device.http_device_info {
+            let http_state = client
+                .get_device_state(info)
+                .await
+                .context("get_device_state")?;
+            log::trace!("updated state for {device}");
+            state
+                .device_mut(&device.sku, &device.id)
+                .await
+                .set_http_device_state(http_state);
+        }
+    } else {
+        log::trace!(
+            "device {device} needs a status update, but there is no platform client available"
+        );
+    }
+
+    Ok(())
+}
+
+async fn periodic_state_poll(state: StateHandle) -> anyhow::Result<()> {
+    tokio::time::sleep(Duration::from_secs(20)).await;
+    loop {
+        for d in state.devices().await {
+            if let Err(err) = poll_single_device(&state, &d).await {
+                log::error!("while polling {d}: {err:#}");
+            }
+        }
+
+        tokio::time::sleep(Duration::from_secs(60)).await;
+    }
 }
 
 impl ServeCommand {
@@ -68,6 +128,16 @@ impl ServeCommand {
                             .await
                             .set_lan_device_status(status);
                     }
+                }
+            });
+        }
+
+        // Start periodic status polling
+        {
+            let state = state.clone();
+            tokio::spawn(async move {
+                if let Err(err) = periodic_state_poll(state).await {
+                    log::error!("periodic_state_poll: {err:#}");
                 }
             });
         }

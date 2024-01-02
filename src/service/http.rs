@@ -1,4 +1,4 @@
-use crate::service::device::Device;
+use crate::service::device::{Device, DeviceState};
 use crate::service::state::StateHandle;
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
@@ -54,6 +54,7 @@ async fn list_devices(State(state): State<StateHandle>) -> Result<Response, Resp
         pub name: String,
         pub room: Option<String>,
         pub ip: Option<IpAddr>,
+        pub state: Option<DeviceState>,
     }
 
     let devices: Vec<_> = devices
@@ -62,6 +63,7 @@ async fn list_devices(State(state): State<StateHandle>) -> Result<Response, Resp
             name: d.name(),
             room: d.room_name().map(|r| r.to_string()),
             ip: d.ip_addr(),
+            state: d.device_state(),
             sku: d.sku,
             id: d.id,
         })

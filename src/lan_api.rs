@@ -203,7 +203,7 @@ pub struct DeviceStatus {
     pub color_temperature_kelvin: u32,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, Default)]
 pub struct DeviceColor {
     pub r: u8,
     pub g: u8,

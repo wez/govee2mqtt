@@ -111,7 +111,6 @@ impl GoveeApiClient {
         Ok(resp.capability)
     }
 
-    #[allow(unused)]
     pub async fn get_device_state(
         &self,
         device: &HttpDeviceInfo,
@@ -372,7 +371,7 @@ struct GetDeviceStateResponse {
     pub payload: HttpDeviceState,
 }
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct HttpDeviceState {
     pub sku: String,
@@ -380,7 +379,7 @@ pub struct HttpDeviceState {
     pub capabilities: Vec<DeviceCapabilityState>,
 }
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(tag = "type")]
 #[serde(deny_unknown_fields)]
 pub struct DeviceCapabilityState {

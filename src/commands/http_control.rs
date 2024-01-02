@@ -50,6 +50,8 @@ enum SubCommand {
         #[arg(required_unless_present = "list")]
         mode: Option<String>,
     },
+    /// Get current status
+    Status {},
 }
 
 impl HttpControlCommand {
@@ -63,6 +65,11 @@ impl HttpControlCommand {
                     .set_power_state(&device, self.cmd == SubCommand::On)
                     .await?;
                 println!("{result:#?}");
+            }
+
+            SubCommand::Status {} => {
+                let state = client.get_device_state(&device).await?;
+                println!("{state:#?}");
             }
 
             SubCommand::Brightness { percent } => {

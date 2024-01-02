@@ -1,6 +1,7 @@
-use crate::http_api::HttpDeviceInfo;
-use crate::lan_api::{DeviceStatus as LanDeviceStatus, LanDevice};
+use crate::http_api::{HttpDeviceInfo, HttpDeviceState};
+use crate::lan_api::{DeviceColor, DeviceStatus as LanDeviceStatus, LanDevice};
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 use std::net::IpAddr;
 
 #[derive(Default, Clone, Debug)]
@@ -19,6 +20,9 @@ pub struct Device {
     pub http_device_info: Option<HttpDeviceInfo>,
     pub last_http_device_update: Option<DateTime<Utc>>,
 
+    pub http_device_state: Option<HttpDeviceState>,
+    pub last_http_device_state_update: Option<DateTime<Utc>>,
+
     pub undoc_device_info: Option<UndocDeviceInfo>,
     pub last_undoc_device_info_update: Option<DateTime<Utc>>,
 }
@@ -27,6 +31,27 @@ impl std::fmt::Display for Device {
     fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(fmt, "{} ({})", self.name(), self.id)
     }
+}
+
+/// Represents the device state; synthesized from the various
+/// sources of facts that we have in the Device
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct DeviceState {
+    /// Whether the device is powered on
+    pub on: bool,
+
+    /// The color temperature in kelvin
+    pub kelvin: u32,
+
+    /// The color
+    pub color: crate::lan_api::DeviceColor,
+
+    /// The brightness in percent (0-100)
+    pub brightness: u8,
+
+    /// Where the information came from
+    pub source: &'static str,
+    pub updated: DateTime<Utc>,
 }
 
 #[derive(Debug, Clone)]
@@ -106,6 +131,11 @@ impl Device {
         self.last_http_device_update.replace(Utc::now());
     }
 
+    pub fn set_http_device_state(&mut self, state: HttpDeviceState) {
+        self.http_device_state.replace(state);
+        self.last_http_device_state_update.replace(Utc::now());
+    }
+
     pub fn set_undoc_device_info(
         &mut self,
         entry: crate::undoc_api::DeviceEntry,
@@ -116,6 +146,83 @@ impl Device {
             room_name: room_name.map(|s| s.to_string()),
         });
         self.last_undoc_device_info_update.replace(Utc::now());
+    }
+
+    pub fn compute_lan_device_state(&self) -> Option<DeviceState> {
+        let updated = self.last_lan_device_status_update?;
+        let status = self.lan_device_status.as_ref()?;
+
+        Some(DeviceState {
+            on: status.on,
+            brightness: status.brightness,
+            color: status.color,
+            kelvin: status.color_temperature_kelvin,
+            source: "LAN API",
+            updated,
+        })
+    }
+
+    pub fn compute_http_device_state(&self) -> Option<DeviceState> {
+        let updated = self.last_http_device_state_update?;
+        let state = self.http_device_state.as_ref()?;
+
+        let mut on = false;
+        let mut brightness = 0;
+        let mut color = DeviceColor::default();
+        let mut kelvin = 0;
+
+        #[derive(serde::Deserialize)]
+        struct IntegerValueState {
+            value: u32,
+        }
+
+        for cap in &state.capabilities {
+            if let Ok(value) = serde_json::from_value::<IntegerValueState>(cap.state.clone()) {
+                match cap.instance.as_str() {
+                    "powerSwitch" => {
+                        on = value.value != 0;
+                    }
+                    "colorRgb" => {
+                        color = DeviceColor {
+                            r: ((value.value >> 16) & 0xff) as u8,
+                            g: ((value.value >> 8) & 0xff) as u8,
+                            b: (value.value & 0xff) as u8,
+                        };
+                    }
+                    "brightness" => {
+                        brightness = value.value as u8;
+                    }
+                    "colorTemperatureK" => {
+                        kelvin = value.value;
+                    }
+                    _ => {}
+                }
+            }
+        }
+
+        Some(DeviceState {
+            on,
+            brightness,
+            color,
+            kelvin,
+            source: "PLATFORM API",
+            updated,
+        })
+    }
+
+    /// Returns the most recently received state information
+    pub fn device_state(&self) -> Option<DeviceState> {
+        let mut candidates = vec![];
+
+        if let Some(state) = self.compute_lan_device_state() {
+            candidates.push(state);
+        }
+        if let Some(state) = self.compute_http_device_state() {
+            candidates.push(state);
+        }
+
+        candidates.sort_by(|a, b| a.updated.cmp(&b.updated));
+        candidates.pop()
     }
 }
 
