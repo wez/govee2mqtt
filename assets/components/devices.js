@@ -80,9 +80,19 @@ export class DeviceList extends LitElement {
     fetch(`/api/device/${device_id}/power/${power}`);
   }
 
+  _set_color(e) {
+    const device_id = e.target.dataset.id;
+    const color = encodeURIComponent(e.target.value);
+    console.log(`color will change to ${color}`);
+    fetch(`/api/device/${device_id}/color/${color}`);
+  }
+
   _render_item = (item) => {
+    const color_value = (item.state?.color.r << 16) | (item.state?.color.g << 8) | (item.state?.color.b);
+    const rgb_hex = `#${color_value.toString(16).padStart(6, '0')}`;
+    const rgb = item.state ? `rgba(${item.state.color.r}, ${item.state.color.g}, ${item.state.color.b}, ${item.state.brightness})`: null;
     const styles =  {
-      backgroundColor: item.state ? `rgb(${item.state.color.r}, ${item.state.color.g}, ${item.state.color.b})` : null,
+      backgroundColor: rgb,
     };
 
     const updated = item.state ?
@@ -101,13 +111,23 @@ export class DeviceList extends LitElement {
       ?checked=${item.state?.on}
     ></span>`;
 
+    const color_picker = html`
+      <input
+        class="form-control form-control-color"
+        data-id=${item.id}
+        @change=${this._set_color}
+        type="color"
+        value=${rgb_hex}>
+      `;
+
     return html`
         <tr>
           <td>${item.name}</td>
           <td>${item.room}</td>
           <td>${item.ip}</td>
           <td>${item.sku}</td>
-          <td><span class="badge" style=${styleMap(styles)}>&nbsp;</span> ${power_switch}</td>
+          <td>${power_switch}</td>
+          <td>${color_picker}</td>
           <td><tt>${item.id}</tt></td>
           <td style="width: 10em">${updated}</td>
           <td>${source}</td>
@@ -124,7 +144,8 @@ export class DeviceList extends LitElement {
               <th scope="col">Room</th>
               <th scope="col">IP</th>
               <th scope="col">SKU</th>
-              <th scope="col">State</th>
+              <th scope="col">Power</th>
+              <th scope="col">Color</th>
               <th scope="col">ID</th>
               <th scope="col">Last Updated</th>
               <th scope="col">Source</th>
