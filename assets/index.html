@@ -11,13 +11,32 @@
         integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN"
         crossorigin="anonymous" />
       <link href="/assets/style.css" rel="stylesheet" />
+<script type="importmap">
+{
+  "imports": {
+    "lit": "https://unpkg.com/lit@3.1.0",
+    "lit/": "https://unpkg.com/lit@3.1.0/",
+    "lit-element": "https://unpkg.com/lit-element@4.0.2",
+    "lit-element/": "https://unpkg.com/lit-element@4.0.2/",
+    "lit-html": "https://unpkg.com/lit-html@3.1.0",
+    "lit-html/": "https://unpkg.com/lit-html@3.1.0/",
+    "@lit/task": "https://unpkg.com/@lit/task@1.0.0",
+    "@lit/reactive-element": "https://unpkg.com/@lit/reactive-element@2.0.2"
+  }
+}
+</script>
+
     <script type="module" src="/assets/color-modes.js"></script>
+    <script type="module" src="/assets/components/devices.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/timeago.js@4.0.2/dist/timeago.min.js"></script>
   </head>
   <body>
-    <main class="container">
+    <main class="container p-5">
 
       <div class="bg-body-tertiary p-5 rounded">
-      Hello
+
+      <gv-device-list></gv-device-list>
+
       </div>
 
     </main>
