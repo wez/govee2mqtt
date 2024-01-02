@@ -1,4 +1,5 @@
 use crate::http_api::{DeviceParameters, EnumOption, IntegerRange};
+use uncased::Uncased;
 
 #[derive(clap::Parser, Debug)]
 pub struct HttpControlCommand {
@@ -117,32 +118,19 @@ impl HttpControlCommand {
             }
 
             SubCommand::Scene { list, scene } => {
-                let scene_caps = client.get_device_scenes(&device).await?;
-
-                for cap in scene_caps {
-                    match &cap.parameters {
-                        DeviceParameters::Enum { options } => {
-                            for opt in options {
-                                if *list {
-                                    println!("{}", opt.name);
-                                } else if let Some(scene) = scene.as_deref() {
-                                    if scene.eq_ignore_ascii_case(&opt.name) {
-                                        let result = client
-                                            .control_device(&device, &cap, opt.value.clone())
-                                            .await?;
-                                        println!("{result:#?}");
-                                        return Ok(());
-                                    }
-                                    continue;
-                                }
-                            }
-                        }
-                        _ => anyhow::bail!("unexpected type {cap:#?}"),
+                if *list {
+                    let mut scenes: Vec<_> = client
+                        .list_scene_names(&device)
+                        .await?
+                        .into_iter()
+                        .map(Uncased::new)
+                        .collect();
+                    scenes.sort();
+                    for name in scenes {
+                        println!("{name}");
                     }
-                }
-
-                if let Some(scene) = scene {
-                    anyhow::bail!("scene '{scene}' was not found");
+                } else if let Some(scene) = scene {
+                    client.set_scene_by_name(&device, scene).await?;
                 }
             }
             SubCommand::Music {

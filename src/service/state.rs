@@ -133,6 +133,15 @@ impl State {
     }
 
     pub async fn device_set_scene(&self, device: &Device, scene: &str) -> anyhow::Result<()> {
+        // TODO: some plumbing to maintain offline scene controls for preferred-LAN control
+
+        if let Some(client) = self.get_platform_client().await {
+            if let Some(info) = &device.http_device_info {
+                client.set_scene_by_name(info, scene).await?;
+                return Ok(());
+            }
+        }
+
         anyhow::bail!("Unable to set scene for {device}");
     }
 }

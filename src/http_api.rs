@@ -164,6 +164,47 @@ impl GoveeApiClient {
         )
         .await
     }
+
+    pub async fn list_scene_names(&self, device: &HttpDeviceInfo) -> anyhow::Result<Vec<String>> {
+        let mut result = vec![];
+
+        let scene_caps = self.get_device_scenes(&device).await?;
+
+        for cap in scene_caps {
+            match cap.parameters {
+                DeviceParameters::Enum { options } => {
+                    for opt in options {
+                        result.push(opt.name);
+                    }
+                }
+                _ => anyhow::bail!("unexpected type {cap:#?}"),
+            }
+        }
+
+        Ok(result)
+    }
+
+    pub async fn set_scene_by_name(
+        &self,
+        device: &HttpDeviceInfo,
+        scene: &str,
+    ) -> anyhow::Result<ControlDeviceResponseCapability> {
+        let scene_caps = self.get_device_scenes(&device).await?;
+
+        for cap in scene_caps {
+            match &cap.parameters {
+                DeviceParameters::Enum { options } => {
+                    for opt in options {
+                        if scene.eq_ignore_ascii_case(&opt.name) {
+                            return self.control_device(&device, &cap, opt.value.clone()).await;
+                        }
+                    }
+                }
+                _ => anyhow::bail!("unexpected type {cap:#?}"),
+            }
+        }
+        anyhow::bail!("Scene '{scene}' is not available for this device");
+    }
 }
 
 #[derive(Deserialize, Serialize, Debug)]
