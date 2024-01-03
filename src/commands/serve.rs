@@ -52,24 +52,31 @@ async fn poll_single_device(state: &StateHandle, device: &Device) -> anyhow::Res
     if let Some(iot) = state.get_iot_client().await {
         if let Some(info) = device.undoc_device_info.clone() {
             log::info!("requesting update via IoT MQTT {device} {device_state:?}");
-            iot.request_status_update(&info.entry)
+            match iot
+                .request_status_update(&info.entry)
                 .await
-                .context("iot request status update")?;
+            {
+                Err(err) => {
+                    log::error!("Failed: {err:#}");
+                }
+                Ok(()) => {
+                    // The response will come in async via the mqtt loop in iot.rs
+                    // However, if the device is offline, nothing will change our state.
+                    // Let's explicitly mark the device as having been polled so that
+                    // we don't keep sending a request every minute.
+                    state
+                        .device_mut(&device.sku, &device.id)
+                        .await
+                        .set_last_polled();
 
-            // The response will come in async via the mqtt loop in iot.rs
-            // However, if the device is offline, nothing will change our state.
-            // Let's explicitly mark the device as having been polled so that
-            // we don't keep sending a request every minute.
-            state
-                .device_mut(&device.sku, &device.id)
-                .await
-                .set_last_polled();
-
-            return Ok(());
+                    return Ok(());
+                }
+            }
         }
     }
 
     if let Some(client) = state.get_platform_client().await {
+        log::info!("requesting update via Platform API {device} {device_state:?}");
         if let Some(info) = &device.http_device_info {
             let http_state = client
                 .get_device_state(info)
