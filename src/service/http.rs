@@ -8,7 +8,6 @@ use axum::{Json, Router};
 use serde::Serialize;
 use std::net::IpAddr;
 use tower_http::services::ServeDir;
-use uncased::Uncased;
 
 fn response_with_code<T: ToString + std::fmt::Display>(code: StatusCode, err: T) -> Response {
     if !code.is_success() {
@@ -174,15 +173,7 @@ async fn device_list_scenes(
 ) -> Result<Response, Response> {
     let device = resolve_device(&state, &id).await?;
 
-    let mut scenes: Vec<_> = state
-        .device_list_scenes(&device)
-        .await
-        .map_err(generic)?
-        .into_iter()
-        .map(Uncased::new)
-        .collect();
-    scenes.sort();
-    let scenes: Vec<_> = scenes.into_iter().map(|u| u.into_string()).collect();
+    let scenes = state.device_list_scenes(&device).await.map_err(generic)?;
 
     Ok(Json(scenes).into_response())
 }

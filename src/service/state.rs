@@ -230,9 +230,14 @@ impl State {
     pub async fn device_list_scenes(&self, device: &Device) -> anyhow::Result<Vec<String>> {
         // TODO: some plumbing to maintain offline scene controls for preferred-LAN control
 
+        fn sort_scenes(mut scenes: Vec<String>) -> Vec<String> {
+            scenes.sort_by_key(|s| s.to_ascii_lowercase());
+            scenes
+        }
+
         if let Some(client) = self.get_platform_client().await {
             if let Some(info) = &device.http_device_info {
-                return client.list_scene_names(info).await;
+                return Ok(sort_scenes(client.list_scene_names(info).await?));
             }
         }
 
