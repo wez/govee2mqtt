@@ -39,6 +39,7 @@ relies on your network supporting multicast-UDP, which is challenging
 on some networks, especially across wifi access points and routers.
 
 |CLI|ENV|AddOn|Purpose|
+|---|---|-----|-------|
 |`--no-multicast`|`GOVEE_LAN_NO_MULTICAST=true`|`no_multicast`|Do not multicast discovery packets to the Govee multicast group `239.255.255.250`. It is not recommended to use this option.|
 |`--broadcast-all`|`GOVEE_LAN_BROADCAST_ALL=true`|`broadcast_all`|Enumerate all non-loopback network interfaces and send discovery packets to the broadcast address of each one, individually. This may be a good option if multicast-UDP doesn't work well on your network|
 |`--global-broadcast`|`GOVEE_LAN_BROADCAST_GLOBAL=true`|`global_broadcast`|Send discovery packets to the global broadcast address `255.255.255.255`. This may be a possible solution if multicast-UDP doesn't work well on your network.|
@@ -53,6 +54,7 @@ In order to make your devices appear in Home Assistant, you will need to have co
 You will also need to configure `govee2mqtt` to use the same broker:
 
 |CLI|ENV|AddOn|Purpose|
+|---|---|-----|-------|
 |`--mqtt-host`|`GOVEE_MQTT_HOST`|`mqtt_host`|The host name or IP address of your mqtt broker. This should be the same broker that you have configured in Home Assistant.|
 |`--mqtt-port`|`GOVEE_MQTT_PORT`|`mqtt_port`|The port number of the mqtt broker. The default is `1883`|
 |`--mqtt-username`|`GOVEE_MQTT_USER`|`mqtt_username`|If your broker requires authentication, the username to use|
