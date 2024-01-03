@@ -14,7 +14,7 @@ impl ListCommand {
     pub async fn run(&self, args: &crate::Args) -> anyhow::Result<()> {
         let state = Arc::new(crate::service::state::State::new());
 
-        let options = args.lan_disco_args.to_disco_options();
+        let options = args.lan_disco_args.to_disco_options()?;
         if options.is_empty() {
             anyhow::bail!("Discovery options are empty");
         }
@@ -24,9 +24,10 @@ impl ListCommand {
         } else {
             eprintln!(
                 "Waiting {} seconds for LAN discovery, use --skip-lan to skip...",
-                args.lan_disco_args.disco_timeout
+                args.lan_disco_args.disco_timeout()?
             );
-            let deadline = Instant::now() + Duration::from_secs(args.lan_disco_args.disco_timeout);
+            let deadline =
+                Instant::now() + Duration::from_secs(args.lan_disco_args.disco_timeout()?);
             let state = state.clone();
             let (client, mut scan) = LanClient::new(options).await?;
             Some(tokio::spawn(async move {

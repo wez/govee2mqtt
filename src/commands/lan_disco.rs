@@ -6,14 +6,14 @@ pub struct LanDiscoCommand {}
 
 impl LanDiscoCommand {
     pub async fn run(&self, args: &crate::Args) -> anyhow::Result<()> {
-        let options = args.lan_disco_args.to_disco_options();
+        let options = args.lan_disco_args.to_disco_options()?;
         if options.is_empty() {
             anyhow::bail!("Discovery options are empty");
         }
 
         let (client, mut scan) = Client::new(options).await?;
 
-        let deadline = Instant::now() + Duration::from_secs(args.lan_disco_args.disco_timeout);
+        let deadline = Instant::now() + Duration::from_secs(args.lan_disco_args.disco_timeout()?);
 
         let state = crate::service::state::State::new();
 

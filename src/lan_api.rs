@@ -1,3 +1,4 @@
+use crate::opt_env_var;
 use anyhow::Context;
 use if_addrs::IfAddr;
 use serde::{Deserialize, Serialize};
@@ -24,36 +25,90 @@ const MULTICAST: IpAddr = IpAddr::V4(Ipv4Addr::new(239, 255, 255, 250));
 
 #[derive(clap::Parser, Debug)]
 pub struct LanDiscoArguments {
-    /// Prevent the use of the default multicast broadcast address
+    /// Prevent the use of the default multicast broadcast address.
+    /// You may also set GOVEE_LAN_NO_MULTICAST=true via the environment.
     #[arg(long, global = true)]
     pub no_multicast: bool,
 
     /// Enumerate all interfaces, and for each one that has
     /// a broadcast address, broadcast to it
+    /// You may also set GOVEE_LAN_BROADCAST_ALL=true via the environment.
     #[arg(long, global = true)]
     pub broadcast_all: bool,
 
     /// Broadcast to the global broadcast address 255.255.255.255
+    /// You may also set GOVEE_LAN_BROADCAST_GLOBAL=true via the environment.
     #[arg(long, global = true)]
     pub global_broadcast: bool,
 
     /// Addresses to scan. May be broadcast addresses or individual
-    /// IP addresses
+    /// IP addresses. Can be specified multiple times.
+    /// You may also set GOVEE_LAN_SCAN=10.0.0.1,10.0.0.2 via the environment.
     #[arg(long, global = true)]
     pub scan: Vec<IpAddr>,
 
     /// How long to wait for discovery to complete, in seconds
+    /// You may also set GOVEE_LAN_DISCO_TIMEOUT via the environment.
     #[arg(long, default_value_t = 3, global = true)]
-    pub disco_timeout: u64,
+    disco_timeout: u64,
+}
+
+fn truthy(s: &str) -> anyhow::Result<bool> {
+    if s.eq_ignore_ascii_case("true")
+        || s.eq_ignore_ascii_case("yes")
+        || s.eq_ignore_ascii_case("on")
+        || s == "1"
+    {
+        Ok(true)
+    } else if s.eq_ignore_ascii_case("false")
+        || s.eq_ignore_ascii_case("no")
+        || s.eq_ignore_ascii_case("off")
+        || s == "0"
+    {
+        Ok(false)
+    } else {
+        anyhow::bail!("invalid value '{s}', expected true/yes/on/1 or false/no/off/0");
+    }
 }
 
 impl LanDiscoArguments {
-    pub fn to_disco_options(&self) -> DiscoOptions {
-        DiscoOptions {
+    pub fn to_disco_options(&self) -> anyhow::Result<DiscoOptions> {
+        let mut options = DiscoOptions {
             enable_multicast: !self.no_multicast,
             additional_addresses: self.scan.clone(),
             broadcast_all_interfaces: self.broadcast_all,
             global_broadcast: self.global_broadcast,
+        };
+
+        if let Some(v) = opt_env_var::<String>("GOVEE_LAN_NO_MULTICAST")? {
+            options.enable_multicast = truthy(&v)?;
+        }
+
+        if let Some(v) = opt_env_var::<String>("GOVEE_LAN_BROADCAST_ALL")? {
+            options.broadcast_all_interfaces = truthy(&v)?;
+        }
+
+        if let Some(v) = opt_env_var::<String>("GOVEE_LAN_BROADCAST_GLOBAL")? {
+            options.global_broadcast = truthy(&v)?;
+        }
+
+        if let Some(v) = opt_env_var::<String>("GOVEE_LAN_SCAN")? {
+            for addr in v.split(',') {
+                let ip = addr
+                    .parse()
+                    .with_context(|| format!("parsing {v} as IpAddr"))?;
+                options.additional_addresses.push(ip);
+            }
+        }
+
+        Ok(options)
+    }
+
+    pub fn disco_timeout(&self) -> anyhow::Result<u64> {
+        if let Some(v) = opt_env_var("GOVEE_LAN_DISCO_TIMEOUT")? {
+            Ok(v)
+        } else {
+            Ok(self.disco_timeout)
         }
     }
 }

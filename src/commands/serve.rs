@@ -144,7 +144,7 @@ impl ServeCommand {
 
         // Now start discovery
 
-        let options = args.lan_disco_args.to_disco_options();
+        let options = args.lan_disco_args.to_disco_options()?;
         if !options.is_empty() {
             log::info!("Starting LAN discovery");
             let state = state.clone();
