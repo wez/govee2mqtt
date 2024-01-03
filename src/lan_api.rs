@@ -95,6 +95,7 @@ impl LanDiscoArguments {
         if let Some(v) = opt_env_var::<String>("GOVEE_LAN_SCAN")? {
             for addr in v.split(',') {
                 let ip = addr
+                    .trim()
                     .parse()
                     .with_context(|| format!("parsing {v} as IpAddr"))?;
                 options.additional_addresses.push(ip);
