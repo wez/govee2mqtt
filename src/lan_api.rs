@@ -395,6 +395,7 @@ async fn send_scan(options: &DiscoOptions) -> anyhow::Result<()> {
     })
     .expect("to serialize scan message");
     for b in broadcasters {
+        log::trace!("Send disco packet to {:?}", b.addr);
         if let Err(err) = b.broadcast(&scan).await {
             log::error!("Error broadcasting to {b:?}: {err:#}");
         }

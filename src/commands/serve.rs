@@ -52,10 +52,7 @@ async fn poll_single_device(state: &StateHandle, device: &Device) -> anyhow::Res
     if let Some(iot) = state.get_iot_client().await {
         if let Some(info) = device.undoc_device_info.clone() {
             log::info!("requesting update via IoT MQTT {device} {device_state:?}");
-            match iot
-                .request_status_update(&info.entry)
-                .await
-            {
+            match iot.request_status_update(&info.entry).await {
                 Err(err) => {
                     log::error!("Failed: {err:#}");
                 }
