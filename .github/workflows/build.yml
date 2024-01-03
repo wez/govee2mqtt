@@ -55,6 +55,12 @@ jobs:
           registry: https://ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: "Install Rust"
+        uses: dtolnay/rust-toolchain@stable
+      - name: "Install cross from Cargo"
+        uses: baptiste0928/cargo-install@v2
+        with:
+          crate: "cross"
       - name: Build executable
         run: ./build-cross.sh ${{ matrix.platform }}
       - name: Build No Push
