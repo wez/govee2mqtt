@@ -31,4 +31,11 @@ jobs:
         name: "windows-x64"
         path: Govee2Mqtt*.zip
         if-no-files-found: error
+    - name: Generate Changelog
+      run: echo "Continuously built and pushed" > ${{ github.workspace }}-CHANGELOG.txt
+    - name: Make Release
+      uses: softprops/action-gh-release@v1
+      with:
+        body_path: ${{ github.workspace }}-CHANGELOG.txt
+        files: Govee2Mqtt*.zip
 
