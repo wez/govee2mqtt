@@ -305,11 +305,9 @@ impl HassClient {
         ))
         .await;
 
-        // Mark the lights as available
+        // Mark as available
         log::trace!("register_with_hass: mark as online");
-        for d in &devices {
-            self.publish(light_availability_topic(d), "online").await?;
-        }
+        self.publish(availability_topic(), "online").await?;
 
         tokio::time::sleep(tokio::time::Duration::from_millis(
             (50 * devices.len()) as u64,
@@ -409,8 +407,15 @@ fn light_state_topic(device: &ServiceDevice) -> String {
     format!("gv2mqtt/light/{id}/state", id = topic_safe_id(device))
 }
 
-fn light_availability_topic(device: &ServiceDevice) -> String {
-    format!("gv2mqtt/light/{id}/avail", id = topic_safe_id(device))
+fn light_availability_topic(_device: &ServiceDevice) -> String {
+    //    format!("gv2mqtt/light/{id}/avail", id = topic_safe_id(device))
+    availability_topic()
+}
+
+/// All entities use the same topic so that we can mark unavailable
+/// via last-will
+fn availability_topic() -> String {
+    "gv2mqtt/availability".to_string()
 }
 
 #[derive(Deserialize)]
@@ -540,6 +545,8 @@ pub async fn spawn_hass_integration(
     let mqtt_username = args.mqtt_username()?;
     let mqtt_password = args.mqtt_password()?;
     let mqtt_port = args.mqtt_port()?;
+
+    client.set_last_will(availability_topic(), "offline", QoS::AtMostOnce, true)?;
 
     client.set_username_and_password(mqtt_username.as_deref(), mqtt_password.as_deref())?;
     client
