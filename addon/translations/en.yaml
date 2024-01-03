@@ -1,0 +1,91 @@
+---
+configuration:
+  govee_email:
+    name: Govee Account Email
+    description: >-
+      The email address you registered with your Govee Account
+  govee_password:
+    name: Govee Account Password
+    description: >-
+      The password you registered with your Govee Account
+  govee_api_key:
+    name: Govee API Key
+    description: >-
+      Functions that use the official Govee APIs require an API Key.
+      If you don't already have one, you can find instructions on obtaining one
+      at https://developer.govee.com/reference/apply-you-govee-api-key
+
+  mqtt_host:
+    name: MQTT Broker Host Name
+    description: >-
+      The host name or IP address of the MQTT Broker on your network.
+      If you are using the Mosquitto Addon, you can leave this blank
+      as it will be handled automatically by Home Assistant.
+  mqtt_port:
+    name: MQTT Broker Port Number
+    description: >-
+      The port number of the MQTT Broker on your network.
+      If you are using the Mosquitto Addon, you can leave this blank
+      as it will be handled automatically by Home Assistant.
+  mqtt_username:
+    name: MQTT Broker Username
+    description: >-
+      If your MQTT broker requires authentication, the username that
+      should be used.
+      If you are using the Mosquitto Addon, you can leave this blank
+      as it will be handled automatically by Home Assistant.
+  mqtt_password:
+    name: MQTT Broker Password
+    description: >-
+      If your MQTT broker requires authentication, the password that
+      should be used.
+      If you are using the Mosquitto Addon, you can leave this blank
+      as it will be handled automatically by Home Assistant.
+  debug_level:
+    name: Debug Filter
+    description: >-
+      If you need to troubleshoot, set this to a Rust debug level filter.
+      The easiest value to enter for this is "govee=trace".
+      Be aware that in trace mode some sensitive information will
+      be output to the log. Take care to redact any topic or token
+      strings before you paste and share it with others.
+  no_multicast:
+    name: Disable Multicast UDP Broadcast for LAN API Discovery
+    description: >-
+      If multicast-UDP doesn't work in your network, you can disable
+      the use of the default multicast group 239.255.255.250. If
+      you disable this, you should enable some of the other LAN
+      discovery options.
+  broadcast_all:
+    name: Send discovery to each network interface
+    description: >-
+      If multicast-UDP doesn't work in your network, you may wish
+      to enable this option. It will enumerate the non-loopback
+      network interfaces on your system, and send a discovery packet
+      to the broadcast address of each one.
+  scan:
+    name: Additional IPs and broadcast addresses to scan
+    description: >-
+      Enter a comma-separated list of IP addresses, broadcast
+      addresses or multicast addresses to which to send discovery
+      packets.  You can use this to list out the individual addresses
+      of your Govee devices, assuming that they are configured with
+      static IP addresses and that they are reachable from the
+      home assistant machine.
+  global_broadcast:
+    name: Send discovery to global broadcast address
+    description: >-
+      If multicast-UDP doesn't work in your network, you may wish
+      to enable this option. It will send discovery packets to the
+      global broadcast address 255.255.255.255. To be honest, if
+      multicast-UDP doesn't work, this isn't likely to work any
+      better.
+
+
+
+
+
+
+
+
+
