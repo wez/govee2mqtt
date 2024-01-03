@@ -1,4 +1,4 @@
-use crate::lan_api::{Client as LanClient, LanDevice};
+use crate::lan_api::{Client as LanClient, DeviceStatus as LanDeviceStatus, LanDevice};
 use crate::platform_api::GoveeApiClient;
 use crate::service::device::Device;
 use crate::service::hass::{topic_safe_id, HassClient};
@@ -6,6 +6,7 @@ use crate::service::iot::IotClient;
 use crate::undoc_api::GoveeUndocumentedApi;
 use std::collections::HashMap;
 use std::sync::Arc;
+use std::time::Instant;
 use tokio::sync::{MappedMutexGuard, Mutex, MutexGuard};
 
 #[derive(Default)]
@@ -121,16 +122,21 @@ impl State {
         self.undoc_client.lock().await.clone()
     }
 
-    async fn poll_lan_api(&self, device: &LanDevice) -> anyhow::Result<()> {
+    async fn poll_lan_api<F: Fn(&LanDeviceStatus) -> bool>(
+        &self,
+        device: &LanDevice,
+        acceptor: F,
+    ) -> anyhow::Result<()> {
         match self.get_lan_client().await {
             Some(client) => {
-                for _ in 0..5 {
+                let deadline = Instant::now() + tokio::time::Duration::from_secs(5);
+                while Instant::now() <= deadline {
                     let status = client.query_status(device).await?;
-                    let changed = self
-                        .device_mut(&device.sku, &device.device)
+                    let accepted = (acceptor)(&status);
+                    self.device_mut(&device.sku, &device.device)
                         .await
                         .set_lan_device_status(status);
-                    if changed {
+                    if accepted {
                         break;
                     }
                     tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
@@ -145,7 +151,7 @@ impl State {
     pub async fn device_power_on(&self, device: &Device, on: bool) -> anyhow::Result<()> {
         if let Some(lan_dev) = &device.lan_device {
             lan_dev.send_turn(on).await?;
-            self.poll_lan_api(lan_dev).await?;
+            self.poll_lan_api(lan_dev, |status| status.on == on).await?;
             return Ok(());
         }
 
@@ -162,7 +168,8 @@ impl State {
     pub async fn device_set_brightness(&self, device: &Device, percent: u8) -> anyhow::Result<()> {
         if let Some(lan_dev) = &device.lan_device {
             lan_dev.send_brightness(percent).await?;
-            self.poll_lan_api(lan_dev).await?;
+            self.poll_lan_api(lan_dev, |status| status.brightness == percent)
+                .await?;
             return Ok(());
         }
 
@@ -182,7 +189,8 @@ impl State {
     ) -> anyhow::Result<()> {
         if let Some(lan_dev) = &device.lan_device {
             lan_dev.send_color_temperature_kelvin(kelvin).await?;
-            self.poll_lan_api(lan_dev).await?;
+            self.poll_lan_api(lan_dev, |status| status.color_temperature_kelvin == kelvin)
+                .await?;
             return Ok(());
         }
 
@@ -203,10 +211,10 @@ impl State {
         b: u8,
     ) -> anyhow::Result<()> {
         if let Some(lan_dev) = &device.lan_device {
-            lan_dev
-                .send_color_rgb(crate::lan_api::DeviceColor { r, g, b })
+            let color = crate::lan_api::DeviceColor { r, g, b };
+            lan_dev.send_color_rgb(color).await?;
+            self.poll_lan_api(lan_dev, |status| status.color == color)
                 .await?;
-            self.poll_lan_api(lan_dev).await?;
             return Ok(());
         }
 
