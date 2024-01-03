@@ -12,7 +12,7 @@ use serde_json::json;
 use std::time::Duration;
 
 const MODEL: &str = "gv2mqtt";
-const URL: &str = "https://github.com/wez/govee-rs";
+const URL: &str = "https://github.com/wez/govee2mqtt";
 
 #[derive(clap::Parser, Debug)]
 pub struct HassArguments {

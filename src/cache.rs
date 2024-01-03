@@ -14,7 +14,7 @@ pub static CACHE: Lazy<Cache> = Lazy::new(|| {
         .or_else(|| dirs_next::cache_dir())
         .expect("failed to resolve cache dir");
 
-    let cache_file = cache_dir.join("govee-rs-cache.sqlite");
+    let cache_file = cache_dir.join("govee2mqtt-cache.sqlite");
     let conn = sqlite_cache::rusqlite::Connection::open(&cache_file)
         .expect(&format!("failed to open {cache_file:?}"));
     Cache::new(
