@@ -29,4 +29,5 @@ schema:
   debug_level: "str?"
   no_multicast: "bool?"
   broadcast_all: "bool?"
+  global_broadcast: "bool?"
   scan: "str?"
