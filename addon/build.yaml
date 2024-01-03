@@ -1,0 +1,23 @@
+labels:
+  org.opencontainers.image.title: "Home Assistant Add-on: Govee to MQTT Bridge"
+  org.opencontainers.image.description: "Acts as a bridge between Govee devices and Home Assistant, via the Home Assistant MQTT Integration."
+  org.opencontainers.image.source: "https://github.com/wez/govee2mqtt"
+  org.opencontainers.image.licenses: "MIT"
+
+# We need to specify these explicitly otherwise :latest will be
+# used by the builder, and that will fail the cosign chain of trust.
+# This should probably be kept in sync with the settings in
+# https://github.com/home-assistant/builder/blob/master/build.yaml
+build_from:
+  aarch64: "ghcr.io/home-assistant/aarch64-base-debian:bookworm"
+  armv7: "ghcr.io/home-assistant/armv7-base-debian:bookworm"
+  armhf: "ghcr.io/home-assistant/armhf-base-debian:bookworm"
+  amd64: "ghcr.io/home-assistant/amd64-base-debian:bookworm"
+  i386: "ghcr.io/home-assistant/i386-base-debian:bookworm"
+cosign:
+  # The identity is *our* identity that we use to sign this image.
+  # It is used to verify the safety of reusing the cache
+  identity: https://github.com/wez/govee2mqtt/.*
+  # The base_identity is the identity of the base images specified
+  # by the build_from section above
+  base_identity: https://github.com/home-assistant/docker-base/.*

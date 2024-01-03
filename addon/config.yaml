@@ -1,0 +1,32 @@
+name: Govee to MQTT Bridge
+#image: ghcr.io/wez/govee2mqtt-{arch}
+version: "latest"
+slug: govee2mqtt
+description: Control Govee Devices
+url: https://github.com/wez/govee2mqtt
+arch:
+  - amd64
+  - aarch64
+  - armv7
+init: false
+startup: services
+services:
+  - mqtt:need
+
+apparmor: true
+
+# Host network access is required for LAN discovery
+host_network: true
+
+schema:
+  govee_email: "str?"
+  govee_password: "str?"
+  govee_api_key: "str?"
+  mqtt_host: "str?"
+  mqtt_port: "int?"
+  mqtt_username: "str?"
+  mqtt_password: "str?"
+  debug_level: "str?"
+  no_multicast: "bool?"
+  broadcast_all: "bool?"
+  scan: "str?"

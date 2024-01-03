@@ -60,7 +60,11 @@ pub async fn start_iot_client(args: &Args, state: StateHandle) -> anyhow::Result
     }
 
     let client = mosquitto_rs::Client::with_id(
-        &format!("AP/{account_id}/foo", account_id = acct.account_id),
+        &format!(
+            "AP/{account_id}/{id}",
+            account_id = acct.account_id,
+            id = uuid::Uuid::new_v4().simple()
+        ),
         true,
     )
     .context("new client")?;
