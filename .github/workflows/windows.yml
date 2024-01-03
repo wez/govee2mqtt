@@ -18,13 +18,17 @@ jobs:
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v4
-    - name: Run tests
-      run: cargo test --all -- --show-output
     - name: Build
       run: cargo build --release --bin govee
+    - name: Assemble archive
+      shell: bash
+      run: |
+        mv target/release/govee.exe govee.exe
+        7z Govee2Mqtt-windows-x64.zip govee.exe AmazonRootCA1.pem assets
     - name: "Upload artifact"
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
-        name: "windows"
-        path: |
-          target/release/govee.exe
+        name: "windows-x64"
+        path: Govee2Mqtt*.zip
+        if-no-files-found: error
+
