@@ -1,5 +1,5 @@
 name: Govee to MQTT Bridge
-#image: ghcr.io/wez/govee2mqtt-{arch}
+image: ghcr.io/wez/govee2mqtt-{arch}
 version: "latest"
 slug: govee2mqtt
 description: Control Govee Devices
