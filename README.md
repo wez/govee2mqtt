@@ -16,6 +16,11 @@ via the [Home Assistant MQTT Integration](https://www.home-assistant.io/integrat
   API](https://developer.govee.com/reference/get-you-devices) in case the AWS
   IoT or LAN control is unavailable.
 
+## Usage
+
+* [Running it in Docker](DOCKER.md)
+* [Configuration](CONFIG.md)
+
 ## Credits
 
 This work is based on my earlier work with [Govee LAN
