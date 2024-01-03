@@ -19,6 +19,9 @@ here](https://developer.govee.com/reference/apply-you-govee-api-key).
 |`--govee-password`|`GOVEE_PASSWORD`|`govee_password`|The password you registered for your govee account|
 |`--api-key`|`GOVEE_API_KEY`|`govee_api_key`|The API key you requested from Govee support|
 
+*Concerned about sharing your credentials? See [Privacy](PRIVACY.md) for
+information about how data is used and retained by `govee2mqtt`*
+
 ## LAN API Control
 
 A number of Govee's devices support a local control protocol that doesn't require
