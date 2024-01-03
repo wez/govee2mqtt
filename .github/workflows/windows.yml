@@ -1,0 +1,27 @@
+name: Windows
+
+on:
+  pull_request:
+    branches:
+      - main
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Run tests
+      run: cargo test --all -- --show-output
+    - name: Build
+      run: cargo build --release --bin govee
+    - name: "Upload artifact"
+      uses: actions/upload-artifact@v3
+      with:
+        name: "windows"
+        path: |
+          target/release/govee.exe
