@@ -1,0 +1,10 @@
+version: '3.8'
+services:
+  pv2mqtt:
+    image: ghcr.io/wez/govee:latest
+    container_name: govee2mqtt
+    restart: unless-stopped
+    env_file:
+      - .env
+    # Host networking is required
+    network_mode: host
