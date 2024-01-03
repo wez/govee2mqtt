@@ -29,9 +29,11 @@ jobs:
         path: Govee2Mqtt*.zip
         if-no-files-found: error
     - name: Generate Changelog
+      if: startsWith(github.ref, 'refs/tags/')
       run: echo "Continuously built and pushed" > ${{ github.workspace }}-CHANGELOG.txt
     - name: Make Release
       uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
       with:
         body_path: ${{ github.workspace }}-CHANGELOG.txt
         files: Govee2Mqtt*.zip
