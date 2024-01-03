@@ -3,7 +3,7 @@ use crate::service::state::StateHandle;
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
-use axum::routing::{get, post};
+use axum::routing::get;
 use axum::{Json, Router};
 use serde::Serialize;
 use std::net::IpAddr;

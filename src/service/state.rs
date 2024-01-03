@@ -118,6 +118,7 @@ impl State {
         self.undoc_client.lock().await.replace(client);
     }
 
+    #[allow(dead_code)]
     pub async fn get_undoc_client(&self) -> Option<GoveeUndocumentedApi> {
         self.undoc_client.lock().await.clone()
     }

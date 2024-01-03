@@ -93,6 +93,7 @@ pub async fn start_iot_client(args: &Args, state: StateHandle) -> anyhow::Result
             log::trace!("{} -> {payload}", msg.topic);
 
             #[derive(Deserialize, Debug)]
+            #[allow(dead_code)]
             struct Packet {
                 sku: String,
                 device: String,
