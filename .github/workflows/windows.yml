@@ -24,7 +24,7 @@ jobs:
       shell: bash
       run: |
         mv target/release/govee.exe govee.exe
-        7z Govee2Mqtt-windows-x64.zip govee.exe AmazonRootCA1.pem assets
+        7z a -tzip Govee2Mqtt-windows-x64.zip govee.exe AmazonRootCA1.pem assets
     - name: "Upload artifact"
       uses: actions/upload-artifact@v4
       with:
