@@ -193,7 +193,7 @@ pub fn boolean_int<'de, D: serde::de::Deserializer<'de>>(
     })
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+#[derive(Serialize, Deserialize, Debug, Clone, Default, PartialEq, Eq)]
 pub struct DeviceStatus {
     #[serde(rename = "onOff", deserialize_with = "boolean_int")]
     pub on: bool,
@@ -203,7 +203,7 @@ pub struct DeviceStatus {
     pub color_temperature_kelvin: u32,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Copy, Default)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct DeviceColor {
     pub r: u8,
     pub g: u8,
@@ -465,16 +465,20 @@ impl Client {
 
     pub async fn query_status(&self, device: &LanDevice) -> anyhow::Result<DeviceStatus> {
         let mut rx = self.add_listener(device.ip).await?;
-        device.send_request(Request::DevStatus {}).await?;
-        loop {
-            match tokio::time::timeout(Duration::from_secs(10), rx.recv()).await {
+        let deadline = Instant::now() + Duration::from_secs(10);
+        while Instant::now() <= deadline {
+            log::trace!("query status from {}", device.ip);
+            device.send_request(Request::DevStatus {}).await?;
+            match tokio::time::timeout(Duration::from_millis(150), rx.recv()).await {
                 Ok(Some(Response::DevStatus(status))) => {
                     return Ok(status);
                 }
                 Ok(Some(_)) => {}
                 Ok(None) => anyhow::bail!("listener thread terminated"),
-                Err(_) => anyhow::bail!("timeout waiting for response"),
+                Err(_) => {}
             }
         }
+
+        anyhow::bail!("timed out waiting for status");
     }
 }

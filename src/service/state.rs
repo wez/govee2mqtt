@@ -1,6 +1,7 @@
-use crate::lan_api::Client as LanClient;
+use crate::lan_api::{Client as LanClient, LanDevice};
 use crate::platform_api::GoveeApiClient;
 use crate::service::device::Device;
+use crate::service::hass::{topic_safe_id, HassClient};
 use crate::service::iot::IotClient;
 use crate::undoc_api::GoveeUndocumentedApi;
 use std::collections::HashMap;
@@ -14,6 +15,8 @@ pub struct State {
     platform_client: Mutex<Option<GoveeApiClient>>,
     undoc_client: Mutex<Option<GoveeUndocumentedApi>>,
     iot_client: Mutex<Option<IotClient>>,
+    hass_client: Mutex<Option<HassClient>>,
+    hass_discovery_prefix: Mutex<String>,
 }
 
 pub type StateHandle = Arc<State>;
@@ -21,6 +24,14 @@ pub type StateHandle = Arc<State>;
 impl State {
     pub fn new() -> Self {
         Self::default()
+    }
+
+    pub async fn set_hass_disco_prefix(&self, prefix: String) {
+        *self.hass_discovery_prefix.lock().await = prefix;
+    }
+
+    pub async fn get_hass_disco_prefix(&self) -> String {
+        self.hass_discovery_prefix.lock().await.to_string()
     }
 
     /// Returns a mutable version of the specified device, creating
@@ -57,6 +68,7 @@ impl State {
         for d in devices.values() {
             if d.name().eq_ignore_ascii_case(label)
                 || d.id.eq_ignore_ascii_case(label)
+                || topic_safe_id(d).eq_ignore_ascii_case(label)
                 || d.ip_addr()
                     .map(|ip| ip.to_string().eq_ignore_ascii_case(label))
                     .unwrap_or(false)
@@ -67,6 +79,14 @@ impl State {
         }
 
         None
+    }
+
+    pub async fn set_hass_client(&self, client: HassClient) {
+        self.hass_client.lock().await.replace(client);
+    }
+
+    pub async fn get_hass_client(&self) -> Option<HassClient> {
+        self.hass_client.lock().await.clone()
     }
 
     pub async fn set_iot_client(&self, client: IotClient) {
@@ -101,9 +121,32 @@ impl State {
         self.undoc_client.lock().await.clone()
     }
 
+    async fn poll_lan_api(&self, device: &LanDevice) -> anyhow::Result<()> {
+        match self.get_lan_client().await {
+            Some(client) => {
+                for _ in 0..5 {
+                    let status = client.query_status(device).await?;
+                    let changed = self
+                        .device_mut(&device.sku, &device.device)
+                        .await
+                        .set_lan_device_status(status);
+                    if changed {
+                        break;
+                    }
+                    tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
+                }
+                self.notify_of_state_change(&device.device).await?;
+                Ok(())
+            }
+            None => anyhow::bail!("no lan client"),
+        }
+    }
+
     pub async fn device_power_on(&self, device: &Device, on: bool) -> anyhow::Result<()> {
         if let Some(lan_dev) = &device.lan_device {
-            return lan_dev.send_turn(on).await;
+            lan_dev.send_turn(on).await?;
+            self.poll_lan_api(lan_dev).await?;
+            return Ok(());
         }
 
         if let Some(client) = self.get_platform_client().await {
@@ -118,7 +161,9 @@ impl State {
 
     pub async fn device_set_brightness(&self, device: &Device, percent: u8) -> anyhow::Result<()> {
         if let Some(lan_dev) = &device.lan_device {
-            return lan_dev.send_brightness(percent).await;
+            lan_dev.send_brightness(percent).await?;
+            self.poll_lan_api(lan_dev).await?;
+            return Ok(());
         }
 
         if let Some(client) = self.get_platform_client().await {
@@ -136,7 +181,9 @@ impl State {
         kelvin: u32,
     ) -> anyhow::Result<()> {
         if let Some(lan_dev) = &device.lan_device {
-            return lan_dev.send_color_temperature_kelvin(kelvin).await;
+            lan_dev.send_color_temperature_kelvin(kelvin).await?;
+            self.poll_lan_api(lan_dev).await?;
+            return Ok(());
         }
 
         if let Some(client) = self.get_platform_client().await {
@@ -156,9 +203,11 @@ impl State {
         b: u8,
     ) -> anyhow::Result<()> {
         if let Some(lan_dev) = &device.lan_device {
-            return lan_dev
+            lan_dev
                 .send_color_rgb(crate::lan_api::DeviceColor { r, g, b })
-                .await;
+                .await?;
+            self.poll_lan_api(lan_dev).await?;
+            return Ok(());
         }
 
         if let Some(client) = self.get_platform_client().await {
@@ -193,5 +242,19 @@ impl State {
         }
 
         anyhow::bail!("Unable to set scene for {device}");
+    }
+
+    // Take care not to call this while you hold a mutable device
+    // reference, as that will deadlock!
+    pub async fn notify_of_state_change(&self, device_id: &str) -> anyhow::Result<()> {
+        let Some(canonical_device) = self.device_by_id(&device_id).await else {
+            anyhow::bail!("cannot find device {device_id}!?");
+        };
+
+        if let Some(hass) = self.get_hass_client().await {
+            hass.advise_hass_of_light_state(&canonical_device).await?;
+        }
+
+        Ok(())
     }
 }

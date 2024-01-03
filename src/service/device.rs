@@ -133,9 +133,15 @@ impl Device {
     }
 
     /// Update the LAN device status information
-    pub fn set_lan_device_status(&mut self, status: LanDeviceStatus) {
+    pub fn set_lan_device_status(&mut self, status: LanDeviceStatus) -> bool {
+        let changed = self
+            .lan_device_status
+            .as_ref()
+            .map(|prior| *prior != status)
+            .unwrap_or(true);
         self.lan_device_status.replace(status);
         self.last_lan_device_status_update.replace(Utc::now());
+        changed
     }
 
     pub fn set_iot_device_status(&mut self, status: LanDeviceStatus) {

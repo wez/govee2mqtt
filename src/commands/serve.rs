@@ -1,9 +1,10 @@
-use crate::version_info::govee_version;
 use crate::lan_api::Client as LanClient;
 use crate::service::device::Device;
+use crate::service::hass::spawn_hass_integration;
 use crate::service::http::run_http_server;
 use crate::service::iot::start_iot_client;
 use crate::service::state::StateHandle;
+use crate::version_info::govee_version;
 use anyhow::Context;
 use chrono::Utc;
 use std::collections::HashMap;
@@ -50,7 +51,7 @@ async fn poll_single_device(state: &StateHandle, device: &Device) -> anyhow::Res
 
     if let Some(iot) = state.get_iot_client().await {
         if let Some(info) = device.undoc_device_info.clone() {
-            log::info!("requesting update via mqtt {device} {device_state:?}");
+            log::info!("requesting update via IoT MQTT {device} {device_state:?}");
             iot.request_status_update(&info.entry)
                 .await
                 .context("iot request status update")?;
@@ -76,9 +77,12 @@ async fn poll_single_device(state: &StateHandle, device: &Device) -> anyhow::Res
                 .context("get_device_state")?;
             log::trace!("updated state for {device}");
 
-            let mut device = state.device_mut(&device.sku, &device.id).await;
-            device.set_http_device_state(http_state);
-            device.set_last_polled();
+            {
+                let mut device = state.device_mut(&device.sku, &device.id).await;
+                device.set_http_device_state(http_state);
+                device.set_last_polled();
+            }
+            state.notify_of_state_change(&device.id).await?;
         }
     } else {
         log::trace!(
@@ -160,6 +164,9 @@ impl ServeCommand {
                             .device_mut(&lan_device.sku, &lan_device.device)
                             .await
                             .set_lan_device_status(status);
+
+                        log::trace!("LAN disco: update and notify {}", lan_device.device);
+                        state.notify_of_state_change(&lan_device.device).await.ok();
                     }
                 }
             });
@@ -175,7 +182,8 @@ impl ServeCommand {
             });
         }
 
-        // TODO: start advertising on local mqtt
+        // start advertising on local mqtt
+        spawn_hass_integration(state.clone(), &args.hass_args).await?;
 
         run_http_server(state.clone(), self.http_port).await
     }

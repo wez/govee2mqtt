@@ -1,0 +1,2399 @@
+GetDevicesResponse {
+    code: 200,
+    message: "success",
+    data: [
+        HttpDeviceInfo {
+            sku: "H6072",
+            device: "AA:BB:CC:DD:AA:BB:CC:DD",
+            device_name: "Floor Lamp",
+            device_type: Light,
+            capabilities: [
+                DeviceCapability {
+                    kind: OnOff,
+                    instance: "powerSwitch",
+                    parameters: Enum {
+                        options: [
+                            EnumOption {
+                                name: "on",
+                                value: Number(1),
+                            },
+                            EnumOption {
+                                name: "off",
+                                value: Number(0),
+                            },
+                        ],
+                    },
+                },
+                DeviceCapability {
+                    kind: Toggle,
+                    instance: "gradientToggle",
+                    parameters: Enum {
+                        options: [
+                            EnumOption {
+                                name: "on",
+                                value: Number(1),
+                            },
+                            EnumOption {
+                                name: "off",
+                                value: Number(0),
+                            },
+                        ],
+                    },
+                },
+                DeviceCapability {
+                    kind: Range,
+                    instance: "brightness",
+                    parameters: Integer {
+                        unit: Some(
+                            "unit.percent",
+                        ),
+                        range: IntegerRange {
+                            min: 1,
+                            max: 100,
+                            precision: 1,
+                        },
+                    },
+                },
+                DeviceCapability {
+                    kind: SegmentColorSetting,
+                    instance: "segmentedBrightness",
+                    parameters: Struct {
+                        fields: [
+                            StructField {
+                                field_name: "segment",
+                                field_type: Array {
+                                    size: Some(
+                                        ArraySize {
+                                            min: 1,
+                                            max: 8,
+                                        },
+                                    ),
+                                    element_range: Some(
+                                        ElementRange {
+                                            min: 0,
+                                            max: 14,
+                                        },
+                                    ),
+                                    element_type: Some(
+                                        "INTEGER",
+                                    ),
+                                    options: [],
+                                },
+                                required: true,
+                            },
+                            StructField {
+                                field_name: "brightness",
+                                field_type: Integer {
+                                    unit: None,
+                                    range: IntegerRange {
+                                        min: 0,
+                                        max: 100,
+                                        precision: 1,
+                                    },
+                                },
+                                required: true,
+                            },
+                        ],
+                    },
+                },
+                DeviceCapability {
+                    kind: SegmentColorSetting,
+                    instance: "segmentedColorRgb",
+                    parameters: Struct {
+                        fields: [
+                            StructField {
+                                field_name: "segment",
+                                field_type: Array {
+                                    size: Some(
+                                        ArraySize {
+                                            min: 1,
+                                            max: 8,
+                                        },
+                                    ),
+                                    element_range: Some(
+                                        ElementRange {
+                                            min: 0,
+                                            max: 14,
+                                        },
+                                    ),
+                                    element_type: Some(
+                                        "INTEGER",
+                                    ),
+                                    options: [],
+                                },
+                                required: true,
+                            },
+                            StructField {
+                                field_name: "rgb",
+                                field_type: Integer {
+                                    unit: None,
+                                    range: IntegerRange {
+                                        min: 0,
+                                        max: 16777215,
+                                        precision: 1,
+                                    },
+                                },
+                                required: true,
+                            },
+                        ],
+                    },
+                },
+                DeviceCapability {
+                    kind: ColorSetting,
+                    instance: "colorRgb",
+                    parameters: Integer {
+                        unit: None,
+                        range: IntegerRange {
+                            min: 0,
+                            max: 16777215,
+                            precision: 1,
+                        },
+                    },
+                },
+                DeviceCapability {
+                    kind: ColorSetting,
+                    instance: "colorTemperatureK",
+                    parameters: Integer {
+                        unit: None,
+                        range: IntegerRange {
+                            min: 2000,
+                            max: 9000,
+                            precision: 1,
+                        },
+                    },
+                },
+                DeviceCapability {
+                    kind: DynamicScene,
+                    instance: "lightScene",
+                    parameters: Enum {
+                        options: [],
+                    },
+                },
+                DeviceCapability {
+                    kind: MusicSetting,
+                    instance: "musicMode",
+                    parameters: Struct {
+                        fields: [
+                            StructField {
+                                field_name: "musicMode",
+                                field_type: Enum {
+                                    options: [
+                                        EnumOption {
+                                            name: "Energic",
+                                            value: Number(1),
+                                        },
+                                        EnumOption {
+                                            name: "Rhythm",
+                                            value: Number(2),
+                                        },
+                                        EnumOption {
+                                            name: "Bounce",
+                                            value: Number(3),
+                                        },
+                                        EnumOption {
+                                            name: "Hopping",
+                                            value: Number(4),
+                                        },
+                                        EnumOption {
+                                            name: "Strike",
+                                            value: Number(5),
+                                        },
+                                        EnumOption {
+                                            name: "Vibrate",
+                                            value: Number(6),
+                                        },
+                                    ],
+                                },
+                                required: true,
+                            },
+                            StructField {
+                                field_name: "sensitivity",
+                                field_type: Integer {
+                                    unit: Some(
+                                        "unit.percent",
+                                    ),
+                                    range: IntegerRange {
+                                        min: 0,
+                                        max: 100,
+                                        precision: 1,
+                                    },
+                                },
+                                required: true,
+                            },
+                            StructField {
+                                field_name: "autoColor",
+                                field_type: Enum {
+                                    options: [
+                                        EnumOption {
+                                            name: "on",
+                                            value: Number(1),
+                                        },
+                                        EnumOption {
+                                            name: "off",
+                                            value: Number(0),
+                                        },
+                                    ],
+                                },
+                                required: false,
+                            },
+                            StructField {
+                                field_name: "rgb",
+                                field_type: Integer {
+                                    unit: None,
+                                    range: IntegerRange {
+                                        min: 0,
+                                        max: 16777215,
+                                        precision: 1,
+                                    },
+                                },
+                                required: false,
+                            },
+                        ],
+                    },
+                },
+                DeviceCapability {
+                    kind: DynamicScene,
+                    instance: "diyScene",
+                    parameters: Enum {
+                        options: [],
+                    },
+                },
+                DeviceCapability {
+                    kind: DynamicScene,
+                    instance: "snapshot",
+                    parameters: Enum {
+                        options: [],
+                    },
+                },
+            ],
+        },
+        HttpDeviceInfo {
+            sku: "H6072",
+            device: "AA:BB:CC:DD:AA:BB:CC:DD",
+            device_name: "Floor Lamp",
+            device_type: Light,
+            capabilities: [
+                DeviceCapability {
+                    kind: OnOff,
+                    instance: "powerSwitch",
+                    parameters: Enum {
+                        options: [
+                            EnumOption {
+                                name: "on",
+                                value: Number(1),
+                            },
+                            EnumOption {
+                                name: "off",
+                                value: Number(0),
+                            },
+                        ],
+                    },
+                },
+                DeviceCapability {
+                    kind: Toggle,
+                    instance: "gradientToggle",
+                    parameters: Enum {
+                        options: [
+                            EnumOption {
+                                name: "on",
+                                value: Number(1),
+                            },
+                            EnumOption {
+                                name: "off",
+                                value: Number(0),
+                            },
+                        ],
+                    },
+                },
+                DeviceCapability {
+                    kind: Range,
+                    instance: "brightness",
+                    parameters: Integer {
+                        unit: Some(
+                            "unit.percent",
+                        ),
+                        range: IntegerRange {
+                            min: 1,
+                            max: 100,
+                            precision: 1,
+                        },
+                    },
+                },
+                DeviceCapability {
+                    kind: SegmentColorSetting,
+                    instance: "segmentedBrightness",
+                    parameters: Struct {
+                        fields: [
+                            StructField {
+                                field_name: "segment",
+                                field_type: Array {
+                                    size: Some(
+                                        ArraySize {
+                                            min: 1,
+                                            max: 8,
+                                        },
+                                    ),
+                                    element_range: Some(
+                                        ElementRange {
+                                            min: 0,
+                                            max: 14,
+                                        },
+                                    ),
+                                    element_type: Some(
+                                        "INTEGER",
+                                    ),
+                                    options: [],
+                                },
+                                required: true,
+                            },
+                            StructField {
+                                field_name: "brightness",
+                                field_type: Integer {
+                                    unit: None,
+                                    range: IntegerRange {
+                                        min: 0,
+                                        max: 100,
+                                        precision: 1,
+                                    },
+                                },
+                                required: true,
+                            },
+                        ],
+                    },
+                },
+                DeviceCapability {
+                    kind: SegmentColorSetting,
+                    instance: "segmentedColorRgb",
+                    parameters: Struct {
+                        fields: [
+                            StructField {
+                                field_name: "segment",
+                                field_type: Array {
+                                    size: Some(
+                                        ArraySize {
+                                            min: 1,
+                                            max: 8,
+                                        },
+                                    ),
+                                    element_range: Some(
+                                        ElementRange {
+                                            min: 0,
+                                            max: 14,
+                                        },
+                                    ),
+                                    element_type: Some(
+                                        "INTEGER",
+                                    ),
+                                    options: [],
+                                },
+                                required: true,
+                            },
+                            StructField {
+                                field_name: "rgb",
+                                field_type: Integer {
+                                    unit: None,
+                                    range: IntegerRange {
+                                        min: 0,
+                                        max: 16777215,
+                                        precision: 1,
+                                    },
+                                },
+                                required: true,
+                            },
+                        ],
+                    },
+                },
+                DeviceCapability {
+                    kind: ColorSetting,
+                    instance: "colorRgb",
+                    parameters: Integer {
+                        unit: None,
+                        range: IntegerRange {
+                            min: 0,
+                            max: 16777215,
+                            precision: 1,
+                        },
+                    },
+                },
+                DeviceCapability {
+                    kind: ColorSetting,
+                    instance: "colorTemperatureK",
+                    parameters: Integer {
+                        unit: None,
+                        range: IntegerRange {
+                            min: 2000,
+                            max: 9000,
+                            precision: 1,
+                        },
+                    },
+                },
+                DeviceCapability {
+                    kind: DynamicScene,
+                    instance: "lightScene",
+                    parameters: Enum {
+                        options: [],
+                    },
+                },
+                DeviceCapability {
+                    kind: MusicSetting,
+                    instance: "musicMode",
+                    parameters: Struct {
+                        fields: [
+                            StructField {
+                                field_name: "musicMode",
+                                field_type: Enum {
+                                    options: [
+                                        EnumOption {
+                                            name: "Energic",
+                                            value: Number(1),
+                                        },
+                                        EnumOption {
+                                            name: "Rhythm",
+                                            value: Number(2),
+                                        },
+                                        EnumOption {
+                                            name: "Bounce",
+                                            value: Number(3),
+                                        },
+                                        EnumOption {
+                                            name: "Hopping",
+                                            value: Number(4),
+                                        },
+                                        EnumOption {
+                                            name: "Strike",
+                                            value: Number(5),
+                                        },
+                                        EnumOption {
+                                            name: "Vibrate",
+                                            value: Number(6),
+                                        },
+                                    ],
+                                },
+                                required: true,
+                            },
+                            StructField {
+                                field_name: "sensitivity",
+                                field_type: Integer {
+                                    unit: Some(
+                                        "unit.percent",
+                                    ),
+                                    range: IntegerRange {
+                                        min: 0,
+                                        max: 100,
+                                        precision: 1,
+                                    },
+                                },
+                                required: true,
+                            },
+                            StructField {
+                                field_name: "autoColor",
+                                field_type: Enum {
+                                    options: [
+                                        EnumOption {
+                                            name: "on",
+                                            value: Number(1),
+                                        },
+                                        EnumOption {
+                                            name: "off",
+                                            value: Number(0),
+                                        },
+                                    ],
+                                },
+                                required: false,
+                            },
+                            StructField {
+                                field_name: "rgb",
+                                field_type: Integer {
+                                    unit: None,
+                                    range: IntegerRange {
+                                        min: 0,
+                                        max: 16777215,
+                                        precision: 1,
+                                    },
+                                },
+                                required: false,
+                            },
+                        ],
+                    },
+                },
+                DeviceCapability {
+                    kind: DynamicScene,
+                    instance: "diyScene",
+                    parameters: Enum {
+                        options: [],
+                    },
+                },
+                DeviceCapability {
+                    kind: DynamicScene,
+                    instance: "snapshot",
+                    parameters: Enum {
+                        options: [],
+                    },
+                },
+            ],
+        },
+        HttpDeviceInfo {
+            sku: "H619A",
+            device: "AA:BB:CC:DD:AA:BB:CC:DD",
+            device_name: "H619A_CDF5",
+            device_type: Light,
+            capabilities: [
+                DeviceCapability {
+                    kind: OnOff,
+                    instance: "powerSwitch",
+                    parameters: Enum {
+                        options: [
+                            EnumOption {
+                                name: "on",
+                                value: Number(1),
+                            },
+                            EnumOption {
+                                name: "off",
+                                value: Number(0),
+                            },
+                        ],
+                    },
+                },
+                DeviceCapability {
+                    kind: Toggle,
+                    instance: "gradientToggle",
+                    parameters: Enum {
+                        options: [
+                            EnumOption {
+                                name: "on",
+                                value: Number(1),
+                            },
+                            EnumOption {
+                                name: "off",
+                                value: Number(0),
+                            },
+                        ],
+                    },
+                },
+                DeviceCapability {
+                    kind: Range,
+                    instance: "brightness",
+                    parameters: Integer {
+                        unit: Some(
+                            "unit.percent",
+                        ),
+                        range: IntegerRange {
+                            min: 1,
+                            max: 100,
+                            precision: 1,
+                        },
+                    },
+                },
+                DeviceCapability {
+                    kind: SegmentColorSetting,
+                    instance: "segmentedBrightness",
+                    parameters: Struct {
+                        fields: [
+                            StructField {
+                                field_name: "segment",
+                                field_type: Array {
+                                    size: Some(
+                                        ArraySize {
+                                            min: 1,
+                                            max: 15,
+                                        },
+                                    ),
+                                    element_range: Some(
+                                        ElementRange {
+                                            min: 0,
+                                            max: 14,
+                                        },
+                                    ),
+                                    element_type: Some(
+                                        "INTEGER",
+                                    ),
+                                    options: [],
+                                },
+                                required: true,
+                            },
+                            StructField {
+                                field_name: "brightness",
+                                field_type: Integer {
+                                    unit: None,
+                                    range: IntegerRange {
+                                        min: 0,
+                                        max: 100,
+                                        precision: 1,
+                                    },
+                                },
+                                required: true,
+                            },
+                        ],
+                    },
+                },
+                DeviceCapability {
+                    kind: SegmentColorSetting,
+                    instance: "segmentedColorRgb",
+                    parameters: Struct {
+                        fields: [
+                            StructField {
+                                field_name: "segment",
+                                field_type: Array {
+                                    size: Some(
+                                        ArraySize {
+                                            min: 1,
+                                            max: 15,
+                                        },
+                                    ),
+                                    element_range: Some(
+                                        ElementRange {
+                                            min: 0,
+                                            max: 14,
+                                        },
+                                    ),
+                                    element_type: Some(
+                                        "INTEGER",
+                                    ),
+                                    options: [],
+                                },
+                                required: true,
+                            },
+                            StructField {
+                                field_name: "rgb",
+                                field_type: Integer {
+                                    unit: None,
+                                    range: IntegerRange {
+                                        min: 0,
+                                        max: 16777215,
+                                        precision: 1,
+                                    },
+                                },
+                                required: true,
+                            },
+                        ],
+                    },
+                },
+                DeviceCapability {
+                    kind: ColorSetting,
+                    instance: "colorRgb",
+                    parameters: Integer {
+                        unit: None,
+                        range: IntegerRange {
+                            min: 0,
+                            max: 16777215,
+                            precision: 1,
+                        },
+                    },
+                },
+                DeviceCapability {
+                    kind: ColorSetting,
+                    instance: "colorTemperatureK",
+                    parameters: Integer {
+                        unit: None,
+                        range: IntegerRange {
+                            min: 2000,
+                            max: 9000,
+                            precision: 1,
+                        },
+                    },
+                },
+                DeviceCapability {
+                    kind: DynamicScene,
+                    instance: "lightScene",
+                    parameters: Enum {
+                        options: [],
+                    },
+                },
+                DeviceCapability {
+                    kind: MusicSetting,
+                    instance: "musicMode",
+                    parameters: Struct {
+                        fields: [
+                            StructField {
+                                field_name: "musicMode",
+                                field_type: Enum {
+                                    options: [
+                                        EnumOption {
+                                            name: "Energic",
+                                            value: Number(1),
+                                        },
+                                        EnumOption {
+                                            name: "Rhythm",
+                                            value: Number(2),
+                                        },
+                                        EnumOption {
+                                            name: "Spectrum",
+                                            value: Number(3),
+                                        },
+                                        EnumOption {
+                                            name: "Rolling",
+                                            value: Number(4),
+                                        },
+                                        EnumOption {
+                                            name: "Separation",
+                                            value: Number(5),
+                                        },
+                                        EnumOption {
+                                            name: "Hopping",
+                                            value: Number(6),
+                                        },
+                                        EnumOption {
+                                            name: "PianoKeys",
+                                            value: Number(7),
+                                        },
+                                        EnumOption {
+                                            name: "Fountain",
+                                            value: Number(8),
+                                        },
+                                        EnumOption {
+                                            name: "DayAndNight",
+                                            value: Number(9),
+                                        },
+                                        EnumOption {
+                                            name: "Sprouting",
+                                            value: Number(10),
+                                        },
+                                        EnumOption {
+                                            name: "Shiny",
+                                            value: Number(11),
+                                        },
+                                    ],
+                                },
+                                required: true,
+                            },
+                            StructField {
+                                field_name: "sensitivity",
+                                field_type: Integer {
+                                    unit: Some(
+                                        "unit.percent",
+                                    ),
+                                    range: IntegerRange {
+                                        min: 0,
+                                        max: 100,
+                                        precision: 1,
+                                    },
+                                },
+                                required: true,
+                            },
+                            StructField {
+                                field_name: "autoColor",
+                                field_type: Enum {
+                                    options: [
+                                        EnumOption {
+                                            name: "on",
+                                            value: Number(1),
+                                        },
+                                        EnumOption {
+                                            name: "off",
+                                            value: Number(0),
+                                        },
+                                    ],
+                                },
+                                required: false,
+                            },
+                            StructField {
+                                field_name: "rgb",
+                                field_type: Integer {
+                                    unit: None,
+                                    range: IntegerRange {
+                                        min: 0,
+                                        max: 16777215,
+                                        precision: 1,
+                                    },
+                                },
+                                required: false,
+                            },
+                        ],
+                    },
+                },
+                DeviceCapability {
+                    kind: DynamicScene,
+                    instance: "diyScene",
+                    parameters: Enum {
+                        options: [],
+                    },
+                },
+                DeviceCapability {
+                    kind: DynamicScene,
+                    instance: "snapshot",
+                    parameters: Enum {
+                        options: [],
+                    },
+                },
+            ],
+        },
+        HttpDeviceInfo {
+            sku: "H619A",
+            device: "AA:BB:CC:DD:AA:BB:CC:DD",
+            device_name: "Strip",
+            device_type: Light,
+            capabilities: [
+                DeviceCapability {
+                    kind: OnOff,
+                    instance: "powerSwitch",
+                    parameters: Enum {
+                        options: [
+                            EnumOption {
+                                name: "on",
+                                value: Number(1),
+                            },
+                            EnumOption {
+                                name: "off",
+                                value: Number(0),
+                            },
+                        ],
+                    },
+                },
+                DeviceCapability {
+                    kind: Toggle,
+                    instance: "gradientToggle",
+                    parameters: Enum {
+                        options: [
+                            EnumOption {
+                                name: "on",
+                                value: Number(1),
+                            },
+                            EnumOption {
+                                name: "off",
+                                value: Number(0),
+                            },
+                        ],
+                    },
+                },
+                DeviceCapability {
+                    kind: Range,
+                    instance: "brightness",
+                    parameters: Integer {
+                        unit: Some(
+                            "unit.percent",
+                        ),
+                        range: IntegerRange {
+                            min: 1,
+                            max: 100,
+                            precision: 1,
+                        },
+                    },
+                },
+                DeviceCapability {
+                    kind: SegmentColorSetting,
+                    instance: "segmentedBrightness",
+                    parameters: Struct {
+                        fields: [
+                            StructField {
+                                field_name: "segment",
+                                field_type: Array {
+                                    size: Some(
+                                        ArraySize {
+                                            min: 1,
+                                            max: 15,
+                                        },
+                                    ),
+                                    element_range: Some(
+                                        ElementRange {
+                                            min: 0,
+                                            max: 14,
+                                        },
+                                    ),
+                                    element_type: Some(
+                                        "INTEGER",
+                                    ),
+                                    options: [],
+                                },
+                                required: true,
+                            },
+                            StructField {
+                                field_name: "brightness",
+                                field_type: Integer {
+                                    unit: None,
+                                    range: IntegerRange {
+                                        min: 0,
+                                        max: 100,
+                                        precision: 1,
+                                    },
+                                },
+                                required: true,
+                            },
+                        ],
+                    },
+                },
+                DeviceCapability {
+                    kind: SegmentColorSetting,
+                    instance: "segmentedColorRgb",
+                    parameters: Struct {
+                        fields: [
+                            StructField {
+                                field_name: "segment",
+                                field_type: Array {
+                                    size: Some(
+                                        ArraySize {
+                                            min: 1,
+                                            max: 15,
+                                        },
+                                    ),
+                                    element_range: Some(
+                                        ElementRange {
+                                            min: 0,
+                                            max: 14,
+                                        },
+                                    ),
+                                    element_type: Some(
+                                        "INTEGER",
+                                    ),
+                                    options: [],
+                                },
+                                required: true,
+                            },
+                            StructField {
+                                field_name: "rgb",
+                                field_type: Integer {
+                                    unit: None,
+                                    range: IntegerRange {
+                                        min: 0,
+                                        max: 16777215,
+                                        precision: 1,
+                                    },
+                                },
+                                required: true,
+                            },
+                        ],
+                    },
+                },
+                DeviceCapability {
+                    kind: ColorSetting,
+                    instance: "colorRgb",
+                    parameters: Integer {
+                        unit: None,
+                        range: IntegerRange {
+                            min: 0,
+                            max: 16777215,
+                            precision: 1,
+                        },
+                    },
+                },
+                DeviceCapability {
+                    kind: ColorSetting,
+                    instance: "colorTemperatureK",
+                    parameters: Integer {
+                        unit: None,
+                        range: IntegerRange {
+                            min: 2000,
+                            max: 9000,
+                            precision: 1,
+                        },
+                    },
+                },
+                DeviceCapability {
+                    kind: DynamicScene,
+                    instance: "lightScene",
+                    parameters: Enum {
+                        options: [],
+                    },
+                },
+                DeviceCapability {
+                    kind: MusicSetting,
+                    instance: "musicMode",
+                    parameters: Struct {
+                        fields: [
+                            StructField {
+                                field_name: "musicMode",
+                                field_type: Enum {
+                                    options: [
+                                        EnumOption {
+                                            name: "Energic",
+                                            value: Number(1),
+                                        },
+                                        EnumOption {
+                                            name: "Rhythm",
+                                            value: Number(2),
+                                        },
+                                        EnumOption {
+                                            name: "Spectrum",
+                                            value: Number(3),
+                                        },
+                                        EnumOption {
+                                            name: "Rolling",
+                                            value: Number(4),
+                                        },
+                                        EnumOption {
+                                            name: "Separation",
+                                            value: Number(5),
+                                        },
+                                        EnumOption {
+                                            name: "Hopping",
+                                            value: Number(6),
+                                        },
+                                        EnumOption {
+                                            name: "PianoKeys",
+                                            value: Number(7),
+                                        },
+                                        EnumOption {
+                                            name: "Fountain",
+                                            value: Number(8),
+                                        },
+                                        EnumOption {
+                                            name: "DayAndNight",
+                                            value: Number(9),
+                                        },
+                                        EnumOption {
+                                            name: "Sprouting",
+                                            value: Number(10),
+                                        },
+                                        EnumOption {
+                                            name: "Shiny",
+                                            value: Number(11),
+                                        },
+                                    ],
+                                },
+                                required: true,
+                            },
+                            StructField {
+                                field_name: "sensitivity",
+                                field_type: Integer {
+                                    unit: Some(
+                                        "unit.percent",
+                                    ),
+                                    range: IntegerRange {
+                                        min: 0,
+                                        max: 100,
+                                        precision: 1,
+                                    },
+                                },
+                                required: true,
+                            },
+                            StructField {
+                                field_name: "autoColor",
+                                field_type: Enum {
+                                    options: [
+                                        EnumOption {
+                                            name: "on",
+                                            value: Number(1),
+                                        },
+                                        EnumOption {
+                                            name: "off",
+                                            value: Number(0),
+                                        },
+                                    ],
+                                },
+                                required: false,
+                            },
+                            StructField {
+                                field_name: "rgb",
+                                field_type: Integer {
+                                    unit: None,
+                                    range: IntegerRange {
+                                        min: 0,
+                                        max: 16777215,
+                                        precision: 1,
+                                    },
+                                },
+                                required: false,
+                            },
+                        ],
+                    },
+                },
+                DeviceCapability {
+                    kind: DynamicScene,
+                    instance: "diyScene",
+                    parameters: Enum {
+                        options: [],
+                    },
+                },
+                DeviceCapability {
+                    kind: DynamicScene,
+                    instance: "snapshot",
+                    parameters: Enum {
+                        options: [],
+                    },
+                },
+            ],
+        },
+        HttpDeviceInfo {
+            sku: "H61A2",
+            device: "AA:BB:CC:DD:AA:BB:CC:DD",
+            device_name: "Neon",
+            device_type: Light,
+            capabilities: [
+                DeviceCapability {
+                    kind: OnOff,
+                    instance: "powerSwitch",
+                    parameters: Enum {
+                        options: [
+                            EnumOption {
+                                name: "on",
+                                value: Number(1),
+                            },
+                            EnumOption {
+                                name: "off",
+                                value: Number(0),
+                            },
+                        ],
+                    },
+                },
+                DeviceCapability {
+                    kind: Toggle,
+                    instance: "gradientToggle",
+                    parameters: Enum {
+                        options: [
+                            EnumOption {
+                                name: "on",
+                                value: Number(1),
+                            },
+                            EnumOption {
+                                name: "off",
+                                value: Number(0),
+                            },
+                        ],
+                    },
+                },
+                DeviceCapability {
+                    kind: Range,
+                    instance: "brightness",
+                    parameters: Integer {
+                        unit: Some(
+                            "unit.percent",
+                        ),
+                        range: IntegerRange {
+                            min: 1,
+                            max: 100,
+                            precision: 1,
+                        },
+                    },
+                },
+                DeviceCapability {
+                    kind: SegmentColorSetting,
+                    instance: "segmentedBrightness",
+                    parameters: Struct {
+                        fields: [
+                            StructField {
+                                field_name: "segment",
+                                field_type: Array {
+                                    size: Some(
+                                        ArraySize {
+                                            min: 1,
+                                            max: 15,
+                                        },
+                                    ),
+                                    element_range: Some(
+                                        ElementRange {
+                                            min: 0,
+                                            max: 14,
+                                        },
+                                    ),
+                                    element_type: Some(
+                                        "INTEGER",
+                                    ),
+                                    options: [],
+                                },
+                                required: true,
+                            },
+                            StructField {
+                                field_name: "brightness",
+                                field_type: Integer {
+                                    unit: None,
+                                    range: IntegerRange {
+                                        min: 0,
+                                        max: 100,
+                                        precision: 1,
+                                    },
+                                },
+                                required: true,
+                            },
+                        ],
+                    },
+                },
+                DeviceCapability {
+                    kind: SegmentColorSetting,
+                    instance: "segmentedColorRgb",
+                    parameters: Struct {
+                        fields: [
+                            StructField {
+                                field_name: "segment",
+                                field_type: Array {
+                                    size: Some(
+                                        ArraySize {
+                                            min: 1,
+                                            max: 15,
+                                        },
+                                    ),
+                                    element_range: Some(
+                                        ElementRange {
+                                            min: 0,
+                                            max: 14,
+                                        },
+                                    ),
+                                    element_type: None,
+                                    options: [],
+                                },
+                                required: true,
+                            },
+                            StructField {
+                                field_name: "rgb",
+                                field_type: Integer {
+                                    unit: None,
+                                    range: IntegerRange {
+                                        min: 0,
+                                        max: 16777215,
+                                        precision: 1,
+                                    },
+                                },
+                                required: true,
+                            },
+                        ],
+                    },
+                },
+                DeviceCapability {
+                    kind: ColorSetting,
+                    instance: "colorRgb",
+                    parameters: Integer {
+                        unit: None,
+                        range: IntegerRange {
+                            min: 0,
+                            max: 16777215,
+                            precision: 1,
+                        },
+                    },
+                },
+                DeviceCapability {
+                    kind: ColorSetting,
+                    instance: "colorTemperatureK",
+                    parameters: Integer {
+                        unit: None,
+                        range: IntegerRange {
+                            min: 2000,
+                            max: 9000,
+                            precision: 1,
+                        },
+                    },
+                },
+                DeviceCapability {
+                    kind: DynamicScene,
+                    instance: "lightScene",
+                    parameters: Enum {
+                        options: [],
+                    },
+                },
+                DeviceCapability {
+                    kind: MusicSetting,
+                    instance: "musicMode",
+                    parameters: Struct {
+                        fields: [
+                            StructField {
+                                field_name: "musicMode",
+                                field_type: Enum {
+                                    options: [
+                                        EnumOption {
+                                            name: "Energic",
+                                            value: Number(1),
+                                        },
+                                        EnumOption {
+                                            name: "Rhythm",
+                                            value: Number(2),
+                                        },
+                                        EnumOption {
+                                            name: "Spectrum",
+                                            value: Number(3),
+                                        },
+                                        EnumOption {
+                                            name: "Rolling",
+                                            value: Number(4),
+                                        },
+                                        EnumOption {
+                                            name: "Separation",
+                                            value: Number(5),
+                                        },
+                                        EnumOption {
+                                            name: "Hopping",
+                                            value: Number(6),
+                                        },
+                                        EnumOption {
+                                            name: "PianoKeys",
+                                            value: Number(7),
+                                        },
+                                        EnumOption {
+                                            name: "Fountain",
+                                            value: Number(8),
+                                        },
+                                        EnumOption {
+                                            name: "DayandNight",
+                                            value: Number(9),
+                                        },
+                                        EnumOption {
+                                            name: "Sprouting",
+                                            value: Number(10),
+                                        },
+                                        EnumOption {
+                                            name: "Shiny",
+                                            value: Number(11),
+                                        },
+                                    ],
+                                },
+                                required: true,
+                            },
+                            StructField {
+                                field_name: "sensitivity",
+                                field_type: Integer {
+                                    unit: Some(
+                                        "unit.percent",
+                                    ),
+                                    range: IntegerRange {
+                                        min: 0,
+                                        max: 100,
+                                        precision: 1,
+                                    },
+                                },
+                                required: true,
+                            },
+                            StructField {
+                                field_name: "autoColor",
+                                field_type: Enum {
+                                    options: [
+                                        EnumOption {
+                                            name: "on",
+                                            value: Number(1),
+                                        },
+                                        EnumOption {
+                                            name: "off",
+                                            value: Number(0),
+                                        },
+                                    ],
+                                },
+                                required: false,
+                            },
+                            StructField {
+                                field_name: "rgb",
+                                field_type: Integer {
+                                    unit: None,
+                                    range: IntegerRange {
+                                        min: 0,
+                                        max: 16777215,
+                                        precision: 1,
+                                    },
+                                },
+                                required: false,
+                            },
+                        ],
+                    },
+                },
+                DeviceCapability {
+                    kind: DynamicScene,
+                    instance: "diyScene",
+                    parameters: Enum {
+                        options: [],
+                    },
+                },
+                DeviceCapability {
+                    kind: DynamicScene,
+                    instance: "snapshot",
+                    parameters: Enum {
+                        options: [],
+                    },
+                },
+            ],
+        },
+        HttpDeviceInfo {
+            sku: "H610A",
+            device: "AA:BB:CC:DD:AA:BB:CC:DD",
+            device_name: "Govee Glide Lively 1",
+            device_type: Light,
+            capabilities: [
+                DeviceCapability {
+                    kind: OnOff,
+                    instance: "powerSwitch",
+                    parameters: Enum {
+                        options: [
+                            EnumOption {
+                                name: "on",
+                                value: Number(1),
+                            },
+                            EnumOption {
+                                name: "off",
+                                value: Number(0),
+                            },
+                        ],
+                    },
+                },
+            ],
+        },
+        HttpDeviceInfo {
+            sku: "H6058",
+            device: "AA:BB:CC:DD:AA:BB:CC:DD",
+            device_name: "Portable Table Lamp",
+            device_type: Light,
+            capabilities: [
+                DeviceCapability {
+                    kind: OnOff,
+                    instance: "powerSwitch",
+                    parameters: Enum {
+                        options: [
+                            EnumOption {
+                                name: "on",
+                                value: Number(1),
+                            },
+                            EnumOption {
+                                name: "off",
+                                value: Number(0),
+                            },
+                        ],
+                    },
+                },
+                DeviceCapability {
+                    kind: Range,
+                    instance: "brightness",
+                    parameters: Integer {
+                        unit: Some(
+                            "unit.percent",
+                        ),
+                        range: IntegerRange {
+                            min: 1,
+                            max: 100,
+                            precision: 1,
+                        },
+                    },
+                },
+                DeviceCapability {
+                    kind: SegmentColorSetting,
+                    instance: "segmentedBrightness",
+                    parameters: Struct {
+                        fields: [
+                            StructField {
+                                field_name: "segment",
+                                field_type: Array {
+                                    size: Some(
+                                        ArraySize {
+                                            min: 1,
+                                            max: 15,
+                                        },
+                                    ),
+                                    element_range: Some(
+                                        ElementRange {
+                                            min: 0,
+                                            max: 14,
+                                        },
+                                    ),
+                                    element_type: Some(
+                                        "INTEGER",
+                                    ),
+                                    options: [],
+                                },
+                                required: true,
+                            },
+                            StructField {
+                                field_name: "brightness",
+                                field_type: Integer {
+                                    unit: None,
+                                    range: IntegerRange {
+                                        min: 0,
+                                        max: 100,
+                                        precision: 1,
+                                    },
+                                },
+                                required: true,
+                            },
+                        ],
+                    },
+                },
+                DeviceCapability {
+                    kind: ColorSetting,
+                    instance: "colorRgb",
+                    parameters: Integer {
+                        unit: None,
+                        range: IntegerRange {
+                            min: 0,
+                            max: 16777215,
+                            precision: 1,
+                        },
+                    },
+                },
+                DeviceCapability {
+                    kind: ColorSetting,
+                    instance: "colorTemperatureK",
+                    parameters: Integer {
+                        unit: None,
+                        range: IntegerRange {
+                            min: 2000,
+                            max: 9000,
+                            precision: 1,
+                        },
+                    },
+                },
+                DeviceCapability {
+                    kind: DynamicScene,
+                    instance: "lightScene",
+                    parameters: Enum {
+                        options: [],
+                    },
+                },
+                DeviceCapability {
+                    kind: MusicSetting,
+                    instance: "musicMode",
+                    parameters: Struct {
+                        fields: [
+                            StructField {
+                                field_name: "musicMode",
+                                field_type: Enum {
+                                    options: [
+                                        EnumOption {
+                                            name: "Dynamic",
+                                            value: Number(1),
+                                        },
+                                        EnumOption {
+                                            name: "Calm",
+                                            value: Number(2),
+                                        },
+                                    ],
+                                },
+                                required: true,
+                            },
+                            StructField {
+                                field_name: "sensitivity",
+                                field_type: Integer {
+                                    unit: Some(
+                                        "unit.percent",
+                                    ),
+                                    range: IntegerRange {
+                                        min: 0,
+                                        max: 100,
+                                        precision: 1,
+                                    },
+                                },
+                                required: true,
+                            },
+                            StructField {
+                                field_name: "autoColor",
+                                field_type: Enum {
+                                    options: [
+                                        EnumOption {
+                                            name: "on",
+                                            value: Number(1),
+                                        },
+                                        EnumOption {
+                                            name: "off",
+                                            value: Number(0),
+                                        },
+                                    ],
+                                },
+                                required: false,
+                            },
+                            StructField {
+                                field_name: "rgb",
+                                field_type: Integer {
+                                    unit: None,
+                                    range: IntegerRange {
+                                        min: 0,
+                                        max: 16777215,
+                                        precision: 1,
+                                    },
+                                },
+                                required: false,
+                            },
+                        ],
+                    },
+                },
+                DeviceCapability {
+                    kind: DynamicScene,
+                    instance: "diyScene",
+                    parameters: Enum {
+                        options: [],
+                    },
+                },
+                DeviceCapability {
+                    kind: DynamicScene,
+                    instance: "snapshot",
+                    parameters: Enum {
+                        options: [],
+                    },
+                },
+            ],
+        },
+        HttpDeviceInfo {
+            sku: "H6072",
+            device: "AA:BB:CC:DD:AA:BB:CC:DD",
+            device_name: "Floor Lamp",
+            device_type: Light,
+            capabilities: [
+                DeviceCapability {
+                    kind: OnOff,
+                    instance: "powerSwitch",
+                    parameters: Enum {
+                        options: [
+                            EnumOption {
+                                name: "on",
+                                value: Number(1),
+                            },
+                            EnumOption {
+                                name: "off",
+                                value: Number(0),
+                            },
+                        ],
+                    },
+                },
+                DeviceCapability {
+                    kind: Toggle,
+                    instance: "gradientToggle",
+                    parameters: Enum {
+                        options: [
+                            EnumOption {
+                                name: "on",
+                                value: Number(1),
+                            },
+                            EnumOption {
+                                name: "off",
+                                value: Number(0),
+                            },
+                        ],
+                    },
+                },
+                DeviceCapability {
+                    kind: Range,
+                    instance: "brightness",
+                    parameters: Integer {
+                        unit: Some(
+                            "unit.percent",
+                        ),
+                        range: IntegerRange {
+                            min: 1,
+                            max: 100,
+                            precision: 1,
+                        },
+                    },
+                },
+                DeviceCapability {
+                    kind: SegmentColorSetting,
+                    instance: "segmentedBrightness",
+                    parameters: Struct {
+                        fields: [
+                            StructField {
+                                field_name: "segment",
+                                field_type: Array {
+                                    size: Some(
+                                        ArraySize {
+                                            min: 1,
+                                            max: 8,
+                                        },
+                                    ),
+                                    element_range: Some(
+                                        ElementRange {
+                                            min: 0,
+                                            max: 14,
+                                        },
+                                    ),
+                                    element_type: Some(
+                                        "INTEGER",
+                                    ),
+                                    options: [],
+                                },
+                                required: true,
+                            },
+                            StructField {
+                                field_name: "brightness",
+                                field_type: Integer {
+                                    unit: None,
+                                    range: IntegerRange {
+                                        min: 0,
+                                        max: 100,
+                                        precision: 1,
+                                    },
+                                },
+                                required: true,
+                            },
+                        ],
+                    },
+                },
+                DeviceCapability {
+                    kind: SegmentColorSetting,
+                    instance: "segmentedColorRgb",
+                    parameters: Struct {
+                        fields: [
+                            StructField {
+                                field_name: "segment",
+                                field_type: Array {
+                                    size: Some(
+                                        ArraySize {
+                                            min: 1,
+                                            max: 8,
+                                        },
+                                    ),
+                                    element_range: Some(
+                                        ElementRange {
+                                            min: 0,
+                                            max: 14,
+                                        },
+                                    ),
+                                    element_type: Some(
+                                        "INTEGER",
+                                    ),
+                                    options: [],
+                                },
+                                required: true,
+                            },
+                            StructField {
+                                field_name: "rgb",
+                                field_type: Integer {
+                                    unit: None,
+                                    range: IntegerRange {
+                                        min: 0,
+                                        max: 16777215,
+                                        precision: 1,
+                                    },
+                                },
+                                required: true,
+                            },
+                        ],
+                    },
+                },
+                DeviceCapability {
+                    kind: ColorSetting,
+                    instance: "colorRgb",
+                    parameters: Integer {
+                        unit: None,
+                        range: IntegerRange {
+                            min: 0,
+                            max: 16777215,
+                            precision: 1,
+                        },
+                    },
+                },
+                DeviceCapability {
+                    kind: ColorSetting,
+                    instance: "colorTemperatureK",
+                    parameters: Integer {
+                        unit: None,
+                        range: IntegerRange {
+                            min: 2000,
+                            max: 9000,
+                            precision: 1,
+                        },
+                    },
+                },
+                DeviceCapability {
+                    kind: DynamicScene,
+                    instance: "lightScene",
+                    parameters: Enum {
+                        options: [],
+                    },
+                },
+                DeviceCapability {
+                    kind: MusicSetting,
+                    instance: "musicMode",
+                    parameters: Struct {
+                        fields: [
+                            StructField {
+                                field_name: "musicMode",
+                                field_type: Enum {
+                                    options: [
+                                        EnumOption {
+                                            name: "Energic",
+                                            value: Number(1),
+                                        },
+                                        EnumOption {
+                                            name: "Rhythm",
+                                            value: Number(2),
+                                        },
+                                        EnumOption {
+                                            name: "Bounce",
+                                            value: Number(3),
+                                        },
+                                        EnumOption {
+                                            name: "Hopping",
+                                            value: Number(4),
+                                        },
+                                        EnumOption {
+                                            name: "Strike",
+                                            value: Number(5),
+                                        },
+                                        EnumOption {
+                                            name: "Vibrate",
+                                            value: Number(6),
+                                        },
+                                    ],
+                                },
+                                required: true,
+                            },
+                            StructField {
+                                field_name: "sensitivity",
+                                field_type: Integer {
+                                    unit: Some(
+                                        "unit.percent",
+                                    ),
+                                    range: IntegerRange {
+                                        min: 0,
+                                        max: 100,
+                                        precision: 1,
+                                    },
+                                },
+                                required: true,
+                            },
+                            StructField {
+                                field_name: "autoColor",
+                                field_type: Enum {
+                                    options: [
+                                        EnumOption {
+                                            name: "on",
+                                            value: Number(1),
+                                        },
+                                        EnumOption {
+                                            name: "off",
+                                            value: Number(0),
+                                        },
+                                    ],
+                                },
+                                required: false,
+                            },
+                            StructField {
+                                field_name: "rgb",
+                                field_type: Integer {
+                                    unit: None,
+                                    range: IntegerRange {
+                                        min: 0,
+                                        max: 16777215,
+                                        precision: 1,
+                                    },
+                                },
+                                required: false,
+                            },
+                        ],
+                    },
+                },
+                DeviceCapability {
+                    kind: DynamicScene,
+                    instance: "diyScene",
+                    parameters: Enum {
+                        options: [],
+                    },
+                },
+                DeviceCapability {
+                    kind: DynamicScene,
+                    instance: "snapshot",
+                    parameters: Enum {
+                        options: [],
+                    },
+                },
+            ],
+        },
+        HttpDeviceInfo {
+            sku: "H6072",
+            device: "AA:BB:CC:DD:AA:BB:CC:DD",
+            device_name: "Light",
+            device_type: Light,
+            capabilities: [
+                DeviceCapability {
+                    kind: OnOff,
+                    instance: "powerSwitch",
+                    parameters: Enum {
+                        options: [
+                            EnumOption {
+                                name: "on",
+                                value: Number(1),
+                            },
+                            EnumOption {
+                                name: "off",
+                                value: Number(0),
+                            },
+                        ],
+                    },
+                },
+                DeviceCapability {
+                    kind: Toggle,
+                    instance: "gradientToggle",
+                    parameters: Enum {
+                        options: [
+                            EnumOption {
+                                name: "on",
+                                value: Number(1),
+                            },
+                            EnumOption {
+                                name: "off",
+                                value: Number(0),
+                            },
+                        ],
+                    },
+                },
+                DeviceCapability {
+                    kind: Range,
+                    instance: "brightness",
+                    parameters: Integer {
+                        unit: Some(
+                            "unit.percent",
+                        ),
+                        range: IntegerRange {
+                            min: 1,
+                            max: 100,
+                            precision: 1,
+                        },
+                    },
+                },
+                DeviceCapability {
+                    kind: SegmentColorSetting,
+                    instance: "segmentedBrightness",
+                    parameters: Struct {
+                        fields: [
+                            StructField {
+                                field_name: "segment",
+                                field_type: Array {
+                                    size: Some(
+                                        ArraySize {
+                                            min: 1,
+                                            max: 8,
+                                        },
+                                    ),
+                                    element_range: Some(
+                                        ElementRange {
+                                            min: 0,
+                                            max: 14,
+                                        },
+                                    ),
+                                    element_type: Some(
+                                        "INTEGER",
+                                    ),
+                                    options: [],
+                                },
+                                required: true,
+                            },
+                            StructField {
+                                field_name: "brightness",
+                                field_type: Integer {
+                                    unit: None,
+                                    range: IntegerRange {
+                                        min: 0,
+                                        max: 100,
+                                        precision: 1,
+                                    },
+                                },
+                                required: true,
+                            },
+                        ],
+                    },
+                },
+                DeviceCapability {
+                    kind: SegmentColorSetting,
+                    instance: "segmentedColorRgb",
+                    parameters: Struct {
+                        fields: [
+                            StructField {
+                                field_name: "segment",
+                                field_type: Array {
+                                    size: Some(
+                                        ArraySize {
+                                            min: 1,
+                                            max: 8,
+                                        },
+                                    ),
+                                    element_range: Some(
+                                        ElementRange {
+                                            min: 0,
+                                            max: 14,
+                                        },
+                                    ),
+                                    element_type: Some(
+                                        "INTEGER",
+                                    ),
+                                    options: [],
+                                },
+                                required: true,
+                            },
+                            StructField {
+                                field_name: "rgb",
+                                field_type: Integer {
+                                    unit: None,
+                                    range: IntegerRange {
+                                        min: 0,
+                                        max: 16777215,
+                                        precision: 1,
+                                    },
+                                },
+                                required: true,
+                            },
+                        ],
+                    },
+                },
+                DeviceCapability {
+                    kind: ColorSetting,
+                    instance: "colorRgb",
+                    parameters: Integer {
+                        unit: None,
+                        range: IntegerRange {
+                            min: 0,
+                            max: 16777215,
+                            precision: 1,
+                        },
+                    },
+                },
+                DeviceCapability {
+                    kind: ColorSetting,
+                    instance: "colorTemperatureK",
+                    parameters: Integer {
+                        unit: None,
+                        range: IntegerRange {
+                            min: 2000,
+                            max: 9000,
+                            precision: 1,
+                        },
+                    },
+                },
+                DeviceCapability {
+                    kind: DynamicScene,
+                    instance: "lightScene",
+                    parameters: Enum {
+                        options: [],
+                    },
+                },
+                DeviceCapability {
+                    kind: MusicSetting,
+                    instance: "musicMode",
+                    parameters: Struct {
+                        fields: [
+                            StructField {
+                                field_name: "musicMode",
+                                field_type: Enum {
+                                    options: [
+                                        EnumOption {
+                                            name: "Energic",
+                                            value: Number(1),
+                                        },
+                                        EnumOption {
+                                            name: "Rhythm",
+                                            value: Number(2),
+                                        },
+                                        EnumOption {
+                                            name: "Bounce",
+                                            value: Number(3),
+                                        },
+                                        EnumOption {
+                                            name: "Hopping",
+                                            value: Number(4),
+                                        },
+                                        EnumOption {
+                                            name: "Strike",
+                                            value: Number(5),
+                                        },
+                                        EnumOption {
+                                            name: "Vibrate",
+                                            value: Number(6),
+                                        },
+                                    ],
+                                },
+                                required: true,
+                            },
+                            StructField {
+                                field_name: "sensitivity",
+                                field_type: Integer {
+                                    unit: Some(
+                                        "unit.percent",
+                                    ),
+                                    range: IntegerRange {
+                                        min: 0,
+                                        max: 100,
+                                        precision: 1,
+                                    },
+                                },
+                                required: true,
+                            },
+                            StructField {
+                                field_name: "autoColor",
+                                field_type: Enum {
+                                    options: [
+                                        EnumOption {
+                                            name: "on",
+                                            value: Number(1),
+                                        },
+                                        EnumOption {
+                                            name: "off",
+                                            value: Number(0),
+                                        },
+                                    ],
+                                },
+                                required: false,
+                            },
+                            StructField {
+                                field_name: "rgb",
+                                field_type: Integer {
+                                    unit: None,
+                                    range: IntegerRange {
+                                        min: 0,
+                                        max: 16777215,
+                                        precision: 1,
+                                    },
+                                },
+                                required: false,
+                            },
+                        ],
+                    },
+                },
+                DeviceCapability {
+                    kind: DynamicScene,
+                    instance: "diyScene",
+                    parameters: Enum {
+                        options: [],
+                    },
+                },
+                DeviceCapability {
+                    kind: DynamicScene,
+                    instance: "snapshot",
+                    parameters: Enum {
+                        options: [],
+                    },
+                },
+            ],
+        },
+        HttpDeviceInfo {
+            sku: "H6072",
+            device: "AA:BB:CC:DD:AA:BB:CC:DD",
+            device_name: "Lamp",
+            device_type: Light,
+            capabilities: [
+                DeviceCapability {
+                    kind: OnOff,
+                    instance: "powerSwitch",
+                    parameters: Enum {
+                        options: [
+                            EnumOption {
+                                name: "on",
+                                value: Number(1),
+                            },
+                            EnumOption {
+                                name: "off",
+                                value: Number(0),
+                            },
+                        ],
+                    },
+                },
+                DeviceCapability {
+                    kind: Toggle,
+                    instance: "gradientToggle",
+                    parameters: Enum {
+                        options: [
+                            EnumOption {
+                                name: "on",
+                                value: Number(1),
+                            },
+                            EnumOption {
+                                name: "off",
+                                value: Number(0),
+                            },
+                        ],
+                    },
+                },
+                DeviceCapability {
+                    kind: Range,
+                    instance: "brightness",
+                    parameters: Integer {
+                        unit: Some(
+                            "unit.percent",
+                        ),
+                        range: IntegerRange {
+                            min: 1,
+                            max: 100,
+                            precision: 1,
+                        },
+                    },
+                },
+                DeviceCapability {
+                    kind: SegmentColorSetting,
+                    instance: "segmentedBrightness",
+                    parameters: Struct {
+                        fields: [
+                            StructField {
+                                field_name: "segment",
+                                field_type: Array {
+                                    size: Some(
+                                        ArraySize {
+                                            min: 1,
+                                            max: 8,
+                                        },
+                                    ),
+                                    element_range: Some(
+                                        ElementRange {
+                                            min: 0,
+                                            max: 14,
+                                        },
+                                    ),
+                                    element_type: Some(
+                                        "INTEGER",
+                                    ),
+                                    options: [],
+                                },
+                                required: true,
+                            },
+                            StructField {
+                                field_name: "brightness",
+                                field_type: Integer {
+                                    unit: None,
+                                    range: IntegerRange {
+                                        min: 0,
+                                        max: 100,
+                                        precision: 1,
+                                    },
+                                },
+                                required: true,
+                            },
+                        ],
+                    },
+                },
+                DeviceCapability {
+                    kind: SegmentColorSetting,
+                    instance: "segmentedColorRgb",
+                    parameters: Struct {
+                        fields: [
+                            StructField {
+                                field_name: "segment",
+                                field_type: Array {
+                                    size: Some(
+                                        ArraySize {
+                                            min: 1,
+                                            max: 8,
+                                        },
+                                    ),
+                                    element_range: Some(
+                                        ElementRange {
+                                            min: 0,
+                                            max: 14,
+                                        },
+                                    ),
+                                    element_type: Some(
+                                        "INTEGER",
+                                    ),
+                                    options: [],
+                                },
+                                required: true,
+                            },
+                            StructField {
+                                field_name: "rgb",
+                                field_type: Integer {
+                                    unit: None,
+                                    range: IntegerRange {
+                                        min: 0,
+                                        max: 16777215,
+                                        precision: 1,
+                                    },
+                                },
+                                required: true,
+                            },
+                        ],
+                    },
+                },
+                DeviceCapability {
+                    kind: ColorSetting,
+                    instance: "colorRgb",
+                    parameters: Integer {
+                        unit: None,
+                        range: IntegerRange {
+                            min: 0,
+                            max: 16777215,
+                            precision: 1,
+                        },
+                    },
+                },
+                DeviceCapability {
+                    kind: ColorSetting,
+                    instance: "colorTemperatureK",
+                    parameters: Integer {
+                        unit: None,
+                        range: IntegerRange {
+                            min: 2000,
+                            max: 9000,
+                            precision: 1,
+                        },
+                    },
+                },
+                DeviceCapability {
+                    kind: DynamicScene,
+                    instance: "lightScene",
+                    parameters: Enum {
+                        options: [],
+                    },
+                },
+                DeviceCapability {
+                    kind: MusicSetting,
+                    instance: "musicMode",
+                    parameters: Struct {
+                        fields: [
+                            StructField {
+                                field_name: "musicMode",
+                                field_type: Enum {
+                                    options: [
+                                        EnumOption {
+                                            name: "Energic",
+                                            value: Number(1),
+                                        },
+                                        EnumOption {
+                                            name: "Rhythm",
+                                            value: Number(2),
+                                        },
+                                        EnumOption {
+                                            name: "Bounce",
+                                            value: Number(3),
+                                        },
+                                        EnumOption {
+                                            name: "Hopping",
+                                            value: Number(4),
+                                        },
+                                        EnumOption {
+                                            name: "Strike",
+                                            value: Number(5),
+                                        },
+                                        EnumOption {
+                                            name: "Vibrate",
+                                            value: Number(6),
+                                        },
+                                    ],
+                                },
+                                required: true,
+                            },
+                            StructField {
+                                field_name: "sensitivity",
+                                field_type: Integer {
+                                    unit: Some(
+                                        "unit.percent",
+                                    ),
+                                    range: IntegerRange {
+                                        min: 0,
+                                        max: 100,
+                                        precision: 1,
+                                    },
+                                },
+                                required: true,
+                            },
+                            StructField {
+                                field_name: "autoColor",
+                                field_type: Enum {
+                                    options: [
+                                        EnumOption {
+                                            name: "on",
+                                            value: Number(1),
+                                        },
+                                        EnumOption {
+                                            name: "off",
+                                            value: Number(0),
+                                        },
+                                    ],
+                                },
+                                required: false,
+                            },
+                            StructField {
+                                field_name: "rgb",
+                                field_type: Integer {
+                                    unit: None,
+                                    range: IntegerRange {
+                                        min: 0,
+                                        max: 16777215,
+                                        precision: 1,
+                                    },
+                                },
+                                required: false,
+                            },
+                        ],
+                    },
+                },
+                DeviceCapability {
+                    kind: DynamicScene,
+                    instance: "diyScene",
+                    parameters: Enum {
+                        options: [],
+                    },
+                },
+                DeviceCapability {
+                    kind: DynamicScene,
+                    instance: "snapshot",
+                    parameters: Enum {
+                        options: [],
+                    },
+                },
+            ],
+        },
+    ],
+}

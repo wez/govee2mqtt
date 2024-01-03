@@ -1,0 +1,474 @@
+GetDeviceScenesResponse {
+    request_id: "uuid",
+    code: 200,
+    message: "success",
+    payload: GetDeviceScenesResponsePayload {
+        sku: "H6072",
+        device: "AA:BB:CC:DD:EE:AA:BB:FF",
+        capabilities: [
+            DeviceCapability {
+                kind: DynamicScene,
+                instance: "lightScene",
+                parameters: Enum {
+                    options: [
+                        EnumOption {
+                            name: "rainbow B",
+                            value: Object {
+                                "id": Number(7691),
+                                "paramId": Number(11837),
+                            },
+                        },
+                        EnumOption {
+                            name: "Sunrise",
+                            value: Object {
+                                "id": Number(1606),
+                                "paramId": Number(1681),
+                            },
+                        },
+                        EnumOption {
+                            name: "Sunset",
+                            value: Object {
+                                "id": Number(1607),
+                                "paramId": Number(1682),
+                            },
+                        },
+                        EnumOption {
+                            name: "Ocean",
+                            value: Object {
+                                "id": Number(1608),
+                                "paramId": Number(1683),
+                            },
+                        },
+                        EnumOption {
+                            name: "Forest",
+                            value: Object {
+                                "id": Number(1609),
+                                "paramId": Number(1684),
+                            },
+                        },
+                        EnumOption {
+                            name: "Sunset Glow",
+                            value: Object {
+                                "id": Number(1610),
+                                "paramId": Number(1685),
+                            },
+                        },
+                        EnumOption {
+                            name: "Ripple",
+                            value: Object {
+                                "id": Number(1611),
+                                "paramId": Number(1686),
+                            },
+                        },
+                        EnumOption {
+                            name: "Rainbow",
+                            value: Object {
+                                "id": Number(1612),
+                                "paramId": Number(1687),
+                            },
+                        },
+                        EnumOption {
+                            name: "Meteor",
+                            value: Object {
+                                "id": Number(1613),
+                                "paramId": Number(1688),
+                            },
+                        },
+                        EnumOption {
+                            name: "Aurora",
+                            value: Object {
+                                "id": Number(1614),
+                                "paramId": Number(1689),
+                            },
+                        },
+                        EnumOption {
+                            name: "Karst Cave",
+                            value: Object {
+                                "id": Number(1615),
+                                "paramId": Number(1690),
+                            },
+                        },
+                        EnumOption {
+                            name: "Glacier",
+                            value: Object {
+                                "id": Number(1616),
+                                "paramId": Number(1691),
+                            },
+                        },
+                        EnumOption {
+                            name: "Lake",
+                            value: Object {
+                                "id": Number(1617),
+                                "paramId": Number(1692),
+                            },
+                        },
+                        EnumOption {
+                            name: "Fire",
+                            value: Object {
+                                "id": Number(1618),
+                                "paramId": Number(1693),
+                            },
+                        },
+                        EnumOption {
+                            name: "Journey of Flowers",
+                            value: Object {
+                                "id": Number(1619),
+                                "paramId": Number(1694),
+                            },
+                        },
+                        EnumOption {
+                            name: "Downpour",
+                            value: Object {
+                                "id": Number(1620),
+                                "paramId": Number(1695),
+                            },
+                        },
+                        EnumOption {
+                            name: "Rustling leaves",
+                            value: Object {
+                                "id": Number(1621),
+                                "paramId": Number(1696),
+                            },
+                        },
+                        EnumOption {
+                            name: "Wave",
+                            value: Object {
+                                "id": Number(1622),
+                                "paramId": Number(1697),
+                            },
+                        },
+                        EnumOption {
+                            name: "Morning",
+                            value: Object {
+                                "id": Number(1623),
+                                "paramId": Number(1698),
+                            },
+                        },
+                        EnumOption {
+                            name: "Night",
+                            value: Object {
+                                "id": Number(1624),
+                                "paramId": Number(1699),
+                            },
+                        },
+                        EnumOption {
+                            name: "Cherry blossoms",
+                            value: Object {
+                                "id": Number(1625),
+                                "paramId": Number(1700),
+                            },
+                        },
+                        EnumOption {
+                            name: "Movie",
+                            value: Object {
+                                "id": Number(1626),
+                                "paramId": Number(1701),
+                            },
+                        },
+                        EnumOption {
+                            name: "Leisure",
+                            value: Object {
+                                "id": Number(1627),
+                                "paramId": Number(1702),
+                            },
+                        },
+                        EnumOption {
+                            name: "Night Light",
+                            value: Object {
+                                "id": Number(1628),
+                                "paramId": Number(1703),
+                            },
+                        },
+                        EnumOption {
+                            name: "Romantic",
+                            value: Object {
+                                "id": Number(1629),
+                                "paramId": Number(1704),
+                            },
+                        },
+                        EnumOption {
+                            name: "Fireworks",
+                            value: Object {
+                                "id": Number(1630),
+                                "paramId": Number(1705),
+                            },
+                        },
+                        EnumOption {
+                            name: "Tunnel",
+                            value: Object {
+                                "id": Number(1631),
+                                "paramId": Number(1706),
+                            },
+                        },
+                        EnumOption {
+                            name: "Drinks",
+                            value: Object {
+                                "id": Number(1632),
+                                "paramId": Number(1707),
+                            },
+                        },
+                        EnumOption {
+                            name: "Work",
+                            value: Object {
+                                "id": Number(1633),
+                                "paramId": Number(1708),
+                            },
+                        },
+                        EnumOption {
+                            name: "Study",
+                            value: Object {
+                                "id": Number(1634),
+                                "paramId": Number(1709),
+                            },
+                        },
+                        EnumOption {
+                            name: "Candy",
+                            value: Object {
+                                "id": Number(1635),
+                                "paramId": Number(1710),
+                            },
+                        },
+                        EnumOption {
+                            name: "Breathe",
+                            value: Object {
+                                "id": Number(1636),
+                                "paramId": Number(1711),
+                            },
+                        },
+                        EnumOption {
+                            name: "Gradient",
+                            value: Object {
+                                "id": Number(1637),
+                                "paramId": Number(1712),
+                            },
+                        },
+                        EnumOption {
+                            name: "Energetic",
+                            value: Object {
+                                "id": Number(1638),
+                                "paramId": Number(1713),
+                            },
+                        },
+                        EnumOption {
+                            name: "Dreamlike",
+                            value: Object {
+                                "id": Number(1639),
+                                "paramId": Number(1714),
+                            },
+                        },
+                        EnumOption {
+                            name: "Dreamland",
+                            value: Object {
+                                "id": Number(1640),
+                                "paramId": Number(1715),
+                            },
+                        },
+                        EnumOption {
+                            name: "Fight",
+                            value: Object {
+                                "id": Number(1641),
+                                "paramId": Number(1716),
+                            },
+                        },
+                        EnumOption {
+                            name: "Light",
+                            value: Object {
+                                "id": Number(1642),
+                                "paramId": Number(1717),
+                            },
+                        },
+                        EnumOption {
+                            name: "Tenderness",
+                            value: Object {
+                                "id": Number(1643),
+                                "paramId": Number(1718),
+                            },
+                        },
+                        EnumOption {
+                            name: "Warm",
+                            value: Object {
+                                "id": Number(1644),
+                                "paramId": Number(1719),
+                            },
+                        },
+                        EnumOption {
+                            name: "Cheerful",
+                            value: Object {
+                                "id": Number(1645),
+                                "paramId": Number(1720),
+                            },
+                        },
+                        EnumOption {
+                            name: "Rush",
+                            value: Object {
+                                "id": Number(1646),
+                                "paramId": Number(1721),
+                            },
+                        },
+                        EnumOption {
+                            name: "Profound",
+                            value: Object {
+                                "id": Number(1647),
+                                "paramId": Number(1722),
+                            },
+                        },
+                        EnumOption {
+                            name: "Daze",
+                            value: Object {
+                                "id": Number(1648),
+                                "paramId": Number(1723),
+                            },
+                        },
+                        EnumOption {
+                            name: "Halloween",
+                            value: Object {
+                                "id": Number(1649),
+                                "paramId": Number(1724),
+                            },
+                        },
+                        EnumOption {
+                            name: "Christmas",
+                            value: Object {
+                                "id": Number(1650),
+                                "paramId": Number(1725),
+                            },
+                        },
+                        EnumOption {
+                            name: "Party",
+                            value: Object {
+                                "id": Number(1651),
+                                "paramId": Number(1726),
+                            },
+                        },
+                        EnumOption {
+                            name: "Celebration",
+                            value: Object {
+                                "id": Number(1652),
+                                "paramId": Number(1727),
+                            },
+                        },
+                        EnumOption {
+                            name: "Ghost",
+                            value: Object {
+                                "id": Number(1653),
+                                "paramId": Number(1728),
+                            },
+                        },
+                        EnumOption {
+                            name: "Poppin",
+                            value: Object {
+                                "id": Number(1664),
+                                "paramId": Number(1739),
+                            },
+                        },
+                        EnumOption {
+                            name: "Swing",
+                            value: Object {
+                                "id": Number(1665),
+                                "paramId": Number(1740),
+                            },
+                        },
+                        EnumOption {
+                            name: "Racing",
+                            value: Object {
+                                "id": Number(1666),
+                                "paramId": Number(1741),
+                            },
+                        },
+                        EnumOption {
+                            name: "Flash",
+                            value: Object {
+                                "id": Number(1667),
+                                "paramId": Number(1742),
+                            },
+                        },
+                        EnumOption {
+                            name: "Marbles",
+                            value: Object {
+                                "id": Number(1668),
+                                "paramId": Number(1743),
+                            },
+                        },
+                        EnumOption {
+                            name: "Split",
+                            value: Object {
+                                "id": Number(1669),
+                                "paramId": Number(1744),
+                            },
+                        },
+                        EnumOption {
+                            name: "Stacking",
+                            value: Object {
+                                "id": Number(1654),
+                                "paramId": Number(1729),
+                            },
+                        },
+                        EnumOption {
+                            name: "Greedy Snake",
+                            value: Object {
+                                "id": Number(1655),
+                                "paramId": Number(1730),
+                            },
+                        },
+                        EnumOption {
+                            name: "Bouncing Ball",
+                            value: Object {
+                                "id": Number(1656),
+                                "paramId": Number(1731),
+                            },
+                        },
+                        EnumOption {
+                            name: "Strike",
+                            value: Object {
+                                "id": Number(1657),
+                                "paramId": Number(1732),
+                            },
+                        },
+                        EnumOption {
+                            name: "Bubble",
+                            value: Object {
+                                "id": Number(1658),
+                                "paramId": Number(1733),
+                            },
+                        },
+                        EnumOption {
+                            name: "Crossing",
+                            value: Object {
+                                "id": Number(1659),
+                                "paramId": Number(1734),
+                            },
+                        },
+                        EnumOption {
+                            name: "Electro Dance",
+                            value: Object {
+                                "id": Number(1660),
+                                "paramId": Number(1735),
+                            },
+                        },
+                        EnumOption {
+                            name: "Flow",
+                            value: Object {
+                                "id": Number(1661),
+                                "paramId": Number(1736),
+                            },
+                        },
+                        EnumOption {
+                            name: "Accumulation",
+                            value: Object {
+                                "id": Number(1662),
+                                "paramId": Number(1737),
+                            },
+                        },
+                        EnumOption {
+                            name: "Release",
+                            value: Object {
+                                "id": Number(1663),
+                                "paramId": Number(1738),
+                            },
+                        },
+                    ],
+                },
+            },
+        ],
+    },
+}

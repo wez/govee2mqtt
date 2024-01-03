@@ -1,5 +1,6 @@
 use crate::lan_api::LanDiscoArguments;
 use crate::platform_api::GoveeApiArguments;
+use crate::service::hass::HassArguments;
 use crate::undoc_api::UndocApiArguments;
 use clap::Parser;
 use std::str::FromStr;
@@ -22,6 +23,8 @@ pub struct Args {
     lan_disco_args: LanDiscoArguments,
     #[command(flatten)]
     undoc_args: UndocApiArguments,
+    #[command(flatten)]
+    hass_args: HassArguments,
 
     #[command(subcommand)]
     cmd: SubCommand,

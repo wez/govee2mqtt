@@ -2,6 +2,7 @@ DevicesResponse {
     devices: [
         DeviceEntry {
             attributes_id: 4,
+            device_id: None,
             device: "47:13:CF:00:00:00:00:25",
             device_ext: DeviceEntryExt {
                 device_settings: DeviceSettings {
@@ -32,8 +33,10 @@ DevicesResponse {
                 },
                 ext_resources: ExtResources {
                     sku_url: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/814c890088f34da331e1eecf8ea46fc2-add_list_type_device_6072.png",
+                    head_on_img_new: None,
                     head_on_img: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/7136846363c3c97ce15fe516fd176366-new_light_title_6072_on%403x.png",
                     head_off_img: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/7704c288c48f0b39033a5a28aedf473c-new_light_title_6072_off%403x.png",
+                    head_off_img_new: None,
                     ext: "",
                     ic: 66,
                 },
@@ -55,6 +58,7 @@ DevicesResponse {
         },
         DeviceEntry {
             attributes_id: 4,
+            device_id: None,
             device: "02:EC:CF:00:00:00:00:48",
             device_ext: DeviceEntryExt {
                 device_settings: DeviceSettings {
@@ -85,8 +89,10 @@ DevicesResponse {
                 },
                 ext_resources: ExtResources {
                     sku_url: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/814c890088f34da331e1eecf8ea46fc2-add_list_type_device_6072.png",
+                    head_on_img_new: None,
                     head_on_img: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/7136846363c3c97ce15fe516fd176366-new_light_title_6072_on%403x.png",
                     head_off_img: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/7704c288c48f0b39033a5a28aedf473c-new_light_title_6072_off%403x.png",
+                    head_off_img_new: None,
                     ext: "",
                     ic: 66,
                 },
@@ -108,6 +114,7 @@ DevicesResponse {
         },
         DeviceEntry {
             attributes_id: 4,
+            device_id: None,
             device: "51:2A:D1:00:00:00:00:93",
             device_ext: DeviceEntryExt {
                 device_settings: DeviceSettings {
@@ -138,8 +145,10 @@ DevicesResponse {
                 },
                 ext_resources: ExtResources {
                     sku_url: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/814c890088f34da331e1eecf8ea46fc2-add_list_type_device_6072.png",
+                    head_on_img_new: None,
                     head_on_img: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/7136846363c3c97ce15fe516fd176366-new_light_title_6072_on%403x.png",
                     head_off_img: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/7704c288c48f0b39033a5a28aedf473c-new_light_title_6072_off%403x.png",
+                    head_off_img_new: None,
                     ext: "",
                     ic: 66,
                 },
@@ -161,6 +170,7 @@ DevicesResponse {
         },
         DeviceEntry {
             attributes_id: 10,
+            device_id: None,
             device: "",
             device_ext: DeviceEntryExt {
                 device_settings: DeviceSettings {
@@ -193,8 +203,10 @@ DevicesResponse {
                 },
                 ext_resources: ExtResources {
                     sku_url: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/57f63144484399b4bcdc6dc52699fe0a-add_list_type_device_6058.png",
+                    head_on_img_new: None,
                     head_on_img: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/ac98ae14313d12a1d8cc092d733b00dc-new_light_title_6058_on.png",
                     head_off_img: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/259fee05d104c051c3f5fee3e0860dc3-new_light_title_6058_off.png",
+                    head_off_img_new: None,
                     ext: "",
                     ic: 0,
                 },
@@ -216,6 +228,7 @@ DevicesResponse {
         },
         DeviceEntry {
             attributes_id: 25,
+            device_id: None,
             device: "",
             device_ext: DeviceEntryExt {
                 device_settings: DeviceSettings {
@@ -252,8 +265,10 @@ DevicesResponse {
                 },
                 ext_resources: ExtResources {
                     sku_url: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/94adc398352f030d3b818ae8c2a805dd-add_list_type_device_610a.png",
+                    head_on_img_new: None,
                     head_on_img: "",
                     head_off_img: "",
+                    head_off_img_new: None,
                     ext: "",
                     ic: 24,
                 },
@@ -275,6 +290,7 @@ DevicesResponse {
         },
         DeviceEntry {
             attributes_id: 1,
+            device_id: None,
             device: "",
             device_ext: DeviceEntryExt {
                 device_settings: DeviceSettings {
@@ -307,8 +323,10 @@ DevicesResponse {
                 },
                 ext_resources: ExtResources {
                     sku_url: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/2ed98b3cef79220b2e982f423b205418-add_list_type_device_61a2.png",
+                    head_on_img_new: None,
                     head_on_img: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/8ff325193c130aa2b232bbc65f391b48-new_light_title_61a0_on.png",
                     head_off_img: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/22e9bd69bc85f3a271ed997bc9fbb699-new_light_title_61a0_off.png",
+                    head_off_img_new: None,
                     ext: "",
                     ic: 70,
                 },
@@ -330,6 +348,7 @@ DevicesResponse {
         },
         DeviceEntry {
             attributes_id: 1,
+            device_id: None,
             device: "",
             device_ext: DeviceEntryExt {
                 device_settings: DeviceSettings {
@@ -362,8 +381,10 @@ DevicesResponse {
                 },
                 ext_resources: ExtResources {
                     sku_url: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/eb8e4f41a30bfebb249c884209460525-add_list_type_device_619ac.png",
+                    head_on_img_new: None,
                     head_on_img: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/eed1b442fc5d3aaa28563ded4284e057-new_light_title_6160_on.png",
                     head_off_img: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/cb48afdb8618c2ddfd8fe16673336af0-new_light_title_6160_off.png",
+                    head_off_img_new: None,
                     ext: "",
                     ic: 20,
                 },
@@ -385,6 +406,7 @@ DevicesResponse {
         },
         DeviceEntry {
             attributes_id: 1,
+            device_id: None,
             device: "",
             device_ext: DeviceEntryExt {
                 device_settings: DeviceSettings {
@@ -417,8 +439,10 @@ DevicesResponse {
                 },
                 ext_resources: ExtResources {
                     sku_url: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/eb8e4f41a30bfebb249c884209460525-add_list_type_device_619ac.png",
+                    head_on_img_new: None,
                     head_on_img: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/eed1b442fc5d3aaa28563ded4284e057-new_light_title_6160_on.png",
                     head_off_img: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/cb48afdb8618c2ddfd8fe16673336af0-new_light_title_6160_off.png",
+                    head_off_img_new: None,
                     ext: "",
                     ic: 20,
                 },
@@ -440,6 +464,7 @@ DevicesResponse {
         },
         DeviceEntry {
             attributes_id: 4,
+            device_id: None,
             device: "",
             device_ext: DeviceEntryExt {
                 device_settings: DeviceSettings {
@@ -470,8 +495,10 @@ DevicesResponse {
                 },
                 ext_resources: ExtResources {
                     sku_url: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/814c890088f34da331e1eecf8ea46fc2-add_list_type_device_6072.png",
+                    head_on_img_new: None,
                     head_on_img: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/7136846363c3c97ce15fe516fd176366-new_light_title_6072_on%403x.png",
                     head_off_img: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/7704c288c48f0b39033a5a28aedf473c-new_light_title_6072_off%403x.png",
+                    head_off_img_new: None,
                     ext: "",
                     ic: 66,
                 },
@@ -493,6 +520,7 @@ DevicesResponse {
         },
         DeviceEntry {
             attributes_id: 4,
+            device_id: None,
             device: "",
             device_ext: DeviceEntryExt {
                 device_settings: DeviceSettings {
@@ -523,8 +551,10 @@ DevicesResponse {
                 },
                 ext_resources: ExtResources {
                     sku_url: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/814c890088f34da331e1eecf8ea46fc2-add_list_type_device_6072.png",
+                    head_on_img_new: None,
                     head_on_img: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/7136846363c3c97ce15fe516fd176366-new_light_title_6072_on%403x.png",
                     head_off_img: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/7704c288c48f0b39033a5a28aedf473c-new_light_title_6072_off%403x.png",
+                    head_off_img_new: None,
                     ext: "",
                     ic: 66,
                 },

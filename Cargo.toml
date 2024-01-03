@@ -29,11 +29,15 @@ data-encoding = "2.5.0"
 clap-num = "1.0.2"
 uuid = { version = "1.6.1", features = ["v5"] }
 uncased = "0.9.9"
-mosquitto-rs = "0.8.0"
 openssl = "0.10.62"
 p12 = "0.6.3"
 axum = "0.7.3"
 tower-http = { version = "0.5.0", features = ["fs"] }
+async-channel = "2.1.1"
+
+[dependencies.mosquitto-rs]
+version="0.9.0"
+#path = "../mosquitto-rs/mosquitto-rs"
 
 [dev-dependencies]
 anyhow = "1"

@@ -750,6 +750,7 @@ name = "govee"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "async-channel",
  "axum",
  "chrono",
  "chrono-tz",
@@ -1236,9 +1237,9 @@ dependencies = [
 
 [[package]]
 name = "mosquitto-rs"
-version = "0.8.0"
+version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "375f38daddeab477a0d546acc62aa5100d3c3e68225116062a49ac326f73b0ec"
+checksum = "057f66185155b6ea8547db3a4581229df019ebba46c83b5346893596991c7ecd"
 dependencies = [
  "anyhow",
  "async-channel",

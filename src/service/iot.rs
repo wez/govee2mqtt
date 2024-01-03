@@ -1,4 +1,4 @@
-use crate::lan_api::DeviceColor;
+use crate::lan_api::{DeviceColor, DeviceStatus};
 use crate::service::state::StateHandle;
 use crate::undoc_api::{ms_timestamp, DeviceEntry};
 use crate::Args;
@@ -88,7 +88,6 @@ pub async fn start_iot_client(args: &Args, state: StateHandle) -> anyhow::Result
     state.set_iot_client(IotClient { client }).await;
 
     tokio::spawn(async move {
-        log::info!("Waiting for data from IoT");
         while let Ok(msg) = subscriptions.recv().await {
             let payload = String::from_utf8_lossy(&msg.payload);
             log::trace!("{} -> {payload}", msg.topic);
@@ -113,22 +112,41 @@ pub async fn start_iot_client(args: &Args, state: StateHandle) -> anyhow::Result
 
             match serde_json::from_slice::<Packet>(&msg.payload) {
                 Ok(packet) => {
-                    log::info!("{packet:?}");
-                    let mut device = state.device_mut(&packet.sku, &packet.device).await;
-                    let mut state = device.iot_device_status.clone().unwrap_or_default();
-                    if let Some(on_off) = packet.state.on_off {
-                        state.on = on_off != 0;
+                    log::debug!("{packet:?}");
+                    {
+                        let mut device = state.device_mut(&packet.sku, &packet.device).await;
+                        let mut state = match device.iot_device_status.clone() {
+                            Some(state) => state,
+                            None => match device.device_state() {
+                                Some(state) => DeviceStatus {
+                                    on: state.on,
+                                    brightness: state.brightness,
+                                    color: state.color,
+                                    color_temperature_kelvin: state.kelvin,
+                                },
+                                None => DeviceStatus::default(),
+                            },
+                        };
+                        if let Some(v) = packet.state.brightness {
+                            state.brightness = v;
+                            state.on = v != 0;
+                        }
+                        if let Some(v) = packet.state.color {
+                            state.color = v;
+                            state.on = true;
+                        }
+                        if let Some(v) = packet.state.color_temperature_kelvin {
+                            state.color_temperature_kelvin = v;
+                            state.on = true;
+                        }
+                        // Check on/off last, as we can synthesize "on"
+                        // if the other fields are present
+                        if let Some(on_off) = packet.state.on_off {
+                            state.on = on_off != 0;
+                        }
+                        device.set_iot_device_status(state);
                     }
-                    if let Some(v) = packet.state.brightness {
-                        state.brightness = v;
-                    }
-                    if let Some(v) = packet.state.color {
-                        state.color = v;
-                    }
-                    if let Some(v) = packet.state.color_temperature_kelvin {
-                        state.color_temperature_kelvin = v;
-                    }
-                    device.set_iot_device_status(state);
+                    state.notify_of_state_change(&packet.device).await?;
                 }
                 Err(err) => {
                     log::error!("{err:#} {payload}");
