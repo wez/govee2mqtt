@@ -257,6 +257,25 @@ impl GoveeApiClient {
             }
         }
 
+        // Add in music modes
+        if let Some(cap) = device.capability_by_instance("musicMode") {
+            if let Some(DeviceParameters::Struct { fields }) = &cap.parameters {
+                for f in fields {
+                    if f.field_name == "musicMode" {
+                        log::warn!("music: {f:#?}");
+                        match &f.field_type {
+                            DeviceParameters::Enum { options } => {
+                                for opt in options {
+                                    result.push(format!("Music: {}", opt.name));
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+            }
+        }
+
         Ok(sort_and_dedup_scenes(result))
     }
 
@@ -265,6 +284,21 @@ impl GoveeApiClient {
         device: &HttpDeviceInfo,
         scene: &str,
     ) -> anyhow::Result<ControlDeviceResponseCapability> {
+        if let Some(music_mode) = scene.strip_prefix("Music: ") {
+            if let Some(cap) = device.capability_by_instance("musicMode") {
+                if let Some(field) = cap.struct_field_by_name("musicMode") {
+                    if let Some(value) = field.field_type.enum_parameter_by_name(music_mode) {
+                        let value = serde_json::json!({
+                            "musicMode": value,
+                            "sensitivity": 100,
+                            "autoColor": 1,
+                        });
+                        return self.control_device(&device, &cap, value).await;
+                    }
+                }
+            }
+        }
+
         let caps = self.get_scene_caps(device).await?;
         for cap in caps {
             match &cap.parameters {
@@ -622,11 +656,16 @@ pub struct DeviceCapability {
 
 impl DeviceCapability {
     pub fn enum_parameter_by_name(&self, name: &str) -> Option<u32> {
+        self.parameters
+            .as_ref()
+            .and_then(|p| p.enum_parameter_by_name(name))
+    }
+
+    pub fn struct_field_by_name(&self, name: &str) -> Option<&StructField> {
         match &self.parameters {
-            Some(DeviceParameters::Enum { options }) => options
-                .iter()
-                .find(|e| e.name == name && e.value.is_i64())
-                .map(|e| e.value.as_i64().expect("i64") as u32),
+            Some(DeviceParameters::Struct { fields }) => {
+                fields.iter().find(|f| f.field_name == name)
+            }
             _ => None,
         }
     }
@@ -655,6 +694,18 @@ pub enum DeviceParameters {
         #[serde(default)]
         options: Vec<ArrayOption>,
     },
+}
+
+impl DeviceParameters {
+    pub fn enum_parameter_by_name(&self, name: &str) -> Option<u32> {
+        match self {
+            DeviceParameters::Enum { options } => options
+                .iter()
+                .find(|e| e.name == name && e.value.is_i64())
+                .map(|e| e.value.as_i64().expect("i64") as u32),
+            _ => None,
+        }
+    }
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
