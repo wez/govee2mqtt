@@ -458,6 +458,26 @@ impl HttpDeviceInfo {
     pub fn capability_by_instance(&self, instance: &str) -> Option<&DeviceCapability> {
         self.capabilities.iter().find(|c| c.instance == instance)
     }
+
+    pub fn supports_rgb(&self) -> bool {
+        self.capability_by_instance("colorRgb").is_some()
+    }
+
+    pub fn supports_brightness(&self) -> bool {
+        self.capability_by_instance("brightness").is_some()
+    }
+
+    pub fn get_color_temperature_range(&self) -> Option<(u32, u32)> {
+        let cap = self.capability_by_instance("colorTemperatureK")?;
+
+        match cap.parameters {
+            DeviceParameters::Integer {
+                range: IntegerRange { min, max, .. },
+                ..
+            } => Some((min, max)),
+            _ => None,
+        }
+    }
 }
 
 #[derive(Deserialize, Serialize, Debug, Default, Clone, Copy)]
