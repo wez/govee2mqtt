@@ -204,7 +204,7 @@ impl SwitchConfig {
     pub async fn for_device(device: &ServiceDevice) -> anyhow::Result<Self> {
         let command_topic = format!("gv2mqtt/power/{id}/command", id = topic_safe_id(device));
         let state_topic = power_state_topic(device);
-        let availability_topic = light_availability_topic(device);
+        let availability_topic = availability_topic();
         let unique_id = format!("gv2mqtt-{id}-power", id = topic_safe_id(device));
 
         Ok(Self {
@@ -223,21 +223,23 @@ impl SwitchConfig {
         })
     }
 
-    pub async fn publish(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
+    pub async fn publish(
+        &self,
+        state: &StateHandle,
+        client: &HassClient,
+        remove: bool,
+    ) -> anyhow::Result<()> {
         let disco = state.get_hass_disco_prefix().await;
         let topic = format!(
             "{disco}/switch/{unique_id}/config",
             unique_id = self.base.unique_id
         );
 
-        // Delete existing version first
-        client
-            .client
-            .publish(&topic, "", QoS::AtMostOnce, false)
-            .await?;
-        tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
-
-        client.publish_obj(topic, self).await
+        if remove {
+            client.publish(&topic, "").await
+        } else {
+            client.publish_obj(topic, self).await
+        }
     }
 }
 
@@ -284,7 +286,7 @@ impl LightConfig {
     pub async fn for_device(device: &ServiceDevice, state: &StateHandle) -> anyhow::Result<Self> {
         let command_topic = format!("gv2mqtt/light/{id}/command", id = topic_safe_id(device));
         let state_topic = light_state_topic(device);
-        let availability_topic = light_availability_topic(device);
+        let availability_topic = availability_topic();
         let unique_id = format!("gv2mqtt-{id}", id = topic_safe_id(device));
 
         let effect_list = state.device_list_scenes(device).await?;
@@ -348,21 +350,23 @@ impl LightConfig {
         })
     }
 
-    pub async fn publish(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
+    pub async fn publish(
+        &self,
+        state: &StateHandle,
+        client: &HassClient,
+        remove: bool,
+    ) -> anyhow::Result<()> {
         let disco = state.get_hass_disco_prefix().await;
         let topic = format!(
             "{disco}/light/{unique_id}/config",
             unique_id = self.base.unique_id
         );
 
-        // Delete existing version first
-        client
-            .client
-            .publish(&topic, "", QoS::AtMostOnce, false)
-            .await?;
-        tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
-
-        client.publish_obj(topic, self).await
+        if remove {
+            client.publish(&topic, "").await
+        } else {
+            client.publish_obj(topic, self).await
+        }
     }
 }
 
@@ -375,34 +379,64 @@ impl HassClient {
     async fn register_with_hass(&self, state: &StateHandle) -> anyhow::Result<()> {
         let devices = state.devices().await;
 
-        // Register the light entities
-        log::trace!("register_with_hass: register entities");
-        for d in &devices {
-            let light = LightConfig::for_device(&d, state).await?;
-            light.publish(state, &self).await?;
+        enum Config {
+            Light(LightConfig),
+            Switch(SwitchConfig),
+        }
 
-            if let Some(info) = &d.http_device_info {
-                if info.capability_by_instance("powerSwitch").is_some() {
-                    let switch = SwitchConfig::for_device(&d).await?;
-                    switch.publish(state, &self).await?;
+        impl Config {
+            async fn publish(
+                &self,
+                state: &StateHandle,
+                client: &HassClient,
+                remove: bool,
+            ) -> anyhow::Result<()> {
+                match self {
+                    Self::Light(l) => l.publish(state, client, remove).await,
+                    Self::Switch(s) => s.publish(state, client, remove).await,
                 }
             }
         }
 
+        let mut configs = vec![];
+
+        // Register the light entities
+        for d in &devices {
+            configs.push(Config::Light(LightConfig::for_device(&d, state).await?));
+            if let Some(info) = &d.http_device_info {
+                if info.capability_by_instance("powerSwitch").is_some() {
+                    configs.push(Config::Switch(SwitchConfig::for_device(&d).await?));
+                }
+            }
+        }
+
+        // Remove existing configs first
+        log::trace!("register_with_hass: Remove prior entries");
+        for c in &configs {
+            c.publish(state, self, true).await?;
+        }
+
+        // Allow hass time to de-register the entities
+        tokio::time::sleep(tokio::time::Duration::from_millis(
+            (50 * configs.len()) as u64,
+        ))
+        .await;
+
+        // Register the configs
+        log::trace!("register_with_hass: register entities");
+        for c in &configs {
+            c.publish(state, self, false).await?;
+        }
+
         // Allow hass time to register the entities
         tokio::time::sleep(tokio::time::Duration::from_millis(
-            (50 * devices.len()) as u64,
+            (50 * configs.len()) as u64,
         ))
         .await;
 
         // Mark as available
         log::trace!("register_with_hass: mark as online");
         self.publish(availability_topic(), "online").await?;
-
-        tokio::time::sleep(tokio::time::Duration::from_millis(
-            (50 * devices.len()) as u64,
-        ))
-        .await;
 
         // report initial state
         log::trace!("register_with_hass: reporting state");
@@ -487,8 +521,6 @@ impl HassClient {
                 self.publish(power_state_topic(device), "OFF").await?;
             }
         }
-        self.publish(light_availability_topic(device), "online")
-            .await?;
 
         Ok(())
     }
@@ -506,11 +538,6 @@ fn power_state_topic(device: &ServiceDevice) -> String {
 
 fn light_state_topic(device: &ServiceDevice) -> String {
     format!("gv2mqtt/light/{id}/state", id = topic_safe_id(device))
-}
-
-fn light_availability_topic(_device: &ServiceDevice) -> String {
-    //    format!("gv2mqtt/light/{id}/avail", id = topic_safe_id(device))
-    availability_topic()
 }
 
 /// All entities use the same topic so that we can mark unavailable
