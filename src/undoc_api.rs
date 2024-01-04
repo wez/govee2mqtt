@@ -461,7 +461,7 @@ impl GoveeUndocumentedApi {
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
-#[serde(deny_unknown_fields)]
+#[cfg_attr(debug_assertions, serde(deny_unknown_fields))]
 #[serde(rename_all = "camelCase")]
 pub struct IotKey {
     pub endpoint: String,
@@ -472,7 +472,7 @@ pub struct IotKey {
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-#[serde(deny_unknown_fields)]
+#[cfg_attr(debug_assertions, serde(deny_unknown_fields))]
 pub struct LightEffectLibraryResponse {
     pub data: LightEffectLibraryCategoryList,
     pub message: String,
@@ -481,7 +481,7 @@ pub struct LightEffectLibraryResponse {
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-#[serde(deny_unknown_fields)]
+#[cfg_attr(debug_assertions, serde(deny_unknown_fields))]
 pub struct LightEffectLibraryCategoryList {
     pub categories: Vec<LightEffectCategory>,
     pub support_speed: u8,
@@ -489,7 +489,7 @@ pub struct LightEffectLibraryCategoryList {
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-#[serde(deny_unknown_fields)]
+#[cfg_attr(debug_assertions, serde(deny_unknown_fields))]
 pub struct LightEffectCategory {
     pub category_id: u32,
     pub category_name: String,
@@ -498,7 +498,7 @@ pub struct LightEffectCategory {
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-#[serde(deny_unknown_fields)]
+#[cfg_attr(debug_assertions, serde(deny_unknown_fields))]
 pub struct LightEffectScene {
     pub scene_id: u32,
     pub icon_urls: Vec<String>,
@@ -518,7 +518,7 @@ pub struct LightEffectScene {
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-#[serde(deny_unknown_fields)]
+#[cfg_attr(debug_assertions, serde(deny_unknown_fields))]
 pub struct LightEffectEntry {
     pub scence_param_id: u32,
     pub scence_name: String,
@@ -536,7 +536,7 @@ pub struct LightEffectEntry {
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-#[serde(deny_unknown_fields)]
+#[cfg_attr(debug_assertions, serde(deny_unknown_fields))]
 pub struct OneClickResponse {
     pub data: OneClickComponentList,
     pub message: String,
@@ -545,14 +545,14 @@ pub struct OneClickResponse {
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-#[serde(deny_unknown_fields)]
+#[cfg_attr(debug_assertions, serde(deny_unknown_fields))]
 pub struct OneClickComponentList {
     pub components: Vec<OneClickComponent>,
 }
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-#[serde(deny_unknown_fields)]
+#[cfg_attr(debug_assertions, serde(deny_unknown_fields))]
 pub struct OneClickComponent {
     pub can_disable: Option<u8>,
     #[serde(deserialize_with = "boolean_int")]
@@ -584,7 +584,7 @@ pub struct OneClickComponent {
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-#[serde(deny_unknown_fields)]
+#[cfg_attr(debug_assertions, serde(deny_unknown_fields))]
 pub struct OneClick {
     pub name: String,
     pub plan_type: u32,
@@ -604,7 +604,7 @@ pub struct OneClick {
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-#[serde(deny_unknown_fields)]
+#[cfg_attr(debug_assertions, serde(deny_unknown_fields))]
 pub struct OneClickIotRule {
     pub device_obj: OneClickIotRuleDevice,
     pub rule: Vec<OneClickIotRuleEntry>,
@@ -612,7 +612,7 @@ pub struct OneClickIotRule {
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-#[serde(deny_unknown_fields)]
+#[cfg_attr(debug_assertions, serde(deny_unknown_fields))]
 pub struct OneClickIotRuleEntry {
     #[serde(deserialize_with = "embedded_json")]
     pub blue_msg: JsonValue,
@@ -626,7 +626,7 @@ pub struct OneClickIotRuleEntry {
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-#[serde(deny_unknown_fields)]
+#[cfg_attr(debug_assertions, serde(deny_unknown_fields))]
 pub struct OneClickIotRuleEntryCmd {
     pub open: Option<u32>,
     pub scenes_code: Option<u16>,
@@ -637,7 +637,7 @@ pub struct OneClickIotRuleEntryCmd {
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-#[serde(deny_unknown_fields)]
+#[cfg_attr(debug_assertions, serde(deny_unknown_fields))]
 pub struct OneClickIotRuleDevice {
     pub name: String,
     pub device: String,
@@ -714,7 +714,7 @@ pub struct GroupEntry {
 
 #[derive(Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-#[serde(deny_unknown_fields)]
+#[cfg_attr(debug_assertions, serde(deny_unknown_fields))]
 pub struct DeviceEntry {
     pub attributes_id: u32,
     pub device_id: Option<u32>,
@@ -735,7 +735,7 @@ pub struct DeviceEntry {
 }
 #[derive(Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-#[serde(deny_unknown_fields)]
+#[cfg_attr(debug_assertions, serde(deny_unknown_fields))]
 pub struct DeviceEntryExt {
     #[serde(deserialize_with = "embedded_json")]
     pub device_settings: DeviceSettings,
@@ -747,7 +747,7 @@ pub struct DeviceEntryExt {
 
 #[derive(Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-#[serde(deny_unknown_fields)]
+#[cfg_attr(debug_assertions, serde(deny_unknown_fields))]
 pub struct DeviceSettings {
     pub wifi_name: String,
     pub address: String,
@@ -780,7 +780,7 @@ pub struct DeviceSettings {
 
 #[derive(Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-#[serde(deny_unknown_fields)]
+#[cfg_attr(debug_assertions, serde(deny_unknown_fields))]
 pub struct ExtResources {
     pub sku_url: String,
     pub head_on_img_new: Option<String>,
@@ -793,7 +793,7 @@ pub struct ExtResources {
 
 #[derive(Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-#[serde(deny_unknown_fields)]
+#[cfg_attr(debug_assertions, serde(deny_unknown_fields))]
 pub struct LastDeviceData {
     pub online: bool,
 }
