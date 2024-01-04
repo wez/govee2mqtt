@@ -14,6 +14,7 @@ use uuid::Uuid;
 // <https://github.com/constructorfleet/homebridge-ultimate-govee/blob/main/src/data/clients/RestClient.ts>
 
 const APP_VERSION: &str = "5.6.01";
+const HALF_DAY: Duration = Duration::from_secs(3600 * 12);
 const ONE_DAY: Duration = Duration::from_secs(86400);
 const ONE_WEEK: Duration = Duration::from_secs(86400 * 7);
 
@@ -124,8 +125,8 @@ impl GoveeUndocumentedApi {
             CacheGetOptions {
                 topic: "undoc-api",
                 key: "iot-key",
-                soft_ttl: ONE_DAY,
-                hard_ttl: ONE_WEEK,
+                soft_ttl: HALF_DAY,
+                hard_ttl: HALF_DAY,
                 negative_ttl: Duration::from_secs(10),
                 allow_stale: false,
             },
@@ -188,8 +189,8 @@ impl GoveeUndocumentedApi {
             CacheGetOptions {
                 topic: "undoc-api",
                 key: "account-info",
-                soft_ttl: ONE_DAY,
-                hard_ttl: ONE_WEEK,
+                soft_ttl: HALF_DAY,
+                hard_ttl: HALF_DAY,
                 negative_ttl: Duration::from_secs(10),
                 allow_stale: false,
             },
