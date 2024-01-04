@@ -4,7 +4,7 @@ use crate::service::state::sort_and_dedup_scenes;
 use crate::undoc_api::GoveeUndocumentedApi;
 use anyhow::Context;
 use reqwest::Method;
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde_json::Value as JsonValue;
 use std::collections::HashMap;
 use std::time::Duration;
@@ -107,7 +107,7 @@ impl GoveeApiClient {
                 sku: device.sku.to_string(),
                 device: device.device.to_string(),
                 capability: ControlDeviceCapability {
-                    kind: capability.kind,
+                    kind: capability.kind.clone(),
                     instance: capability.instance.to_string(),
                     value: value.into(),
                 },
@@ -520,61 +520,119 @@ impl HttpDeviceInfo {
     }
 }
 
-#[derive(Deserialize, Serialize, Debug, Default, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Default, Clone, PartialEq, Eq, strum_macros::Display, strum_macros::EnumString)]
 pub enum DeviceType {
-    #[serde(rename = "devices.types.light")]
+    #[strum(serialize = "devices.types.light")]
     #[default]
     Light,
-    #[serde(rename = "devices.types.air_purifier")]
+    #[strum(serialize = "devices.types.air_purifier")]
     AirPurifier,
-    #[serde(rename = "devices.types.thermometer")]
+    #[strum(serialize = "devices.types.thermometer")]
     Thermometer,
-    #[serde(rename = "devices.types.socket")]
+    #[strum(serialize = "devices.types.socket")]
     Socket,
-    #[serde(rename = "devices.types.sensor")]
+    #[strum(serialize = "devices.types.sensor")]
     Sensor,
-    #[serde(rename = "devices.types.heater")]
+    #[strum(serialize = "devices.types.heater")]
     Heater,
-    #[serde(rename = "devices.types.humidifier")]
+    #[strum(serialize = "devices.types.humidifier")]
     Humidifer,
-    #[serde(rename = "devices.types.dehumidifer")]
+    #[strum(serialize = "devices.types.dehumidifer")]
     Dehumidifer,
-    #[serde(rename = "devices.types.ice_maker")]
+    #[strum(serialize = "devices.types.ice_maker")]
     IceMaker,
-    #[serde(rename = "devices.types.aroma_diffuser")]
+    #[strum(serialize = "devices.types.aroma_diffuser")]
     AromaDiffuser,
-    #[serde(other)]
-    Other,
+    #[strum(serialize = "devices.types.fan")]
+    Fan,
+    Other(String),
 }
 
-#[derive(Deserialize, Serialize, Debug, Clone, Copy, PartialEq, Eq)]
+impl<'de> Deserialize<'de> for DeviceType {
+    fn deserialize<D>(d: D) -> Result<Self, <D as Deserializer<'de>>::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(d)?;
+
+        if let Ok(t) = s.parse::<Self>() {
+            Ok(t)
+        } else {
+            Ok(Self::Other(s))
+        }
+    }
+}
+
+impl Serialize for DeviceType {
+    fn serialize<S>(&self, serializer: S) -> Result<<S as Serializer>::Ok, <S as Serializer>::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Other(s) => s.serialize(serializer),
+            _ => self.to_string().serialize(serializer),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, strum_macros::Display, strum_macros::EnumString)]
 pub enum DeviceCapabilityKind {
-    #[serde(rename = "devices.capabilities.on_off")]
+    #[strum(serialize = "devices.capabilities.on_off")]
     OnOff,
-    #[serde(rename = "devices.capabilities.toggle")]
+    #[strum(serialize = "devices.capabilities.toggle")]
     Toggle,
-    #[serde(rename = "devices.capabilities.range")]
+    #[strum(serialize = "devices.capabilities.range")]
     Range,
-    #[serde(rename = "devices.capabilities.mode")]
+    #[strum(serialize = "devices.capabilities.mode")]
     Mode,
-    #[serde(rename = "devices.capabilities.color_setting")]
+    #[strum(serialize = "devices.capabilities.color_setting")]
     ColorSetting,
-    #[serde(rename = "devices.capabilities.segment_color_setting")]
+    #[strum(serialize = "devices.capabilities.segment_color_setting")]
     SegmentColorSetting,
-    #[serde(rename = "devices.capabilities.music_setting")]
+    #[strum(serialize = "devices.capabilities.music_setting")]
     MusicSetting,
-    #[serde(rename = "devices.capabilities.dynamic_scene")]
+    #[strum(serialize = "devices.capabilities.dynamic_scene")]
     DynamicScene,
-    #[serde(rename = "devices.capabilities.work_mode")]
+    #[strum(serialize = "devices.capabilities.work_mode")]
     WorkMode,
-    #[serde(rename = "devices.capabilities.dynamic_setting")]
+    #[strum(serialize = "devices.capabilities.dynamic_setting")]
     DynamicSetting,
-    #[serde(rename = "devices.capabilities.temperature_setting")]
+    #[strum(serialize = "devices.capabilities.temperature_setting")]
     TemperatureSetting,
-    #[serde(rename = "devices.capabilities.online")]
+    #[strum(serialize = "devices.capabilities.online")]
     Online,
-    #[serde(other)]
-    Other,
+    #[strum(serialize = "devices.capabilities.property")]
+    Property,
+    #[strum(serialize = "devices.capabilities.event")]
+    Event,
+    Other(String),
+}
+
+impl<'de> Deserialize<'de> for DeviceCapabilityKind {
+    fn deserialize<D>(d: D) -> Result<Self, <D as Deserializer<'de>>::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(d)?;
+
+        if let Ok(t) = s.parse::<Self>() {
+            Ok(t)
+        } else {
+            Ok(Self::Other(s))
+        }
+    }
+}
+
+impl Serialize for DeviceCapabilityKind {
+    fn serialize<S>(&self, serializer: S) -> Result<<S as Serializer>::Ok, <S as Serializer>::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Other(s) => s.serialize(serializer),
+            _ => self.to_string().serialize(serializer),
+        }
+    }
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
@@ -806,5 +864,17 @@ mod test {
     fn list_devices() {
         let resp: GetDevicesResponse = from_json(&LIST_DEVICES_EXAMPLE).unwrap();
         k9::assert_matches_snapshot!(format!("{resp:#?}"));
+    }
+
+    #[test]
+    fn enum_repr() {
+        k9::assert_equal!(
+            serde_json::to_string(&DeviceType::Light).unwrap(),
+            "\"devices.types.light\""
+        );
+        k9::assert_equal!(
+            serde_json::to_string(&DeviceType::Other("something".to_string())).unwrap(),
+            "\"something\""
+        );
     }
 }

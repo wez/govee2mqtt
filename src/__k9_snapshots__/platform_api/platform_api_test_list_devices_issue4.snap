@@ -6,7 +6,7 @@ GetDevicesResponse {
             sku: "H7111",
             device: "AA:BB:CC:DD:EE:FF:00:11",
             device_name: "Smart Floor Fan",
-            device_type: Other,
+            device_type: Fan,
             capabilities: [
                 DeviceCapability {
                     kind: OnOff,
@@ -322,7 +322,7 @@ GetDevicesResponse {
                     event_state: None,
                 },
                 DeviceCapability {
-                    kind: Other,
+                    kind: Event,
                     instance: "lackWaterEvent",
                     parameters: None,
                     alarm_type: Some(
@@ -551,7 +551,7 @@ GetDevicesResponse {
                     event_state: None,
                 },
                 DeviceCapability {
-                    kind: Other,
+                    kind: Property,
                     instance: "sensorTemperature",
                     parameters: None,
                     alarm_type: None,
@@ -745,14 +745,14 @@ GetDevicesResponse {
                     event_state: None,
                 },
                 DeviceCapability {
-                    kind: Other,
+                    kind: Property,
                     instance: "filterLifeTime",
                     parameters: None,
                     alarm_type: None,
                     event_state: None,
                 },
                 DeviceCapability {
-                    kind: Other,
+                    kind: Property,
                     instance: "airQuality",
                     parameters: None,
                     alarm_type: None,
