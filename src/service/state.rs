@@ -261,7 +261,8 @@ impl State {
         };
 
         if let Some(hass) = self.get_hass_client().await {
-            hass.advise_hass_of_light_state(&canonical_device).await?;
+            hass.advise_hass_of_light_state(&canonical_device, self)
+                .await?;
         }
 
         Ok(())

@@ -281,20 +281,29 @@ impl GoveeApiClient {
         anyhow::bail!("Scene '{scene}' is not available for this device");
     }
 
+    pub async fn set_toggle_state(
+        &self,
+        device: &HttpDeviceInfo,
+        instance: &str,
+        on: bool,
+    ) -> anyhow::Result<ControlDeviceResponseCapability> {
+        let cap = device
+            .capability_by_instance(instance)
+            .ok_or_else(|| anyhow::anyhow!("device has no {instance}"))?;
+
+        let value = cap
+            .enum_parameter_by_name(if on { "on" } else { "off" })
+            .ok_or_else(|| anyhow::anyhow!("{instance} has no on/off!?"))?;
+
+        self.control_device(&device, &cap, value).await
+    }
+
     pub async fn set_power_state(
         &self,
         device: &HttpDeviceInfo,
         on: bool,
     ) -> anyhow::Result<ControlDeviceResponseCapability> {
-        let cap = device
-            .capability_by_instance("powerSwitch")
-            .ok_or_else(|| anyhow::anyhow!("device has no powerSwitch"))?;
-
-        let value = cap
-            .enum_parameter_by_name(if on { "on" } else { "off" })
-            .ok_or_else(|| anyhow::anyhow!("powerSwitch has no on/off!?"))?;
-
-        self.control_device(&device, &cap, value).await
+        self.set_toggle_state(device, "powerSwitch", on).await
     }
 
     pub async fn set_brightness(
@@ -511,7 +520,7 @@ impl HttpDeviceInfo {
     }
 }
 
-#[derive(Deserialize, Serialize, Debug, Default, Clone, Copy)]
+#[derive(Deserialize, Serialize, Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub enum DeviceType {
     #[serde(rename = "devices.types.light")]
     #[default]
@@ -538,7 +547,7 @@ pub enum DeviceType {
     Other,
 }
 
-#[derive(Deserialize, Serialize, Debug, Clone, Copy)]
+#[derive(Deserialize, Serialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DeviceCapabilityKind {
     #[serde(rename = "devices.capabilities.on_off")]
     OnOff,

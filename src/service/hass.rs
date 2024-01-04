@@ -1,7 +1,8 @@
 use crate::lan_api::DeviceColor;
 use crate::opt_env_var;
+use crate::platform_api::{DeviceCapability, DeviceCapabilityKind};
 use crate::service::device::Device as ServiceDevice;
-use crate::service::state::StateHandle;
+use crate::service::state::{State as ServiceState, StateHandle};
 use crate::version_info::govee_version;
 use anyhow::Context;
 use async_channel::Receiver;
@@ -192,6 +193,75 @@ pub struct ButtonConfig {
     pub payload_press: Option<String>,
 }
 
+impl ButtonConfig {
+    #[allow(dead_code)]
+    pub async fn for_device(
+        device: &ServiceDevice,
+        instance: &DeviceCapability,
+    ) -> anyhow::Result<Self> {
+        let command_topic = format!(
+            "gv2mqtt/switch/{id}/command/{inst}",
+            id = topic_safe_id(device),
+            inst = instance.instance
+        );
+        let availability_topic = availability_topic();
+        let unique_id = format!(
+            "gv2mqtt-{id}-{inst}",
+            id = topic_safe_id(device),
+            inst = instance.instance
+        );
+
+        Ok(Self {
+            base: EntityConfig {
+                availability_topic,
+                name: Some(camel_case_to_space_separated(&instance.instance)),
+                device_class: None,
+                origin: Origin::default(),
+                device: Device::for_device(device),
+                unique_id,
+                entity_category: None,
+                icon: None,
+            },
+            command_topic,
+            payload_press: None,
+        })
+    }
+
+    pub async fn publish(
+        &self,
+        state: &StateHandle,
+        client: &HassClient,
+        remove: bool,
+    ) -> anyhow::Result<()> {
+        let disco = state.get_hass_disco_prefix().await;
+        let topic = format!(
+            "{disco}/button/{unique_id}/config",
+            unique_id = self.base.unique_id
+        );
+
+        if remove {
+            let legacy_topic = format!(
+                "{disco}/switch/{unique_id}/config",
+                unique_id = self.base.unique_id
+            );
+            client.publish(&legacy_topic, "").await?;
+
+            client.publish(&topic, "").await
+        } else {
+            client.publish_obj(topic, self).await
+        }
+    }
+
+    pub async fn notify_state(
+        &self,
+        _device: &ServiceDevice,
+        _client: &HassClient,
+    ) -> anyhow::Result<()> {
+        // Buttons have no state
+        Ok(())
+    }
+}
+
 #[derive(Serialize, Clone, Debug)]
 pub struct SwitchConfig {
     #[serde(flatten)]
@@ -201,16 +271,27 @@ pub struct SwitchConfig {
 }
 
 impl SwitchConfig {
-    pub async fn for_device(device: &ServiceDevice) -> anyhow::Result<Self> {
-        let command_topic = format!("gv2mqtt/power/{id}/command", id = topic_safe_id(device));
-        let state_topic = power_state_topic(device);
+    pub async fn for_device(
+        device: &ServiceDevice,
+        instance: &DeviceCapability,
+    ) -> anyhow::Result<Self> {
+        let command_topic = format!(
+            "gv2mqtt/switch/{id}/command/{inst}",
+            id = topic_safe_id(device),
+            inst = instance.instance
+        );
+        let state_topic = switch_instance_state_topic(device, &instance.instance);
         let availability_topic = availability_topic();
-        let unique_id = format!("gv2mqtt-{id}-power", id = topic_safe_id(device));
+        let unique_id = format!(
+            "gv2mqtt-{id}-{inst}",
+            id = topic_safe_id(device),
+            inst = instance.instance
+        );
 
         Ok(Self {
             base: EntityConfig {
                 availability_topic,
-                name: Some("Power".to_string()),
+                name: Some(camel_case_to_space_separated(&instance.instance)),
                 device_class: None,
                 origin: Origin::default(),
                 device: Device::for_device(device),
@@ -236,10 +317,51 @@ impl SwitchConfig {
         );
 
         if remove {
+            if let Some("powerSwitch") = instance_from_topic(&self.command_topic) {
+                let legacy_topic = topic.replace("powerSwitch", "power");
+                client.publish(&legacy_topic, "").await?;
+            }
+
             client.publish(&topic, "").await
         } else {
             client.publish_obj(topic, self).await
         }
+    }
+
+    pub async fn notify_state(
+        &self,
+        device: &ServiceDevice,
+        client: &HassClient,
+    ) -> anyhow::Result<()> {
+        let instance = instance_from_topic(&self.command_topic).expect("topic to be valid");
+
+        if instance == "powerSwitch" {
+            if let Some(state) = device.device_state() {
+                client
+                    .publish(&self.state_topic, if state.on { "ON" } else { "OFF" })
+                    .await?;
+            }
+            return Ok(());
+        }
+
+        // TODO: currently, Govee don't return any meaningful data on
+        // additional states. When they do, we'll need to start reporting
+        // it here, but we'll also need to start polling it from the
+        // platform API in order for it to even be available here.
+        // Until then, the switch will show in the hass UI with an
+        // unknown state but provide you with separate on and off push
+        // buttons so that you can at least send the commands to the device.
+        // <https://developer.govee.com/discuss/6596e84c901fb900312d5968>
+        if let Some(state) = &device.http_device_state {
+            for cap in &state.capabilities {
+                if cap.instance == instance {
+                    log::warn!("SwitchConfig::notify_state: Do something with {cap:#?}");
+                    return Ok(());
+                }
+            }
+        }
+        log::trace!("SelectConfig::notify_state: didn't find state for {device} {instance}");
+        Ok(())
     }
 }
 
@@ -283,7 +405,7 @@ pub struct LightConfig {
 }
 
 impl LightConfig {
-    pub async fn for_device(device: &ServiceDevice, state: &StateHandle) -> anyhow::Result<Self> {
+    pub async fn for_device(device: &ServiceDevice, state: &ServiceState) -> anyhow::Result<Self> {
         let command_topic = format!("gv2mqtt/light/{id}/command", id = topic_safe_id(device));
         let state_topic = light_state_topic(device);
         let availability_topic = availability_topic();
@@ -368,6 +490,105 @@ impl LightConfig {
             client.publish_obj(topic, self).await
         }
     }
+
+    pub async fn notify_state(
+        &self,
+        device: &ServiceDevice,
+        client: &HassClient,
+    ) -> anyhow::Result<()> {
+        match device.device_state() {
+            Some(device_state) => {
+                log::trace!("LightConfig::notify_state: state is {device_state:?}");
+
+                let light_state = if device_state.on {
+                    if device_state.kelvin == 0 {
+                        json!({
+                            "state": "ON",
+                            "color_mode": "rgb",
+                            "color": {
+                                "r": device_state.color.r,
+                                "g": device_state.color.g,
+                                "b": device_state.color.b,
+                            },
+                            "brightness": device_state.brightness,
+                        })
+                    } else {
+                        json!({
+                            "state": "ON",
+                            "color_mode": "color_temp",
+                            "brightness": device_state.brightness,
+                            "color_temp": kelvin_to_mired(device_state.kelvin),
+                        })
+                    }
+                } else {
+                    json!({"state":"OFF"})
+                };
+
+                client.publish_obj(&self.state_topic, &light_state).await
+            }
+            None => {
+                // TODO: mark as unavailable or something? Don't
+                // want to prevent attempting to control it though,
+                // as that could cause it to wake up.
+                client
+                    .publish_obj(&self.state_topic, &json!({"state":"OFF"}))
+                    .await
+            }
+        }
+    }
+}
+
+enum Config {
+    Light(LightConfig),
+    Switch(SwitchConfig),
+    #[allow(dead_code)]
+    Button(ButtonConfig),
+}
+
+impl Config {
+    async fn publish(
+        &self,
+        state: &StateHandle,
+        client: &HassClient,
+        remove: bool,
+    ) -> anyhow::Result<()> {
+        match self {
+            Self::Light(l) => l.publish(state, client, remove).await,
+            Self::Switch(s) => s.publish(state, client, remove).await,
+            Self::Button(s) => s.publish(state, client, remove).await,
+        }
+    }
+
+    async fn notify_state(
+        &self,
+        device: &ServiceDevice,
+        client: &HassClient,
+    ) -> anyhow::Result<()> {
+        match self {
+            Self::Light(l) => l.notify_state(device, client).await,
+            Self::Switch(s) => s.notify_state(device, client).await,
+            Self::Button(s) => s.notify_state(device, client).await,
+        }
+    }
+
+    async fn for_device<'a>(
+        d: &'a ServiceDevice,
+        state: &ServiceState,
+        configs: &mut Vec<(&'a ServiceDevice, Self)>,
+    ) -> anyhow::Result<()> {
+        configs.push((d, Config::Light(LightConfig::for_device(&d, state).await?)));
+        if let Some(info) = &d.http_device_info {
+            for cap in &info.capabilities {
+                match cap.kind {
+                    DeviceCapabilityKind::Toggle | DeviceCapabilityKind::OnOff => {
+                        configs.push((d, Config::Switch(SwitchConfig::for_device(&d, cap).await?)));
+                    }
+                    _ => {}
+                }
+            }
+        }
+        Ok(())
+    }
 }
 
 #[derive(Clone)]
@@ -379,40 +600,15 @@ impl HassClient {
     async fn register_with_hass(&self, state: &StateHandle) -> anyhow::Result<()> {
         let devices = state.devices().await;
 
-        enum Config {
-            Light(LightConfig),
-            Switch(SwitchConfig),
-        }
-
-        impl Config {
-            async fn publish(
-                &self,
-                state: &StateHandle,
-                client: &HassClient,
-                remove: bool,
-            ) -> anyhow::Result<()> {
-                match self {
-                    Self::Light(l) => l.publish(state, client, remove).await,
-                    Self::Switch(s) => s.publish(state, client, remove).await,
-                }
-            }
-        }
-
         let mut configs = vec![];
 
-        // Register the light entities
         for d in &devices {
-            configs.push(Config::Light(LightConfig::for_device(&d, state).await?));
-            if let Some(info) = &d.http_device_info {
-                if info.capability_by_instance("powerSwitch").is_some() {
-                    configs.push(Config::Switch(SwitchConfig::for_device(&d).await?));
-                }
-            }
+            Config::for_device(d, state, &mut configs).await?;
         }
 
         // Remove existing configs first
         log::trace!("register_with_hass: Remove prior entries");
-        for c in &configs {
+        for (_, c) in &configs {
             c.publish(state, self, true).await?;
         }
 
@@ -424,7 +620,7 @@ impl HassClient {
 
         // Register the configs
         log::trace!("register_with_hass: register entities");
-        for c in &configs {
+        for (_, c) in &configs {
             c.publish(state, self, false).await?;
         }
 
@@ -440,8 +636,8 @@ impl HassClient {
 
         // report initial state
         log::trace!("register_with_hass: reporting state");
-        for d in &devices {
-            self.advise_hass_of_light_state(d).await?;
+        for (d, c) in &configs {
+            c.notify_state(d, self).await?;
         }
 
         log::trace!("register_with_hass: done");
@@ -474,52 +670,15 @@ impl HassClient {
         Ok(())
     }
 
-    pub async fn advise_hass_of_light_state(&self, device: &ServiceDevice) -> anyhow::Result<()> {
-        match device.device_state() {
-            Some(device_state) => {
-                log::trace!("advise_hass_of_light_state: state is {device_state:?}");
-
-                let light_state = if device_state.on {
-                    if device_state.kelvin == 0 {
-                        json!({
-                            "state": "ON",
-                            "color_mode": "rgb",
-                            "color": {
-                                "r": device_state.color.r,
-                                "g": device_state.color.g,
-                                "b": device_state.color.b,
-                            },
-                            "brightness": device_state.brightness,
-                        })
-                    } else {
-                        json!({
-                            "state": "ON",
-                            "color_mode": "color_temp",
-                            "brightness": device_state.brightness,
-                            "color_temp": kelvin_to_mired(device_state.kelvin),
-                        })
-                    }
-                } else {
-                    json!({"state":"OFF"})
-                };
-
-                self.publish_obj(light_state_topic(device), &light_state)
-                    .await?;
-
-                self.publish(
-                    power_state_topic(device),
-                    if device_state.on { "ON" } else { "OFF" },
-                )
-                .await?;
-            }
-            None => {
-                // TODO: mark as unavailable or something? Don't
-                // want to prevent attempting to control it though,
-                // as that could cause it to wake up.
-                self.publish_obj(light_state_topic(device), &json!({"state":"OFF"}))
-                    .await?;
-                self.publish(power_state_topic(device), "OFF").await?;
-            }
+    pub async fn advise_hass_of_light_state(
+        &self,
+        device: &ServiceDevice,
+        state: &ServiceState,
+    ) -> anyhow::Result<()> {
+        let mut configs = vec![];
+        Config::for_device(device, state, &mut configs).await?;
+        for (d, c) in configs {
+            c.notify_state(d, self).await?;
         }
 
         Ok(())
@@ -532,8 +691,11 @@ pub fn topic_safe_id(device: &ServiceDevice) -> String {
     id
 }
 
-fn power_state_topic(device: &ServiceDevice) -> String {
-    format!("gv2mqtt/power/{id}/state", id = topic_safe_id(device))
+fn switch_instance_state_topic(device: &ServiceDevice, instance: &str) -> String {
+    format!(
+        "gv2mqtt/switch/{id}/{instance}/state",
+        id = topic_safe_id(device)
+    )
 }
 
 fn light_state_topic(device: &ServiceDevice) -> String {
@@ -595,21 +757,39 @@ async fn mqtt_light_command(
     Ok(())
 }
 
-async fn mqtt_power_command(
+#[derive(Deserialize)]
+struct IdAndInst {
+    id: String,
+    instance: String,
+}
+
+async fn mqtt_switch_command(
     Payload(command): Payload<String>,
-    Params(IdParameter { id }): Params<IdParameter>,
+    Params(IdAndInst { id, instance }): Params<IdAndInst>,
     State(state): State<StateHandle>,
 ) -> anyhow::Result<()> {
-    log::info!("Power for {id}: {command}");
+    log::info!("{instance} for {id}: {command}");
     let device = state
         .resolve_device(&id)
         .await
         .ok_or_else(|| anyhow::anyhow!("device '{id}' not found"))?;
 
-    if command == "OFF" {
-        state.device_power_on(&device, false).await?;
-    } else if command == "ON" {
-        state.device_power_on(&device, true).await?;
+    let on = match command.as_str() {
+        "ON" | "on" => true,
+        "OFF" | "off" => false,
+        _ => anyhow::bail!("invalid {command} for {id}"),
+    };
+
+    if instance == "powerSwitch" {
+        state.device_power_on(&device, on).await?;
+    } else if let Some(client) = state.get_platform_client().await {
+        if let Some(http_dev) = &device.http_device_info {
+            client.set_toggle_state(http_dev, &instance, on).await?;
+        } else {
+            anyhow::bail!("No platform state available to set {id} {instance} to {on}");
+        }
+    } else {
+        anyhow::bail!("Don't know how to {command} for {id} {instance}!");
     }
 
     Ok(())
@@ -668,7 +848,7 @@ async fn run_mqtt_loop(
         .route("gv2mqtt/light/:id/command", mqtt_light_command)
         .await?;
     router
-        .route("gv2mqtt/power/:id/command", mqtt_power_command)
+        .route("gv2mqtt/switch/:id/command/:instance", mqtt_switch_command)
         .await?;
 
     state
@@ -728,4 +908,38 @@ pub async fn spawn_hass_integration(
     });
 
     Ok(())
+}
+
+fn camel_case_to_space_separated(camel: &str) -> String {
+    let mut result = camel[..1].to_ascii_uppercase();
+    for c in camel.chars().skip(1) {
+        if c.is_uppercase() {
+            result.push(' ');
+        }
+        result.push(c);
+    }
+    result
+}
+
+#[cfg(test)]
+#[test]
+fn test_camel_case_to_space_separated() {
+    assert_eq!(camel_case_to_space_separated("powerSwitch"), "Power Switch");
+    assert_eq!(
+        camel_case_to_space_separated("oscillationToggle"),
+        "Oscillation Toggle"
+    );
+}
+
+fn instance_from_topic(topic: &str) -> Option<&str> {
+    topic.rsplit_once('/').map(|(_, instance)| instance)
+}
+
+#[cfg(test)]
+#[test]
+fn test_instance_from_topic() {
+    assert_eq!(
+        instance_from_topic("hello/there/powerSwitch").unwrap(),
+        "powerSwitch"
+    );
 }
