@@ -209,12 +209,19 @@ impl GoveeApiClient {
         let scene_caps = self.get_device_scenes(&device).await?;
         let diy_caps = self.get_device_diy_scenes(&device).await?;
 
-        for caps in [scene_caps, diy_caps] {
+        for caps in [&device.capabilities, &scene_caps, &diy_caps] {
             for cap in caps {
-                match cap.parameters {
+                let is_scene = matches!(
+                    cap.kind,
+                    DeviceCapabilityKind::DynamicScene | DeviceCapabilityKind::DynamicSetting
+                );
+                if !is_scene {
+                    continue;
+                }
+                match &cap.parameters {
                     DeviceParameters::Enum { options } => {
                         for opt in options {
-                            result.push(opt.name);
+                            result.push(opt.name.to_string());
                         }
                     }
                     _ => anyhow::bail!("unexpected type {cap:#?}"),
@@ -233,8 +240,15 @@ impl GoveeApiClient {
         let scene_caps = self.get_device_scenes(&device).await?;
         let diy_caps = self.get_device_diy_scenes(&device).await?;
 
-        for caps in [scene_caps, diy_caps] {
+        for caps in [&device.capabilities, &scene_caps, &diy_caps] {
             for cap in caps {
+                let is_scene = matches!(
+                    cap.kind,
+                    DeviceCapabilityKind::DynamicScene | DeviceCapabilityKind::DynamicSetting
+                );
+                if !is_scene {
+                    continue;
+                }
                 match &cap.parameters {
                     DeviceParameters::Enum { options } => {
                         for opt in options {
