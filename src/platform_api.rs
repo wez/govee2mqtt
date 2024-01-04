@@ -137,6 +137,39 @@ impl GoveeApiClient {
         Ok(resp.payload)
     }
 
+    pub async fn get_device_diy_scenes(
+        &self,
+        device: &HttpDeviceInfo,
+    ) -> anyhow::Result<Vec<DeviceCapability>> {
+        let key = format!("scene-list-diy-{}-{}", device.sku, device.device);
+        cache_get(
+            CacheGetOptions {
+                topic: "http-api",
+                key: &key,
+                soft_ttl: Duration::from_secs(300),
+                hard_ttl: ONE_WEEK,
+                negative_ttl: Duration::from_secs(60),
+            },
+            async {
+                let url = endpoint("/router/api/v1/device/diy-scenes");
+                let request = GetDeviceScenesRequest {
+                    request_id: "uuid".to_string(),
+                    payload: GetDeviceScenesPayload {
+                        sku: device.sku.to_string(),
+                        device: device.device.to_string(),
+                    },
+                };
+
+                let resp: GetDeviceScenesResponse = self
+                    .request_with_json_response(Method::POST, url, &request)
+                    .await?;
+
+                Ok(resp.payload.capabilities)
+            },
+        )
+        .await
+    }
+
     pub async fn get_device_scenes(
         &self,
         device: &HttpDeviceInfo,
@@ -186,6 +219,19 @@ impl GoveeApiClient {
             }
         }
 
+        let diy_caps = self.get_device_diy_scenes(&device).await?;
+
+        for cap in diy_caps {
+            match cap.parameters {
+                DeviceParameters::Enum { options } => {
+                    for opt in options {
+                        result.push(opt.name);
+                    }
+                }
+                _ => anyhow::bail!("unexpected type {cap:#?}"),
+            }
+        }
+
         Ok(result)
     }
 
@@ -195,17 +241,20 @@ impl GoveeApiClient {
         scene: &str,
     ) -> anyhow::Result<ControlDeviceResponseCapability> {
         let scene_caps = self.get_device_scenes(&device).await?;
+        let diy_caps = self.get_device_diy_scenes(&device).await?;
 
-        for cap in scene_caps {
-            match &cap.parameters {
-                DeviceParameters::Enum { options } => {
-                    for opt in options {
-                        if scene.eq_ignore_ascii_case(&opt.name) {
-                            return self.control_device(&device, &cap, opt.value.clone()).await;
+        for caps in [scene_caps, diy_caps] {
+            for cap in caps {
+                match &cap.parameters {
+                    DeviceParameters::Enum { options } => {
+                        for opt in options {
+                            if scene.eq_ignore_ascii_case(&opt.name) {
+                                return self.control_device(&device, &cap, opt.value.clone()).await;
+                            }
                         }
                     }
+                    _ => anyhow::bail!("unexpected type {cap:#?}"),
                 }
-                _ => anyhow::bail!("unexpected type {cap:#?}"),
             }
         }
         anyhow::bail!("Scene '{scene}' is not available for this device");
