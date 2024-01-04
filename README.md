@@ -18,6 +18,7 @@ via the [Home Assistant MQTT Integration](https://www.home-assistant.io/integrat
 
 ## Usage
 
+* [Installing the HASS Add-On](ADDON.md) - for HAOS and Supervised HASS users
 * [Running it in Docker](DOCKER.md)
 * [Configuration](CONFIG.md)
 
