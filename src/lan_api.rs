@@ -1,4 +1,6 @@
+use crate::ble::GoveeBlePacket;
 use crate::opt_env_var;
+use crate::undoc_api::GoveeUndocumentedApi;
 use anyhow::Context;
 use if_addrs::IfAddr;
 use serde::{Deserialize, Serialize};
@@ -231,6 +233,25 @@ impl LanDevice {
             color_temperature_kelvin,
         })
         .await
+    }
+
+    pub async fn set_scene_by_name(&self, scene_name: &str) -> anyhow::Result<()> {
+        for category in GoveeUndocumentedApi::get_scenes_for_device(&self.sku).await? {
+            for scene in category.scenes {
+                for effect in scene.light_effects {
+                    if scene.scene_name == scene_name && effect.scene_code != 0 {
+                        let encoded = GoveeBlePacket::scene_code(effect.scene_code).base64();
+                        log::info!(
+                            "sending scene packet {encoded:x?} for {scene_name}, code {}",
+                            effect.scene_code
+                        );
+                        return self.send_real(vec![encoded]).await;
+                    }
+                }
+            }
+        }
+
+        anyhow::bail!("unable to set scene {scene_name} for {}", self.device);
     }
 }
 

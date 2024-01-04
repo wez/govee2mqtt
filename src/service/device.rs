@@ -1,5 +1,6 @@
 use crate::lan_api::{DeviceColor, DeviceStatus as LanDeviceStatus, LanDevice};
 use crate::platform_api::{HttpDeviceInfo, HttpDeviceState};
+use crate::service::quirks::resolve_quirk;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::net::IpAddr;
@@ -276,6 +277,27 @@ impl Device {
         candidates.sort_by(|a, b| a.updated.cmp(&b.updated));
 
         candidates.pop()
+    }
+
+    pub fn get_color_temperature_range(&self) -> Option<(u32, u32)> {
+        if let Some(quirk) = resolve_quirk(&self.sku) {
+            return quirk.color_temp_range;
+        }
+
+        self.http_device_info
+            .as_ref()
+            .and_then(|info| info.get_color_temperature_range())
+    }
+
+    pub fn supports_rgb(&self) -> bool {
+        if let Some(quirk) = resolve_quirk(&self.sku) {
+            return quirk.supports_rgb;
+        }
+
+        self.http_device_info
+            .as_ref()
+            .map(|info| info.supports_rgb())
+            .unwrap_or(false)
     }
 }
 

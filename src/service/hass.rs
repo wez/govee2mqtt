@@ -473,29 +473,21 @@ impl LightConfig {
         let mut supported_color_modes = vec![];
         let mut color_mode = false;
 
-        if device
-            .http_device_info
-            .as_ref()
-            .map(|info| info.supports_rgb())
-            .unwrap_or(false)
-        {
+        if device.supports_rgb() {
             supported_color_modes.push("rgb".to_string());
             color_mode = true;
         }
 
-        let (min_mireds, max_mireds) = if let Some((min, max)) = device
-            .http_device_info
-            .as_ref()
-            .and_then(|info| info.get_color_temperature_range())
-        {
-            supported_color_modes.push("color_temp".to_string());
-            color_mode = true;
-            // Note that min and max are swapped by the translation
-            // from kelvin to mired
-            (Some(kelvin_to_mired(max)), Some(kelvin_to_mired(min)))
-        } else {
-            (None, None)
-        };
+        let (min_mireds, max_mireds) =
+            if let Some((min, max)) = device.get_color_temperature_range() {
+                supported_color_modes.push("color_temp".to_string());
+                color_mode = true;
+                // Note that min and max are swapped by the translation
+                // from kelvin to mired
+                (Some(kelvin_to_mired(max)), Some(kelvin_to_mired(min)))
+            } else {
+                (None, None)
+            };
 
         let brightness = device
             .http_device_info

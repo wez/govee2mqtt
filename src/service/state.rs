@@ -3,6 +3,7 @@ use crate::platform_api::GoveeApiClient;
 use crate::service::device::Device;
 use crate::service::hass::{topic_safe_id, HassClient};
 use crate::service::iot::IotClient;
+use crate::service::quirks::resolve_quirk;
 use crate::undoc_api::GoveeUndocumentedApi;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -242,12 +243,24 @@ impl State {
 
     pub async fn device_set_scene(&self, device: &Device, scene: &str) -> anyhow::Result<()> {
         // TODO: some plumbing to maintain offline scene controls for preferred-LAN control
+        let quirk = resolve_quirk(&device.sku);
 
-        if let Some(client) = self.get_platform_client().await {
-            if let Some(info) = &device.http_device_info {
-                client.set_scene_by_name(info, scene).await?;
-                return Ok(());
+        let avoid_platform_api = quirk
+            .as_ref()
+            .map(|q| q.avoid_platform_api)
+            .unwrap_or(false);
+
+        if !avoid_platform_api {
+            if let Some(client) = self.get_platform_client().await {
+                if let Some(info) = &device.http_device_info {
+                    client.set_scene_by_name(info, scene).await?;
+                    return Ok(());
+                }
             }
+        }
+
+        if let Some(lan_dev) = &device.lan_device {
+            return lan_dev.set_scene_by_name(scene).await;
         }
 
         anyhow::bail!("Unable to set scene for {device}");
