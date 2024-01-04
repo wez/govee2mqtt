@@ -520,95 +520,29 @@ impl HttpDeviceInfo {
     }
 }
 
-#[derive(Debug, Default, Clone, PartialEq, Eq, strum_macros::Display, strum_macros::EnumString)]
-pub enum DeviceType {
-    #[strum(serialize = "devices.types.light")]
-    #[default]
-    Light,
-    #[strum(serialize = "devices.types.air_purifier")]
-    AirPurifier,
-    #[strum(serialize = "devices.types.thermometer")]
-    Thermometer,
-    #[strum(serialize = "devices.types.socket")]
-    Socket,
-    #[strum(serialize = "devices.types.sensor")]
-    Sensor,
-    #[strum(serialize = "devices.types.heater")]
-    Heater,
-    #[strum(serialize = "devices.types.humidifier")]
-    Humidifer,
-    #[strum(serialize = "devices.types.dehumidifer")]
-    Dehumidifer,
-    #[strum(serialize = "devices.types.ice_maker")]
-    IceMaker,
-    #[strum(serialize = "devices.types.aroma_diffuser")]
-    AromaDiffuser,
-    #[strum(serialize = "devices.types.fan")]
-    Fan,
-    Other(String),
-}
-
-impl<'de> Deserialize<'de> for DeviceType {
-    fn deserialize<D>(d: D) -> Result<Self, <D as Deserializer<'de>>::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let s = String::deserialize(d)?;
-
-        if let Ok(t) = s.parse::<Self>() {
-            Ok(t)
-        } else {
-            Ok(Self::Other(s))
-        }
-    }
-}
-
-impl Serialize for DeviceType {
-    fn serialize<S>(&self, serializer: S) -> Result<<S as Serializer>::Ok, <S as Serializer>::Error>
-    where
-        S: Serializer,
-    {
-        match self {
-            Self::Other(s) => s.serialize(serializer),
-            _ => self.to_string().serialize(serializer),
-        }
-    }
-}
+/// Helper to generate boilerplate around govee enum string types
+macro_rules! enum_string {
+    {pub enum $name:ident {
+     $($var:ident = $label:literal),* $(,)?
+     }
+    } => {
 
 #[derive(Debug, Clone, PartialEq, Eq, strum_macros::Display, strum_macros::EnumString)]
-pub enum DeviceCapabilityKind {
-    #[strum(serialize = "devices.capabilities.on_off")]
-    OnOff,
-    #[strum(serialize = "devices.capabilities.toggle")]
-    Toggle,
-    #[strum(serialize = "devices.capabilities.range")]
-    Range,
-    #[strum(serialize = "devices.capabilities.mode")]
-    Mode,
-    #[strum(serialize = "devices.capabilities.color_setting")]
-    ColorSetting,
-    #[strum(serialize = "devices.capabilities.segment_color_setting")]
-    SegmentColorSetting,
-    #[strum(serialize = "devices.capabilities.music_setting")]
-    MusicSetting,
-    #[strum(serialize = "devices.capabilities.dynamic_scene")]
-    DynamicScene,
-    #[strum(serialize = "devices.capabilities.work_mode")]
-    WorkMode,
-    #[strum(serialize = "devices.capabilities.dynamic_setting")]
-    DynamicSetting,
-    #[strum(serialize = "devices.capabilities.temperature_setting")]
-    TemperatureSetting,
-    #[strum(serialize = "devices.capabilities.online")]
-    Online,
-    #[strum(serialize = "devices.capabilities.property")]
-    Property,
-    #[strum(serialize = "devices.capabilities.event")]
-    Event,
-    Other(String),
+pub enum $name {
+    $(
+        #[strum(serialize = $label)]
+        $var,
+    )*
+        Other(String),
 }
 
-impl<'de> Deserialize<'de> for DeviceCapabilityKind {
+impl Default for $name {
+    fn default() -> Self {
+        Self::Other("NONE".to_string())
+    }
+}
+
+impl<'de> Deserialize<'de> for $name {
     fn deserialize<D>(d: D) -> Result<Self, <D as Deserializer<'de>>::Error>
     where
         D: Deserializer<'de>,
@@ -623,7 +557,7 @@ impl<'de> Deserialize<'de> for DeviceCapabilityKind {
     }
 }
 
-impl Serialize for DeviceCapabilityKind {
+impl Serialize for $name {
     fn serialize<S>(&self, serializer: S) -> Result<<S as Serializer>::Ok, <S as Serializer>::Error>
     where
         S: Serializer,
@@ -633,6 +567,44 @@ impl Serialize for DeviceCapabilityKind {
             _ => self.to_string().serialize(serializer),
         }
     }
+}
+
+    }
+}
+
+enum_string! {
+pub enum DeviceType {
+    Light = "devices.types.light",
+    AirPurifier = "devices.types.air_purifier",
+    Thermometer = "devices.types.thermometer",
+    Socket = "devices.types.socket",
+    Sensor = "devices.types.sensor",
+    Heater = "devices.types.heater",
+    Humidifer = "devices.types.humidifier",
+    Dehumidifer = "devices.types.dehumidifer",
+    IceMaker = "devices.types.ice_maker",
+    AromaDiffuser = "devices.types.aroma_diffuser",
+    Fan = "devices.types.fan",
+}
+}
+
+enum_string! {
+pub enum DeviceCapabilityKind {
+    OnOff = "devices.capabilities.on_off",
+    Toggle = "devices.capabilities.toggle",
+    Range = "devices.capabilities.range",
+    Mode = "devices.capabilities.mode",
+    ColorSetting = "devices.capabilities.color_setting",
+    SegmentColorSetting = "devices.capabilities.segment_color_setting",
+    MusicSetting = "devices.capabilities.music_setting",
+    DynamicScene = "devices.capabilities.dynamic_scene",
+    WorkMode = "devices.capabilities.work_mode",
+    DynamicSetting = "devices.capabilities.dynamic_setting",
+    TemperatureSetting = "devices.capabilities.temperature_setting",
+    Online = "devices.capabilities.online",
+    Property = "devices.capabilities.property",
+    Event = "devices.capabilities.event",
+}
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]

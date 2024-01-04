@@ -6,7 +6,9 @@ GetDevicesResponse {
             sku: "H6601",
             device: "9D:FA:85:EB:D3:00:8B:FF",
             device_name: "",
-            device_type: Light,
+            device_type: Other(
+                "NONE",
+            ),
             capabilities: [
                 DeviceCapability {
                     kind: OnOff,
@@ -541,7 +543,9 @@ GetDevicesResponse {
             sku: "H605C",
             device: "69:EC:D1:37:36:39:24:4B",
             device_name: "",
-            device_type: Light,
+            device_type: Other(
+                "NONE",
+            ),
             capabilities: [
                 DeviceCapability {
                     kind: OnOff,
@@ -1069,7 +1073,9 @@ GetDevicesResponse {
             sku: "H7055",
             device: "B6:21:C3:37:34:32:33:86",
             device_name: "",
-            device_type: Light,
+            device_type: Other(
+                "NONE",
+            ),
             capabilities: [
                 DeviceCapability {
                     kind: OnOff,
