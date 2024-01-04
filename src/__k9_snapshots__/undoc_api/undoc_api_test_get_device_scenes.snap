@@ -13,6 +13,7 @@ DevicesResponse {
                     wifi_mac: "",
                     pact_type: 2,
                     pact_code: 1,
+                    dsp_version_soft: None,
                     wifi_soft_version: "2.05.08",
                     wifi_hard_version: "1.02.00",
                     ic: Some(
@@ -69,6 +70,7 @@ DevicesResponse {
                     wifi_mac: "",
                     pact_type: 2,
                     pact_code: 1,
+                    dsp_version_soft: None,
                     wifi_soft_version: "2.05.08",
                     wifi_hard_version: "1.02.00",
                     ic: Some(
@@ -125,6 +127,7 @@ DevicesResponse {
                     wifi_mac: "",
                     pact_type: 2,
                     pact_code: 1,
+                    dsp_version_soft: None,
                     wifi_soft_version: "2.05.08",
                     wifi_hard_version: "1.02.00",
                     ic: Some(
@@ -181,6 +184,7 @@ DevicesResponse {
                     wifi_mac: "",
                     pact_type: 1,
                     pact_code: 1,
+                    dsp_version_soft: None,
                     wifi_soft_version: "2.00.20",
                     wifi_hard_version: "1.02.00",
                     ic: Some(
@@ -239,6 +243,7 @@ DevicesResponse {
                     wifi_mac: "",
                     pact_type: 1,
                     pact_code: 1,
+                    dsp_version_soft: None,
                     wifi_soft_version: "2.05.08",
                     wifi_hard_version: "1.02.00",
                     ic: Some(
@@ -301,6 +306,7 @@ DevicesResponse {
                     wifi_mac: "",
                     pact_type: 2,
                     pact_code: 1,
+                    dsp_version_soft: None,
                     wifi_soft_version: "2.05.08",
                     wifi_hard_version: "1.02.00",
                     ic: Some(
@@ -359,6 +365,7 @@ DevicesResponse {
                     wifi_mac: "",
                     pact_type: 2,
                     pact_code: 1,
+                    dsp_version_soft: None,
                     wifi_soft_version: "2.05.08",
                     wifi_hard_version: "1.02.00",
                     ic: Some(
@@ -417,6 +424,7 @@ DevicesResponse {
                     wifi_mac: "",
                     pact_type: 2,
                     pact_code: 1,
+                    dsp_version_soft: None,
                     wifi_soft_version: "2.05.08",
                     wifi_hard_version: "1.02.00",
                     ic: Some(
@@ -475,6 +483,7 @@ DevicesResponse {
                     wifi_mac: "",
                     pact_type: 2,
                     pact_code: 1,
+                    dsp_version_soft: None,
                     wifi_soft_version: "1.02.11",
                     wifi_hard_version: "1.00.10",
                     ic: Some(
@@ -531,6 +540,7 @@ DevicesResponse {
                     wifi_mac: "",
                     pact_type: 2,
                     pact_code: 1,
+                    dsp_version_soft: None,
                     wifi_soft_version: "1.02.11",
                     wifi_hard_version: "1.00.10",
                     ic: Some(
