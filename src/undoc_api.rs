@@ -1,8 +1,7 @@
 use crate::cache::{cache_get, CacheComputeResult, CacheGetOptions};
 use crate::lan_api::boolean_int;
 use crate::opt_env_var;
-use crate::platform_api::json_body;
-use anyhow::Context;
+use crate::platform_api::http_response_body;
 use reqwest::Method;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
@@ -145,23 +144,6 @@ impl GoveeUndocumentedApi {
                     .send()
                     .await?;
 
-                let status = response.status();
-                if !status.is_success() {
-                    let body_bytes = response.bytes().await.with_context(|| {
-                        format!(
-                            "request status {}: {}, and failed to read response body",
-                            status.as_u16(),
-                            status.canonical_reason().unwrap_or("")
-                        )
-                    })?;
-                    anyhow::bail!(
-                        "request status {}: {}. Response body: {}",
-                        status.as_u16(),
-                        status.canonical_reason().unwrap_or(""),
-                        String::from_utf8_lossy(&body_bytes)
-                    );
-                }
-
                 #[derive(Deserialize, Debug)]
                 #[allow(non_snake_case, dead_code)]
                 struct Response {
@@ -170,13 +152,7 @@ impl GoveeUndocumentedApi {
                     status: u64,
                 }
 
-                let resp: Response = json_body(response).await.with_context(|| {
-                    format!(
-                        "request status {}: {}",
-                        status.as_u16(),
-                        status.canonical_reason().unwrap_or("")
-                    )
-                })?;
+                let resp: Response = http_response_body(response).await?;
 
                 Ok(CacheComputeResult::Value(resp.data))
             },
@@ -210,30 +186,7 @@ impl GoveeUndocumentedApi {
                     .send()
                     .await?;
 
-                let status = response.status();
-                if !status.is_success() {
-                    let body_bytes = response.bytes().await.with_context(|| {
-                        format!(
-                            "request status {}: {}, and failed to read response body",
-                            status.as_u16(),
-                            status.canonical_reason().unwrap_or("")
-                        )
-                    })?;
-                    anyhow::bail!(
-                        "request status {}: {}. Response body: {}",
-                        status.as_u16(),
-                        status.canonical_reason().unwrap_or(""),
-                        String::from_utf8_lossy(&body_bytes)
-                    );
-                }
-
-                let resp: Response = json_body(response).await.with_context(|| {
-                    format!(
-                        "request status {}: {}",
-                        status.as_u16(),
-                        status.canonical_reason().unwrap_or("")
-                    )
-                })?;
+                let resp: Response = http_response_body(response).await?;
 
                 #[derive(Deserialize, Serialize, Debug)]
                 #[allow(non_snake_case, dead_code)]
@@ -268,30 +221,7 @@ impl GoveeUndocumentedApi {
             .send()
             .await?;
 
-        let status = response.status();
-        if !status.is_success() {
-            let body_bytes = response.bytes().await.with_context(|| {
-                format!(
-                    "request status {}: {}, and failed to read response body",
-                    status.as_u16(),
-                    status.canonical_reason().unwrap_or("")
-                )
-            })?;
-            anyhow::bail!(
-                "request status {}: {}. Response body: {}",
-                status.as_u16(),
-                status.canonical_reason().unwrap_or(""),
-                String::from_utf8_lossy(&body_bytes)
-            );
-        }
-
-        let resp: DevicesResponse = json_body(response).await.with_context(|| {
-            format!(
-                "request status {}: {}",
-                status.as_u16(),
-                status.canonical_reason().unwrap_or("")
-            )
-        })?;
+        let resp: DevicesResponse = http_response_body(response).await?;
 
         Ok(resp)
     }
@@ -308,23 +238,6 @@ impl GoveeUndocumentedApi {
             }))
             .send()
             .await?;
-
-        let status = response.status();
-        if !status.is_success() {
-            let body_bytes = response.bytes().await.with_context(|| {
-                format!(
-                    "request status {}: {}, and failed to read response body",
-                    status.as_u16(),
-                    status.canonical_reason().unwrap_or("")
-                )
-            })?;
-            anyhow::bail!(
-                "request status {}: {}. Response body: {}",
-                status.as_u16(),
-                status.canonical_reason().unwrap_or(""),
-                String::from_utf8_lossy(&body_bytes)
-            );
-        }
 
         #[derive(Deserialize, Debug)]
         #[allow(non_snake_case, dead_code)]
@@ -345,13 +258,7 @@ impl GoveeUndocumentedApi {
             token: String,
         }
 
-        let resp: Response = json_body(response).await.with_context(|| {
-            format!(
-                "request status {}: {}",
-                status.as_u16(),
-                status.canonical_reason().unwrap_or("")
-            )
-        })?;
+        let resp: Response = http_response_body(response).await?;
 
         Ok(resp.data.token)
     }
@@ -383,31 +290,7 @@ impl GoveeUndocumentedApi {
                     .send()
                     .await?;
 
-                let status = response.status();
-                if !status.is_success() {
-                    let body_bytes = response.bytes().await.with_context(|| {
-                        format!(
-                            "request status {}: {}, and failed to read response body",
-                            status.as_u16(),
-                            status.canonical_reason().unwrap_or("")
-                        )
-                    })?;
-                    anyhow::bail!(
-                        "request status {}: {}. Response body: {}",
-                        status.as_u16(),
-                        status.canonical_reason().unwrap_or(""),
-                        String::from_utf8_lossy(&body_bytes)
-                    );
-                }
-
-                let resp: LightEffectLibraryResponse =
-                    json_body(response).await.with_context(|| {
-                        format!(
-                            "request status {}: {}",
-                            status.as_u16(),
-                            status.canonical_reason().unwrap_or("")
-                        )
-                    })?;
+                let resp: LightEffectLibraryResponse = http_response_body(response).await?;
 
                 Ok(CacheComputeResult::Value(resp.data.categories))
             },
@@ -436,30 +319,7 @@ impl GoveeUndocumentedApi {
             .send()
             .await?;
 
-        let status = response.status();
-        if !status.is_success() {
-            let body_bytes = response.bytes().await.with_context(|| {
-                format!(
-                    "request status {}: {}, and failed to read response body",
-                    status.as_u16(),
-                    status.canonical_reason().unwrap_or("")
-                )
-            })?;
-            anyhow::bail!(
-                "request status {}: {}. Response body: {}",
-                status.as_u16(),
-                status.canonical_reason().unwrap_or(""),
-                String::from_utf8_lossy(&body_bytes)
-            );
-        }
-
-        let resp: OneClickResponse = json_body(response).await.with_context(|| {
-            format!(
-                "request status {}: {}",
-                status.as_u16(),
-                status.canonical_reason().unwrap_or("")
-            )
-        })?;
+        let resp: OneClickResponse = http_response_body(response).await?;
 
         Ok(resp.data.components)
     }
