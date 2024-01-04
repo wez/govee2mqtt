@@ -810,30 +810,41 @@ async fn mqtt_light_command(
     Params(IdParameter { id }): Params<IdParameter>,
     State(state): State<StateHandle>,
 ) -> anyhow::Result<()> {
-    log::info!("Command for {id}: {payload}");
     let device = state
         .resolve_device(&id)
         .await
         .ok_or_else(|| anyhow::anyhow!("device '{id}' not found"))?;
 
     let command: HassLightCommand = serde_json::from_str(&payload)?;
+    log::info!("Command for {device}: {payload}");
 
     if command.state == "OFF" {
         state.device_power_on(&device, false).await?;
-    } else if let Some(color) = &command.color {
-        state
-            .device_set_color_rgb(&device, color.r, color.g, color.b)
-            .await?;
-    } else if let Some(brightness) = command.brightness {
-        state.device_set_brightness(&device, brightness).await?;
-    } else if let Some(color_temp) = command.color_temp {
-        state
-            .device_set_color_temperature(&device, mired_to_kelvin(color_temp))
-            .await?;
-    } else if let Some(effect) = &command.effect {
-        state.device_set_scene(&device, effect).await?;
     } else {
-        state.device_power_on(&device, true).await?;
+        let mut power_on = true;
+        if let Some(color) = &command.color {
+            state
+                .device_set_color_rgb(&device, color.r, color.g, color.b)
+                .await?;
+            power_on = false;
+        }
+        if let Some(brightness) = command.brightness {
+            state.device_set_brightness(&device, brightness).await?;
+            power_on = false;
+        }
+        if let Some(color_temp) = command.color_temp {
+            state
+                .device_set_color_temperature(&device, dbg!(mired_to_kelvin(color_temp)))
+                .await?;
+            power_on = false;
+        }
+        if let Some(effect) = &command.effect {
+            state.device_set_scene(&device, effect).await?;
+            power_on = false;
+        }
+        if power_on {
+            state.device_power_on(&device, true).await?;
+        }
     }
 
     Ok(())
