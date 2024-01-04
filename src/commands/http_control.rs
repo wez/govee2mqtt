@@ -121,10 +121,10 @@ impl HttpControlCommand {
 
                 fn for_each_music_mode<F: FnMut(&EnumOption) -> anyhow::Result<bool>>(
                     mut apply: F,
-                    parameters: &DeviceParameters,
+                    parameters: &Option<DeviceParameters>,
                 ) -> anyhow::Result<bool> {
                     match parameters {
-                        DeviceParameters::Struct { fields } => {
+                        Some(DeviceParameters::Struct { fields }) => {
                             for f in fields {
                                 if f.field_name == "musicMode" {
                                     match &f.field_type {

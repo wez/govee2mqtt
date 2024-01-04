@@ -1,0 +1,1682 @@
+{
+  "code": 200,
+  "message": "success",
+  "data": [
+    {
+      "sku": "H7111",
+      "device": "AA:BB:CC:DD:EE:FF:00:11",
+      "deviceName": "Smart Floor Fan",
+      "type": "devices.types.fan",
+      "capabilities": [
+        {
+          "type": "devices.capabilities.on_off",
+          "instance": "powerSwitch",
+          "parameters": {
+            "dataType": "ENUM",
+            "options": [
+              {
+                "name": "on",
+                "value": 1
+              },
+              {
+                "name": "off",
+                "value": 0
+              }
+            ]
+          }
+        },
+        {
+          "type": "devices.capabilities.toggle",
+          "instance": "oscillationToggle",
+          "parameters": {
+            "dataType": "ENUM",
+            "options": [
+              {
+                "name": "on",
+                "value": 1
+              },
+              {
+                "name": "off",
+                "value": 0
+              }
+            ]
+          }
+        },
+        {
+          "type": "devices.capabilities.work_mode",
+          "instance": "workMode",
+          "parameters": {
+            "dataType": "STRUCT",
+            "fields": [
+              {
+                "fieldName": "workMode",
+                "dataType": "ENUM",
+                "options": [
+                  {
+                    "name": "FanSpeed",
+                    "value": 1
+                  },
+                  {
+                    "name": "Custom",
+                    "value": 2
+                  },
+                  {
+                    "name": "Auto",
+                    "value": 3
+                  },
+                  {
+                    "name": "Sleep",
+                    "value": 5
+                  },
+                  {
+                    "name": "Nature",
+                    "value": 6
+                  },
+                  {
+                    "name": "Storm",
+                    "value": 7
+                  }
+                ],
+                "required": true
+              },
+              {
+                "fieldName": "modeValue",
+                "dataType": "ENUM",
+                "options": [
+                  {
+                    "name": "FanSpeed",
+                    "options": [
+                      {
+                        "value": 1
+                      },
+                      {
+                        "value": 2
+                      },
+                      {
+                        "value": 3
+                      },
+                      {
+                        "value": 4
+                      },
+                      {
+                        "value": 5
+                      },
+                      {
+                        "value": 6
+                      },
+                      {
+                        "value": 7
+                      },
+                      {
+                        "value": 8
+                      }
+                    ]
+                  },
+                  {
+                    "defaultValue": 0,
+                    "name": "Custom"
+                  },
+                  {
+                    "defaultValue": 0,
+                    "name": "Auto"
+                  },
+                  {
+                    "defaultValue": 0,
+                    "name": "Sleep"
+                  },
+                  {
+                    "defaultValue": 0,
+                    "name": "Nature"
+                  },
+                  {
+                    "defaultValue": 0,
+                    "name": "Storm"
+                  }
+                ],
+                "required": true
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "sku": "H7141",
+      "device": "AA:BB:CC:DD:EE:FF:00:11",
+      "deviceName": "Smart Humidifier",
+      "type": "devices.types.humidifier",
+      "capabilities": [
+        {
+          "type": "devices.capabilities.on_off",
+          "instance": "powerSwitch",
+          "parameters": {
+            "dataType": "ENUM",
+            "options": [
+              {
+                "name": "on",
+                "value": 1
+              },
+              {
+                "name": "off",
+                "value": 0
+              }
+            ]
+          }
+        },
+        {
+          "type": "devices.capabilities.work_mode",
+          "instance": "workMode",
+          "parameters": {
+            "dataType": "STRUCT",
+            "fields": [
+              {
+                "fieldName": "workMode",
+                "dataType": "ENUM",
+                "options": [
+                  {
+                    "name": "Manual",
+                    "value": 1
+                  },
+                  {
+                    "name": "Custom",
+                    "value": 2
+                  },
+                  {
+                    "name": "Auto",
+                    "value": 3
+                  }
+                ],
+                "required": true
+              },
+              {
+                "fieldName": "modeValue",
+                "dataType": "ENUM",
+                "options": [
+                  {
+                    "name": "Manual",
+                    "options": [
+                      {
+                        "value": 1
+                      },
+                      {
+                        "value": 2
+                      },
+                      {
+                        "value": 3
+                      },
+                      {
+                        "value": 4
+                      },
+                      {
+                        "value": 5
+                      },
+                      {
+                        "value": 6
+                      },
+                      {
+                        "value": 7
+                      },
+                      {
+                        "value": 8
+                      }
+                    ]
+                  },
+                  {
+                    "defaultValue": 0,
+                    "name": "Custom"
+                  },
+                  {
+                    "name": "Auto",
+                    "range": {
+                      "min": 40,
+                      "max": 70
+                    }
+                  }
+                ],
+                "required": false
+              }
+            ]
+          }
+        },
+        {
+          "type": "devices.capabilities.range",
+          "instance": "humidity",
+          "parameters": {
+            "unit": "unit.percent",
+            "dataType": "INTEGER",
+            "range": {
+              "min": 40,
+              "max": 70,
+              "precision": 1
+            }
+          }
+        },
+        {
+          "type": "devices.capabilities.event",
+          "instance": "lackWaterEvent",
+          "alarmType": 51,
+          "eventState": {
+            "options": [
+              {
+                "name": "lack",
+                "value": 1,
+                "message": "Lack of Water"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "sku": "H7131",
+      "device": "AA:BB:CC:DD:EE:FF:00:11",
+      "deviceName": "Smart Space Heater",
+      "type": "devices.types.heater",
+      "capabilities": [
+        {
+          "type": "devices.capabilities.on_off",
+          "instance": "powerSwitch",
+          "parameters": {
+            "dataType": "ENUM",
+            "options": [
+              {
+                "name": "on",
+                "value": 1
+              },
+              {
+                "name": "off",
+                "value": 0
+              }
+            ]
+          }
+        },
+        {
+          "type": "devices.capabilities.toggle",
+          "instance": "oscillationToggle",
+          "parameters": {
+            "dataType": "ENUM",
+            "options": [
+              {
+                "name": "on",
+                "value": 1
+              },
+              {
+                "name": "off",
+                "value": 0
+              }
+            ]
+          }
+        },
+        {
+          "type": "devices.capabilities.toggle",
+          "instance": "nightlightToggle",
+          "parameters": {
+            "dataType": "ENUM",
+            "options": [
+              {
+                "name": "on",
+                "value": 1
+              },
+              {
+                "name": "off",
+                "value": 0
+              }
+            ]
+          }
+        },
+        {
+          "type": "devices.capabilities.range",
+          "instance": "brightness",
+          "parameters": {
+            "dataType": "INTEGER",
+            "range": {
+              "min": 1,
+              "max": 100,
+              "precision": 1
+            }
+          }
+        },
+        {
+          "type": "devices.capabilities.color_setting",
+          "instance": "colorRgb",
+          "parameters": {
+            "dataType": "INTEGER",
+            "range": {
+              "min": 0,
+              "max": 16777215,
+              "precision": 1
+            }
+          }
+        },
+        {
+          "type": "devices.capabilities.mode",
+          "instance": "nightlightScene",
+          "parameters": {
+            "dataType": "ENUM",
+            "options": [
+              {
+                "name": "Flame",
+                "value": 1
+              },
+              {
+                "name": "Rainbow",
+                "value": 2
+              },
+              {
+                "name": "Rhythm",
+                "value": 3
+              },
+              {
+                "name": "Easy",
+                "value": 4
+              },
+              {
+                "name": "Sleep",
+                "value": 5
+              }
+            ]
+          }
+        },
+        {
+          "type": "devices.capabilities.temperature_setting",
+          "instance": "targetTemperature",
+          "parameters": {
+            "dataType": "STRUCT",
+            "fields": [
+              {
+                "fieldName": "autoStop",
+                "defaultValue": 0,
+                "dataType": "ENUM",
+                "options": [
+                  {
+                    "name": "Auto Stop",
+                    "value": 1
+                  },
+                  {
+                    "name": "Maintain",
+                    "value": 0
+                  }
+                ],
+                "required": false
+              },
+              {
+                "fieldName": "temperature",
+                "dataType": "INTEGER",
+                "range": {
+                  "min": 5,
+                  "max": 30,
+                  "precision": 1
+                },
+                "required": true
+              },
+              {
+                "fieldName": "unit",
+                "defaultValue": "Celsius",
+                "dataType": "ENUM",
+                "options": [
+                  {
+                    "name": "Celsius",
+                    "value": "Celsius"
+                  },
+                  {
+                    "name": "Fahrenheit",
+                    "value": "Fahrenheit"
+                  }
+                ],
+                "required": true
+              }
+            ]
+          }
+        },
+        {
+          "type": "devices.capabilities.property",
+          "instance": "sensorTemperature"
+        },
+        {
+          "type": "devices.capabilities.work_mode",
+          "instance": "workMode",
+          "parameters": {
+            "dataType": "STRUCT",
+            "fields": [
+              {
+                "fieldName": "workMode",
+                "dataType": "ENUM",
+                "options": [
+                  {
+                    "name": "gearMode",
+                    "value": 1
+                  },
+                  {
+                    "name": "Fan",
+                    "value": 9
+                  },
+                  {
+                    "name": "Auto",
+                    "value": 3
+                  }
+                ],
+                "required": true
+              },
+              {
+                "fieldName": "modeValue",
+                "dataType": "ENUM",
+                "options": [
+                  {
+                    "name": "gearMode",
+                    "options": [
+                      {
+                        "name": "Low",
+                        "value": 1
+                      },
+                      {
+                        "name": "Medium",
+                        "value": 2
+                      },
+                      {
+                        "name": "High",
+                        "value": 3
+                      }
+                    ]
+                  },
+                  {
+                    "defaultValue": 0,
+                    "name": "Fan"
+                  },
+                  {
+                    "defaultValue": 0,
+                    "name": "Auto"
+                  }
+                ],
+                "required": true
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "sku": "H7121",
+      "device": "AA:BB:CC:DD:EE:FF:00:11",
+      "deviceName": "Smart Air Purifier",
+      "type": "devices.types.air_purifier",
+      "capabilities": [
+        {
+          "type": "devices.capabilities.on_off",
+          "instance": "powerSwitch",
+          "parameters": {
+            "dataType": "ENUM",
+            "options": [
+              {
+                "name": "on",
+                "value": 1
+              },
+              {
+                "name": "off",
+                "value": 0
+              }
+            ]
+          }
+        },
+        {
+          "type": "devices.capabilities.work_mode",
+          "instance": "workMode",
+          "parameters": {
+            "dataType": "STRUCT",
+            "fields": [
+              {
+                "fieldName": "workMode",
+                "dataType": "ENUM",
+                "options": [
+                  {
+                    "name": "High",
+                    "value": 3
+                  },
+                  {
+                    "name": "Medium",
+                    "value": 2
+                  },
+                  {
+                    "name": "Low",
+                    "value": 1
+                  },
+                  {
+                    "name": "Sleep",
+                    "value": 16
+                  }
+                ],
+                "required": true
+              },
+              {
+                "fieldName": "modeValue",
+                "dataType": "ENUM",
+                "options": [
+                  {
+                    "defaultValue": 0,
+                    "name": "High"
+                  },
+                  {
+                    "defaultValue": 0,
+                    "name": "Medium"
+                  },
+                  {
+                    "defaultValue": 0,
+                    "name": "Low"
+                  },
+                  {
+                    "defaultValue": 0,
+                    "name": "Sleep"
+                  }
+                ],
+                "required": true
+              }
+            ]
+          }
+        },
+        {
+          "type": "devices.capabilities.property",
+          "instance": "filterLifeTime"
+        },
+        {
+          "type": "devices.capabilities.property",
+          "instance": "airQuality"
+        }
+      ]
+    },
+    {
+      "sku": "H6052",
+      "device": "AA:BB:CC:DD:EE:FF:00:11",
+      "deviceName": "Aura Table Lamp",
+      "type": "devices.types.light",
+      "capabilities": [
+        {
+          "type": "devices.capabilities.on_off",
+          "instance": "powerSwitch",
+          "parameters": {
+            "dataType": "ENUM",
+            "options": [
+              {
+                "name": "on",
+                "value": 1
+              },
+              {
+                "name": "off",
+                "value": 0
+              }
+            ]
+          }
+        },
+        {
+          "type": "devices.capabilities.toggle",
+          "instance": "gradientToggle",
+          "parameters": {
+            "dataType": "ENUM",
+            "options": [
+              {
+                "name": "on",
+                "value": 1
+              },
+              {
+                "name": "off",
+                "value": 0
+              }
+            ]
+          }
+        },
+        {
+          "type": "devices.capabilities.range",
+          "instance": "brightness",
+          "parameters": {
+            "unit": "unit.percent",
+            "dataType": "INTEGER",
+            "range": {
+              "min": 1,
+              "max": 100,
+              "precision": 1
+            }
+          }
+        },
+        {
+          "type": "devices.capabilities.segment_color_setting",
+          "instance": "segmentedBrightness",
+          "parameters": {
+            "dataType": "STRUCT",
+            "fields": [
+              {
+                "fieldName": "segment",
+                "size": {
+                  "min": 1,
+                  "max": 15
+                },
+                "dataType": "Array",
+                "elementRange": {
+                  "min": 0,
+                  "max": 14
+                },
+                "elementType": "INTEGER",
+                "required": true
+              },
+              {
+                "fieldName": "brightness",
+                "dataType": "INTEGER",
+                "range": {
+                  "min": 0,
+                  "max": 100,
+                  "precision": 1
+                },
+                "required": true
+              }
+            ]
+          }
+        },
+        {
+          "type": "devices.capabilities.segment_color_setting",
+          "instance": "segmentedColorRgb",
+          "parameters": {
+            "dataType": "STRUCT",
+            "fields": [
+              {
+                "fieldName": "segment",
+                "size": {
+                  "min": 1,
+                  "max": 15
+                },
+                "dataType": "Array",
+                "elementRange": {
+                  "min": 0,
+                  "max": 14
+                },
+                "elementType": "INTEGER",
+                "required": true
+              },
+              {
+                "fieldName": "rgb",
+                "dataType": "INTEGER",
+                "range": {
+                  "min": 0,
+                  "max": 16777215,
+                  "precision": 1
+                },
+                "required": true
+              }
+            ]
+          }
+        },
+        {
+          "type": "devices.capabilities.color_setting",
+          "instance": "colorRgb",
+          "parameters": {
+            "dataType": "INTEGER",
+            "range": {
+              "min": 0,
+              "max": 16777215,
+              "precision": 1
+            }
+          }
+        },
+        {
+          "type": "devices.capabilities.color_setting",
+          "instance": "colorTemperatureK",
+          "parameters": {
+            "dataType": "INTEGER",
+            "range": {
+              "min": 2000,
+              "max": 9000,
+              "precision": 1
+            }
+          }
+        },
+        {
+          "type": "devices.capabilities.dynamic_scene",
+          "instance": "lightScene",
+          "parameters": {
+            "dataType": "ENUM",
+            "options": []
+          }
+        },
+        {
+          "type": "devices.capabilities.music_setting",
+          "instance": "musicMode",
+          "parameters": {
+            "dataType": "STRUCT",
+            "fields": [
+              {
+                "fieldName": "musicMode",
+                "dataType": "ENUM",
+                "options": [
+                  {
+                    "name": "Spectrum",
+                    "value": 1
+                  },
+                  {
+                    "name": "Vibrate",
+                    "value": 2
+                  },
+                  {
+                    "name": "Energic",
+                    "value": 3
+                  },
+                  {
+                    "name": "Rhythm",
+                    "value": 4
+                  }
+                ],
+                "required": true
+              },
+              {
+                "unit": "unit.percent",
+                "fieldName": "sensitivity",
+                "dataType": "INTEGER",
+                "range": {
+                  "min": 0,
+                  "max": 100,
+                  "precision": 1
+                },
+                "required": true
+              },
+              {
+                "fieldName": "autoColor",
+                "dataType": "ENUM",
+                "options": [
+                  {
+                    "name": "on",
+                    "value": 1
+                  },
+                  {
+                    "name": "off",
+                    "value": 0
+                  }
+                ],
+                "required": false
+              },
+              {
+                "fieldName": "rgb",
+                "dataType": "INTEGER",
+                "range": {
+                  "min": 0,
+                  "max": 16777215,
+                  "precision": 1
+                },
+                "required": false
+              }
+            ]
+          }
+        },
+        {
+          "type": "devices.capabilities.dynamic_scene",
+          "instance": "diyScene",
+          "parameters": {
+            "dataType": "ENUM",
+            "options": []
+          }
+        },
+        {
+          "type": "devices.capabilities.dynamic_scene",
+          "instance": "snapshot",
+          "parameters": {
+            "dataType": "ENUM",
+            "options": []
+          }
+        }
+      ]
+    },
+    {
+      "sku": "H6059",
+      "device": "AA:BB:CC:DD:EE:FF:00:11",
+      "deviceName": "Aura Mini",
+      "type": "devices.types.light",
+      "capabilities": [
+        {
+          "type": "devices.capabilities.on_off",
+          "instance": "powerSwitch",
+          "parameters": {
+            "dataType": "ENUM",
+            "options": [
+              {
+                "name": "on",
+                "value": 1
+              },
+              {
+                "name": "off",
+                "value": 0
+              }
+            ]
+          }
+        },
+        {
+          "type": "devices.capabilities.range",
+          "instance": "brightness",
+          "parameters": {
+            "unit": "unit.percent",
+            "dataType": "INTEGER",
+            "range": {
+              "min": 1,
+              "max": 100,
+              "precision": 1
+            }
+          }
+        },
+        {
+          "type": "devices.capabilities.segment_color_setting",
+          "instance": "segmentedBrightness",
+          "parameters": {
+            "dataType": "STRUCT",
+            "fields": [
+              {
+                "fieldName": "segment",
+                "size": {
+                  "min": 1,
+                  "max": 15
+                },
+                "dataType": "Array",
+                "elementRange": {
+                  "min": 0,
+                  "max": 14
+                },
+                "elementType": "INTEGER",
+                "required": true
+              },
+              {
+                "fieldName": "brightness",
+                "dataType": "INTEGER",
+                "range": {
+                  "min": 0,
+                  "max": 100,
+                  "precision": 1
+                },
+                "required": true
+              }
+            ]
+          }
+        },
+        {
+          "type": "devices.capabilities.color_setting",
+          "instance": "colorRgb",
+          "parameters": {
+            "dataType": "INTEGER",
+            "range": {
+              "min": 0,
+              "max": 16777215,
+              "precision": 1
+            }
+          }
+        },
+        {
+          "type": "devices.capabilities.color_setting",
+          "instance": "colorTemperatureK",
+          "parameters": {
+            "dataType": "INTEGER",
+            "range": {
+              "min": 2000,
+              "max": 9000,
+              "precision": 1
+            }
+          }
+        },
+        {
+          "type": "devices.capabilities.dynamic_scene",
+          "instance": "lightScene",
+          "parameters": {
+            "dataType": "ENUM",
+            "options": []
+          }
+        },
+        {
+          "type": "devices.capabilities.music_setting",
+          "instance": "musicMode",
+          "parameters": {
+            "dataType": "STRUCT",
+            "fields": [
+              {
+                "fieldName": "musicMode",
+                "dataType": "ENUM",
+                "options": [
+                  {
+                    "name": "Magic",
+                    "value": 1
+                  },
+                  {
+                    "name": "Rhythm",
+                    "value": 2
+                  }
+                ],
+                "required": true
+              },
+              {
+                "unit": "unit.percent",
+                "fieldName": "sensitivity",
+                "dataType": "INTEGER",
+                "range": {
+                  "min": 0,
+                  "max": 100,
+                  "precision": 1
+                },
+                "required": true
+              },
+              {
+                "fieldName": "autoColor",
+                "dataType": "ENUM",
+                "options": [
+                  {
+                    "name": "on",
+                    "value": 1
+                  },
+                  {
+                    "name": "off",
+                    "value": 0
+                  }
+                ],
+                "required": false
+              },
+              {
+                "fieldName": "rgb",
+                "dataType": "INTEGER",
+                "range": {
+                  "min": 0,
+                  "max": 16777215,
+                  "precision": 1
+                },
+                "required": false
+              }
+            ]
+          }
+        },
+        {
+          "type": "devices.capabilities.dynamic_scene",
+          "instance": "diyScene",
+          "parameters": {
+            "dataType": "ENUM",
+            "options": []
+          }
+        },
+        {
+          "type": "devices.capabilities.dynamic_scene",
+          "instance": "snapshot",
+          "parameters": {
+            "dataType": "ENUM",
+            "options": []
+          }
+        }
+      ]
+    },
+    {
+      "sku": "H6057",
+      "device": "AA:BB:CC:DD:EE:FF:00:11",
+      "deviceName": "Night Light",
+      "type": "devices.types.light",
+      "capabilities": [
+        {
+          "type": "devices.capabilities.on_off",
+          "instance": "powerSwitch",
+          "parameters": {
+            "dataType": "ENUM",
+            "options": [
+              {
+                "name": "on",
+                "value": 1
+              },
+              {
+                "name": "off",
+                "value": 0
+              }
+            ]
+          }
+        },
+        {
+          "type": "devices.capabilities.toggle",
+          "instance": "gradientToggle",
+          "parameters": {
+            "dataType": "ENUM",
+            "options": [
+              {
+                "name": "on",
+                "value": 1
+              },
+              {
+                "name": "off",
+                "value": 0
+              }
+            ]
+          }
+        },
+        {
+          "type": "devices.capabilities.range",
+          "instance": "brightness",
+          "parameters": {
+            "unit": "unit.percent",
+            "dataType": "INTEGER",
+            "range": {
+              "min": 1,
+              "max": 100,
+              "precision": 1
+            }
+          }
+        },
+        {
+          "type": "devices.capabilities.segment_color_setting",
+          "instance": "segmentedBrightness",
+          "parameters": {
+            "dataType": "STRUCT",
+            "fields": [
+              {
+                "fieldName": "segment",
+                "size": {
+                  "min": 1,
+                  "max": 15
+                },
+                "dataType": "Array",
+                "elementRange": {
+                  "min": 0,
+                  "max": 14
+                },
+                "elementType": "INTEGER",
+                "required": true
+              },
+              {
+                "fieldName": "brightness",
+                "dataType": "INTEGER",
+                "range": {
+                  "min": 0,
+                  "max": 100,
+                  "precision": 1
+                },
+                "required": true
+              }
+            ]
+          }
+        },
+        {
+          "type": "devices.capabilities.segment_color_setting",
+          "instance": "segmentedColorRgb",
+          "parameters": {
+            "dataType": "STRUCT",
+            "fields": [
+              {
+                "fieldName": "segment",
+                "size": {
+                  "min": 1,
+                  "max": 15
+                },
+                "dataType": "Array",
+                "elementRange": {
+                  "min": 0,
+                  "max": 14
+                },
+                "elementType": "INTEGER",
+                "required": true
+              },
+              {
+                "fieldName": "rgb",
+                "dataType": "INTEGER",
+                "range": {
+                  "min": 0,
+                  "max": 16777215,
+                  "precision": 1
+                },
+                "required": true
+              }
+            ]
+          }
+        },
+        {
+          "type": "devices.capabilities.color_setting",
+          "instance": "colorRgb",
+          "parameters": {
+            "dataType": "INTEGER",
+            "range": {
+              "min": 0,
+              "max": 16777215,
+              "precision": 1
+            }
+          }
+        },
+        {
+          "type": "devices.capabilities.color_setting",
+          "instance": "colorTemperatureK",
+          "parameters": {
+            "dataType": "INTEGER",
+            "range": {
+              "min": 2000,
+              "max": 9000,
+              "precision": 1
+            }
+          }
+        },
+        {
+          "type": "devices.capabilities.dynamic_scene",
+          "instance": "lightScene",
+          "parameters": {
+            "dataType": "ENUM",
+            "options": []
+          }
+        },
+        {
+          "type": "devices.capabilities.music_setting",
+          "instance": "musicMode",
+          "parameters": {
+            "dataType": "STRUCT",
+            "fields": [
+              {
+                "fieldName": "musicMode",
+                "dataType": "ENUM",
+                "options": [
+                  {
+                    "name": "Energic",
+                    "value": 1
+                  },
+                  {
+                    "name": "Dynamic",
+                    "value": 2
+                  },
+                  {
+                    "name": "Calm",
+                    "value": 3
+                  },
+                  {
+                    "name": "Spectrum",
+                    "value": 4
+                  },
+                  {
+                    "name": "LightWaves",
+                    "value": 5
+                  },
+                  {
+                    "name": "ColorPainting",
+                    "value": 6
+                  },
+                  {
+                    "name": "Hopping",
+                    "value": 7
+                  },
+                  {
+                    "name": "Dandelion",
+                    "value": 8
+                  }
+                ],
+                "required": true
+              },
+              {
+                "unit": "unit.percent",
+                "fieldName": "sensitivity",
+                "dataType": "INTEGER",
+                "range": {
+                  "min": 0,
+                  "max": 100,
+                  "precision": 1
+                },
+                "required": true
+              },
+              {
+                "fieldName": "autoColor",
+                "dataType": "ENUM",
+                "options": [
+                  {
+                    "name": "on",
+                    "value": 1
+                  },
+                  {
+                    "name": "off",
+                    "value": 0
+                  }
+                ],
+                "required": false
+              },
+              {
+                "fieldName": "rgb",
+                "dataType": "INTEGER",
+                "range": {
+                  "min": 0,
+                  "max": 16777215,
+                  "precision": 1
+                },
+                "required": false
+              }
+            ]
+          }
+        },
+        {
+          "type": "devices.capabilities.dynamic_scene",
+          "instance": "diyScene",
+          "parameters": {
+            "dataType": "ENUM",
+            "options": []
+          }
+        },
+        {
+          "type": "devices.capabilities.dynamic_scene",
+          "instance": "snapshot",
+          "parameters": {
+            "dataType": "ENUM",
+            "options": []
+          }
+        }
+      ]
+    },
+    {
+      "sku": "H618A",
+      "device": "AA:BB:CC:DD:EE:FF:00:11",
+      "deviceName": "Alex's Light Strip",
+      "type": "devices.types.light",
+      "capabilities": [
+        {
+          "type": "devices.capabilities.on_off",
+          "instance": "powerSwitch",
+          "parameters": {
+            "dataType": "ENUM",
+            "options": [
+              {
+                "name": "on",
+                "value": 1
+              },
+              {
+                "name": "off",
+                "value": 0
+              }
+            ]
+          }
+        },
+        {
+          "type": "devices.capabilities.toggle",
+          "instance": "gradientToggle",
+          "parameters": {
+            "dataType": "ENUM",
+            "options": [
+              {
+                "name": "on",
+                "value": 1
+              },
+              {
+                "name": "off",
+                "value": 0
+              }
+            ]
+          }
+        },
+        {
+          "type": "devices.capabilities.range",
+          "instance": "brightness",
+          "parameters": {
+            "unit": "unit.percent",
+            "dataType": "INTEGER",
+            "range": {
+              "min": 1,
+              "max": 100,
+              "precision": 1
+            }
+          }
+        },
+        {
+          "type": "devices.capabilities.segment_color_setting",
+          "instance": "segmentedBrightness",
+          "parameters": {
+            "dataType": "STRUCT",
+            "fields": [
+              {
+                "fieldName": "segment",
+                "size": {
+                  "min": 1,
+                  "max": 15
+                },
+                "dataType": "Array",
+                "elementRange": {
+                  "min": 0,
+                  "max": 14
+                },
+                "elementType": "INTEGER",
+                "required": true
+              },
+              {
+                "fieldName": "brightness",
+                "dataType": "INTEGER",
+                "range": {
+                  "min": 0,
+                  "max": 100,
+                  "precision": 1
+                },
+                "required": true
+              }
+            ]
+          }
+        },
+        {
+          "type": "devices.capabilities.segment_color_setting",
+          "instance": "segmentedColorRgb",
+          "parameters": {
+            "dataType": "STRUCT",
+            "fields": [
+              {
+                "fieldName": "segment",
+                "size": {
+                  "min": 1,
+                  "max": 15
+                },
+                "dataType": "Array",
+                "elementRange": {
+                  "min": 0,
+                  "max": 14
+                },
+                "elementType": "INTEGER",
+                "required": true
+              },
+              {
+                "fieldName": "rgb",
+                "dataType": "INTEGER",
+                "range": {
+                  "min": 0,
+                  "max": 16777215,
+                  "precision": 1
+                },
+                "required": true
+              }
+            ]
+          }
+        },
+        {
+          "type": "devices.capabilities.color_setting",
+          "instance": "colorRgb",
+          "parameters": {
+            "dataType": "INTEGER",
+            "range": {
+              "min": 0,
+              "max": 16777215,
+              "precision": 1
+            }
+          }
+        },
+        {
+          "type": "devices.capabilities.color_setting",
+          "instance": "colorTemperatureK",
+          "parameters": {
+            "dataType": "INTEGER",
+            "range": {
+              "min": 2000,
+              "max": 9000,
+              "precision": 1
+            }
+          }
+        },
+        {
+          "type": "devices.capabilities.dynamic_scene",
+          "instance": "lightScene",
+          "parameters": {
+            "dataType": "ENUM",
+            "options": []
+          }
+        },
+        {
+          "type": "devices.capabilities.music_setting",
+          "instance": "musicMode",
+          "parameters": {
+            "dataType": "STRUCT",
+            "fields": [
+              {
+                "fieldName": "musicMode",
+                "dataType": "ENUM",
+                "options": [
+                  {
+                    "name": "Energic",
+                    "value": 1
+                  },
+                  {
+                    "name": "Rhythm",
+                    "value": 2
+                  },
+                  {
+                    "name": "Spectrum",
+                    "value": 3
+                  },
+                  {
+                    "name": "Rolling",
+                    "value": 4
+                  },
+                  {
+                    "name": "Separation",
+                    "value": 5
+                  },
+                  {
+                    "name": "Hopping",
+                    "value": 6
+                  },
+                  {
+                    "name": "PianoKeys",
+                    "value": 7
+                  },
+                  {
+                    "name": "Fountain",
+                    "value": 8
+                  },
+                  {
+                    "name": "DayAndNight",
+                    "value": 9
+                  },
+                  {
+                    "name": "Sprouting",
+                    "value": 10
+                  },
+                  {
+                    "name": "Shiny",
+                    "value": 11
+                  }
+                ],
+                "required": true
+              },
+              {
+                "unit": "unit.percent",
+                "fieldName": "sensitivity",
+                "dataType": "INTEGER",
+                "range": {
+                  "min": 0,
+                  "max": 100,
+                  "precision": 1
+                },
+                "required": true
+              },
+              {
+                "fieldName": "autoColor",
+                "dataType": "ENUM",
+                "options": [
+                  {
+                    "name": "on",
+                    "value": 1
+                  },
+                  {
+                    "name": "off",
+                    "value": 0
+                  }
+                ],
+                "required": false
+              },
+              {
+                "fieldName": "rgb",
+                "dataType": "INTEGER",
+                "range": {
+                  "min": 0,
+                  "max": 16777215,
+                  "precision": 1
+                },
+                "required": false
+              }
+            ]
+          }
+        },
+        {
+          "type": "devices.capabilities.dynamic_scene",
+          "instance": "diyScene",
+          "parameters": {
+            "dataType": "ENUM",
+            "options": []
+          }
+        },
+        {
+          "type": "devices.capabilities.dynamic_scene",
+          "instance": "snapshot",
+          "parameters": {
+            "dataType": "ENUM",
+            "options": []
+          }
+        }
+      ]
+    },
+    {
+      "sku": "H70B1",
+      "device": "AA:BB:CC:DD:EE:FF:00:11",
+      "deviceName": "Smart Curtain Lights",
+      "type": "devices.types.light",
+      "capabilities": [
+        {
+          "type": "devices.capabilities.on_off",
+          "instance": "powerSwitch",
+          "parameters": {
+            "dataType": "ENUM",
+            "options": [
+              {
+                "name": "on",
+                "value": 1
+              },
+              {
+                "name": "off",
+                "value": 0
+              }
+            ]
+          }
+        },
+        {
+          "type": "devices.capabilities.range",
+          "instance": "brightness",
+          "parameters": {
+            "unit": "unit.percent",
+            "dataType": "INTEGER",
+            "range": {
+              "min": 1,
+              "max": 100,
+              "precision": 1
+            }
+          }
+        },
+        {
+          "type": "devices.capabilities.color_setting",
+          "instance": "colorRgb",
+          "parameters": {
+            "dataType": "INTEGER",
+            "range": {
+              "min": 0,
+              "max": 16777215,
+              "precision": 1
+            }
+          }
+        },
+        {
+          "type": "devices.capabilities.color_setting",
+          "instance": "colorTemperatureK",
+          "parameters": {
+            "dataType": "INTEGER",
+            "range": {
+              "min": 2000,
+              "max": 9000,
+              "precision": 1
+            }
+          }
+        },
+        {
+          "type": "devices.capabilities.dynamic_scene",
+          "instance": "lightScene",
+          "parameters": {
+            "dataType": "ENUM",
+            "options": []
+          }
+        },
+        {
+          "type": "devices.capabilities.music_setting",
+          "instance": "musicMode",
+          "parameters": {
+            "dataType": "STRUCT",
+            "fields": [
+              {
+                "fieldName": "musicMode",
+                "dataType": "ENUM",
+                "options": [
+                  {
+                    "name": "MeteorShower",
+                    "value": 1
+                  },
+                  {
+                    "name": "Crossing",
+                    "value": 2
+                  },
+                  {
+                    "name": "DreamColor",
+                    "value": 3
+                  },
+                  {
+                    "name": "FloatingMist",
+                    "value": 4
+                  },
+                  {
+                    "name": "Spectrum",
+                    "value": 5
+                  },
+                  {
+                    "name": "FallingSand",
+                    "value": 6
+                  }
+                ],
+                "required": true
+              },
+              {
+                "unit": "unit.percent",
+                "fieldName": "sensitivity",
+                "dataType": "INTEGER",
+                "range": {
+                  "min": 0,
+                  "max": 100,
+                  "precision": 1
+                },
+                "required": true
+              },
+              {
+                "fieldName": "autoColor",
+                "dataType": "ENUM",
+                "options": [
+                  {
+                    "name": "on",
+                    "value": 1
+                  },
+                  {
+                    "name": "off",
+                    "value": 0
+                  }
+                ],
+                "required": false
+              },
+              {
+                "fieldName": "rgb",
+                "dataType": "INTEGER",
+                "range": {
+                  "min": 0,
+                  "max": 16777215,
+                  "precision": 1
+                },
+                "required": false
+              }
+            ]
+          }
+        },
+        {
+          "type": "devices.capabilities.dynamic_scene",
+          "instance": "diyScene",
+          "parameters": {
+            "dataType": "ENUM",
+            "options": []
+          }
+        },
+        {
+          "type": "devices.capabilities.dynamic_scene",
+          "instance": "snapshot",
+          "parameters": {
+            "dataType": "ENUM",
+            "options": []
+          }
+        }
+      ]
+    }
+  ]
+}

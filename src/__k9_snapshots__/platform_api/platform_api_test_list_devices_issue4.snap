@@ -3,9 +3,767 @@ GetDevicesResponse {
     message: "success",
     data: [
         HttpDeviceInfo {
-            sku: "H6072",
-            device: "AA:BB:CC:DD:AA:BB:CC:DD",
-            device_name: "Floor Lamp",
+            sku: "H7111",
+            device: "AA:BB:CC:DD:EE:FF:00:11",
+            device_name: "Smart Floor Fan",
+            device_type: Other,
+            capabilities: [
+                DeviceCapability {
+                    kind: OnOff,
+                    instance: "powerSwitch",
+                    parameters: Some(
+                        Enum {
+                            options: [
+                                EnumOption {
+                                    name: "on",
+                                    value: Number(1),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "off",
+                                    value: Number(0),
+                                    extras: {},
+                                },
+                            ],
+                        },
+                    ),
+                    alarm_type: None,
+                    event_state: None,
+                },
+                DeviceCapability {
+                    kind: Toggle,
+                    instance: "oscillationToggle",
+                    parameters: Some(
+                        Enum {
+                            options: [
+                                EnumOption {
+                                    name: "on",
+                                    value: Number(1),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "off",
+                                    value: Number(0),
+                                    extras: {},
+                                },
+                            ],
+                        },
+                    ),
+                    alarm_type: None,
+                    event_state: None,
+                },
+                DeviceCapability {
+                    kind: WorkMode,
+                    instance: "workMode",
+                    parameters: Some(
+                        Struct {
+                            fields: [
+                                StructField {
+                                    field_name: "workMode",
+                                    field_type: Enum {
+                                        options: [
+                                            EnumOption {
+                                                name: "FanSpeed",
+                                                value: Number(1),
+                                                extras: {},
+                                            },
+                                            EnumOption {
+                                                name: "Custom",
+                                                value: Number(2),
+                                                extras: {},
+                                            },
+                                            EnumOption {
+                                                name: "Auto",
+                                                value: Number(3),
+                                                extras: {},
+                                            },
+                                            EnumOption {
+                                                name: "Sleep",
+                                                value: Number(5),
+                                                extras: {},
+                                            },
+                                            EnumOption {
+                                                name: "Nature",
+                                                value: Number(6),
+                                                extras: {},
+                                            },
+                                            EnumOption {
+                                                name: "Storm",
+                                                value: Number(7),
+                                                extras: {},
+                                            },
+                                        ],
+                                    },
+                                    default_value: None,
+                                    required: true,
+                                },
+                                StructField {
+                                    field_name: "modeValue",
+                                    field_type: Enum {
+                                        options: [
+                                            EnumOption {
+                                                name: "FanSpeed",
+                                                value: Null,
+                                                extras: {
+                                                    "options": Array [
+                                                        Object {
+                                                            "value": Number(1),
+                                                        },
+                                                        Object {
+                                                            "value": Number(2),
+                                                        },
+                                                        Object {
+                                                            "value": Number(3),
+                                                        },
+                                                        Object {
+                                                            "value": Number(4),
+                                                        },
+                                                        Object {
+                                                            "value": Number(5),
+                                                        },
+                                                        Object {
+                                                            "value": Number(6),
+                                                        },
+                                                        Object {
+                                                            "value": Number(7),
+                                                        },
+                                                        Object {
+                                                            "value": Number(8),
+                                                        },
+                                                    ],
+                                                },
+                                            },
+                                            EnumOption {
+                                                name: "Custom",
+                                                value: Null,
+                                                extras: {
+                                                    "defaultValue": Number(0),
+                                                },
+                                            },
+                                            EnumOption {
+                                                name: "Auto",
+                                                value: Null,
+                                                extras: {
+                                                    "defaultValue": Number(0),
+                                                },
+                                            },
+                                            EnumOption {
+                                                name: "Sleep",
+                                                value: Null,
+                                                extras: {
+                                                    "defaultValue": Number(0),
+                                                },
+                                            },
+                                            EnumOption {
+                                                name: "Nature",
+                                                value: Null,
+                                                extras: {
+                                                    "defaultValue": Number(0),
+                                                },
+                                            },
+                                            EnumOption {
+                                                name: "Storm",
+                                                value: Null,
+                                                extras: {
+                                                    "defaultValue": Number(0),
+                                                },
+                                            },
+                                        ],
+                                    },
+                                    default_value: None,
+                                    required: true,
+                                },
+                            ],
+                        },
+                    ),
+                    alarm_type: None,
+                    event_state: None,
+                },
+            ],
+        },
+        HttpDeviceInfo {
+            sku: "H7141",
+            device: "AA:BB:CC:DD:EE:FF:00:11",
+            device_name: "Smart Humidifier",
+            device_type: Humidifer,
+            capabilities: [
+                DeviceCapability {
+                    kind: OnOff,
+                    instance: "powerSwitch",
+                    parameters: Some(
+                        Enum {
+                            options: [
+                                EnumOption {
+                                    name: "on",
+                                    value: Number(1),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "off",
+                                    value: Number(0),
+                                    extras: {},
+                                },
+                            ],
+                        },
+                    ),
+                    alarm_type: None,
+                    event_state: None,
+                },
+                DeviceCapability {
+                    kind: WorkMode,
+                    instance: "workMode",
+                    parameters: Some(
+                        Struct {
+                            fields: [
+                                StructField {
+                                    field_name: "workMode",
+                                    field_type: Enum {
+                                        options: [
+                                            EnumOption {
+                                                name: "Manual",
+                                                value: Number(1),
+                                                extras: {},
+                                            },
+                                            EnumOption {
+                                                name: "Custom",
+                                                value: Number(2),
+                                                extras: {},
+                                            },
+                                            EnumOption {
+                                                name: "Auto",
+                                                value: Number(3),
+                                                extras: {},
+                                            },
+                                        ],
+                                    },
+                                    default_value: None,
+                                    required: true,
+                                },
+                                StructField {
+                                    field_name: "modeValue",
+                                    field_type: Enum {
+                                        options: [
+                                            EnumOption {
+                                                name: "Manual",
+                                                value: Null,
+                                                extras: {
+                                                    "options": Array [
+                                                        Object {
+                                                            "value": Number(1),
+                                                        },
+                                                        Object {
+                                                            "value": Number(2),
+                                                        },
+                                                        Object {
+                                                            "value": Number(3),
+                                                        },
+                                                        Object {
+                                                            "value": Number(4),
+                                                        },
+                                                        Object {
+                                                            "value": Number(5),
+                                                        },
+                                                        Object {
+                                                            "value": Number(6),
+                                                        },
+                                                        Object {
+                                                            "value": Number(7),
+                                                        },
+                                                        Object {
+                                                            "value": Number(8),
+                                                        },
+                                                    ],
+                                                },
+                                            },
+                                            EnumOption {
+                                                name: "Custom",
+                                                value: Null,
+                                                extras: {
+                                                    "defaultValue": Number(0),
+                                                },
+                                            },
+                                            EnumOption {
+                                                name: "Auto",
+                                                value: Null,
+                                                extras: {
+                                                    "range": Object {
+                                                        "max": Number(70),
+                                                        "min": Number(40),
+                                                    },
+                                                },
+                                            },
+                                        ],
+                                    },
+                                    default_value: None,
+                                    required: false,
+                                },
+                            ],
+                        },
+                    ),
+                    alarm_type: None,
+                    event_state: None,
+                },
+                DeviceCapability {
+                    kind: Range,
+                    instance: "humidity",
+                    parameters: Some(
+                        Integer {
+                            unit: Some(
+                                "unit.percent",
+                            ),
+                            range: IntegerRange {
+                                min: 40,
+                                max: 70,
+                                precision: 1,
+                            },
+                        },
+                    ),
+                    alarm_type: None,
+                    event_state: None,
+                },
+                DeviceCapability {
+                    kind: Other,
+                    instance: "lackWaterEvent",
+                    parameters: None,
+                    alarm_type: Some(
+                        51,
+                    ),
+                    event_state: Some(
+                        Object {
+                            "options": Array [
+                                Object {
+                                    "message": String("Lack of Water"),
+                                    "name": String("lack"),
+                                    "value": Number(1),
+                                },
+                            ],
+                        },
+                    ),
+                },
+            ],
+        },
+        HttpDeviceInfo {
+            sku: "H7131",
+            device: "AA:BB:CC:DD:EE:FF:00:11",
+            device_name: "Smart Space Heater",
+            device_type: Heater,
+            capabilities: [
+                DeviceCapability {
+                    kind: OnOff,
+                    instance: "powerSwitch",
+                    parameters: Some(
+                        Enum {
+                            options: [
+                                EnumOption {
+                                    name: "on",
+                                    value: Number(1),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "off",
+                                    value: Number(0),
+                                    extras: {},
+                                },
+                            ],
+                        },
+                    ),
+                    alarm_type: None,
+                    event_state: None,
+                },
+                DeviceCapability {
+                    kind: Toggle,
+                    instance: "oscillationToggle",
+                    parameters: Some(
+                        Enum {
+                            options: [
+                                EnumOption {
+                                    name: "on",
+                                    value: Number(1),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "off",
+                                    value: Number(0),
+                                    extras: {},
+                                },
+                            ],
+                        },
+                    ),
+                    alarm_type: None,
+                    event_state: None,
+                },
+                DeviceCapability {
+                    kind: Toggle,
+                    instance: "nightlightToggle",
+                    parameters: Some(
+                        Enum {
+                            options: [
+                                EnumOption {
+                                    name: "on",
+                                    value: Number(1),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "off",
+                                    value: Number(0),
+                                    extras: {},
+                                },
+                            ],
+                        },
+                    ),
+                    alarm_type: None,
+                    event_state: None,
+                },
+                DeviceCapability {
+                    kind: Range,
+                    instance: "brightness",
+                    parameters: Some(
+                        Integer {
+                            unit: None,
+                            range: IntegerRange {
+                                min: 1,
+                                max: 100,
+                                precision: 1,
+                            },
+                        },
+                    ),
+                    alarm_type: None,
+                    event_state: None,
+                },
+                DeviceCapability {
+                    kind: ColorSetting,
+                    instance: "colorRgb",
+                    parameters: Some(
+                        Integer {
+                            unit: None,
+                            range: IntegerRange {
+                                min: 0,
+                                max: 16777215,
+                                precision: 1,
+                            },
+                        },
+                    ),
+                    alarm_type: None,
+                    event_state: None,
+                },
+                DeviceCapability {
+                    kind: Mode,
+                    instance: "nightlightScene",
+                    parameters: Some(
+                        Enum {
+                            options: [
+                                EnumOption {
+                                    name: "Flame",
+                                    value: Number(1),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Rainbow",
+                                    value: Number(2),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Rhythm",
+                                    value: Number(3),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Easy",
+                                    value: Number(4),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Sleep",
+                                    value: Number(5),
+                                    extras: {},
+                                },
+                            ],
+                        },
+                    ),
+                    alarm_type: None,
+                    event_state: None,
+                },
+                DeviceCapability {
+                    kind: TemperatureSetting,
+                    instance: "targetTemperature",
+                    parameters: Some(
+                        Struct {
+                            fields: [
+                                StructField {
+                                    field_name: "autoStop",
+                                    field_type: Enum {
+                                        options: [
+                                            EnumOption {
+                                                name: "Auto Stop",
+                                                value: Number(1),
+                                                extras: {},
+                                            },
+                                            EnumOption {
+                                                name: "Maintain",
+                                                value: Number(0),
+                                                extras: {},
+                                            },
+                                        ],
+                                    },
+                                    default_value: Some(
+                                        Number(0),
+                                    ),
+                                    required: false,
+                                },
+                                StructField {
+                                    field_name: "temperature",
+                                    field_type: Integer {
+                                        unit: None,
+                                        range: IntegerRange {
+                                            min: 5,
+                                            max: 30,
+                                            precision: 1,
+                                        },
+                                    },
+                                    default_value: None,
+                                    required: true,
+                                },
+                                StructField {
+                                    field_name: "unit",
+                                    field_type: Enum {
+                                        options: [
+                                            EnumOption {
+                                                name: "Celsius",
+                                                value: String("Celsius"),
+                                                extras: {},
+                                            },
+                                            EnumOption {
+                                                name: "Fahrenheit",
+                                                value: String("Fahrenheit"),
+                                                extras: {},
+                                            },
+                                        ],
+                                    },
+                                    default_value: Some(
+                                        String("Celsius"),
+                                    ),
+                                    required: true,
+                                },
+                            ],
+                        },
+                    ),
+                    alarm_type: None,
+                    event_state: None,
+                },
+                DeviceCapability {
+                    kind: Other,
+                    instance: "sensorTemperature",
+                    parameters: None,
+                    alarm_type: None,
+                    event_state: None,
+                },
+                DeviceCapability {
+                    kind: WorkMode,
+                    instance: "workMode",
+                    parameters: Some(
+                        Struct {
+                            fields: [
+                                StructField {
+                                    field_name: "workMode",
+                                    field_type: Enum {
+                                        options: [
+                                            EnumOption {
+                                                name: "gearMode",
+                                                value: Number(1),
+                                                extras: {},
+                                            },
+                                            EnumOption {
+                                                name: "Fan",
+                                                value: Number(9),
+                                                extras: {},
+                                            },
+                                            EnumOption {
+                                                name: "Auto",
+                                                value: Number(3),
+                                                extras: {},
+                                            },
+                                        ],
+                                    },
+                                    default_value: None,
+                                    required: true,
+                                },
+                                StructField {
+                                    field_name: "modeValue",
+                                    field_type: Enum {
+                                        options: [
+                                            EnumOption {
+                                                name: "gearMode",
+                                                value: Null,
+                                                extras: {
+                                                    "options": Array [
+                                                        Object {
+                                                            "name": String("Low"),
+                                                            "value": Number(1),
+                                                        },
+                                                        Object {
+                                                            "name": String("Medium"),
+                                                            "value": Number(2),
+                                                        },
+                                                        Object {
+                                                            "name": String("High"),
+                                                            "value": Number(3),
+                                                        },
+                                                    ],
+                                                },
+                                            },
+                                            EnumOption {
+                                                name: "Fan",
+                                                value: Null,
+                                                extras: {
+                                                    "defaultValue": Number(0),
+                                                },
+                                            },
+                                            EnumOption {
+                                                name: "Auto",
+                                                value: Null,
+                                                extras: {
+                                                    "defaultValue": Number(0),
+                                                },
+                                            },
+                                        ],
+                                    },
+                                    default_value: None,
+                                    required: true,
+                                },
+                            ],
+                        },
+                    ),
+                    alarm_type: None,
+                    event_state: None,
+                },
+            ],
+        },
+        HttpDeviceInfo {
+            sku: "H7121",
+            device: "AA:BB:CC:DD:EE:FF:00:11",
+            device_name: "Smart Air Purifier",
+            device_type: AirPurifier,
+            capabilities: [
+                DeviceCapability {
+                    kind: OnOff,
+                    instance: "powerSwitch",
+                    parameters: Some(
+                        Enum {
+                            options: [
+                                EnumOption {
+                                    name: "on",
+                                    value: Number(1),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "off",
+                                    value: Number(0),
+                                    extras: {},
+                                },
+                            ],
+                        },
+                    ),
+                    alarm_type: None,
+                    event_state: None,
+                },
+                DeviceCapability {
+                    kind: WorkMode,
+                    instance: "workMode",
+                    parameters: Some(
+                        Struct {
+                            fields: [
+                                StructField {
+                                    field_name: "workMode",
+                                    field_type: Enum {
+                                        options: [
+                                            EnumOption {
+                                                name: "High",
+                                                value: Number(3),
+                                                extras: {},
+                                            },
+                                            EnumOption {
+                                                name: "Medium",
+                                                value: Number(2),
+                                                extras: {},
+                                            },
+                                            EnumOption {
+                                                name: "Low",
+                                                value: Number(1),
+                                                extras: {},
+                                            },
+                                            EnumOption {
+                                                name: "Sleep",
+                                                value: Number(16),
+                                                extras: {},
+                                            },
+                                        ],
+                                    },
+                                    default_value: None,
+                                    required: true,
+                                },
+                                StructField {
+                                    field_name: "modeValue",
+                                    field_type: Enum {
+                                        options: [
+                                            EnumOption {
+                                                name: "High",
+                                                value: Null,
+                                                extras: {
+                                                    "defaultValue": Number(0),
+                                                },
+                                            },
+                                            EnumOption {
+                                                name: "Medium",
+                                                value: Null,
+                                                extras: {
+                                                    "defaultValue": Number(0),
+                                                },
+                                            },
+                                            EnumOption {
+                                                name: "Low",
+                                                value: Null,
+                                                extras: {
+                                                    "defaultValue": Number(0),
+                                                },
+                                            },
+                                            EnumOption {
+                                                name: "Sleep",
+                                                value: Null,
+                                                extras: {
+                                                    "defaultValue": Number(0),
+                                                },
+                                            },
+                                        ],
+                                    },
+                                    default_value: None,
+                                    required: true,
+                                },
+                            ],
+                        },
+                    ),
+                    alarm_type: None,
+                    event_state: None,
+                },
+                DeviceCapability {
+                    kind: Other,
+                    instance: "filterLifeTime",
+                    parameters: None,
+                    alarm_type: None,
+                    event_state: None,
+                },
+                DeviceCapability {
+                    kind: Other,
+                    instance: "airQuality",
+                    parameters: None,
+                    alarm_type: None,
+                    event_state: None,
+                },
+            ],
+        },
+        HttpDeviceInfo {
+            sku: "H6052",
+            device: "AA:BB:CC:DD:EE:FF:00:11",
+            device_name: "Aura Table Lamp",
             device_type: Light,
             capabilities: [
                 DeviceCapability {
@@ -82,7 +840,7 @@ GetDevicesResponse {
                                         size: Some(
                                             ArraySize {
                                                 min: 1,
-                                                max: 8,
+                                                max: 15,
                                             },
                                         ),
                                         element_range: Some(
@@ -130,7 +888,7 @@ GetDevicesResponse {
                                         size: Some(
                                             ArraySize {
                                                 min: 1,
-                                                max: 8,
+                                                max: 15,
                                             },
                                         ),
                                         element_range: Some(
@@ -220,33 +978,23 @@ GetDevicesResponse {
                                     field_type: Enum {
                                         options: [
                                             EnumOption {
-                                                name: "Energic",
+                                                name: "Spectrum",
                                                 value: Number(1),
-                                                extras: {},
-                                            },
-                                            EnumOption {
-                                                name: "Rhythm",
-                                                value: Number(2),
-                                                extras: {},
-                                            },
-                                            EnumOption {
-                                                name: "Bounce",
-                                                value: Number(3),
-                                                extras: {},
-                                            },
-                                            EnumOption {
-                                                name: "Hopping",
-                                                value: Number(4),
-                                                extras: {},
-                                            },
-                                            EnumOption {
-                                                name: "Strike",
-                                                value: Number(5),
                                                 extras: {},
                                             },
                                             EnumOption {
                                                 name: "Vibrate",
-                                                value: Number(6),
+                                                value: Number(2),
+                                                extras: {},
+                                            },
+                                            EnumOption {
+                                                name: "Energic",
+                                                value: Number(3),
+                                                extras: {},
+                                            },
+                                            EnumOption {
+                                                name: "Rhythm",
+                                                value: Number(4),
                                                 extras: {},
                                             },
                                         ],
@@ -332,36 +1080,14 @@ GetDevicesResponse {
             ],
         },
         HttpDeviceInfo {
-            sku: "H6072",
-            device: "AA:BB:CC:DD:AA:BB:CC:DD",
-            device_name: "Floor Lamp",
+            sku: "H6059",
+            device: "AA:BB:CC:DD:EE:FF:00:11",
+            device_name: "Aura Mini",
             device_type: Light,
             capabilities: [
                 DeviceCapability {
                     kind: OnOff,
                     instance: "powerSwitch",
-                    parameters: Some(
-                        Enum {
-                            options: [
-                                EnumOption {
-                                    name: "on",
-                                    value: Number(1),
-                                    extras: {},
-                                },
-                                EnumOption {
-                                    name: "off",
-                                    value: Number(0),
-                                    extras: {},
-                                },
-                            ],
-                        },
-                    ),
-                    alarm_type: None,
-                    event_state: None,
-                },
-                DeviceCapability {
-                    kind: Toggle,
-                    instance: "gradientToggle",
                     parameters: Some(
                         Enum {
                             options: [
@@ -411,7 +1137,7 @@ GetDevicesResponse {
                                         size: Some(
                                             ArraySize {
                                                 min: 1,
-                                                max: 8,
+                                                max: 15,
                                             },
                                         ),
                                         element_range: Some(
@@ -435,54 +1161,6 @@ GetDevicesResponse {
                                         range: IntegerRange {
                                             min: 0,
                                             max: 100,
-                                            precision: 1,
-                                        },
-                                    },
-                                    default_value: None,
-                                    required: true,
-                                },
-                            ],
-                        },
-                    ),
-                    alarm_type: None,
-                    event_state: None,
-                },
-                DeviceCapability {
-                    kind: SegmentColorSetting,
-                    instance: "segmentedColorRgb",
-                    parameters: Some(
-                        Struct {
-                            fields: [
-                                StructField {
-                                    field_name: "segment",
-                                    field_type: Array {
-                                        size: Some(
-                                            ArraySize {
-                                                min: 1,
-                                                max: 8,
-                                            },
-                                        ),
-                                        element_range: Some(
-                                            ElementRange {
-                                                min: 0,
-                                                max: 14,
-                                            },
-                                        ),
-                                        element_type: Some(
-                                            "INTEGER",
-                                        ),
-                                        options: [],
-                                    },
-                                    default_value: None,
-                                    required: true,
-                                },
-                                StructField {
-                                    field_name: "rgb",
-                                    field_type: Integer {
-                                        unit: None,
-                                        range: IntegerRange {
-                                            min: 0,
-                                            max: 16777215,
                                             precision: 1,
                                         },
                                     },
@@ -549,33 +1227,13 @@ GetDevicesResponse {
                                     field_type: Enum {
                                         options: [
                                             EnumOption {
-                                                name: "Energic",
+                                                name: "Magic",
                                                 value: Number(1),
                                                 extras: {},
                                             },
                                             EnumOption {
                                                 name: "Rhythm",
                                                 value: Number(2),
-                                                extras: {},
-                                            },
-                                            EnumOption {
-                                                name: "Bounce",
-                                                value: Number(3),
-                                                extras: {},
-                                            },
-                                            EnumOption {
-                                                name: "Hopping",
-                                                value: Number(4),
-                                                extras: {},
-                                            },
-                                            EnumOption {
-                                                name: "Strike",
-                                                value: Number(5),
-                                                extras: {},
-                                            },
-                                            EnumOption {
-                                                name: "Vibrate",
-                                                value: Number(6),
                                                 extras: {},
                                             },
                                         ],
@@ -661,9 +1319,9 @@ GetDevicesResponse {
             ],
         },
         HttpDeviceInfo {
-            sku: "H619A",
-            device: "AA:BB:CC:DD:AA:BB:CC:DD",
-            device_name: "H619A_CDF5",
+            sku: "H6057",
+            device: "AA:BB:CC:DD:EE:FF:00:11",
+            device_name: "Night Light",
             device_type: Light,
             capabilities: [
                 DeviceCapability {
@@ -882,1360 +1540,41 @@ GetDevicesResponse {
                                                 value: Number(1),
                                                 extras: {},
                                             },
-                                            EnumOption {
-                                                name: "Rhythm",
-                                                value: Number(2),
-                                                extras: {},
-                                            },
-                                            EnumOption {
-                                                name: "Spectrum",
-                                                value: Number(3),
-                                                extras: {},
-                                            },
-                                            EnumOption {
-                                                name: "Rolling",
-                                                value: Number(4),
-                                                extras: {},
-                                            },
-                                            EnumOption {
-                                                name: "Separation",
-                                                value: Number(5),
-                                                extras: {},
-                                            },
-                                            EnumOption {
-                                                name: "Hopping",
-                                                value: Number(6),
-                                                extras: {},
-                                            },
-                                            EnumOption {
-                                                name: "PianoKeys",
-                                                value: Number(7),
-                                                extras: {},
-                                            },
-                                            EnumOption {
-                                                name: "Fountain",
-                                                value: Number(8),
-                                                extras: {},
-                                            },
-                                            EnumOption {
-                                                name: "DayAndNight",
-                                                value: Number(9),
-                                                extras: {},
-                                            },
-                                            EnumOption {
-                                                name: "Sprouting",
-                                                value: Number(10),
-                                                extras: {},
-                                            },
-                                            EnumOption {
-                                                name: "Shiny",
-                                                value: Number(11),
-                                                extras: {},
-                                            },
-                                        ],
-                                    },
-                                    default_value: None,
-                                    required: true,
-                                },
-                                StructField {
-                                    field_name: "sensitivity",
-                                    field_type: Integer {
-                                        unit: Some(
-                                            "unit.percent",
-                                        ),
-                                        range: IntegerRange {
-                                            min: 0,
-                                            max: 100,
-                                            precision: 1,
-                                        },
-                                    },
-                                    default_value: None,
-                                    required: true,
-                                },
-                                StructField {
-                                    field_name: "autoColor",
-                                    field_type: Enum {
-                                        options: [
-                                            EnumOption {
-                                                name: "on",
-                                                value: Number(1),
-                                                extras: {},
-                                            },
-                                            EnumOption {
-                                                name: "off",
-                                                value: Number(0),
-                                                extras: {},
-                                            },
-                                        ],
-                                    },
-                                    default_value: None,
-                                    required: false,
-                                },
-                                StructField {
-                                    field_name: "rgb",
-                                    field_type: Integer {
-                                        unit: None,
-                                        range: IntegerRange {
-                                            min: 0,
-                                            max: 16777215,
-                                            precision: 1,
-                                        },
-                                    },
-                                    default_value: None,
-                                    required: false,
-                                },
-                            ],
-                        },
-                    ),
-                    alarm_type: None,
-                    event_state: None,
-                },
-                DeviceCapability {
-                    kind: DynamicScene,
-                    instance: "diyScene",
-                    parameters: Some(
-                        Enum {
-                            options: [],
-                        },
-                    ),
-                    alarm_type: None,
-                    event_state: None,
-                },
-                DeviceCapability {
-                    kind: DynamicScene,
-                    instance: "snapshot",
-                    parameters: Some(
-                        Enum {
-                            options: [],
-                        },
-                    ),
-                    alarm_type: None,
-                    event_state: None,
-                },
-            ],
-        },
-        HttpDeviceInfo {
-            sku: "H619A",
-            device: "AA:BB:CC:DD:AA:BB:CC:DD",
-            device_name: "Strip",
-            device_type: Light,
-            capabilities: [
-                DeviceCapability {
-                    kind: OnOff,
-                    instance: "powerSwitch",
-                    parameters: Some(
-                        Enum {
-                            options: [
-                                EnumOption {
-                                    name: "on",
-                                    value: Number(1),
-                                    extras: {},
-                                },
-                                EnumOption {
-                                    name: "off",
-                                    value: Number(0),
-                                    extras: {},
-                                },
-                            ],
-                        },
-                    ),
-                    alarm_type: None,
-                    event_state: None,
-                },
-                DeviceCapability {
-                    kind: Toggle,
-                    instance: "gradientToggle",
-                    parameters: Some(
-                        Enum {
-                            options: [
-                                EnumOption {
-                                    name: "on",
-                                    value: Number(1),
-                                    extras: {},
-                                },
-                                EnumOption {
-                                    name: "off",
-                                    value: Number(0),
-                                    extras: {},
-                                },
-                            ],
-                        },
-                    ),
-                    alarm_type: None,
-                    event_state: None,
-                },
-                DeviceCapability {
-                    kind: Range,
-                    instance: "brightness",
-                    parameters: Some(
-                        Integer {
-                            unit: Some(
-                                "unit.percent",
-                            ),
-                            range: IntegerRange {
-                                min: 1,
-                                max: 100,
-                                precision: 1,
-                            },
-                        },
-                    ),
-                    alarm_type: None,
-                    event_state: None,
-                },
-                DeviceCapability {
-                    kind: SegmentColorSetting,
-                    instance: "segmentedBrightness",
-                    parameters: Some(
-                        Struct {
-                            fields: [
-                                StructField {
-                                    field_name: "segment",
-                                    field_type: Array {
-                                        size: Some(
-                                            ArraySize {
-                                                min: 1,
-                                                max: 15,
-                                            },
-                                        ),
-                                        element_range: Some(
-                                            ElementRange {
-                                                min: 0,
-                                                max: 14,
-                                            },
-                                        ),
-                                        element_type: Some(
-                                            "INTEGER",
-                                        ),
-                                        options: [],
-                                    },
-                                    default_value: None,
-                                    required: true,
-                                },
-                                StructField {
-                                    field_name: "brightness",
-                                    field_type: Integer {
-                                        unit: None,
-                                        range: IntegerRange {
-                                            min: 0,
-                                            max: 100,
-                                            precision: 1,
-                                        },
-                                    },
-                                    default_value: None,
-                                    required: true,
-                                },
-                            ],
-                        },
-                    ),
-                    alarm_type: None,
-                    event_state: None,
-                },
-                DeviceCapability {
-                    kind: SegmentColorSetting,
-                    instance: "segmentedColorRgb",
-                    parameters: Some(
-                        Struct {
-                            fields: [
-                                StructField {
-                                    field_name: "segment",
-                                    field_type: Array {
-                                        size: Some(
-                                            ArraySize {
-                                                min: 1,
-                                                max: 15,
-                                            },
-                                        ),
-                                        element_range: Some(
-                                            ElementRange {
-                                                min: 0,
-                                                max: 14,
-                                            },
-                                        ),
-                                        element_type: Some(
-                                            "INTEGER",
-                                        ),
-                                        options: [],
-                                    },
-                                    default_value: None,
-                                    required: true,
-                                },
-                                StructField {
-                                    field_name: "rgb",
-                                    field_type: Integer {
-                                        unit: None,
-                                        range: IntegerRange {
-                                            min: 0,
-                                            max: 16777215,
-                                            precision: 1,
-                                        },
-                                    },
-                                    default_value: None,
-                                    required: true,
-                                },
-                            ],
-                        },
-                    ),
-                    alarm_type: None,
-                    event_state: None,
-                },
-                DeviceCapability {
-                    kind: ColorSetting,
-                    instance: "colorRgb",
-                    parameters: Some(
-                        Integer {
-                            unit: None,
-                            range: IntegerRange {
-                                min: 0,
-                                max: 16777215,
-                                precision: 1,
-                            },
-                        },
-                    ),
-                    alarm_type: None,
-                    event_state: None,
-                },
-                DeviceCapability {
-                    kind: ColorSetting,
-                    instance: "colorTemperatureK",
-                    parameters: Some(
-                        Integer {
-                            unit: None,
-                            range: IntegerRange {
-                                min: 2000,
-                                max: 9000,
-                                precision: 1,
-                            },
-                        },
-                    ),
-                    alarm_type: None,
-                    event_state: None,
-                },
-                DeviceCapability {
-                    kind: DynamicScene,
-                    instance: "lightScene",
-                    parameters: Some(
-                        Enum {
-                            options: [],
-                        },
-                    ),
-                    alarm_type: None,
-                    event_state: None,
-                },
-                DeviceCapability {
-                    kind: MusicSetting,
-                    instance: "musicMode",
-                    parameters: Some(
-                        Struct {
-                            fields: [
-                                StructField {
-                                    field_name: "musicMode",
-                                    field_type: Enum {
-                                        options: [
-                                            EnumOption {
-                                                name: "Energic",
-                                                value: Number(1),
-                                                extras: {},
-                                            },
-                                            EnumOption {
-                                                name: "Rhythm",
-                                                value: Number(2),
-                                                extras: {},
-                                            },
-                                            EnumOption {
-                                                name: "Spectrum",
-                                                value: Number(3),
-                                                extras: {},
-                                            },
-                                            EnumOption {
-                                                name: "Rolling",
-                                                value: Number(4),
-                                                extras: {},
-                                            },
-                                            EnumOption {
-                                                name: "Separation",
-                                                value: Number(5),
-                                                extras: {},
-                                            },
-                                            EnumOption {
-                                                name: "Hopping",
-                                                value: Number(6),
-                                                extras: {},
-                                            },
-                                            EnumOption {
-                                                name: "PianoKeys",
-                                                value: Number(7),
-                                                extras: {},
-                                            },
-                                            EnumOption {
-                                                name: "Fountain",
-                                                value: Number(8),
-                                                extras: {},
-                                            },
-                                            EnumOption {
-                                                name: "DayAndNight",
-                                                value: Number(9),
-                                                extras: {},
-                                            },
-                                            EnumOption {
-                                                name: "Sprouting",
-                                                value: Number(10),
-                                                extras: {},
-                                            },
-                                            EnumOption {
-                                                name: "Shiny",
-                                                value: Number(11),
-                                                extras: {},
-                                            },
-                                        ],
-                                    },
-                                    default_value: None,
-                                    required: true,
-                                },
-                                StructField {
-                                    field_name: "sensitivity",
-                                    field_type: Integer {
-                                        unit: Some(
-                                            "unit.percent",
-                                        ),
-                                        range: IntegerRange {
-                                            min: 0,
-                                            max: 100,
-                                            precision: 1,
-                                        },
-                                    },
-                                    default_value: None,
-                                    required: true,
-                                },
-                                StructField {
-                                    field_name: "autoColor",
-                                    field_type: Enum {
-                                        options: [
-                                            EnumOption {
-                                                name: "on",
-                                                value: Number(1),
-                                                extras: {},
-                                            },
-                                            EnumOption {
-                                                name: "off",
-                                                value: Number(0),
-                                                extras: {},
-                                            },
-                                        ],
-                                    },
-                                    default_value: None,
-                                    required: false,
-                                },
-                                StructField {
-                                    field_name: "rgb",
-                                    field_type: Integer {
-                                        unit: None,
-                                        range: IntegerRange {
-                                            min: 0,
-                                            max: 16777215,
-                                            precision: 1,
-                                        },
-                                    },
-                                    default_value: None,
-                                    required: false,
-                                },
-                            ],
-                        },
-                    ),
-                    alarm_type: None,
-                    event_state: None,
-                },
-                DeviceCapability {
-                    kind: DynamicScene,
-                    instance: "diyScene",
-                    parameters: Some(
-                        Enum {
-                            options: [],
-                        },
-                    ),
-                    alarm_type: None,
-                    event_state: None,
-                },
-                DeviceCapability {
-                    kind: DynamicScene,
-                    instance: "snapshot",
-                    parameters: Some(
-                        Enum {
-                            options: [],
-                        },
-                    ),
-                    alarm_type: None,
-                    event_state: None,
-                },
-            ],
-        },
-        HttpDeviceInfo {
-            sku: "H61A2",
-            device: "AA:BB:CC:DD:AA:BB:CC:DD",
-            device_name: "Neon",
-            device_type: Light,
-            capabilities: [
-                DeviceCapability {
-                    kind: OnOff,
-                    instance: "powerSwitch",
-                    parameters: Some(
-                        Enum {
-                            options: [
-                                EnumOption {
-                                    name: "on",
-                                    value: Number(1),
-                                    extras: {},
-                                },
-                                EnumOption {
-                                    name: "off",
-                                    value: Number(0),
-                                    extras: {},
-                                },
-                            ],
-                        },
-                    ),
-                    alarm_type: None,
-                    event_state: None,
-                },
-                DeviceCapability {
-                    kind: Toggle,
-                    instance: "gradientToggle",
-                    parameters: Some(
-                        Enum {
-                            options: [
-                                EnumOption {
-                                    name: "on",
-                                    value: Number(1),
-                                    extras: {},
-                                },
-                                EnumOption {
-                                    name: "off",
-                                    value: Number(0),
-                                    extras: {},
-                                },
-                            ],
-                        },
-                    ),
-                    alarm_type: None,
-                    event_state: None,
-                },
-                DeviceCapability {
-                    kind: Range,
-                    instance: "brightness",
-                    parameters: Some(
-                        Integer {
-                            unit: Some(
-                                "unit.percent",
-                            ),
-                            range: IntegerRange {
-                                min: 1,
-                                max: 100,
-                                precision: 1,
-                            },
-                        },
-                    ),
-                    alarm_type: None,
-                    event_state: None,
-                },
-                DeviceCapability {
-                    kind: SegmentColorSetting,
-                    instance: "segmentedBrightness",
-                    parameters: Some(
-                        Struct {
-                            fields: [
-                                StructField {
-                                    field_name: "segment",
-                                    field_type: Array {
-                                        size: Some(
-                                            ArraySize {
-                                                min: 1,
-                                                max: 15,
-                                            },
-                                        ),
-                                        element_range: Some(
-                                            ElementRange {
-                                                min: 0,
-                                                max: 14,
-                                            },
-                                        ),
-                                        element_type: Some(
-                                            "INTEGER",
-                                        ),
-                                        options: [],
-                                    },
-                                    default_value: None,
-                                    required: true,
-                                },
-                                StructField {
-                                    field_name: "brightness",
-                                    field_type: Integer {
-                                        unit: None,
-                                        range: IntegerRange {
-                                            min: 0,
-                                            max: 100,
-                                            precision: 1,
-                                        },
-                                    },
-                                    default_value: None,
-                                    required: true,
-                                },
-                            ],
-                        },
-                    ),
-                    alarm_type: None,
-                    event_state: None,
-                },
-                DeviceCapability {
-                    kind: SegmentColorSetting,
-                    instance: "segmentedColorRgb",
-                    parameters: Some(
-                        Struct {
-                            fields: [
-                                StructField {
-                                    field_name: "segment",
-                                    field_type: Array {
-                                        size: Some(
-                                            ArraySize {
-                                                min: 1,
-                                                max: 15,
-                                            },
-                                        ),
-                                        element_range: Some(
-                                            ElementRange {
-                                                min: 0,
-                                                max: 14,
-                                            },
-                                        ),
-                                        element_type: None,
-                                        options: [],
-                                    },
-                                    default_value: None,
-                                    required: true,
-                                },
-                                StructField {
-                                    field_name: "rgb",
-                                    field_type: Integer {
-                                        unit: None,
-                                        range: IntegerRange {
-                                            min: 0,
-                                            max: 16777215,
-                                            precision: 1,
-                                        },
-                                    },
-                                    default_value: None,
-                                    required: true,
-                                },
-                            ],
-                        },
-                    ),
-                    alarm_type: None,
-                    event_state: None,
-                },
-                DeviceCapability {
-                    kind: ColorSetting,
-                    instance: "colorRgb",
-                    parameters: Some(
-                        Integer {
-                            unit: None,
-                            range: IntegerRange {
-                                min: 0,
-                                max: 16777215,
-                                precision: 1,
-                            },
-                        },
-                    ),
-                    alarm_type: None,
-                    event_state: None,
-                },
-                DeviceCapability {
-                    kind: ColorSetting,
-                    instance: "colorTemperatureK",
-                    parameters: Some(
-                        Integer {
-                            unit: None,
-                            range: IntegerRange {
-                                min: 2000,
-                                max: 9000,
-                                precision: 1,
-                            },
-                        },
-                    ),
-                    alarm_type: None,
-                    event_state: None,
-                },
-                DeviceCapability {
-                    kind: DynamicScene,
-                    instance: "lightScene",
-                    parameters: Some(
-                        Enum {
-                            options: [],
-                        },
-                    ),
-                    alarm_type: None,
-                    event_state: None,
-                },
-                DeviceCapability {
-                    kind: MusicSetting,
-                    instance: "musicMode",
-                    parameters: Some(
-                        Struct {
-                            fields: [
-                                StructField {
-                                    field_name: "musicMode",
-                                    field_type: Enum {
-                                        options: [
-                                            EnumOption {
-                                                name: "Energic",
-                                                value: Number(1),
-                                                extras: {},
-                                            },
-                                            EnumOption {
-                                                name: "Rhythm",
-                                                value: Number(2),
-                                                extras: {},
-                                            },
-                                            EnumOption {
-                                                name: "Spectrum",
-                                                value: Number(3),
-                                                extras: {},
-                                            },
-                                            EnumOption {
-                                                name: "Rolling",
-                                                value: Number(4),
-                                                extras: {},
-                                            },
-                                            EnumOption {
-                                                name: "Separation",
-                                                value: Number(5),
-                                                extras: {},
-                                            },
-                                            EnumOption {
-                                                name: "Hopping",
-                                                value: Number(6),
-                                                extras: {},
-                                            },
-                                            EnumOption {
-                                                name: "PianoKeys",
-                                                value: Number(7),
-                                                extras: {},
-                                            },
-                                            EnumOption {
-                                                name: "Fountain",
-                                                value: Number(8),
-                                                extras: {},
-                                            },
-                                            EnumOption {
-                                                name: "DayandNight",
-                                                value: Number(9),
-                                                extras: {},
-                                            },
-                                            EnumOption {
-                                                name: "Sprouting",
-                                                value: Number(10),
-                                                extras: {},
-                                            },
-                                            EnumOption {
-                                                name: "Shiny",
-                                                value: Number(11),
-                                                extras: {},
-                                            },
-                                        ],
-                                    },
-                                    default_value: None,
-                                    required: true,
-                                },
-                                StructField {
-                                    field_name: "sensitivity",
-                                    field_type: Integer {
-                                        unit: Some(
-                                            "unit.percent",
-                                        ),
-                                        range: IntegerRange {
-                                            min: 0,
-                                            max: 100,
-                                            precision: 1,
-                                        },
-                                    },
-                                    default_value: None,
-                                    required: true,
-                                },
-                                StructField {
-                                    field_name: "autoColor",
-                                    field_type: Enum {
-                                        options: [
-                                            EnumOption {
-                                                name: "on",
-                                                value: Number(1),
-                                                extras: {},
-                                            },
-                                            EnumOption {
-                                                name: "off",
-                                                value: Number(0),
-                                                extras: {},
-                                            },
-                                        ],
-                                    },
-                                    default_value: None,
-                                    required: false,
-                                },
-                                StructField {
-                                    field_name: "rgb",
-                                    field_type: Integer {
-                                        unit: None,
-                                        range: IntegerRange {
-                                            min: 0,
-                                            max: 16777215,
-                                            precision: 1,
-                                        },
-                                    },
-                                    default_value: None,
-                                    required: false,
-                                },
-                            ],
-                        },
-                    ),
-                    alarm_type: None,
-                    event_state: None,
-                },
-                DeviceCapability {
-                    kind: DynamicScene,
-                    instance: "diyScene",
-                    parameters: Some(
-                        Enum {
-                            options: [],
-                        },
-                    ),
-                    alarm_type: None,
-                    event_state: None,
-                },
-                DeviceCapability {
-                    kind: DynamicScene,
-                    instance: "snapshot",
-                    parameters: Some(
-                        Enum {
-                            options: [],
-                        },
-                    ),
-                    alarm_type: None,
-                    event_state: None,
-                },
-            ],
-        },
-        HttpDeviceInfo {
-            sku: "H610A",
-            device: "AA:BB:CC:DD:AA:BB:CC:DD",
-            device_name: "Govee Glide Lively 1",
-            device_type: Light,
-            capabilities: [
-                DeviceCapability {
-                    kind: OnOff,
-                    instance: "powerSwitch",
-                    parameters: Some(
-                        Enum {
-                            options: [
-                                EnumOption {
-                                    name: "on",
-                                    value: Number(1),
-                                    extras: {},
-                                },
-                                EnumOption {
-                                    name: "off",
-                                    value: Number(0),
-                                    extras: {},
-                                },
-                            ],
-                        },
-                    ),
-                    alarm_type: None,
-                    event_state: None,
-                },
-            ],
-        },
-        HttpDeviceInfo {
-            sku: "H6058",
-            device: "AA:BB:CC:DD:AA:BB:CC:DD",
-            device_name: "Portable Table Lamp",
-            device_type: Light,
-            capabilities: [
-                DeviceCapability {
-                    kind: OnOff,
-                    instance: "powerSwitch",
-                    parameters: Some(
-                        Enum {
-                            options: [
-                                EnumOption {
-                                    name: "on",
-                                    value: Number(1),
-                                    extras: {},
-                                },
-                                EnumOption {
-                                    name: "off",
-                                    value: Number(0),
-                                    extras: {},
-                                },
-                            ],
-                        },
-                    ),
-                    alarm_type: None,
-                    event_state: None,
-                },
-                DeviceCapability {
-                    kind: Range,
-                    instance: "brightness",
-                    parameters: Some(
-                        Integer {
-                            unit: Some(
-                                "unit.percent",
-                            ),
-                            range: IntegerRange {
-                                min: 1,
-                                max: 100,
-                                precision: 1,
-                            },
-                        },
-                    ),
-                    alarm_type: None,
-                    event_state: None,
-                },
-                DeviceCapability {
-                    kind: SegmentColorSetting,
-                    instance: "segmentedBrightness",
-                    parameters: Some(
-                        Struct {
-                            fields: [
-                                StructField {
-                                    field_name: "segment",
-                                    field_type: Array {
-                                        size: Some(
-                                            ArraySize {
-                                                min: 1,
-                                                max: 15,
-                                            },
-                                        ),
-                                        element_range: Some(
-                                            ElementRange {
-                                                min: 0,
-                                                max: 14,
-                                            },
-                                        ),
-                                        element_type: Some(
-                                            "INTEGER",
-                                        ),
-                                        options: [],
-                                    },
-                                    default_value: None,
-                                    required: true,
-                                },
-                                StructField {
-                                    field_name: "brightness",
-                                    field_type: Integer {
-                                        unit: None,
-                                        range: IntegerRange {
-                                            min: 0,
-                                            max: 100,
-                                            precision: 1,
-                                        },
-                                    },
-                                    default_value: None,
-                                    required: true,
-                                },
-                            ],
-                        },
-                    ),
-                    alarm_type: None,
-                    event_state: None,
-                },
-                DeviceCapability {
-                    kind: ColorSetting,
-                    instance: "colorRgb",
-                    parameters: Some(
-                        Integer {
-                            unit: None,
-                            range: IntegerRange {
-                                min: 0,
-                                max: 16777215,
-                                precision: 1,
-                            },
-                        },
-                    ),
-                    alarm_type: None,
-                    event_state: None,
-                },
-                DeviceCapability {
-                    kind: ColorSetting,
-                    instance: "colorTemperatureK",
-                    parameters: Some(
-                        Integer {
-                            unit: None,
-                            range: IntegerRange {
-                                min: 2000,
-                                max: 9000,
-                                precision: 1,
-                            },
-                        },
-                    ),
-                    alarm_type: None,
-                    event_state: None,
-                },
-                DeviceCapability {
-                    kind: DynamicScene,
-                    instance: "lightScene",
-                    parameters: Some(
-                        Enum {
-                            options: [],
-                        },
-                    ),
-                    alarm_type: None,
-                    event_state: None,
-                },
-                DeviceCapability {
-                    kind: MusicSetting,
-                    instance: "musicMode",
-                    parameters: Some(
-                        Struct {
-                            fields: [
-                                StructField {
-                                    field_name: "musicMode",
-                                    field_type: Enum {
-                                        options: [
                                             EnumOption {
                                                 name: "Dynamic",
-                                                value: Number(1),
+                                                value: Number(2),
                                                 extras: {},
                                             },
                                             EnumOption {
                                                 name: "Calm",
-                                                value: Number(2),
-                                                extras: {},
-                                            },
-                                        ],
-                                    },
-                                    default_value: None,
-                                    required: true,
-                                },
-                                StructField {
-                                    field_name: "sensitivity",
-                                    field_type: Integer {
-                                        unit: Some(
-                                            "unit.percent",
-                                        ),
-                                        range: IntegerRange {
-                                            min: 0,
-                                            max: 100,
-                                            precision: 1,
-                                        },
-                                    },
-                                    default_value: None,
-                                    required: true,
-                                },
-                                StructField {
-                                    field_name: "autoColor",
-                                    field_type: Enum {
-                                        options: [
-                                            EnumOption {
-                                                name: "on",
-                                                value: Number(1),
-                                                extras: {},
-                                            },
-                                            EnumOption {
-                                                name: "off",
-                                                value: Number(0),
-                                                extras: {},
-                                            },
-                                        ],
-                                    },
-                                    default_value: None,
-                                    required: false,
-                                },
-                                StructField {
-                                    field_name: "rgb",
-                                    field_type: Integer {
-                                        unit: None,
-                                        range: IntegerRange {
-                                            min: 0,
-                                            max: 16777215,
-                                            precision: 1,
-                                        },
-                                    },
-                                    default_value: None,
-                                    required: false,
-                                },
-                            ],
-                        },
-                    ),
-                    alarm_type: None,
-                    event_state: None,
-                },
-                DeviceCapability {
-                    kind: DynamicScene,
-                    instance: "diyScene",
-                    parameters: Some(
-                        Enum {
-                            options: [],
-                        },
-                    ),
-                    alarm_type: None,
-                    event_state: None,
-                },
-                DeviceCapability {
-                    kind: DynamicScene,
-                    instance: "snapshot",
-                    parameters: Some(
-                        Enum {
-                            options: [],
-                        },
-                    ),
-                    alarm_type: None,
-                    event_state: None,
-                },
-            ],
-        },
-        HttpDeviceInfo {
-            sku: "H6072",
-            device: "AA:BB:CC:DD:AA:BB:CC:DD",
-            device_name: "Floor Lamp",
-            device_type: Light,
-            capabilities: [
-                DeviceCapability {
-                    kind: OnOff,
-                    instance: "powerSwitch",
-                    parameters: Some(
-                        Enum {
-                            options: [
-                                EnumOption {
-                                    name: "on",
-                                    value: Number(1),
-                                    extras: {},
-                                },
-                                EnumOption {
-                                    name: "off",
-                                    value: Number(0),
-                                    extras: {},
-                                },
-                            ],
-                        },
-                    ),
-                    alarm_type: None,
-                    event_state: None,
-                },
-                DeviceCapability {
-                    kind: Toggle,
-                    instance: "gradientToggle",
-                    parameters: Some(
-                        Enum {
-                            options: [
-                                EnumOption {
-                                    name: "on",
-                                    value: Number(1),
-                                    extras: {},
-                                },
-                                EnumOption {
-                                    name: "off",
-                                    value: Number(0),
-                                    extras: {},
-                                },
-                            ],
-                        },
-                    ),
-                    alarm_type: None,
-                    event_state: None,
-                },
-                DeviceCapability {
-                    kind: Range,
-                    instance: "brightness",
-                    parameters: Some(
-                        Integer {
-                            unit: Some(
-                                "unit.percent",
-                            ),
-                            range: IntegerRange {
-                                min: 1,
-                                max: 100,
-                                precision: 1,
-                            },
-                        },
-                    ),
-                    alarm_type: None,
-                    event_state: None,
-                },
-                DeviceCapability {
-                    kind: SegmentColorSetting,
-                    instance: "segmentedBrightness",
-                    parameters: Some(
-                        Struct {
-                            fields: [
-                                StructField {
-                                    field_name: "segment",
-                                    field_type: Array {
-                                        size: Some(
-                                            ArraySize {
-                                                min: 1,
-                                                max: 8,
-                                            },
-                                        ),
-                                        element_range: Some(
-                                            ElementRange {
-                                                min: 0,
-                                                max: 14,
-                                            },
-                                        ),
-                                        element_type: Some(
-                                            "INTEGER",
-                                        ),
-                                        options: [],
-                                    },
-                                    default_value: None,
-                                    required: true,
-                                },
-                                StructField {
-                                    field_name: "brightness",
-                                    field_type: Integer {
-                                        unit: None,
-                                        range: IntegerRange {
-                                            min: 0,
-                                            max: 100,
-                                            precision: 1,
-                                        },
-                                    },
-                                    default_value: None,
-                                    required: true,
-                                },
-                            ],
-                        },
-                    ),
-                    alarm_type: None,
-                    event_state: None,
-                },
-                DeviceCapability {
-                    kind: SegmentColorSetting,
-                    instance: "segmentedColorRgb",
-                    parameters: Some(
-                        Struct {
-                            fields: [
-                                StructField {
-                                    field_name: "segment",
-                                    field_type: Array {
-                                        size: Some(
-                                            ArraySize {
-                                                min: 1,
-                                                max: 8,
-                                            },
-                                        ),
-                                        element_range: Some(
-                                            ElementRange {
-                                                min: 0,
-                                                max: 14,
-                                            },
-                                        ),
-                                        element_type: Some(
-                                            "INTEGER",
-                                        ),
-                                        options: [],
-                                    },
-                                    default_value: None,
-                                    required: true,
-                                },
-                                StructField {
-                                    field_name: "rgb",
-                                    field_type: Integer {
-                                        unit: None,
-                                        range: IntegerRange {
-                                            min: 0,
-                                            max: 16777215,
-                                            precision: 1,
-                                        },
-                                    },
-                                    default_value: None,
-                                    required: true,
-                                },
-                            ],
-                        },
-                    ),
-                    alarm_type: None,
-                    event_state: None,
-                },
-                DeviceCapability {
-                    kind: ColorSetting,
-                    instance: "colorRgb",
-                    parameters: Some(
-                        Integer {
-                            unit: None,
-                            range: IntegerRange {
-                                min: 0,
-                                max: 16777215,
-                                precision: 1,
-                            },
-                        },
-                    ),
-                    alarm_type: None,
-                    event_state: None,
-                },
-                DeviceCapability {
-                    kind: ColorSetting,
-                    instance: "colorTemperatureK",
-                    parameters: Some(
-                        Integer {
-                            unit: None,
-                            range: IntegerRange {
-                                min: 2000,
-                                max: 9000,
-                                precision: 1,
-                            },
-                        },
-                    ),
-                    alarm_type: None,
-                    event_state: None,
-                },
-                DeviceCapability {
-                    kind: DynamicScene,
-                    instance: "lightScene",
-                    parameters: Some(
-                        Enum {
-                            options: [],
-                        },
-                    ),
-                    alarm_type: None,
-                    event_state: None,
-                },
-                DeviceCapability {
-                    kind: MusicSetting,
-                    instance: "musicMode",
-                    parameters: Some(
-                        Struct {
-                            fields: [
-                                StructField {
-                                    field_name: "musicMode",
-                                    field_type: Enum {
-                                        options: [
-                                            EnumOption {
-                                                name: "Energic",
-                                                value: Number(1),
-                                                extras: {},
-                                            },
-                                            EnumOption {
-                                                name: "Rhythm",
-                                                value: Number(2),
-                                                extras: {},
-                                            },
-                                            EnumOption {
-                                                name: "Bounce",
                                                 value: Number(3),
                                                 extras: {},
                                             },
                                             EnumOption {
-                                                name: "Hopping",
+                                                name: "Spectrum",
                                                 value: Number(4),
                                                 extras: {},
                                             },
                                             EnumOption {
-                                                name: "Strike",
+                                                name: "LightWaves",
                                                 value: Number(5),
                                                 extras: {},
                                             },
                                             EnumOption {
-                                                name: "Vibrate",
+                                                name: "ColorPainting",
                                                 value: Number(6),
                                                 extras: {},
                                             },
+                                            EnumOption {
+                                                name: "Hopping",
+                                                value: Number(7),
+                                                extras: {},
+                                            },
+                                            EnumOption {
+                                                name: "Dandelion",
+                                                value: Number(8),
+                                                extras: {},
+                                            },
                                         ],
                                     },
                                     default_value: None,
@@ -2319,9 +1658,9 @@ GetDevicesResponse {
             ],
         },
         HttpDeviceInfo {
-            sku: "H6072",
-            device: "AA:BB:CC:DD:AA:BB:CC:DD",
-            device_name: "Light",
+            sku: "H618A",
+            device: "AA:BB:CC:DD:EE:FF:00:11",
+            device_name: "Alex's Light Strip",
             device_type: Light,
             capabilities: [
                 DeviceCapability {
@@ -2398,7 +1737,7 @@ GetDevicesResponse {
                                         size: Some(
                                             ArraySize {
                                                 min: 1,
-                                                max: 8,
+                                                max: 15,
                                             },
                                         ),
                                         element_range: Some(
@@ -2446,7 +1785,7 @@ GetDevicesResponse {
                                         size: Some(
                                             ArraySize {
                                                 min: 1,
-                                                max: 8,
+                                                max: 15,
                                             },
                                         ),
                                         element_range: Some(
@@ -2546,25 +1885,50 @@ GetDevicesResponse {
                                                 extras: {},
                                             },
                                             EnumOption {
-                                                name: "Bounce",
+                                                name: "Spectrum",
                                                 value: Number(3),
                                                 extras: {},
                                             },
                                             EnumOption {
-                                                name: "Hopping",
+                                                name: "Rolling",
                                                 value: Number(4),
                                                 extras: {},
                                             },
                                             EnumOption {
-                                                name: "Strike",
+                                                name: "Separation",
                                                 value: Number(5),
                                                 extras: {},
                                             },
                                             EnumOption {
-                                                name: "Vibrate",
+                                                name: "Hopping",
                                                 value: Number(6),
                                                 extras: {},
                                             },
+                                            EnumOption {
+                                                name: "PianoKeys",
+                                                value: Number(7),
+                                                extras: {},
+                                            },
+                                            EnumOption {
+                                                name: "Fountain",
+                                                value: Number(8),
+                                                extras: {},
+                                            },
+                                            EnumOption {
+                                                name: "DayAndNight",
+                                                value: Number(9),
+                                                extras: {},
+                                            },
+                                            EnumOption {
+                                                name: "Sprouting",
+                                                value: Number(10),
+                                                extras: {},
+                                            },
+                                            EnumOption {
+                                                name: "Shiny",
+                                                value: Number(11),
+                                                extras: {},
+                                            },
                                         ],
                                     },
                                     default_value: None,
@@ -2648,36 +2012,14 @@ GetDevicesResponse {
             ],
         },
         HttpDeviceInfo {
-            sku: "H6072",
-            device: "AA:BB:CC:DD:AA:BB:CC:DD",
-            device_name: "Lamp",
+            sku: "H70B1",
+            device: "AA:BB:CC:DD:EE:FF:00:11",
+            device_name: "Smart Curtain Lights",
             device_type: Light,
             capabilities: [
                 DeviceCapability {
                     kind: OnOff,
                     instance: "powerSwitch",
-                    parameters: Some(
-                        Enum {
-                            options: [
-                                EnumOption {
-                                    name: "on",
-                                    value: Number(1),
-                                    extras: {},
-                                },
-                                EnumOption {
-                                    name: "off",
-                                    value: Number(0),
-                                    extras: {},
-                                },
-                            ],
-                        },
-                    ),
-                    alarm_type: None,
-                    event_state: None,
-                },
-                DeviceCapability {
-                    kind: Toggle,
-                    instance: "gradientToggle",
                     parameters: Some(
                         Enum {
                             options: [
@@ -2710,102 +2052,6 @@ GetDevicesResponse {
                                 max: 100,
                                 precision: 1,
                             },
-                        },
-                    ),
-                    alarm_type: None,
-                    event_state: None,
-                },
-                DeviceCapability {
-                    kind: SegmentColorSetting,
-                    instance: "segmentedBrightness",
-                    parameters: Some(
-                        Struct {
-                            fields: [
-                                StructField {
-                                    field_name: "segment",
-                                    field_type: Array {
-                                        size: Some(
-                                            ArraySize {
-                                                min: 1,
-                                                max: 8,
-                                            },
-                                        ),
-                                        element_range: Some(
-                                            ElementRange {
-                                                min: 0,
-                                                max: 14,
-                                            },
-                                        ),
-                                        element_type: Some(
-                                            "INTEGER",
-                                        ),
-                                        options: [],
-                                    },
-                                    default_value: None,
-                                    required: true,
-                                },
-                                StructField {
-                                    field_name: "brightness",
-                                    field_type: Integer {
-                                        unit: None,
-                                        range: IntegerRange {
-                                            min: 0,
-                                            max: 100,
-                                            precision: 1,
-                                        },
-                                    },
-                                    default_value: None,
-                                    required: true,
-                                },
-                            ],
-                        },
-                    ),
-                    alarm_type: None,
-                    event_state: None,
-                },
-                DeviceCapability {
-                    kind: SegmentColorSetting,
-                    instance: "segmentedColorRgb",
-                    parameters: Some(
-                        Struct {
-                            fields: [
-                                StructField {
-                                    field_name: "segment",
-                                    field_type: Array {
-                                        size: Some(
-                                            ArraySize {
-                                                min: 1,
-                                                max: 8,
-                                            },
-                                        ),
-                                        element_range: Some(
-                                            ElementRange {
-                                                min: 0,
-                                                max: 14,
-                                            },
-                                        ),
-                                        element_type: Some(
-                                            "INTEGER",
-                                        ),
-                                        options: [],
-                                    },
-                                    default_value: None,
-                                    required: true,
-                                },
-                                StructField {
-                                    field_name: "rgb",
-                                    field_type: Integer {
-                                        unit: None,
-                                        range: IntegerRange {
-                                            min: 0,
-                                            max: 16777215,
-                                            precision: 1,
-                                        },
-                                    },
-                                    default_value: None,
-                                    required: true,
-                                },
-                            ],
                         },
                     ),
                     alarm_type: None,
@@ -2865,32 +2111,32 @@ GetDevicesResponse {
                                     field_type: Enum {
                                         options: [
                                             EnumOption {
-                                                name: "Energic",
+                                                name: "MeteorShower",
                                                 value: Number(1),
                                                 extras: {},
                                             },
                                             EnumOption {
-                                                name: "Rhythm",
+                                                name: "Crossing",
                                                 value: Number(2),
                                                 extras: {},
                                             },
                                             EnumOption {
-                                                name: "Bounce",
+                                                name: "DreamColor",
                                                 value: Number(3),
                                                 extras: {},
                                             },
                                             EnumOption {
-                                                name: "Hopping",
+                                                name: "FloatingMist",
                                                 value: Number(4),
                                                 extras: {},
                                             },
                                             EnumOption {
-                                                name: "Strike",
+                                                name: "Spectrum",
                                                 value: Number(5),
                                                 extras: {},
                                             },
                                             EnumOption {
-                                                name: "Vibrate",
+                                                name: "FallingSand",
                                                 value: Number(6),
                                                 extras: {},
                                             },

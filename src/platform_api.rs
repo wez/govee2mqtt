@@ -4,6 +4,7 @@ use anyhow::Context;
 use reqwest::Method;
 use serde::{Deserialize, Serialize};
 use serde_json::Value as JsonValue;
+use std::collections::HashMap;
 use std::time::Duration;
 
 // This file implements the Govee Platform API V1 as described at:
@@ -222,7 +223,7 @@ impl GoveeApiClient {
                     continue;
                 }
                 match &cap.parameters {
-                    DeviceParameters::Enum { options } => {
+                    Some(DeviceParameters::Enum { options }) => {
                         for opt in options {
                             result.push(opt.name.to_string());
                         }
@@ -253,7 +254,7 @@ impl GoveeApiClient {
                     continue;
                 }
                 match &cap.parameters {
-                    DeviceParameters::Enum { options } => {
+                    Some(DeviceParameters::Enum { options }) => {
                         for opt in options {
                             if scene.eq_ignore_ascii_case(&opt.name) {
                                 return self.control_device(&device, &cap, opt.value.clone()).await;
@@ -292,10 +293,10 @@ impl GoveeApiClient {
             .capability_by_instance("brightness")
             .ok_or_else(|| anyhow::anyhow!("device has no brightness"))?;
         let value = match &cap.parameters {
-            DeviceParameters::Integer {
+            Some(DeviceParameters::Integer {
                 range: IntegerRange { min, max, .. },
                 ..
-            } => (percent as u32).max(*min).min(*max),
+            }) => (percent as u32).max(*min).min(*max),
             _ => anyhow::bail!("unexpected parameter type for brightness"),
         };
         self.control_device(&device, &cap, value).await
@@ -310,10 +311,10 @@ impl GoveeApiClient {
             .capability_by_instance("colorTemperatureK")
             .ok_or_else(|| anyhow::anyhow!("device has no colorTemperatureK"))?;
         let value = match &cap.parameters {
-            DeviceParameters::Integer {
+            Some(DeviceParameters::Integer {
                 range: IntegerRange { min, max, .. },
                 ..
-            } => (kelvin).max(*min).min(*max),
+            }) => (kelvin).max(*min).min(*max),
             _ => anyhow::bail!("unexpected parameter type for colorTemperatureK"),
         };
         self.control_device(&device, &cap, value).await
@@ -488,10 +489,10 @@ impl HttpDeviceInfo {
         let cap = self.capability_by_instance("colorTemperatureK")?;
 
         match cap.parameters {
-            DeviceParameters::Integer {
+            Some(DeviceParameters::Integer {
                 range: IntegerRange { min, max, .. },
                 ..
-            } => Some((min, max)),
+            }) => Some((min, max)),
             _ => None,
         }
     }
@@ -560,13 +561,17 @@ pub struct DeviceCapability {
     #[serde(rename = "type")]
     pub kind: DeviceCapabilityKind,
     pub instance: String,
-    pub parameters: DeviceParameters,
+    pub parameters: Option<DeviceParameters>,
+    #[serde(rename = "alarmType")]
+    pub alarm_type: Option<u32>,
+    #[serde(rename = "eventState")]
+    pub event_state: Option<JsonValue>,
 }
 
 impl DeviceCapability {
     pub fn enum_parameter_by_name(&self, name: &str) -> Option<u32> {
         match &self.parameters {
-            DeviceParameters::Enum { options } => options
+            Some(DeviceParameters::Enum { options }) => options
                 .iter()
                 .find(|e| e.name == name && e.value.is_i64())
                 .map(|e| e.value.as_i64().expect("i64") as u32),
@@ -609,6 +614,9 @@ pub struct StructField {
     #[serde(flatten)]
     pub field_type: DeviceParameters,
 
+    #[serde(rename = "defaultValue")]
+    pub default_value: Option<JsonValue>,
+
     pub required: bool,
 }
 
@@ -635,16 +643,24 @@ pub struct IntegerRange {
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
-#[cfg_attr(debug_assertions, serde(deny_unknown_fields))]
 pub struct EnumOption {
     pub name: String,
+    #[serde(default)]
     pub value: JsonValue,
+    #[serde(flatten)]
+    pub extras: HashMap<String, JsonValue>,
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 #[cfg_attr(debug_assertions, serde(deny_unknown_fields))]
 pub struct ArrayOption {
     pub value: u32,
+}
+
+pub fn from_json<T: serde::de::DeserializeOwned, S: AsRef<[u8]>>(text: S) -> anyhow::Result<T> {
+    let text = text.as_ref();
+    serde_json_path_to_error::from_slice(text)
+        .map_err(|err| anyhow::anyhow!("{err}. Input: {}", String::from_utf8_lossy(text)))
 }
 
 pub async fn json_body<T: serde::de::DeserializeOwned>(
@@ -655,12 +671,7 @@ pub async fn json_body<T: serde::de::DeserializeOwned>(
         .bytes()
         .await
         .with_context(|| format!("read {url} response body"))?;
-    serde_json::from_slice(&data).with_context(|| {
-        format!(
-            "parsing {url} response as json: {}",
-            String::from_utf8_lossy(&data)
-        )
-    })
+    from_json(&data).with_context(|| format!("parsing {url} response"))
 }
 
 pub async fn http_response_body<R: serde::de::DeserializeOwned>(
@@ -741,7 +752,7 @@ mod test {
 
     #[test]
     fn get_device_scenes() {
-        let resp: GetDeviceScenesResponse = serde_json::from_str(&SCENE_LIST).unwrap();
+        let resp: GetDeviceScenesResponse = from_json(&SCENE_LIST).unwrap();
         k9::assert_matches_snapshot!(format!("{resp:#?}"));
     }
 
@@ -749,7 +760,7 @@ mod test {
 
     #[test]
     fn get_device_state() {
-        let resp: GetDeviceStateResponse = serde_json::from_str(&GET_DEVICE_STATE_EXAMPLE).unwrap();
+        let resp: GetDeviceStateResponse = from_json(&GET_DEVICE_STATE_EXAMPLE).unwrap();
         k9::assert_matches_snapshot!(format!("{resp:#?}"));
     }
 
@@ -757,14 +768,21 @@ mod test {
     const LIST_DEVICES_EXAMPLE2: &str = include_str!("../test-data/list_devices_2.json");
 
     #[test]
+    fn list_devices_issue4() {
+        let resp: GetDevicesResponse =
+            from_json(&include_str!("../test-data/list_devices_issue4.json")).unwrap();
+        k9::assert_matches_snapshot!(format!("{resp:#?}"));
+    }
+
+    #[test]
     fn list_devices_2() {
-        let resp: GetDevicesResponse = serde_json::from_str(&LIST_DEVICES_EXAMPLE2).unwrap();
+        let resp: GetDevicesResponse = from_json(&LIST_DEVICES_EXAMPLE2).unwrap();
         k9::assert_matches_snapshot!(format!("{resp:#?}"));
     }
 
     #[test]
     fn list_devices() {
-        let resp: GetDevicesResponse = serde_json::from_str(&LIST_DEVICES_EXAMPLE).unwrap();
+        let resp: GetDevicesResponse = from_json(&LIST_DEVICES_EXAMPLE).unwrap();
         k9::assert_matches_snapshot!(format!("{resp:#?}"));
     }
 }

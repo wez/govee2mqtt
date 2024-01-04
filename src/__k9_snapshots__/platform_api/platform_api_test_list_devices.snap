@@ -11,428 +11,529 @@ GetDevicesResponse {
                 DeviceCapability {
                     kind: OnOff,
                     instance: "powerSwitch",
-                    parameters: Enum {
-                        options: [
-                            EnumOption {
-                                name: "on",
-                                value: Number(1),
-                            },
-                            EnumOption {
-                                name: "off",
-                                value: Number(0),
-                            },
-                        ],
-                    },
+                    parameters: Some(
+                        Enum {
+                            options: [
+                                EnumOption {
+                                    name: "on",
+                                    value: Number(1),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "off",
+                                    value: Number(0),
+                                    extras: {},
+                                },
+                            ],
+                        },
+                    ),
+                    alarm_type: None,
+                    event_state: None,
                 },
                 DeviceCapability {
                     kind: Toggle,
                     instance: "gradientToggle",
-                    parameters: Enum {
-                        options: [
-                            EnumOption {
-                                name: "on",
-                                value: Number(1),
-                            },
-                            EnumOption {
-                                name: "off",
-                                value: Number(0),
-                            },
-                        ],
-                    },
+                    parameters: Some(
+                        Enum {
+                            options: [
+                                EnumOption {
+                                    name: "on",
+                                    value: Number(1),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "off",
+                                    value: Number(0),
+                                    extras: {},
+                                },
+                            ],
+                        },
+                    ),
+                    alarm_type: None,
+                    event_state: None,
                 },
                 DeviceCapability {
                     kind: Range,
                     instance: "brightness",
-                    parameters: Integer {
-                        unit: Some(
-                            "unit.percent",
-                        ),
-                        range: IntegerRange {
-                            min: 1,
-                            max: 100,
-                            precision: 1,
+                    parameters: Some(
+                        Integer {
+                            unit: Some(
+                                "unit.percent",
+                            ),
+                            range: IntegerRange {
+                                min: 1,
+                                max: 100,
+                                precision: 1,
+                            },
                         },
-                    },
+                    ),
+                    alarm_type: None,
+                    event_state: None,
                 },
                 DeviceCapability {
                     kind: SegmentColorSetting,
                     instance: "segmentedColorRgb",
-                    parameters: Struct {
-                        fields: [
-                            StructField {
-                                field_name: "segment",
-                                field_type: Array {
-                                    size: None,
-                                    element_range: None,
-                                    element_type: None,
-                                    options: [
-                                        ArrayOption {
-                                            value: 0,
-                                        },
-                                        ArrayOption {
-                                            value: 1,
-                                        },
-                                        ArrayOption {
-                                            value: 2,
-                                        },
-                                        ArrayOption {
-                                            value: 3,
-                                        },
-                                        ArrayOption {
-                                            value: 4,
-                                        },
-                                        ArrayOption {
-                                            value: 5,
-                                        },
-                                        ArrayOption {
-                                            value: 6,
-                                        },
-                                        ArrayOption {
-                                            value: 7,
-                                        },
-                                        ArrayOption {
-                                            value: 8,
-                                        },
-                                        ArrayOption {
-                                            value: 9,
-                                        },
-                                        ArrayOption {
-                                            value: 10,
-                                        },
-                                        ArrayOption {
-                                            value: 11,
-                                        },
-                                        ArrayOption {
-                                            value: 12,
-                                        },
-                                        ArrayOption {
-                                            value: 13,
-                                        },
-                                        ArrayOption {
-                                            value: 14,
-                                        },
-                                    ],
-                                },
-                                required: true,
-                            },
-                            StructField {
-                                field_name: "rgb",
-                                field_type: Integer {
-                                    unit: None,
-                                    range: IntegerRange {
-                                        min: 0,
-                                        max: 16777215,
-                                        precision: 1,
+                    parameters: Some(
+                        Struct {
+                            fields: [
+                                StructField {
+                                    field_name: "segment",
+                                    field_type: Array {
+                                        size: None,
+                                        element_range: None,
+                                        element_type: None,
+                                        options: [
+                                            ArrayOption {
+                                                value: 0,
+                                            },
+                                            ArrayOption {
+                                                value: 1,
+                                            },
+                                            ArrayOption {
+                                                value: 2,
+                                            },
+                                            ArrayOption {
+                                                value: 3,
+                                            },
+                                            ArrayOption {
+                                                value: 4,
+                                            },
+                                            ArrayOption {
+                                                value: 5,
+                                            },
+                                            ArrayOption {
+                                                value: 6,
+                                            },
+                                            ArrayOption {
+                                                value: 7,
+                                            },
+                                            ArrayOption {
+                                                value: 8,
+                                            },
+                                            ArrayOption {
+                                                value: 9,
+                                            },
+                                            ArrayOption {
+                                                value: 10,
+                                            },
+                                            ArrayOption {
+                                                value: 11,
+                                            },
+                                            ArrayOption {
+                                                value: 12,
+                                            },
+                                            ArrayOption {
+                                                value: 13,
+                                            },
+                                            ArrayOption {
+                                                value: 14,
+                                            },
+                                        ],
                                     },
+                                    default_value: None,
+                                    required: true,
                                 },
-                                required: true,
-                            },
-                        ],
-                    },
+                                StructField {
+                                    field_name: "rgb",
+                                    field_type: Integer {
+                                        unit: None,
+                                        range: IntegerRange {
+                                            min: 0,
+                                            max: 16777215,
+                                            precision: 1,
+                                        },
+                                    },
+                                    default_value: None,
+                                    required: true,
+                                },
+                            ],
+                        },
+                    ),
+                    alarm_type: None,
+                    event_state: None,
                 },
                 DeviceCapability {
                     kind: ColorSetting,
                     instance: "colorRgb",
-                    parameters: Integer {
-                        unit: None,
-                        range: IntegerRange {
-                            min: 0,
-                            max: 16777215,
-                            precision: 1,
+                    parameters: Some(
+                        Integer {
+                            unit: None,
+                            range: IntegerRange {
+                                min: 0,
+                                max: 16777215,
+                                precision: 1,
+                            },
                         },
-                    },
+                    ),
+                    alarm_type: None,
+                    event_state: None,
                 },
                 DeviceCapability {
                     kind: ColorSetting,
                     instance: "colorTemperatureK",
-                    parameters: Integer {
-                        unit: None,
-                        range: IntegerRange {
-                            min: 2000,
-                            max: 9000,
-                            precision: 1,
+                    parameters: Some(
+                        Integer {
+                            unit: None,
+                            range: IntegerRange {
+                                min: 2000,
+                                max: 9000,
+                                precision: 1,
+                            },
                         },
-                    },
+                    ),
+                    alarm_type: None,
+                    event_state: None,
                 },
                 DeviceCapability {
                     kind: DynamicScene,
                     instance: "lightScene",
-                    parameters: Enum {
-                        options: [
-                            EnumOption {
-                                name: "Tudum",
-                                value: Number(3054),
-                            },
-                            EnumOption {
-                                name: "Party",
-                                value: Number(3055),
-                            },
-                            EnumOption {
-                                name: "Dance Party",
-                                value: Number(3056),
-                            },
-                            EnumOption {
-                                name: "Dine Together",
-                                value: Number(3057),
-                            },
-                            EnumOption {
-                                name: "Dating",
-                                value: Number(3058),
-                            },
-                            EnumOption {
-                                name: "Adventure",
-                                value: Number(3059),
-                            },
-                            EnumOption {
-                                name: "Technology",
-                                value: Number(3060),
-                            },
-                            EnumOption {
-                                name: "Sports",
-                                value: Number(3061),
-                            },
-                            EnumOption {
-                                name: "Dreamlike",
-                                value: Number(3062),
-                            },
-                            EnumOption {
-                                name: "Dynamic",
-                                value: Number(3063),
-                            },
-                            EnumOption {
-                                name: "Blossom",
-                                value: Number(3064),
-                            },
-                            EnumOption {
-                                name: "Christmas",
-                                value: Number(3065),
-                            },
-                            EnumOption {
-                                name: "Halloween",
-                                value: Number(3066),
-                            },
-                            EnumOption {
-                                name: "Fireworks",
-                                value: Number(3067),
-                            },
-                            EnumOption {
-                                name: "Ghost",
-                                value: Number(3068),
-                            },
-                            EnumOption {
-                                name: "Easter",
-                                value: Number(3069),
-                            },
-                            EnumOption {
-                                name: "Valentine's Day",
-                                value: Number(3070),
-                            },
-                            EnumOption {
-                                name: "Spin",
-                                value: Number(3071),
-                            },
-                            EnumOption {
-                                name: "Stacking",
-                                value: Number(3072),
-                            },
-                            EnumOption {
-                                name: "Shoot",
-                                value: Number(3073),
-                            },
-                            EnumOption {
-                                name: "Racing",
-                                value: Number(3074),
-                            },
-                            EnumOption {
-                                name: "Poker",
-                                value: Number(3075),
-                            },
-                            EnumOption {
-                                name: "Crossing",
-                                value: Number(3076),
-                            },
-                            EnumOption {
-                                name: "Fight",
-                                value: Number(3077),
-                            },
-                            EnumOption {
-                                name: "Electro Dance",
-                                value: Number(3078),
-                            },
-                            EnumOption {
-                                name: "Swing",
-                                value: Number(3079),
-                            },
-                            EnumOption {
-                                name: "Candy Crush",
-                                value: Number(3080),
-                            },
-                            EnumOption {
-                                name: "Portal",
-                                value: Number(3081),
-                            },
-                            EnumOption {
-                                name: "Freeze",
-                                value: Number(3082),
-                            },
-                            EnumOption {
-                                name: "Excited",
-                                value: Number(3083),
-                            },
-                            EnumOption {
-                                name: "Tension",
-                                value: Number(3084),
-                            },
-                            EnumOption {
-                                name: "Fright",
-                                value: Number(3085),
-                            },
-                            EnumOption {
-                                name: "Energetic",
-                                value: Number(3086),
-                            },
-                            EnumOption {
-                                name: "Doubt",
-                                value: Number(3087),
-                            },
-                            EnumOption {
-                                name: "Meditation",
-                                value: Number(3088),
-                            },
-                            EnumOption {
-                                name: "Daze",
-                                value: Number(3089),
-                            },
-                            EnumOption {
-                                name: "Action",
-                                value: Number(3090),
-                            },
-                            EnumOption {
-                                name: "Rivalry",
-                                value: Number(3091),
-                            },
-                            EnumOption {
-                                name: "Puzzle Game",
-                                value: Number(3092),
-                            },
-                            EnumOption {
-                                name: "Shooting Game",
-                                value: Number(3093),
-                            },
-                            EnumOption {
-                                name: "Racing Game",
-                                value: Number(3094),
-                            },
-                            EnumOption {
-                                name: "Card Playing",
-                                value: Number(3095),
-                            },
-                        ],
-                    },
+                    parameters: Some(
+                        Enum {
+                            options: [
+                                EnumOption {
+                                    name: "Tudum",
+                                    value: Number(3054),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Party",
+                                    value: Number(3055),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Dance Party",
+                                    value: Number(3056),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Dine Together",
+                                    value: Number(3057),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Dating",
+                                    value: Number(3058),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Adventure",
+                                    value: Number(3059),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Technology",
+                                    value: Number(3060),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Sports",
+                                    value: Number(3061),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Dreamlike",
+                                    value: Number(3062),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Dynamic",
+                                    value: Number(3063),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Blossom",
+                                    value: Number(3064),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Christmas",
+                                    value: Number(3065),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Halloween",
+                                    value: Number(3066),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Fireworks",
+                                    value: Number(3067),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Ghost",
+                                    value: Number(3068),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Easter",
+                                    value: Number(3069),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Valentine's Day",
+                                    value: Number(3070),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Spin",
+                                    value: Number(3071),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Stacking",
+                                    value: Number(3072),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Shoot",
+                                    value: Number(3073),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Racing",
+                                    value: Number(3074),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Poker",
+                                    value: Number(3075),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Crossing",
+                                    value: Number(3076),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Fight",
+                                    value: Number(3077),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Electro Dance",
+                                    value: Number(3078),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Swing",
+                                    value: Number(3079),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Candy Crush",
+                                    value: Number(3080),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Portal",
+                                    value: Number(3081),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Freeze",
+                                    value: Number(3082),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Excited",
+                                    value: Number(3083),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Tension",
+                                    value: Number(3084),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Fright",
+                                    value: Number(3085),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Energetic",
+                                    value: Number(3086),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Doubt",
+                                    value: Number(3087),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Meditation",
+                                    value: Number(3088),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Daze",
+                                    value: Number(3089),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Action",
+                                    value: Number(3090),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Rivalry",
+                                    value: Number(3091),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Puzzle Game",
+                                    value: Number(3092),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Shooting Game",
+                                    value: Number(3093),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Racing Game",
+                                    value: Number(3094),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Card Playing",
+                                    value: Number(3095),
+                                    extras: {},
+                                },
+                            ],
+                        },
+                    ),
+                    alarm_type: None,
+                    event_state: None,
                 },
                 DeviceCapability {
                     kind: MusicSetting,
                     instance: "musicMode",
-                    parameters: Struct {
-                        fields: [
-                            StructField {
-                                field_name: "musicMode",
-                                field_type: Enum {
-                                    options: [
-                                        EnumOption {
-                                            name: "Energic",
-                                            value: Number(5),
-                                        },
-                                        EnumOption {
-                                            name: "Rhythm",
-                                            value: Number(3),
-                                        },
-                                        EnumOption {
-                                            name: "Spectrum",
-                                            value: Number(6),
-                                        },
-                                        EnumOption {
-                                            name: "Rolling",
-                                            value: Number(4),
-                                        },
-                                    ],
-                                },
-                                required: true,
-                            },
-                            StructField {
-                                field_name: "sensitivity",
-                                field_type: Integer {
-                                    unit: Some(
-                                        "unit.percent",
-                                    ),
-                                    range: IntegerRange {
-                                        min: 0,
-                                        max: 100,
-                                        precision: 1,
+                    parameters: Some(
+                        Struct {
+                            fields: [
+                                StructField {
+                                    field_name: "musicMode",
+                                    field_type: Enum {
+                                        options: [
+                                            EnumOption {
+                                                name: "Energic",
+                                                value: Number(5),
+                                                extras: {},
+                                            },
+                                            EnumOption {
+                                                name: "Rhythm",
+                                                value: Number(3),
+                                                extras: {},
+                                            },
+                                            EnumOption {
+                                                name: "Spectrum",
+                                                value: Number(6),
+                                                extras: {},
+                                            },
+                                            EnumOption {
+                                                name: "Rolling",
+                                                value: Number(4),
+                                                extras: {},
+                                            },
+                                        ],
                                     },
+                                    default_value: None,
+                                    required: true,
                                 },
-                                required: true,
-                            },
-                            StructField {
-                                field_name: "autoColor",
-                                field_type: Enum {
-                                    options: [
-                                        EnumOption {
-                                            name: "on",
-                                            value: Number(1),
+                                StructField {
+                                    field_name: "sensitivity",
+                                    field_type: Integer {
+                                        unit: Some(
+                                            "unit.percent",
+                                        ),
+                                        range: IntegerRange {
+                                            min: 0,
+                                            max: 100,
+                                            precision: 1,
                                         },
-                                        EnumOption {
-                                            name: "off",
-                                            value: Number(0),
-                                        },
-                                    ],
-                                },
-                                required: false,
-                            },
-                            StructField {
-                                field_name: "rgb",
-                                field_type: Integer {
-                                    unit: Some(
-                                        "unit.percent",
-                                    ),
-                                    range: IntegerRange {
-                                        min: 0,
-                                        max: 16777215,
-                                        precision: 1,
                                     },
+                                    default_value: None,
+                                    required: true,
                                 },
-                                required: true,
-                            },
-                        ],
-                    },
+                                StructField {
+                                    field_name: "autoColor",
+                                    field_type: Enum {
+                                        options: [
+                                            EnumOption {
+                                                name: "on",
+                                                value: Number(1),
+                                                extras: {},
+                                            },
+                                            EnumOption {
+                                                name: "off",
+                                                value: Number(0),
+                                                extras: {},
+                                            },
+                                        ],
+                                    },
+                                    default_value: None,
+                                    required: false,
+                                },
+                                StructField {
+                                    field_name: "rgb",
+                                    field_type: Integer {
+                                        unit: Some(
+                                            "unit.percent",
+                                        ),
+                                        range: IntegerRange {
+                                            min: 0,
+                                            max: 16777215,
+                                            precision: 1,
+                                        },
+                                    },
+                                    default_value: None,
+                                    required: true,
+                                },
+                            ],
+                        },
+                    ),
+                    alarm_type: None,
+                    event_state: None,
                 },
                 DeviceCapability {
                     kind: DynamicScene,
                     instance: "diyScene",
-                    parameters: Enum {
-                        options: [
-                            EnumOption {
-                                name: "Fade",
-                                value: Number(8216567),
-                            },
-                        ],
-                    },
+                    parameters: Some(
+                        Enum {
+                            options: [
+                                EnumOption {
+                                    name: "Fade",
+                                    value: Number(8216567),
+                                    extras: {},
+                                },
+                            ],
+                        },
+                    ),
+                    alarm_type: None,
+                    event_state: None,
                 },
                 DeviceCapability {
                     kind: DynamicScene,
                     instance: "snapshot",
-                    parameters: Enum {
-                        options: [
-                            EnumOption {
-                                name: "Sunrise",
-                                value: Number(0),
-                            },
-                            EnumOption {
-                                name: "Sunset",
-                                value: Number(1),
-                            },
-                        ],
-                    },
+                    parameters: Some(
+                        Enum {
+                            options: [
+                                EnumOption {
+                                    name: "Sunrise",
+                                    value: Number(0),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Sunset",
+                                    value: Number(1),
+                                    extras: {},
+                                },
+                            ],
+                        },
+                    ),
+                    alarm_type: None,
+                    event_state: None,
                 },
             ],
         },
@@ -445,422 +546,522 @@ GetDevicesResponse {
                 DeviceCapability {
                     kind: OnOff,
                     instance: "powerSwitch",
-                    parameters: Enum {
-                        options: [
-                            EnumOption {
-                                name: "on",
-                                value: Number(1),
-                            },
-                            EnumOption {
-                                name: "off",
-                                value: Number(0),
-                            },
-                        ],
-                    },
+                    parameters: Some(
+                        Enum {
+                            options: [
+                                EnumOption {
+                                    name: "on",
+                                    value: Number(1),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "off",
+                                    value: Number(0),
+                                    extras: {},
+                                },
+                            ],
+                        },
+                    ),
+                    alarm_type: None,
+                    event_state: None,
                 },
                 DeviceCapability {
                     kind: Toggle,
                     instance: "gradientToggle",
-                    parameters: Enum {
-                        options: [
-                            EnumOption {
-                                name: "on",
-                                value: Number(1),
-                            },
-                            EnumOption {
-                                name: "off",
-                                value: Number(0),
-                            },
-                        ],
-                    },
+                    parameters: Some(
+                        Enum {
+                            options: [
+                                EnumOption {
+                                    name: "on",
+                                    value: Number(1),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "off",
+                                    value: Number(0),
+                                    extras: {},
+                                },
+                            ],
+                        },
+                    ),
+                    alarm_type: None,
+                    event_state: None,
                 },
                 DeviceCapability {
                     kind: Range,
                     instance: "brightness",
-                    parameters: Integer {
-                        unit: Some(
-                            "unit.percent",
-                        ),
-                        range: IntegerRange {
-                            min: 1,
-                            max: 100,
-                            precision: 1,
+                    parameters: Some(
+                        Integer {
+                            unit: Some(
+                                "unit.percent",
+                            ),
+                            range: IntegerRange {
+                                min: 1,
+                                max: 100,
+                                precision: 1,
+                            },
                         },
-                    },
+                    ),
+                    alarm_type: None,
+                    event_state: None,
                 },
                 DeviceCapability {
                     kind: SegmentColorSetting,
                     instance: "segmentedColorRgb",
-                    parameters: Struct {
-                        fields: [
-                            StructField {
-                                field_name: "segment",
-                                field_type: Array {
-                                    size: None,
-                                    element_range: None,
-                                    element_type: None,
-                                    options: [
-                                        ArrayOption {
-                                            value: 0,
-                                        },
-                                        ArrayOption {
-                                            value: 1,
-                                        },
-                                        ArrayOption {
-                                            value: 2,
-                                        },
-                                        ArrayOption {
-                                            value: 3,
-                                        },
-                                        ArrayOption {
-                                            value: 4,
-                                        },
-                                        ArrayOption {
-                                            value: 5,
-                                        },
-                                        ArrayOption {
-                                            value: 6,
-                                        },
-                                        ArrayOption {
-                                            value: 7,
-                                        },
-                                        ArrayOption {
-                                            value: 8,
-                                        },
-                                        ArrayOption {
-                                            value: 9,
-                                        },
-                                        ArrayOption {
-                                            value: 10,
-                                        },
-                                        ArrayOption {
-                                            value: 11,
-                                        },
-                                        ArrayOption {
-                                            value: 12,
-                                        },
-                                        ArrayOption {
-                                            value: 13,
-                                        },
-                                        ArrayOption {
-                                            value: 14,
-                                        },
-                                    ],
-                                },
-                                required: true,
-                            },
-                            StructField {
-                                field_name: "rgb",
-                                field_type: Integer {
-                                    unit: None,
-                                    range: IntegerRange {
-                                        min: 0,
-                                        max: 16777215,
-                                        precision: 1,
+                    parameters: Some(
+                        Struct {
+                            fields: [
+                                StructField {
+                                    field_name: "segment",
+                                    field_type: Array {
+                                        size: None,
+                                        element_range: None,
+                                        element_type: None,
+                                        options: [
+                                            ArrayOption {
+                                                value: 0,
+                                            },
+                                            ArrayOption {
+                                                value: 1,
+                                            },
+                                            ArrayOption {
+                                                value: 2,
+                                            },
+                                            ArrayOption {
+                                                value: 3,
+                                            },
+                                            ArrayOption {
+                                                value: 4,
+                                            },
+                                            ArrayOption {
+                                                value: 5,
+                                            },
+                                            ArrayOption {
+                                                value: 6,
+                                            },
+                                            ArrayOption {
+                                                value: 7,
+                                            },
+                                            ArrayOption {
+                                                value: 8,
+                                            },
+                                            ArrayOption {
+                                                value: 9,
+                                            },
+                                            ArrayOption {
+                                                value: 10,
+                                            },
+                                            ArrayOption {
+                                                value: 11,
+                                            },
+                                            ArrayOption {
+                                                value: 12,
+                                            },
+                                            ArrayOption {
+                                                value: 13,
+                                            },
+                                            ArrayOption {
+                                                value: 14,
+                                            },
+                                        ],
                                     },
+                                    default_value: None,
+                                    required: true,
                                 },
-                                required: true,
-                            },
-                        ],
-                    },
+                                StructField {
+                                    field_name: "rgb",
+                                    field_type: Integer {
+                                        unit: None,
+                                        range: IntegerRange {
+                                            min: 0,
+                                            max: 16777215,
+                                            precision: 1,
+                                        },
+                                    },
+                                    default_value: None,
+                                    required: true,
+                                },
+                            ],
+                        },
+                    ),
+                    alarm_type: None,
+                    event_state: None,
                 },
                 DeviceCapability {
                     kind: ColorSetting,
                     instance: "colorRgb",
-                    parameters: Integer {
-                        unit: None,
-                        range: IntegerRange {
-                            min: 0,
-                            max: 16777215,
-                            precision: 1,
+                    parameters: Some(
+                        Integer {
+                            unit: None,
+                            range: IntegerRange {
+                                min: 0,
+                                max: 16777215,
+                                precision: 1,
+                            },
                         },
-                    },
+                    ),
+                    alarm_type: None,
+                    event_state: None,
                 },
                 DeviceCapability {
                     kind: ColorSetting,
                     instance: "colorTemperatureK",
-                    parameters: Integer {
-                        unit: None,
-                        range: IntegerRange {
-                            min: 2000,
-                            max: 9000,
-                            precision: 1,
+                    parameters: Some(
+                        Integer {
+                            unit: None,
+                            range: IntegerRange {
+                                min: 2000,
+                                max: 9000,
+                                precision: 1,
+                            },
                         },
-                    },
+                    ),
+                    alarm_type: None,
+                    event_state: None,
                 },
                 DeviceCapability {
                     kind: DynamicScene,
                     instance: "lightScene",
-                    parameters: Enum {
-                        options: [
-                            EnumOption {
-                                name: "Tudum",
-                                value: Number(3054),
-                            },
-                            EnumOption {
-                                name: "Party",
-                                value: Number(3055),
-                            },
-                            EnumOption {
-                                name: "Dance Party",
-                                value: Number(3056),
-                            },
-                            EnumOption {
-                                name: "Dine Together",
-                                value: Number(3057),
-                            },
-                            EnumOption {
-                                name: "Dating",
-                                value: Number(3058),
-                            },
-                            EnumOption {
-                                name: "Adventure",
-                                value: Number(3059),
-                            },
-                            EnumOption {
-                                name: "Technology",
-                                value: Number(3060),
-                            },
-                            EnumOption {
-                                name: "Sports",
-                                value: Number(3061),
-                            },
-                            EnumOption {
-                                name: "Dreamlike",
-                                value: Number(3062),
-                            },
-                            EnumOption {
-                                name: "Dynamic",
-                                value: Number(3063),
-                            },
-                            EnumOption {
-                                name: "Blossom",
-                                value: Number(3064),
-                            },
-                            EnumOption {
-                                name: "Christmas",
-                                value: Number(3065),
-                            },
-                            EnumOption {
-                                name: "Halloween",
-                                value: Number(3066),
-                            },
-                            EnumOption {
-                                name: "Fireworks",
-                                value: Number(3067),
-                            },
-                            EnumOption {
-                                name: "Ghost",
-                                value: Number(3068),
-                            },
-                            EnumOption {
-                                name: "Easter",
-                                value: Number(3069),
-                            },
-                            EnumOption {
-                                name: "Valentine's Day",
-                                value: Number(3070),
-                            },
-                            EnumOption {
-                                name: "Spin",
-                                value: Number(3071),
-                            },
-                            EnumOption {
-                                name: "Stacking",
-                                value: Number(3072),
-                            },
-                            EnumOption {
-                                name: "Shoot",
-                                value: Number(3073),
-                            },
-                            EnumOption {
-                                name: "Racing",
-                                value: Number(3074),
-                            },
-                            EnumOption {
-                                name: "Poker",
-                                value: Number(3075),
-                            },
-                            EnumOption {
-                                name: "Crossing",
-                                value: Number(3076),
-                            },
-                            EnumOption {
-                                name: "Fight",
-                                value: Number(3077),
-                            },
-                            EnumOption {
-                                name: "Electro Dance",
-                                value: Number(3078),
-                            },
-                            EnumOption {
-                                name: "Swing",
-                                value: Number(3079),
-                            },
-                            EnumOption {
-                                name: "Candy Crush",
-                                value: Number(3080),
-                            },
-                            EnumOption {
-                                name: "Portal",
-                                value: Number(3081),
-                            },
-                            EnumOption {
-                                name: "Freeze",
-                                value: Number(3082),
-                            },
-                            EnumOption {
-                                name: "Excited",
-                                value: Number(3083),
-                            },
-                            EnumOption {
-                                name: "Tension",
-                                value: Number(3084),
-                            },
-                            EnumOption {
-                                name: "Fright",
-                                value: Number(3085),
-                            },
-                            EnumOption {
-                                name: "Energetic",
-                                value: Number(3086),
-                            },
-                            EnumOption {
-                                name: "Doubt",
-                                value: Number(3087),
-                            },
-                            EnumOption {
-                                name: "Meditation",
-                                value: Number(3088),
-                            },
-                            EnumOption {
-                                name: "Daze",
-                                value: Number(3089),
-                            },
-                            EnumOption {
-                                name: "Action",
-                                value: Number(3090),
-                            },
-                            EnumOption {
-                                name: "Rivalry",
-                                value: Number(3091),
-                            },
-                            EnumOption {
-                                name: "Puzzle Game",
-                                value: Number(3092),
-                            },
-                            EnumOption {
-                                name: "Shooting Game",
-                                value: Number(3093),
-                            },
-                            EnumOption {
-                                name: "Racing Game",
-                                value: Number(3094),
-                            },
-                            EnumOption {
-                                name: "Card Playing",
-                                value: Number(3095),
-                            },
-                        ],
-                    },
+                    parameters: Some(
+                        Enum {
+                            options: [
+                                EnumOption {
+                                    name: "Tudum",
+                                    value: Number(3054),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Party",
+                                    value: Number(3055),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Dance Party",
+                                    value: Number(3056),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Dine Together",
+                                    value: Number(3057),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Dating",
+                                    value: Number(3058),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Adventure",
+                                    value: Number(3059),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Technology",
+                                    value: Number(3060),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Sports",
+                                    value: Number(3061),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Dreamlike",
+                                    value: Number(3062),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Dynamic",
+                                    value: Number(3063),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Blossom",
+                                    value: Number(3064),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Christmas",
+                                    value: Number(3065),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Halloween",
+                                    value: Number(3066),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Fireworks",
+                                    value: Number(3067),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Ghost",
+                                    value: Number(3068),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Easter",
+                                    value: Number(3069),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Valentine's Day",
+                                    value: Number(3070),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Spin",
+                                    value: Number(3071),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Stacking",
+                                    value: Number(3072),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Shoot",
+                                    value: Number(3073),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Racing",
+                                    value: Number(3074),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Poker",
+                                    value: Number(3075),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Crossing",
+                                    value: Number(3076),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Fight",
+                                    value: Number(3077),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Electro Dance",
+                                    value: Number(3078),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Swing",
+                                    value: Number(3079),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Candy Crush",
+                                    value: Number(3080),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Portal",
+                                    value: Number(3081),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Freeze",
+                                    value: Number(3082),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Excited",
+                                    value: Number(3083),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Tension",
+                                    value: Number(3084),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Fright",
+                                    value: Number(3085),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Energetic",
+                                    value: Number(3086),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Doubt",
+                                    value: Number(3087),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Meditation",
+                                    value: Number(3088),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Daze",
+                                    value: Number(3089),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Action",
+                                    value: Number(3090),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Rivalry",
+                                    value: Number(3091),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Puzzle Game",
+                                    value: Number(3092),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Shooting Game",
+                                    value: Number(3093),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Racing Game",
+                                    value: Number(3094),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Card Playing",
+                                    value: Number(3095),
+                                    extras: {},
+                                },
+                            ],
+                        },
+                    ),
+                    alarm_type: None,
+                    event_state: None,
                 },
                 DeviceCapability {
                     kind: MusicSetting,
                     instance: "musicMode",
-                    parameters: Struct {
-                        fields: [
-                            StructField {
-                                field_name: "musicMode",
-                                field_type: Enum {
-                                    options: [
-                                        EnumOption {
-                                            name: "Energic",
-                                            value: Number(5),
-                                        },
-                                        EnumOption {
-                                            name: "Rhythm",
-                                            value: Number(3),
-                                        },
-                                        EnumOption {
-                                            name: "Spectrum",
-                                            value: Number(4),
-                                        },
-                                        EnumOption {
-                                            name: "Rolling",
-                                            value: Number(6),
-                                        },
-                                    ],
-                                },
-                                required: true,
-                            },
-                            StructField {
-                                field_name: "sensitivity",
-                                field_type: Integer {
-                                    unit: Some(
-                                        "unit.percent",
-                                    ),
-                                    range: IntegerRange {
-                                        min: 0,
-                                        max: 100,
-                                        precision: 1,
+                    parameters: Some(
+                        Struct {
+                            fields: [
+                                StructField {
+                                    field_name: "musicMode",
+                                    field_type: Enum {
+                                        options: [
+                                            EnumOption {
+                                                name: "Energic",
+                                                value: Number(5),
+                                                extras: {},
+                                            },
+                                            EnumOption {
+                                                name: "Rhythm",
+                                                value: Number(3),
+                                                extras: {},
+                                            },
+                                            EnumOption {
+                                                name: "Spectrum",
+                                                value: Number(4),
+                                                extras: {},
+                                            },
+                                            EnumOption {
+                                                name: "Rolling",
+                                                value: Number(6),
+                                                extras: {},
+                                            },
+                                        ],
                                     },
+                                    default_value: None,
+                                    required: true,
                                 },
-                                required: true,
-                            },
-                            StructField {
-                                field_name: "autoColor",
-                                field_type: Enum {
-                                    options: [
-                                        EnumOption {
-                                            name: "on",
-                                            value: Number(1),
+                                StructField {
+                                    field_name: "sensitivity",
+                                    field_type: Integer {
+                                        unit: Some(
+                                            "unit.percent",
+                                        ),
+                                        range: IntegerRange {
+                                            min: 0,
+                                            max: 100,
+                                            precision: 1,
                                         },
-                                        EnumOption {
-                                            name: "off",
-                                            value: Number(0),
-                                        },
-                                    ],
-                                },
-                                required: false,
-                            },
-                            StructField {
-                                field_name: "rgb",
-                                field_type: Integer {
-                                    unit: None,
-                                    range: IntegerRange {
-                                        min: 0,
-                                        max: 16777215,
-                                        precision: 1,
                                     },
+                                    default_value: None,
+                                    required: true,
                                 },
-                                required: true,
-                            },
-                        ],
-                    },
+                                StructField {
+                                    field_name: "autoColor",
+                                    field_type: Enum {
+                                        options: [
+                                            EnumOption {
+                                                name: "on",
+                                                value: Number(1),
+                                                extras: {},
+                                            },
+                                            EnumOption {
+                                                name: "off",
+                                                value: Number(0),
+                                                extras: {},
+                                            },
+                                        ],
+                                    },
+                                    default_value: None,
+                                    required: false,
+                                },
+                                StructField {
+                                    field_name: "rgb",
+                                    field_type: Integer {
+                                        unit: None,
+                                        range: IntegerRange {
+                                            min: 0,
+                                            max: 16777215,
+                                            precision: 1,
+                                        },
+                                    },
+                                    default_value: None,
+                                    required: true,
+                                },
+                            ],
+                        },
+                    ),
+                    alarm_type: None,
+                    event_state: None,
                 },
                 DeviceCapability {
                     kind: DynamicSetting,
                     instance: "diyScene",
-                    parameters: Enum {
-                        options: [
-                            EnumOption {
-                                name: "fade",
-                                value: Number(8216567),
-                            },
-                        ],
-                    },
+                    parameters: Some(
+                        Enum {
+                            options: [
+                                EnumOption {
+                                    name: "fade",
+                                    value: Number(8216567),
+                                    extras: {},
+                                },
+                            ],
+                        },
+                    ),
+                    alarm_type: None,
+                    event_state: None,
                 },
                 DeviceCapability {
                     kind: DynamicScene,
                     instance: "snapshot",
-                    parameters: Enum {
-                        options: [
-                            EnumOption {
-                                name: "color scene",
-                                value: Number(465503),
-                            },
-                        ],
-                    },
+                    parameters: Some(
+                        Enum {
+                            options: [
+                                EnumOption {
+                                    name: "color scene",
+                                    value: Number(465503),
+                                    extras: {},
+                                },
+                            ],
+                        },
+                    ),
+                    alarm_type: None,
+                    event_state: None,
                 },
             ],
         },
@@ -873,428 +1074,529 @@ GetDevicesResponse {
                 DeviceCapability {
                     kind: OnOff,
                     instance: "powerSwitch",
-                    parameters: Enum {
-                        options: [
-                            EnumOption {
-                                name: "on",
-                                value: Number(1),
-                            },
-                            EnumOption {
-                                name: "off",
-                                value: Number(0),
-                            },
-                        ],
-                    },
+                    parameters: Some(
+                        Enum {
+                            options: [
+                                EnumOption {
+                                    name: "on",
+                                    value: Number(1),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "off",
+                                    value: Number(0),
+                                    extras: {},
+                                },
+                            ],
+                        },
+                    ),
+                    alarm_type: None,
+                    event_state: None,
                 },
                 DeviceCapability {
                     kind: Toggle,
                     instance: "gradientToggle",
-                    parameters: Enum {
-                        options: [
-                            EnumOption {
-                                name: "on",
-                                value: Number(1),
-                            },
-                            EnumOption {
-                                name: "off",
-                                value: Number(0),
-                            },
-                        ],
-                    },
+                    parameters: Some(
+                        Enum {
+                            options: [
+                                EnumOption {
+                                    name: "on",
+                                    value: Number(1),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "off",
+                                    value: Number(0),
+                                    extras: {},
+                                },
+                            ],
+                        },
+                    ),
+                    alarm_type: None,
+                    event_state: None,
                 },
                 DeviceCapability {
                     kind: Range,
                     instance: "brightness",
-                    parameters: Integer {
-                        unit: Some(
-                            "unit.percent",
-                        ),
-                        range: IntegerRange {
-                            min: 1,
-                            max: 100,
-                            precision: 1,
+                    parameters: Some(
+                        Integer {
+                            unit: Some(
+                                "unit.percent",
+                            ),
+                            range: IntegerRange {
+                                min: 1,
+                                max: 100,
+                                precision: 1,
+                            },
                         },
-                    },
+                    ),
+                    alarm_type: None,
+                    event_state: None,
                 },
                 DeviceCapability {
                     kind: SegmentColorSetting,
                     instance: "segmentedColorRgb",
-                    parameters: Struct {
-                        fields: [
-                            StructField {
-                                field_name: "segment",
-                                field_type: Array {
-                                    size: None,
-                                    element_range: None,
-                                    element_type: None,
-                                    options: [
-                                        ArrayOption {
-                                            value: 0,
-                                        },
-                                        ArrayOption {
-                                            value: 1,
-                                        },
-                                        ArrayOption {
-                                            value: 2,
-                                        },
-                                        ArrayOption {
-                                            value: 3,
-                                        },
-                                        ArrayOption {
-                                            value: 4,
-                                        },
-                                        ArrayOption {
-                                            value: 5,
-                                        },
-                                        ArrayOption {
-                                            value: 6,
-                                        },
-                                        ArrayOption {
-                                            value: 7,
-                                        },
-                                        ArrayOption {
-                                            value: 8,
-                                        },
-                                        ArrayOption {
-                                            value: 9,
-                                        },
-                                        ArrayOption {
-                                            value: 10,
-                                        },
-                                        ArrayOption {
-                                            value: 11,
-                                        },
-                                        ArrayOption {
-                                            value: 12,
-                                        },
-                                        ArrayOption {
-                                            value: 13,
-                                        },
-                                        ArrayOption {
-                                            value: 14,
-                                        },
-                                    ],
-                                },
-                                required: true,
-                            },
-                            StructField {
-                                field_name: "rgb",
-                                field_type: Integer {
-                                    unit: None,
-                                    range: IntegerRange {
-                                        min: 0,
-                                        max: 16777215,
-                                        precision: 1,
+                    parameters: Some(
+                        Struct {
+                            fields: [
+                                StructField {
+                                    field_name: "segment",
+                                    field_type: Array {
+                                        size: None,
+                                        element_range: None,
+                                        element_type: None,
+                                        options: [
+                                            ArrayOption {
+                                                value: 0,
+                                            },
+                                            ArrayOption {
+                                                value: 1,
+                                            },
+                                            ArrayOption {
+                                                value: 2,
+                                            },
+                                            ArrayOption {
+                                                value: 3,
+                                            },
+                                            ArrayOption {
+                                                value: 4,
+                                            },
+                                            ArrayOption {
+                                                value: 5,
+                                            },
+                                            ArrayOption {
+                                                value: 6,
+                                            },
+                                            ArrayOption {
+                                                value: 7,
+                                            },
+                                            ArrayOption {
+                                                value: 8,
+                                            },
+                                            ArrayOption {
+                                                value: 9,
+                                            },
+                                            ArrayOption {
+                                                value: 10,
+                                            },
+                                            ArrayOption {
+                                                value: 11,
+                                            },
+                                            ArrayOption {
+                                                value: 12,
+                                            },
+                                            ArrayOption {
+                                                value: 13,
+                                            },
+                                            ArrayOption {
+                                                value: 14,
+                                            },
+                                        ],
                                     },
+                                    default_value: None,
+                                    required: true,
                                 },
-                                required: true,
-                            },
-                        ],
-                    },
+                                StructField {
+                                    field_name: "rgb",
+                                    field_type: Integer {
+                                        unit: None,
+                                        range: IntegerRange {
+                                            min: 0,
+                                            max: 16777215,
+                                            precision: 1,
+                                        },
+                                    },
+                                    default_value: None,
+                                    required: true,
+                                },
+                            ],
+                        },
+                    ),
+                    alarm_type: None,
+                    event_state: None,
                 },
                 DeviceCapability {
                     kind: ColorSetting,
                     instance: "colorRgb",
-                    parameters: Integer {
-                        unit: None,
-                        range: IntegerRange {
-                            min: 0,
-                            max: 16777215,
-                            precision: 1,
+                    parameters: Some(
+                        Integer {
+                            unit: None,
+                            range: IntegerRange {
+                                min: 0,
+                                max: 16777215,
+                                precision: 1,
+                            },
                         },
-                    },
+                    ),
+                    alarm_type: None,
+                    event_state: None,
                 },
                 DeviceCapability {
                     kind: ColorSetting,
                     instance: "colorTemperatureK",
-                    parameters: Integer {
-                        unit: None,
-                        range: IntegerRange {
-                            min: 2000,
-                            max: 9000,
-                            precision: 1,
+                    parameters: Some(
+                        Integer {
+                            unit: None,
+                            range: IntegerRange {
+                                min: 2000,
+                                max: 9000,
+                                precision: 1,
+                            },
                         },
-                    },
+                    ),
+                    alarm_type: None,
+                    event_state: None,
                 },
                 DeviceCapability {
                     kind: DynamicScene,
                     instance: "lightScene",
-                    parameters: Enum {
-                        options: [
-                            EnumOption {
-                                name: "Tudum",
-                                value: Number(3054),
-                            },
-                            EnumOption {
-                                name: "Party",
-                                value: Number(3055),
-                            },
-                            EnumOption {
-                                name: "Dance Party",
-                                value: Number(3056),
-                            },
-                            EnumOption {
-                                name: "Dine Together",
-                                value: Number(3057),
-                            },
-                            EnumOption {
-                                name: "Dating",
-                                value: Number(3058),
-                            },
-                            EnumOption {
-                                name: "Adventure",
-                                value: Number(3059),
-                            },
-                            EnumOption {
-                                name: "Technology",
-                                value: Number(3060),
-                            },
-                            EnumOption {
-                                name: "Sports",
-                                value: Number(3061),
-                            },
-                            EnumOption {
-                                name: "Dreamlike",
-                                value: Number(3062),
-                            },
-                            EnumOption {
-                                name: "Dynamic",
-                                value: Number(3063),
-                            },
-                            EnumOption {
-                                name: "Blossom",
-                                value: Number(3064),
-                            },
-                            EnumOption {
-                                name: "Christmas",
-                                value: Number(3065),
-                            },
-                            EnumOption {
-                                name: "Halloween",
-                                value: Number(3066),
-                            },
-                            EnumOption {
-                                name: "Fireworks",
-                                value: Number(3067),
-                            },
-                            EnumOption {
-                                name: "Ghost",
-                                value: Number(3068),
-                            },
-                            EnumOption {
-                                name: "Easter",
-                                value: Number(3069),
-                            },
-                            EnumOption {
-                                name: "Valentine's Day",
-                                value: Number(3070),
-                            },
-                            EnumOption {
-                                name: "Spin",
-                                value: Number(3071),
-                            },
-                            EnumOption {
-                                name: "Stacking",
-                                value: Number(3072),
-                            },
-                            EnumOption {
-                                name: "Shoot",
-                                value: Number(3073),
-                            },
-                            EnumOption {
-                                name: "Racing",
-                                value: Number(3074),
-                            },
-                            EnumOption {
-                                name: "Poker",
-                                value: Number(3075),
-                            },
-                            EnumOption {
-                                name: "Crossing",
-                                value: Number(3076),
-                            },
-                            EnumOption {
-                                name: "Fight",
-                                value: Number(3077),
-                            },
-                            EnumOption {
-                                name: "Electro Dance",
-                                value: Number(3078),
-                            },
-                            EnumOption {
-                                name: "Swing",
-                                value: Number(3079),
-                            },
-                            EnumOption {
-                                name: "Candy Crush",
-                                value: Number(3080),
-                            },
-                            EnumOption {
-                                name: "Portal",
-                                value: Number(3081),
-                            },
-                            EnumOption {
-                                name: "Freeze",
-                                value: Number(3082),
-                            },
-                            EnumOption {
-                                name: "Excited",
-                                value: Number(3083),
-                            },
-                            EnumOption {
-                                name: "Tension",
-                                value: Number(3084),
-                            },
-                            EnumOption {
-                                name: "Fright",
-                                value: Number(3085),
-                            },
-                            EnumOption {
-                                name: "Energetic",
-                                value: Number(3086),
-                            },
-                            EnumOption {
-                                name: "Doubt",
-                                value: Number(3087),
-                            },
-                            EnumOption {
-                                name: "Meditation",
-                                value: Number(3088),
-                            },
-                            EnumOption {
-                                name: "Daze",
-                                value: Number(3089),
-                            },
-                            EnumOption {
-                                name: "Action",
-                                value: Number(3090),
-                            },
-                            EnumOption {
-                                name: "Rivalry",
-                                value: Number(3091),
-                            },
-                            EnumOption {
-                                name: "Puzzle Game",
-                                value: Number(3092),
-                            },
-                            EnumOption {
-                                name: "Shooting Game",
-                                value: Number(3093),
-                            },
-                            EnumOption {
-                                name: "Racing Game",
-                                value: Number(3094),
-                            },
-                            EnumOption {
-                                name: "Card Playing",
-                                value: Number(3095),
-                            },
-                        ],
-                    },
+                    parameters: Some(
+                        Enum {
+                            options: [
+                                EnumOption {
+                                    name: "Tudum",
+                                    value: Number(3054),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Party",
+                                    value: Number(3055),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Dance Party",
+                                    value: Number(3056),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Dine Together",
+                                    value: Number(3057),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Dating",
+                                    value: Number(3058),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Adventure",
+                                    value: Number(3059),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Technology",
+                                    value: Number(3060),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Sports",
+                                    value: Number(3061),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Dreamlike",
+                                    value: Number(3062),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Dynamic",
+                                    value: Number(3063),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Blossom",
+                                    value: Number(3064),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Christmas",
+                                    value: Number(3065),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Halloween",
+                                    value: Number(3066),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Fireworks",
+                                    value: Number(3067),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Ghost",
+                                    value: Number(3068),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Easter",
+                                    value: Number(3069),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Valentine's Day",
+                                    value: Number(3070),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Spin",
+                                    value: Number(3071),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Stacking",
+                                    value: Number(3072),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Shoot",
+                                    value: Number(3073),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Racing",
+                                    value: Number(3074),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Poker",
+                                    value: Number(3075),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Crossing",
+                                    value: Number(3076),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Fight",
+                                    value: Number(3077),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Electro Dance",
+                                    value: Number(3078),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Swing",
+                                    value: Number(3079),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Candy Crush",
+                                    value: Number(3080),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Portal",
+                                    value: Number(3081),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Freeze",
+                                    value: Number(3082),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Excited",
+                                    value: Number(3083),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Tension",
+                                    value: Number(3084),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Fright",
+                                    value: Number(3085),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Energetic",
+                                    value: Number(3086),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Doubt",
+                                    value: Number(3087),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Meditation",
+                                    value: Number(3088),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Daze",
+                                    value: Number(3089),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Action",
+                                    value: Number(3090),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Rivalry",
+                                    value: Number(3091),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Puzzle Game",
+                                    value: Number(3092),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Shooting Game",
+                                    value: Number(3093),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Racing Game",
+                                    value: Number(3094),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Card Playing",
+                                    value: Number(3095),
+                                    extras: {},
+                                },
+                            ],
+                        },
+                    ),
+                    alarm_type: None,
+                    event_state: None,
                 },
                 DeviceCapability {
                     kind: MusicSetting,
                     instance: "musicMode",
-                    parameters: Struct {
-                        fields: [
-                            StructField {
-                                field_name: "musicMode",
-                                field_type: Enum {
-                                    options: [
-                                        EnumOption {
-                                            name: "Energic",
-                                            value: Number(5),
-                                        },
-                                        EnumOption {
-                                            name: "Rhythm",
-                                            value: Number(3),
-                                        },
-                                        EnumOption {
-                                            name: "Spectrum",
-                                            value: Number(6),
-                                        },
-                                        EnumOption {
-                                            name: "Rolling",
-                                            value: Number(4),
-                                        },
-                                    ],
-                                },
-                                required: true,
-                            },
-                            StructField {
-                                field_name: "sensitivity",
-                                field_type: Integer {
-                                    unit: Some(
-                                        "unit.percent",
-                                    ),
-                                    range: IntegerRange {
-                                        min: 0,
-                                        max: 100,
-                                        precision: 1,
+                    parameters: Some(
+                        Struct {
+                            fields: [
+                                StructField {
+                                    field_name: "musicMode",
+                                    field_type: Enum {
+                                        options: [
+                                            EnumOption {
+                                                name: "Energic",
+                                                value: Number(5),
+                                                extras: {},
+                                            },
+                                            EnumOption {
+                                                name: "Rhythm",
+                                                value: Number(3),
+                                                extras: {},
+                                            },
+                                            EnumOption {
+                                                name: "Spectrum",
+                                                value: Number(6),
+                                                extras: {},
+                                            },
+                                            EnumOption {
+                                                name: "Rolling",
+                                                value: Number(4),
+                                                extras: {},
+                                            },
+                                        ],
                                     },
+                                    default_value: None,
+                                    required: true,
                                 },
-                                required: true,
-                            },
-                            StructField {
-                                field_name: "autoColor",
-                                field_type: Enum {
-                                    options: [
-                                        EnumOption {
-                                            name: "on",
-                                            value: Number(1),
+                                StructField {
+                                    field_name: "sensitivity",
+                                    field_type: Integer {
+                                        unit: Some(
+                                            "unit.percent",
+                                        ),
+                                        range: IntegerRange {
+                                            min: 0,
+                                            max: 100,
+                                            precision: 1,
                                         },
-                                        EnumOption {
-                                            name: "off",
-                                            value: Number(0),
-                                        },
-                                    ],
-                                },
-                                required: false,
-                            },
-                            StructField {
-                                field_name: "rgb",
-                                field_type: Integer {
-                                    unit: Some(
-                                        "unit.percent",
-                                    ),
-                                    range: IntegerRange {
-                                        min: 0,
-                                        max: 16777215,
-                                        precision: 1,
                                     },
+                                    default_value: None,
+                                    required: true,
                                 },
-                                required: true,
-                            },
-                        ],
-                    },
+                                StructField {
+                                    field_name: "autoColor",
+                                    field_type: Enum {
+                                        options: [
+                                            EnumOption {
+                                                name: "on",
+                                                value: Number(1),
+                                                extras: {},
+                                            },
+                                            EnumOption {
+                                                name: "off",
+                                                value: Number(0),
+                                                extras: {},
+                                            },
+                                        ],
+                                    },
+                                    default_value: None,
+                                    required: false,
+                                },
+                                StructField {
+                                    field_name: "rgb",
+                                    field_type: Integer {
+                                        unit: Some(
+                                            "unit.percent",
+                                        ),
+                                        range: IntegerRange {
+                                            min: 0,
+                                            max: 16777215,
+                                            precision: 1,
+                                        },
+                                    },
+                                    default_value: None,
+                                    required: true,
+                                },
+                            ],
+                        },
+                    ),
+                    alarm_type: None,
+                    event_state: None,
                 },
                 DeviceCapability {
                     kind: DynamicScene,
                     instance: "diyScene",
-                    parameters: Enum {
-                        options: [
-                            EnumOption {
-                                name: "Fade",
-                                value: Number(8216567),
-                            },
-                        ],
-                    },
+                    parameters: Some(
+                        Enum {
+                            options: [
+                                EnumOption {
+                                    name: "Fade",
+                                    value: Number(8216567),
+                                    extras: {},
+                                },
+                            ],
+                        },
+                    ),
+                    alarm_type: None,
+                    event_state: None,
                 },
                 DeviceCapability {
                     kind: DynamicScene,
                     instance: "snapshot",
-                    parameters: Enum {
-                        options: [
-                            EnumOption {
-                                name: "Sunrise",
-                                value: Number(0),
-                            },
-                            EnumOption {
-                                name: "Sunset",
-                                value: Number(1),
-                            },
-                        ],
-                    },
+                    parameters: Some(
+                        Enum {
+                            options: [
+                                EnumOption {
+                                    name: "Sunrise",
+                                    value: Number(0),
+                                    extras: {},
+                                },
+                                EnumOption {
+                                    name: "Sunset",
+                                    value: Number(1),
+                                    extras: {},
+                                },
+                            ],
+                        },
+                    ),
+                    alarm_type: None,
+                    event_state: None,
                 },
             ],
         },
