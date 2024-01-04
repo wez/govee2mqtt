@@ -141,7 +141,7 @@ impl Device {
             model: device.sku.to_string(),
             sw_version: None,
             suggested_area: device.room_name().map(|s| s.to_string()),
-            via_device: None,
+            via_device: Some("gv2mqtt".to_string()),
             identifiers: vec![
                 format!("gv2mqtt-{}", topic_safe_id(device)),
                 /*
@@ -149,6 +149,19 @@ impl Device {
                 device.id.to_string(),
                 */
             ],
+            connections: vec![],
+        }
+    }
+
+    pub fn this_service() -> Self {
+        Self {
+            name: "Govee to MQTT".to_string(),
+            manufacturer: "Wez Furlong".to_string(),
+            model: "govee2mqtt".to_string(),
+            sw_version: Some(govee_version().to_string()),
+            suggested_area: None,
+            via_device: None,
+            identifiers: vec!["gv2mqtt".to_string()],
             connections: vec![],
         }
     }
@@ -181,6 +194,49 @@ pub struct SensorConfig {
 
     pub state_topic: String,
     pub unit_of_measurement: Option<String>,
+}
+
+impl SensorConfig {
+    pub fn global_fixed_diagnostic(name: &str) -> Self {
+        let unique_id = format!("global-{}", topic_safe_string(name));
+        Self {
+            base: EntityConfig {
+                availability_topic: availability_topic(),
+                name: Some(name.to_string()),
+                entity_category: Some("diagnostic".to_string()),
+                origin: Origin::default(),
+                device: Device::this_service(),
+                unique_id: unique_id.clone(),
+                device_class: None,
+                icon: None,
+            },
+            state_topic: format!("gv2mqtt/sensor/{unique_id}/state"),
+            unit_of_measurement: None,
+        }
+    }
+
+    pub async fn publish(
+        &self,
+        state: &StateHandle,
+        client: &HassClient,
+        remove: bool,
+    ) -> anyhow::Result<()> {
+        let disco = state.get_hass_disco_prefix().await;
+        let topic = format!(
+            "{disco}/sensor/{unique_id}/config",
+            unique_id = self.base.unique_id
+        );
+
+        if remove {
+            client.publish(&topic, "").await
+        } else {
+            client.publish_obj(topic, self).await
+        }
+    }
+
+    pub async fn notify_state(&self, client: &HassClient, value: &str) -> anyhow::Result<()> {
+        client.publish(&self.state_topic, value).await
+    }
 }
 
 #[derive(Serialize, Clone, Debug)]
@@ -598,6 +654,11 @@ pub struct HassClient {
 
 impl HassClient {
     async fn register_with_hass(&self, state: &StateHandle) -> anyhow::Result<()> {
+        let global_sensors = vec![(
+            SensorConfig::global_fixed_diagnostic("Version"),
+            govee_version().to_string(),
+        )];
+
         let devices = state.devices().await;
 
         let mut configs = vec![];
@@ -608,6 +669,9 @@ impl HassClient {
 
         // Remove existing configs first
         log::trace!("register_with_hass: Remove prior entries");
+        for (s, _) in &global_sensors {
+            s.publish(state, self, true).await?;
+        }
         for (_, c) in &configs {
             c.publish(state, self, true).await?;
         }
@@ -620,6 +684,9 @@ impl HassClient {
 
         // Register the configs
         log::trace!("register_with_hass: register entities");
+        for (s, _) in &global_sensors {
+            s.publish(state, self, false).await?;
+        }
         for (_, c) in &configs {
             c.publish(state, self, false).await?;
         }
@@ -636,6 +703,9 @@ impl HassClient {
 
         // report initial state
         log::trace!("register_with_hass: reporting state");
+        for (s, v) in &global_sensors {
+            s.notify_state(self, v).await?;
+        }
         for (d, c) in &configs {
             c.notify_state(d, self).await?;
         }
@@ -683,6 +753,18 @@ impl HassClient {
 
         Ok(())
     }
+}
+
+pub fn topic_safe_string(s: &str) -> String {
+    let mut result = String::new();
+    for c in s.chars() {
+        if c == ':' {
+            result.push('_');
+        } else {
+            result.push(c.to_ascii_lowercase());
+        }
+    }
+    result
 }
 
 pub fn topic_safe_id(device: &ServiceDevice) -> String {
