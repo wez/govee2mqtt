@@ -1,11 +1,13 @@
 use crate::cache::{cache_get, CacheComputeResult, CacheGetOptions};
 use crate::lan_api::boolean_int;
 use crate::opt_env_var;
-use crate::platform_api::http_response_body;
+use crate::platform_api::{
+    http_response_body, DeviceCapability, DeviceCapabilityKind, DeviceParameters, EnumOption,
+};
 use reqwest::Method;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
-use serde_json::Value as JsonValue;
+use serde_json::{json, Value as JsonValue};
 use std::path::PathBuf;
 use std::time::Duration;
 use uuid::Uuid;
@@ -296,6 +298,38 @@ impl GoveeUndocumentedApi {
             },
         )
         .await
+    }
+
+    /// This is present primarily to workaround a bug where Govee aren't returning
+    /// the full list of scenes via their supported platform API
+    pub async fn synthesize_platform_api_scene_list(
+        sku: &str,
+    ) -> anyhow::Result<Vec<DeviceCapability>> {
+        let catalog = Self::get_scenes_for_device(sku).await?;
+        let mut options = vec![];
+
+        for c in catalog {
+            for s in c.scenes {
+                if let Some(param_id) = s.light_effects.get(0).map(|e| e.scence_param_id) {
+                    options.push(EnumOption {
+                        name: s.scene_name,
+                        value: json!({
+                            "paramId": param_id,
+                            "id": s.scene_id,
+                        }),
+                        extras: Default::default(),
+                    });
+                }
+            }
+        }
+
+        Ok(vec![DeviceCapability {
+            kind: DeviceCapabilityKind::DynamicScene,
+            parameters: Some(DeviceParameters::Enum { options }),
+            alarm_type: None,
+            event_state: None,
+            instance: "lightScene".to_string(),
+        }])
     }
 
     pub async fn get_saved_one_click_shortcuts(

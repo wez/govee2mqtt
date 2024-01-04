@@ -1,5 +1,7 @@
 use crate::cache::{cache_get, CacheComputeResult, CacheGetOptions};
 use crate::opt_env_var;
+use crate::service::state::sort_and_dedup_scenes;
+use crate::undoc_api::GoveeUndocumentedApi;
 use anyhow::Context;
 use reqwest::Method;
 use serde::{Deserialize, Serialize};
@@ -207,13 +209,24 @@ impl GoveeApiClient {
         .await
     }
 
-    pub async fn list_scene_names(&self, device: &HttpDeviceInfo) -> anyhow::Result<Vec<String>> {
+    pub async fn get_scene_caps(
+        &self,
+        device: &HttpDeviceInfo,
+    ) -> anyhow::Result<Vec<DeviceCapability>> {
         let mut result = vec![];
 
         let scene_caps = self.get_device_scenes(&device).await?;
         let diy_caps = self.get_device_diy_scenes(&device).await?;
+        let undoc_caps =
+            match GoveeUndocumentedApi::synthesize_platform_api_scene_list(&device.sku).await {
+                Ok(caps) => caps,
+                Err(err) => {
+                    log::warn!("synthesize_platform_api_scene_list: {err:#}");
+                    vec![]
+                }
+            };
 
-        for caps in [&device.capabilities, &scene_caps, &diy_caps] {
+        for caps in [&device.capabilities, &scene_caps, &diy_caps, &undoc_caps] {
             for cap in caps {
                 let is_scene = matches!(
                     cap.kind,
@@ -222,18 +235,29 @@ impl GoveeApiClient {
                 if !is_scene {
                     continue;
                 }
-                match &cap.parameters {
-                    Some(DeviceParameters::Enum { options }) => {
-                        for opt in options {
-                            result.push(opt.name.to_string());
-                        }
-                    }
-                    _ => anyhow::bail!("unexpected type {cap:#?}"),
-                }
+                result.push(cap.clone());
             }
         }
 
         Ok(result)
+    }
+
+    pub async fn list_scene_names(&self, device: &HttpDeviceInfo) -> anyhow::Result<Vec<String>> {
+        let mut result = vec![];
+
+        let caps = self.get_scene_caps(device).await?;
+        for cap in caps {
+            match &cap.parameters {
+                Some(DeviceParameters::Enum { options }) => {
+                    for opt in options {
+                        result.push(opt.name.to_string());
+                    }
+                }
+                _ => anyhow::bail!("unexpected type {cap:#?}"),
+            }
+        }
+
+        Ok(sort_and_dedup_scenes(result))
     }
 
     pub async fn set_scene_by_name(
@@ -241,28 +265,17 @@ impl GoveeApiClient {
         device: &HttpDeviceInfo,
         scene: &str,
     ) -> anyhow::Result<ControlDeviceResponseCapability> {
-        let scene_caps = self.get_device_scenes(&device).await?;
-        let diy_caps = self.get_device_diy_scenes(&device).await?;
-
-        for caps in [&device.capabilities, &scene_caps, &diy_caps] {
-            for cap in caps {
-                let is_scene = matches!(
-                    cap.kind,
-                    DeviceCapabilityKind::DynamicScene | DeviceCapabilityKind::DynamicSetting
-                );
-                if !is_scene {
-                    continue;
-                }
-                match &cap.parameters {
-                    Some(DeviceParameters::Enum { options }) => {
-                        for opt in options {
-                            if scene.eq_ignore_ascii_case(&opt.name) {
-                                return self.control_device(&device, &cap, opt.value.clone()).await;
-                            }
+        let caps = self.get_scene_caps(device).await?;
+        for cap in caps {
+            match &cap.parameters {
+                Some(DeviceParameters::Enum { options }) => {
+                    for opt in options {
+                        if scene.eq_ignore_ascii_case(&opt.name) {
+                            return self.control_device(&device, &cap, opt.value.clone()).await;
                         }
                     }
-                    _ => anyhow::bail!("unexpected type {cap:#?}"),
                 }
+                _ => anyhow::bail!("unexpected type {cap:#?}"),
             }
         }
         anyhow::bail!("Scene '{scene}' is not available for this device");
