@@ -207,28 +207,18 @@ impl GoveeApiClient {
         let mut result = vec![];
 
         let scene_caps = self.get_device_scenes(&device).await?;
-
-        for cap in scene_caps {
-            match cap.parameters {
-                DeviceParameters::Enum { options } => {
-                    for opt in options {
-                        result.push(opt.name);
-                    }
-                }
-                _ => anyhow::bail!("unexpected type {cap:#?}"),
-            }
-        }
-
         let diy_caps = self.get_device_diy_scenes(&device).await?;
 
-        for cap in diy_caps {
-            match cap.parameters {
-                DeviceParameters::Enum { options } => {
-                    for opt in options {
-                        result.push(opt.name);
+        for caps in [scene_caps, diy_caps] {
+            for cap in caps {
+                match cap.parameters {
+                    DeviceParameters::Enum { options } => {
+                        for opt in options {
+                            result.push(opt.name);
+                        }
                     }
+                    _ => anyhow::bail!("unexpected type {cap:#?}"),
                 }
-                _ => anyhow::bail!("unexpected type {cap:#?}"),
             }
         }
 
