@@ -1,4 +1,4 @@
-use crate::cache::{cache_get, CacheGetOptions};
+use crate::cache::{cache_get, CacheComputeResult, CacheGetOptions};
 use crate::opt_env_var;
 use anyhow::Context;
 use reqwest::Method;
@@ -74,7 +74,7 @@ impl GoveeApiClient {
             async {
                 let url = endpoint("/router/api/v1/user/devices");
                 let resp: GetDevicesResponse = self.get_request_with_json_response(url).await?;
-                Ok(resp.data)
+                Ok(CacheComputeResult::Value(resp.data))
             },
         )
         .await
@@ -166,7 +166,7 @@ impl GoveeApiClient {
                     .request_with_json_response(Method::POST, url, &request)
                     .await?;
 
-                Ok(resp.payload.capabilities)
+                Ok(CacheComputeResult::Value(resp.payload.capabilities))
             },
         )
         .await
@@ -200,7 +200,7 @@ impl GoveeApiClient {
                     .request_with_json_response(Method::POST, url, &request)
                     .await?;
 
-                Ok(resp.payload.capabilities)
+                Ok(CacheComputeResult::Value(resp.payload.capabilities))
             },
         )
         .await

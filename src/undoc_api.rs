@@ -1,4 +1,4 @@
-use crate::cache::{cache_get, CacheGetOptions};
+use crate::cache::{cache_get, CacheComputeResult, CacheGetOptions};
 use crate::lan_api::boolean_int;
 use crate::opt_env_var;
 use crate::platform_api::json_body;
@@ -177,7 +177,7 @@ impl GoveeUndocumentedApi {
                     )
                 })?;
 
-                Ok(resp.data)
+                Ok(CacheComputeResult::Value(resp.data))
             },
         )
         .await
@@ -242,7 +242,8 @@ impl GoveeUndocumentedApi {
                     status: u64,
                 }
 
-                Ok(resp.client)
+                let ttl = Duration::from_secs(resp.client.token_expire_cycle as u64);
+                Ok(CacheComputeResult::WithTtl(resp.client, ttl))
             },
         )
         .await
@@ -407,7 +408,7 @@ impl GoveeUndocumentedApi {
                         )
                     })?;
 
-                Ok(resp.data.categories)
+                Ok(CacheComputeResult::Value(resp.data.categories))
             },
         )
         .await

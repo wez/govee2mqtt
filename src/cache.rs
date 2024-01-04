@@ -60,12 +60,17 @@ pub struct CacheGetOptions<'a> {
     pub allow_stale: bool,
 }
 
+pub enum CacheComputeResult<T> {
+    Value(T),
+    WithTtl(T, Duration),
+}
+
 /// Cache an item with a soft TTL; we'll retry the operation
 /// if the TTL has expired, but allow stale reads
 pub async fn cache_get<T, Fut>(options: CacheGetOptions<'_>, future: Fut) -> anyhow::Result<T>
 where
     T: Serialize + DeserializeOwned + std::fmt::Debug + Clone,
-    Fut: Future<Output = anyhow::Result<T>>,
+    Fut: Future<Output = anyhow::Result<CacheComputeResult<T>>>,
 {
     let topic = CACHE.topic(options.topic)?;
     let (updater, current_value) = topic.get_for_update(options.key).await?;
@@ -85,9 +90,19 @@ where
     }
 
     log::trace!("cache miss for {}", options.key);
-    let value: anyhow::Result<T> = future.await;
+    let value: anyhow::Result<CacheComputeResult<T>> = future.await;
     match value {
-        Ok(value) => {
+        Ok(CacheComputeResult::WithTtl(value, ttl)) => {
+            let entry = CacheEntry {
+                expires: Utc::now() + ttl,
+                result: CacheResult::Ok(value.clone()),
+            };
+
+            let data = serde_json::to_string_pretty(&entry)?;
+            updater.write(data.as_bytes(), options.hard_ttl)?;
+            Ok(value)
+        }
+        Ok(CacheComputeResult::Value(value)) => {
             let entry = CacheEntry {
                 expires: Utc::now() + options.soft_ttl,
                 result: CacheResult::Ok(value.clone()),
