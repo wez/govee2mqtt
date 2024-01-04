@@ -193,6 +193,55 @@ pub struct ButtonConfig {
 }
 
 #[derive(Serialize, Clone, Debug)]
+pub struct SwitchConfig {
+    #[serde(flatten)]
+    pub base: EntityConfig,
+    pub command_topic: String,
+    pub state_topic: String,
+}
+
+impl SwitchConfig {
+    pub async fn for_device(device: &ServiceDevice) -> anyhow::Result<Self> {
+        let command_topic = format!("gv2mqtt/power/{id}/command", id = topic_safe_id(device));
+        let state_topic = power_state_topic(device);
+        let availability_topic = light_availability_topic(device);
+        let unique_id = format!("gv2mqtt-{id}-power", id = topic_safe_id(device));
+
+        Ok(Self {
+            base: EntityConfig {
+                availability_topic,
+                name: Some("Power".to_string()),
+                device_class: None,
+                origin: Origin::default(),
+                device: Device::for_device(device),
+                unique_id,
+                entity_category: None,
+                icon: None,
+            },
+            command_topic,
+            state_topic,
+        })
+    }
+
+    pub async fn publish(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
+        let disco = state.get_hass_disco_prefix().await;
+        let topic = format!(
+            "{disco}/switch/{unique_id}/config",
+            unique_id = self.base.unique_id
+        );
+
+        // Delete existing version first
+        client
+            .client
+            .publish(&topic, "", QoS::AtMostOnce, false)
+            .await?;
+        tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
+
+        client.publish_obj(topic, self).await
+    }
+}
+
+#[derive(Serialize, Clone, Debug)]
 pub struct SelectConfig {
     #[serde(flatten)]
     pub base: EntityConfig,
@@ -331,6 +380,13 @@ impl HassClient {
         for d in &devices {
             let light = LightConfig::for_device(&d, state).await?;
             light.publish(state, &self).await?;
+
+            if let Some(info) = &d.http_device_info {
+                if info.capability_by_instance("powerSwitch").is_some() {
+                    let switch = SwitchConfig::for_device(&d).await?;
+                    switch.publish(state, &self).await?;
+                }
+            }
         }
 
         // Allow hass time to register the entities
@@ -415,6 +471,12 @@ impl HassClient {
 
                 self.publish_obj(light_state_topic(device), &light_state)
                     .await?;
+
+                self.publish(
+                    power_state_topic(device),
+                    if device_state.on { "ON" } else { "OFF" },
+                )
+                .await?;
             }
             None => {
                 // TODO: mark as unavailable or something? Don't
@@ -422,6 +484,7 @@ impl HassClient {
                 // as that could cause it to wake up.
                 self.publish_obj(light_state_topic(device), &json!({"state":"OFF"}))
                     .await?;
+                self.publish(power_state_topic(device), "OFF").await?;
             }
         }
         self.publish(light_availability_topic(device), "online")
@@ -435,6 +498,10 @@ pub fn topic_safe_id(device: &ServiceDevice) -> String {
     let mut id = device.id.to_string();
     id.retain(|c| c != ':');
     id
+}
+
+fn power_state_topic(device: &ServiceDevice) -> String {
+    format!("gv2mqtt/power/{id}/state", id = topic_safe_id(device))
 }
 
 fn light_state_topic(device: &ServiceDevice) -> String {
@@ -501,6 +568,26 @@ async fn mqtt_light_command(
     Ok(())
 }
 
+async fn mqtt_power_command(
+    Payload(command): Payload<String>,
+    Params(IdParameter { id }): Params<IdParameter>,
+    State(state): State<StateHandle>,
+) -> anyhow::Result<()> {
+    log::info!("Power for {id}: {command}");
+    let device = state
+        .resolve_device(&id)
+        .await
+        .ok_or_else(|| anyhow::anyhow!("device '{id}' not found"))?;
+
+    if command == "OFF" {
+        state.device_power_on(&device, false).await?;
+    } else if command == "ON" {
+        state.device_power_on(&device, true).await?;
+    }
+
+    Ok(())
+}
+
 pub fn mired_to_kelvin(mired: u32) -> u32 {
     if mired == 0 {
         0
@@ -552,6 +639,9 @@ async fn run_mqtt_loop(
 
     router
         .route("gv2mqtt/light/:id/command", mqtt_light_command)
+        .await?;
+    router
+        .route("gv2mqtt/power/:id/command", mqtt_power_command)
         .await?;
 
     state
