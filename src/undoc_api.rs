@@ -127,6 +127,7 @@ impl GoveeUndocumentedApi {
                 soft_ttl: ONE_DAY,
                 hard_ttl: ONE_WEEK,
                 negative_ttl: Duration::from_secs(10),
+                allow_stale: false,
             },
             async {
                 let response = reqwest::Client::builder()
@@ -190,6 +191,7 @@ impl GoveeUndocumentedApi {
                 soft_ttl: ONE_DAY,
                 hard_ttl: ONE_WEEK,
                 negative_ttl: Duration::from_secs(10),
+                allow_stale: false,
             },
             async {
                 let response = reqwest::Client::builder()
@@ -362,6 +364,7 @@ impl GoveeUndocumentedApi {
                 soft_ttl: ONE_DAY,
                 hard_ttl: ONE_WEEK,
                 negative_ttl: Duration::from_secs(1),
+                allow_stale: true,
             },
             async {
                 let response = reqwest::Client::builder()

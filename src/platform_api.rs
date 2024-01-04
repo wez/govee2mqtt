@@ -69,6 +69,7 @@ impl GoveeApiClient {
                 soft_ttl: Duration::from_secs(900),
                 hard_ttl: ONE_WEEK,
                 negative_ttl: Duration::from_secs(60),
+                allow_stale: true,
             },
             async {
                 let url = endpoint("/router/api/v1/user/devices");
@@ -149,6 +150,7 @@ impl GoveeApiClient {
                 soft_ttl: Duration::from_secs(300),
                 hard_ttl: ONE_WEEK,
                 negative_ttl: Duration::from_secs(60),
+                allow_stale: true,
             },
             async {
                 let url = endpoint("/router/api/v1/device/diy-scenes");
@@ -182,6 +184,7 @@ impl GoveeApiClient {
                 soft_ttl: Duration::from_secs(300),
                 hard_ttl: ONE_WEEK,
                 negative_ttl: Duration::from_secs(60),
+                allow_stale: true,
             },
             async {
                 let url = endpoint("/router/api/v1/device/scenes");

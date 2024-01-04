@@ -57,6 +57,7 @@ pub struct CacheGetOptions<'a> {
     pub soft_ttl: Duration,
     pub hard_ttl: Duration,
     pub negative_ttl: Duration,
+    pub allow_stale: bool,
 }
 
 /// Cache an item with a soft TTL; we'll retry the operation
@@ -97,7 +98,7 @@ where
             Ok(value)
         }
         Err(err) => match cache_entry.take() {
-            Some(mut entry) => {
+            Some(mut entry) if options.allow_stale => {
                 entry.expires = Utc::now() + options.negative_ttl;
 
                 log::warn!("{err:#}, will use prior results");
@@ -110,7 +111,7 @@ where
 
                 entry.result.into_result()
             }
-            None => {
+            _ => {
                 let entry = CacheEntry {
                     expires: Utc::now() + options.negative_ttl,
                     result: CacheResult::Err(format!("{err:#}")),
