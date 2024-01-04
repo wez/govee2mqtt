@@ -262,7 +262,6 @@ impl GoveeApiClient {
             if let Some(DeviceParameters::Struct { fields }) = &cap.parameters {
                 for f in fields {
                     if f.field_name == "musicMode" {
-                        log::warn!("music: {f:#?}");
                         match &f.field_type {
                             DeviceParameters::Enum { options } => {
                                 for opt in options {
