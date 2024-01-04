@@ -10,6 +10,7 @@ use mosquitto_rs::router::{MqttRouter, Params, Payload, State};
 use mosquitto_rs::{Client, Message, QoS};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use std::sync::Arc;
 use std::time::Duration;
 
 const MODEL: &str = "gv2mqtt";
@@ -834,7 +835,7 @@ async fn mqtt_light_command(
         }
         if let Some(color_temp) = command.color_temp {
             state
-                .device_set_color_temperature(&device, dbg!(mired_to_kelvin(color_temp)))
+                .device_set_color_temperature(&device, mired_to_kelvin(color_temp))
                 .await?;
             power_on = false;
         }
@@ -951,10 +952,16 @@ async fn run_mqtt_loop(
         .register_with_hass(&state)
         .await?;
 
+    let router = Arc::new(router);
+
     while let Ok(msg) = subscriber.recv().await {
-        if let Err(err) = router.dispatch(msg.clone(), state.clone()).await {
-            log::error!("While dispatching {msg:?}: {err:#}");
-        }
+        let router = router.clone();
+        let state = state.clone();
+        tokio::spawn(async move {
+            if let Err(err) = router.dispatch(msg.clone(), state.clone()).await {
+                log::error!("While dispatching {msg:?}: {err:#}");
+            }
+        });
     }
     Ok(())
 }
