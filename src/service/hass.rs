@@ -12,6 +12,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::sync::Arc;
 use std::time::Duration;
+use uuid::Uuid;
 
 const MODEL: &str = "gv2mqtt";
 const URL: &str = "https://github.com/wez/govee2mqtt";
@@ -186,6 +187,32 @@ pub struct SceneConfig {
 
     pub command_topic: String,
     pub payload_on: String,
+}
+
+impl SceneConfig {
+    pub async fn publish(
+        &self,
+        state: &StateHandle,
+        client: &HassClient,
+        remove: bool,
+    ) -> anyhow::Result<()> {
+        let disco = state.get_hass_disco_prefix().await;
+        let topic = format!(
+            "{disco}/scene/{unique_id}/config",
+            unique_id = self.base.unique_id
+        );
+
+        if remove {
+            client.publish(&topic, "").await
+        } else {
+            client.publish_obj(topic, self).await
+        }
+    }
+
+    pub async fn notify_state(&self, _client: &HassClient, _: &str) -> anyhow::Result<()> {
+        // Scenes have no state
+        Ok(())
+    }
 }
 
 #[derive(Serialize, Clone, Debug)]
@@ -595,6 +622,32 @@ impl LightConfig {
     }
 }
 
+enum GlobalConfig {
+    Sensor(SensorConfig),
+    Scene(SceneConfig),
+}
+
+impl GlobalConfig {
+    async fn publish(
+        &self,
+        state: &StateHandle,
+        client: &HassClient,
+        remove: bool,
+    ) -> anyhow::Result<()> {
+        match self {
+            Self::Sensor(l) => l.publish(state, client, remove).await,
+            Self::Scene(s) => s.publish(state, client, remove).await,
+        }
+    }
+
+    pub async fn notify_state(&self, client: &HassClient, value: &str) -> anyhow::Result<()> {
+        match self {
+            Self::Sensor(l) => l.notify_state(client, value).await,
+            Self::Scene(s) => s.notify_state(client, value).await,
+        }
+    }
+}
+
 enum Config {
     Light(LightConfig),
     Switch(SwitchConfig),
@@ -655,10 +708,43 @@ pub struct HassClient {
 
 impl HassClient {
     async fn register_with_hass(&self, state: &StateHandle) -> anyhow::Result<()> {
-        let global_sensors = vec![(
-            SensorConfig::global_fixed_diagnostic("Version"),
+        let mut globals = vec![(
+            GlobalConfig::Sensor(SensorConfig::global_fixed_diagnostic("Version")),
             govee_version().to_string(),
         )];
+
+        if let Some(undoc) = state.get_undoc_client().await {
+            match undoc.parse_one_clicks().await {
+                Ok(items) => {
+                    for oc in items {
+                        let unique_id = format!(
+                            "gv2mqtt-one-click-{}",
+                            Uuid::new_v5(&Uuid::NAMESPACE_DNS, oc.name.as_bytes()).simple()
+                        );
+                        globals.push((
+                            GlobalConfig::Scene(SceneConfig {
+                                base: EntityConfig {
+                                    availability_topic: availability_topic(),
+                                    name: Some(oc.name.to_string()),
+                                    entity_category: None,
+                                    origin: Origin::default(),
+                                    device: Device::this_service(),
+                                    unique_id: unique_id.clone(),
+                                    device_class: None,
+                                    icon: None,
+                                },
+                                command_topic: oneclick_topic(),
+                                payload_on: oc.name,
+                            }),
+                            "".into(),
+                        ));
+                    }
+                }
+                Err(err) => {
+                    log::warn!("Failed to parse one-clicks: {err:#}");
+                }
+            }
+        }
 
         let devices = state.devices().await;
 
@@ -672,10 +758,10 @@ impl HassClient {
 
         // Remove existing configs first
         log::trace!("register_with_hass: Remove prior entries");
-        for (s, _) in &global_sensors {
+        for (s, _) in &globals {
             s.publish(state, self, true)
                 .await
-                .context("delete hass config for a global sensor")?;
+                .context("delete hass config for a global item")?;
         }
         for (d, c) in &configs {
             c.publish(state, self, true)
@@ -691,10 +777,10 @@ impl HassClient {
 
         // Register the configs
         log::trace!("register_with_hass: register entities");
-        for (s, _) in &global_sensors {
+        for (s, _) in &globals {
             s.publish(state, self, false)
                 .await
-                .context("create hass config for a global sensor")?;
+                .context("create hass config for a global item")?;
         }
         for (d, c) in &configs {
             c.publish(state, self, false)
@@ -716,10 +802,10 @@ impl HassClient {
 
         // report initial state
         log::trace!("register_with_hass: reporting state");
-        for (s, v) in &global_sensors {
+        for (s, v) in &globals {
             s.notify_state(self, v)
                 .await
-                .context("publish state for a global sensor")?;
+                .context("publish state for a global item")?;
         }
         for (d, c) in &configs {
             c.notify_state(d, self)
@@ -807,6 +893,10 @@ fn availability_topic() -> String {
     "gv2mqtt/availability".to_string()
 }
 
+fn oneclick_topic() -> String {
+    "gv2mqtt/oneclick".to_string()
+}
+
 #[derive(Deserialize)]
 struct IdParameter {
     id: String,
@@ -872,6 +962,30 @@ async fn mqtt_light_command(
     }
 
     Ok(())
+}
+
+async fn mqtt_oneclick(
+    Payload(name): Payload<String>,
+    State(state): State<StateHandle>,
+) -> anyhow::Result<()> {
+    log::info!("mqtt_oneclick: {name}");
+
+    let undoc = state
+        .get_undoc_client()
+        .await
+        .ok_or_else(|| anyhow::anyhow!("Undoc API client is not available"))?;
+    let items = undoc.parse_one_clicks().await?;
+    let item = items
+        .iter()
+        .find(|item| item.name == name)
+        .ok_or_else(|| anyhow::anyhow!("didn't find item {name}"))?;
+
+    let iot = state
+        .get_iot_client()
+        .await
+        .ok_or_else(|| anyhow::anyhow!("AWS IoT client is not available"))?;
+
+    iot.activate_one_click(&item).await
 }
 
 #[derive(Deserialize)]
@@ -967,6 +1081,8 @@ async fn run_mqtt_loop(
     router
         .route("gv2mqtt/switch/:id/command/:instance", mqtt_switch_command)
         .await?;
+
+    router.route(oneclick_topic(), mqtt_oneclick).await?;
 
     state
         .get_hass_client()

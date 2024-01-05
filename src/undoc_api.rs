@@ -403,7 +403,7 @@ impl GoveeUndocumentedApi {
                     continue;
                 }
 
-                let name = format!("Govee One-Click: {}: {}", group.name, oc.name);
+                let name = format!("One-Click: {}: {}", group.name, oc.name);
 
                 let mut entries = vec![];
                 for rule in oc.iot_rules {
