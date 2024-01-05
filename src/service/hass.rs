@@ -190,23 +190,14 @@ pub struct SceneConfig {
 }
 
 impl SceneConfig {
-    pub async fn publish(
-        &self,
-        state: &StateHandle,
-        client: &HassClient,
-        remove: bool,
-    ) -> anyhow::Result<()> {
+    pub async fn publish(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
         let disco = state.get_hass_disco_prefix().await;
         let topic = format!(
             "{disco}/scene/{unique_id}/config",
             unique_id = self.base.unique_id
         );
 
-        if remove {
-            client.publish(&topic, "").await
-        } else {
-            client.publish_obj(topic, self).await
-        }
+        client.publish_obj(topic, self).await
     }
 
     pub async fn notify_state(&self, _client: &HassClient, _: &str) -> anyhow::Result<()> {
@@ -243,23 +234,14 @@ impl SensorConfig {
         }
     }
 
-    pub async fn publish(
-        &self,
-        state: &StateHandle,
-        client: &HassClient,
-        remove: bool,
-    ) -> anyhow::Result<()> {
+    pub async fn publish(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
         let disco = state.get_hass_disco_prefix().await;
         let topic = format!(
             "{disco}/sensor/{unique_id}/config",
             unique_id = self.base.unique_id
         );
 
-        if remove {
-            client.publish(&topic, "").await
-        } else {
-            client.publish_obj(topic, self).await
-        }
+        client.publish_obj(topic, self).await
     }
 
     pub async fn notify_state(&self, client: &HassClient, value: &str) -> anyhow::Result<()> {
@@ -311,29 +293,14 @@ impl ButtonConfig {
         })
     }
 
-    pub async fn publish(
-        &self,
-        state: &StateHandle,
-        client: &HassClient,
-        remove: bool,
-    ) -> anyhow::Result<()> {
+    pub async fn publish(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
         let disco = state.get_hass_disco_prefix().await;
         let topic = format!(
             "{disco}/button/{unique_id}/config",
             unique_id = self.base.unique_id
         );
 
-        if remove {
-            let legacy_topic = format!(
-                "{disco}/switch/{unique_id}/config",
-                unique_id = self.base.unique_id
-            );
-            client.publish(&legacy_topic, "").await?;
-
-            client.publish(&topic, "").await
-        } else {
-            client.publish_obj(topic, self).await
-        }
+        client.publish_obj(topic, self).await
     }
 
     pub async fn notify_state(
@@ -388,28 +355,14 @@ impl SwitchConfig {
         })
     }
 
-    pub async fn publish(
-        &self,
-        state: &StateHandle,
-        client: &HassClient,
-        remove: bool,
-    ) -> anyhow::Result<()> {
+    pub async fn publish(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
         let disco = state.get_hass_disco_prefix().await;
         let topic = format!(
             "{disco}/switch/{unique_id}/config",
             unique_id = self.base.unique_id
         );
 
-        if remove {
-            if let Some("powerSwitch") = instance_from_topic(&self.command_topic) {
-                let legacy_topic = topic.replace("powerSwitch", "power");
-                client.publish(&legacy_topic, "").await?;
-            }
-
-            client.publish(&topic, "").await
-        } else {
-            client.publish_obj(topic, self).await
-        }
+        client.publish_obj(topic, self).await
     }
 
     pub async fn notify_state(
@@ -554,23 +507,14 @@ impl LightConfig {
         })
     }
 
-    pub async fn publish(
-        &self,
-        state: &StateHandle,
-        client: &HassClient,
-        remove: bool,
-    ) -> anyhow::Result<()> {
+    pub async fn publish(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
         let disco = state.get_hass_disco_prefix().await;
         let topic = format!(
             "{disco}/light/{unique_id}/config",
             unique_id = self.base.unique_id
         );
 
-        if remove {
-            client.publish(&topic, "").await
-        } else {
-            client.publish_obj(topic, self).await
-        }
+        client.publish_obj(topic, self).await
     }
 
     pub async fn notify_state(
@@ -628,15 +572,10 @@ enum GlobalConfig {
 }
 
 impl GlobalConfig {
-    async fn publish(
-        &self,
-        state: &StateHandle,
-        client: &HassClient,
-        remove: bool,
-    ) -> anyhow::Result<()> {
+    async fn publish(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
         match self {
-            Self::Sensor(l) => l.publish(state, client, remove).await,
-            Self::Scene(s) => s.publish(state, client, remove).await,
+            Self::Sensor(l) => l.publish(state, client).await,
+            Self::Scene(s) => s.publish(state, client).await,
         }
     }
 
@@ -656,16 +595,11 @@ enum Config {
 }
 
 impl Config {
-    async fn publish(
-        &self,
-        state: &StateHandle,
-        client: &HassClient,
-        remove: bool,
-    ) -> anyhow::Result<()> {
+    async fn publish(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
         match self {
-            Self::Light(l) => l.publish(state, client, remove).await,
-            Self::Switch(s) => s.publish(state, client, remove).await,
-            Self::Button(s) => s.publish(state, client, remove).await,
+            Self::Light(l) => l.publish(state, client).await,
+            Self::Switch(s) => s.publish(state, client).await,
+            Self::Button(s) => s.publish(state, client).await,
         }
     }
 
@@ -756,34 +690,15 @@ impl HassClient {
                 .with_context(|| format!("Config::for_device({d})"))?;
         }
 
-        // Remove existing configs first
-        log::trace!("register_with_hass: Remove prior entries");
-        for (s, _) in &globals {
-            s.publish(state, self, true)
-                .await
-                .context("delete hass config for a global item")?;
-        }
-        for (d, c) in &configs {
-            c.publish(state, self, true)
-                .await
-                .with_context(|| format!("delete hass config for {d}"))?;
-        }
-
-        // Allow hass time to de-register the entities
-        tokio::time::sleep(tokio::time::Duration::from_millis(
-            (50 * configs.len()) as u64,
-        ))
-        .await;
-
         // Register the configs
         log::trace!("register_with_hass: register entities");
         for (s, _) in &globals {
-            s.publish(state, self, false)
+            s.publish(state, self)
                 .await
                 .context("create hass config for a global item")?;
         }
         for (d, c) in &configs {
-            c.publish(state, self, false)
+            c.publish(state, self)
                 .await
                 .with_context(|| format!("delete hass config for {d}"))?;
         }
