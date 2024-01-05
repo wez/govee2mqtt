@@ -193,12 +193,18 @@ impl State {
             lan_dev.send_color_temperature_kelvin(kelvin).await?;
             self.poll_lan_api(lan_dev, |status| status.color_temperature_kelvin == kelvin)
                 .await?;
+            self.device_mut(&device.sku, &device.id)
+                .await
+                .set_active_scene(None);
             return Ok(());
         }
 
         if let Some(client) = self.get_platform_client().await {
             if let Some(info) = &device.http_device_info {
                 client.set_color_temperature(info, kelvin).await?;
+                self.device_mut(&device.sku, &device.id)
+                    .await
+                    .set_active_scene(None);
                 return Ok(());
             }
         }
@@ -217,12 +223,18 @@ impl State {
             lan_dev.send_color_rgb(color).await?;
             self.poll_lan_api(lan_dev, |status| status.color == color)
                 .await?;
+            self.device_mut(&device.sku, &device.id)
+                .await
+                .set_active_scene(None);
             return Ok(());
         }
 
         if let Some(client) = self.get_platform_client().await {
             if let Some(info) = &device.http_device_info {
                 client.set_color_rgb(info, r, g, b).await?;
+                self.device_mut(&device.sku, &device.id)
+                    .await
+                    .set_active_scene(None);
                 return Ok(());
             }
         }
@@ -254,13 +266,21 @@ impl State {
             if let Some(client) = self.get_platform_client().await {
                 if let Some(info) = &device.http_device_info {
                     client.set_scene_by_name(info, scene).await?;
+                    self.device_mut(&device.sku, &device.id)
+                        .await
+                        .set_active_scene(Some(scene));
                     return Ok(());
                 }
             }
         }
 
         if let Some(lan_dev) = &device.lan_device {
-            return lan_dev.set_scene_by_name(scene).await;
+            lan_dev.set_scene_by_name(scene).await?;
+
+            self.device_mut(&device.sku, &device.id)
+                .await
+                .set_active_scene(Some(scene));
+            return Ok(());
         }
 
         anyhow::bail!("Unable to set scene for {device}");

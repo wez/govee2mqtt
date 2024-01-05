@@ -560,6 +560,7 @@ impl LightConfig {
                                 "b": device_state.color.b,
                             },
                             "brightness": device_state.brightness,
+                            "effect": device_state.scene,
                         })
                     } else {
                         json!({
@@ -567,6 +568,7 @@ impl LightConfig {
                             "color_mode": "color_temp",
                             "brightness": device_state.brightness,
                             "color_temp": kelvin_to_mired(device_state.kelvin),
+                            "effect": device_state.scene,
                         })
                     }
                 } else {
@@ -815,24 +817,31 @@ async fn mqtt_light_command(
         state.device_power_on(&device, false).await?;
     } else {
         let mut power_on = true;
+
+        if let Some(brightness) = command.brightness {
+            state.device_set_brightness(&device, brightness).await?;
+            power_on = false;
+        }
+
+        if let Some(effect) = &command.effect {
+            state.device_set_scene(&device, effect).await?;
+            // It doesn't make sense to vary color properties
+            // at the same time as the scene properties, so
+            // ignore those.
+            // Brightness, set above, is ok.
+            return Ok(());
+        }
+
         if let Some(color) = &command.color {
             state
                 .device_set_color_rgb(&device, color.r, color.g, color.b)
                 .await?;
             power_on = false;
         }
-        if let Some(brightness) = command.brightness {
-            state.device_set_brightness(&device, brightness).await?;
-            power_on = false;
-        }
         if let Some(color_temp) = command.color_temp {
             state
                 .device_set_color_temperature(&device, mired_to_kelvin(color_temp))
                 .await?;
-            power_on = false;
-        }
-        if let Some(effect) = &command.effect {
-            state.device_set_scene(&device, effect).await?;
             power_on = false;
         }
         if power_on {

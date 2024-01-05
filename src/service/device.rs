@@ -31,12 +31,24 @@ pub struct Device {
     pub last_iot_device_status_update: Option<DateTime<Utc>>,
 
     pub last_polled: Option<DateTime<Utc>>,
+
+    active_scene: Option<ActiveSceneInfo>,
 }
 
 impl std::fmt::Display for Device {
     fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(fmt, "{} ({})", self.name(), self.id)
     }
+}
+
+/// Govee doesn't report the active scene or music mode,
+/// so we maintain our own idea of it, clearing it when
+/// the color of the light is changed
+#[derive(Clone, Debug)]
+struct ActiveSceneInfo {
+    pub name: String,
+    pub color: crate::lan_api::DeviceColor,
+    pub kelvin: u32,
 }
 
 /// Represents the device state; synthesized from the various
@@ -145,12 +157,14 @@ impl Device {
             .unwrap_or(true);
         self.lan_device_status.replace(status);
         self.last_lan_device_status_update.replace(Utc::now());
+        self.clear_scene_if_color_changed();
         changed
     }
 
     pub fn set_iot_device_status(&mut self, status: LanDeviceStatus) {
         self.iot_device_status.replace(status);
         self.last_iot_device_status_update.replace(Utc::now());
+        self.clear_scene_if_color_changed();
     }
 
     pub fn set_http_device_info(&mut self, info: HttpDeviceInfo) {
@@ -161,6 +175,7 @@ impl Device {
     pub fn set_http_device_state(&mut self, state: HttpDeviceState) {
         self.http_device_state.replace(state);
         self.last_http_device_state_update.replace(Utc::now());
+        self.clear_scene_if_color_changed();
     }
 
     pub fn set_undoc_device_info(
@@ -173,6 +188,7 @@ impl Device {
             room_name: room_name.map(|s| s.to_string()),
         });
         self.last_undoc_device_info_update.replace(Utc::now());
+        self.clear_scene_if_color_changed();
     }
 
     pub fn compute_iot_device_state(&self) -> Option<DeviceState> {
@@ -185,7 +201,7 @@ impl Device {
             brightness: status.brightness,
             color: status.color,
             kelvin: status.color_temperature_kelvin,
-            scene: None,
+            scene: self.active_scene.as_ref().map(|info| info.name.to_string()),
             source: "AWS IoT API",
             updated,
         })
@@ -201,7 +217,7 @@ impl Device {
             brightness: status.brightness,
             color: status.color,
             kelvin: status.color_temperature_kelvin,
-            scene: None,
+            scene: self.active_scene.as_ref().map(|info| info.name.to_string()),
             source: "LAN API",
             updated,
         })
@@ -260,7 +276,7 @@ impl Device {
             brightness,
             color,
             kelvin,
-            scene: None,
+            scene: self.active_scene.as_ref().map(|info| info.name.to_string()),
             source: "PLATFORM API",
             updated,
         })
@@ -283,6 +299,42 @@ impl Device {
         candidates.sort_by(|a, b| a.updated.cmp(&b.updated));
 
         candidates.pop()
+    }
+
+    /// Records the active scene name
+    pub fn set_active_scene(&mut self, scene: Option<&str>) {
+        match scene {
+            None => {
+                self.active_scene.take();
+            }
+            Some(scene) => {
+                let (color, kelvin) = self
+                    .device_state()
+                    .map(|s| (s.color, s.kelvin))
+                    .unwrap_or_default();
+                self.active_scene.replace(ActiveSceneInfo {
+                    name: scene.to_string(),
+                    color,
+                    kelvin,
+                });
+            }
+        }
+    }
+
+    pub fn clear_scene_if_color_changed(&mut self) {
+        if let Some(info) = &self.active_scene {
+            let current = self
+                .device_state()
+                .map(|s| (s.color, s.kelvin))
+                .unwrap_or_default();
+            let scene_state = (info.color, info.kelvin);
+            if current != scene_state {
+                log::info!(
+                    "Clearing reported scene because current {current:?} != {scene_state:?}"
+                );
+                self.active_scene.take();
+            }
+        }
     }
 
     pub fn get_color_temperature_range(&self) -> Option<(u32, u32)> {
