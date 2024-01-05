@@ -422,13 +422,13 @@ impl GoveeUndocumentedApi {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ParsedOneClick {
     pub name: String,
     pub entries: Vec<ParsedOneClickEntry>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ParsedOneClickEntry {
     pub topic: String,
     pub device: String,
