@@ -245,7 +245,10 @@ impl GoveeApiClient {
     pub async fn list_scene_names(&self, device: &HttpDeviceInfo) -> anyhow::Result<Vec<String>> {
         let mut result = vec![];
 
-        let caps = self.get_scene_caps(device).await?;
+        let caps = self
+            .get_scene_caps(device)
+            .await
+            .context("list_scene_names: get_scene_caps")?;
         for cap in caps {
             match &cap.parameters {
                 Some(DeviceParameters::Enum { options }) => {
@@ -253,7 +256,7 @@ impl GoveeApiClient {
                         result.push(opt.name.to_string());
                     }
                 }
-                _ => anyhow::bail!("unexpected type {cap:#?}"),
+                _ => anyhow::bail!("list_scene_names: unexpected type {cap:#?}"),
             }
         }
 
@@ -308,7 +311,7 @@ impl GoveeApiClient {
                         }
                     }
                 }
-                _ => anyhow::bail!("unexpected type {cap:#?}"),
+                _ => anyhow::bail!("set_scene_by_name: unexpected type {cap:#?}"),
             }
         }
         anyhow::bail!("Scene '{scene}' is not available for this device");

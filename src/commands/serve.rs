@@ -52,7 +52,11 @@ async fn poll_single_device(state: &StateHandle, device: &Device) -> anyhow::Res
     if let Some(iot) = state.get_iot_client().await {
         if let Some(info) = device.undoc_device_info.clone() {
             log::info!("requesting update via IoT MQTT {device} {device_state:?}");
-            match iot.request_status_update(&info.entry).await {
+            match iot
+                .request_status_update(&info.entry)
+                .await
+                .context("iot.request_status_update")
+            {
                 Err(err) => {
                     log::error!("Failed: {err:#}");
                 }
@@ -86,7 +90,10 @@ async fn poll_single_device(state: &StateHandle, device: &Device) -> anyhow::Res
                 device.set_http_device_state(http_state);
                 device.set_last_polled();
             }
-            state.notify_of_state_change(&device.id).await?;
+            state
+                .notify_of_state_change(&device.id)
+                .await
+                .context("state.notify_of_state_change")?;
         }
     } else {
         log::trace!(

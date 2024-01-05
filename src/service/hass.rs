@@ -468,7 +468,13 @@ impl LightConfig {
         let availability_topic = availability_topic();
         let unique_id = format!("gv2mqtt-{id}", id = topic_safe_id(device));
 
-        let effect_list = state.device_list_scenes(device).await?;
+        let effect_list = match state.device_list_scenes(device).await {
+            Ok(scenes) => scenes,
+            Err(err) => {
+                log::error!("Unable to list scenes for {device}: {err:#}");
+                vec![]
+            }
+        };
 
         let mut supported_color_modes = vec![];
         let mut color_mode = false;
@@ -659,16 +665,22 @@ impl HassClient {
         let mut configs = vec![];
 
         for d in &devices {
-            Config::for_device(d, state, &mut configs).await?;
+            Config::for_device(d, state, &mut configs)
+                .await
+                .with_context(|| format!("Config::for_device({d})"))?;
         }
 
         // Remove existing configs first
         log::trace!("register_with_hass: Remove prior entries");
         for (s, _) in &global_sensors {
-            s.publish(state, self, true).await?;
+            s.publish(state, self, true)
+                .await
+                .context("delete hass config for a global sensor")?;
         }
-        for (_, c) in &configs {
-            c.publish(state, self, true).await?;
+        for (d, c) in &configs {
+            c.publish(state, self, true)
+                .await
+                .with_context(|| format!("delete hass config for {d}"))?;
         }
 
         // Allow hass time to de-register the entities
@@ -680,10 +692,14 @@ impl HassClient {
         // Register the configs
         log::trace!("register_with_hass: register entities");
         for (s, _) in &global_sensors {
-            s.publish(state, self, false).await?;
+            s.publish(state, self, false)
+                .await
+                .context("create hass config for a global sensor")?;
         }
-        for (_, c) in &configs {
-            c.publish(state, self, false).await?;
+        for (d, c) in &configs {
+            c.publish(state, self, false)
+                .await
+                .with_context(|| format!("delete hass config for {d}"))?;
         }
 
         // Allow hass time to register the entities
@@ -694,15 +710,21 @@ impl HassClient {
 
         // Mark as available
         log::trace!("register_with_hass: mark as online");
-        self.publish(availability_topic(), "online").await?;
+        self.publish(availability_topic(), "online")
+            .await
+            .context("online -> availability_topic")?;
 
         // report initial state
         log::trace!("register_with_hass: reporting state");
         for (s, v) in &global_sensors {
-            s.notify_state(self, v).await?;
+            s.notify_state(self, v)
+                .await
+                .context("publish state for a global sensor")?;
         }
         for (d, c) in &configs {
-            c.notify_state(d, self).await?;
+            c.notify_state(d, self)
+                .await
+                .with_context(|| format!("publish state for {d}"))?;
         }
 
         log::trace!("register_with_hass: done");
@@ -951,7 +973,8 @@ async fn run_mqtt_loop(
         .await
         .expect("have hass client")
         .register_with_hass(&state)
-        .await?;
+        .await
+        .context("register_with_hass")?;
 
     let router = Arc::new(router);
 
@@ -1005,6 +1028,10 @@ pub async fn spawn_hass_integration(
         let res = run_mqtt_loop(state, subscriber, client).await;
         if let Err(err) = res {
             log::error!("run_mqtt_loop: {err:#}");
+            log::error!("FATAL: hass integration will not function.");
+            log::error!("Pausing for 30 seconds before terminating.");
+            tokio::time::sleep(tokio::time::Duration::from_secs(30)).await;
+            std::process::exit(1);
         }
     });
 
