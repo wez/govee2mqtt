@@ -655,7 +655,7 @@ pub struct DeviceSettings {
     pub wifi_mac: String,
     pub pact_type: u32,
     pub pact_code: u32,
-    pub dsp_version_soft: Option<String>,
+    pub dsp_version_soft: Option<JsonValue>,
     pub wifi_soft_version: String,
     pub wifi_hard_version: String,
     pub ic: Option<u32>,
