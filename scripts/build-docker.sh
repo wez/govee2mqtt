@@ -5,6 +5,6 @@ set -x
 TARGETPLATFORM=$1
 shift
 
-./build-cross.sh "$TARGETPLATFORM"
+./scripts/build-cross.sh "$TARGETPLATFORM"
 
 docker buildx build --platform $TARGETPLATFORM . "$@"
