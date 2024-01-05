@@ -226,7 +226,12 @@ impl GoveeApiClient {
                 }
             };
 
-        for caps in [&device.capabilities, &scene_caps, &diy_caps, &undoc_caps] {
+        for (origin, caps) in [
+            ("device.capabilities", &device.capabilities),
+            ("scene_caps", &scene_caps),
+            ("diy_caps", &diy_caps),
+            ("undoc_caps", &undoc_caps),
+        ] {
             for cap in caps {
                 let is_scene = matches!(
                     cap.kind,
@@ -235,7 +240,21 @@ impl GoveeApiClient {
                 if !is_scene {
                     continue;
                 }
-                result.push(cap.clone());
+
+                match &cap.parameters {
+                    Some(DeviceParameters::Enum { .. }) => {
+                        result.push(cap.clone());
+                    }
+                    _ => {
+                        log::warn!(
+                            "get_scene_caps(sku={sku} device={id}): \
+                            Unexpected cap.parameters in {origin}: {cap:#?}. \
+                            Ignoring this entry.",
+                            sku = device.sku,
+                            id = device.device
+                        );
+                    }
+                }
             }
         }
 
