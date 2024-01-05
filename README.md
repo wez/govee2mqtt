@@ -16,11 +16,26 @@ via the [Home Assistant MQTT Integration](https://www.home-assistant.io/integrat
   API](https://developer.govee.com/reference/get-you-devices) in case the AWS
   IoT or LAN control is unavailable.
 
+|Feature|Requires|Notes|
+|-------|--------|-------------|
+|DIY Scenes|API Key|Find in the list of Effects for the light in Home Assistant|
+|Music Modes|API Key|Find in the list of Effects for the light in Home Assistant|
+|One Click Scene|IoT|Find in the overall list of Scenes in Home Assistant, as well as under the `Govee to MQTT` device|
+|Live Device Status Updates|LAN and/or IoT|Devices typically report most changes within a couple of seconds.|
+
+* `API Key` means that you have [applied for a key from Govee](https://developer.govee.com/reference/apply-you-govee-api-key)
+  and have configured it for use in goovee2mqtt
+* `IoT` means that you have configured your Govee account email and password for
+  use in govee2mqtt, which will then attempt to use the
+  *undocumented and likely unsupported* AWS MQTT-based IoT service
+* `LAN` means that you have enabled the [Govee LAN API](https://app-h5.govee.com/user-manual/wlan-guide)
+  on supported devices and that the LAN API protocol is functional on your network
+
 ## Usage
 
-* [Installing the HASS Add-On](ADDON.md) - for HAOS and Supervised HASS users
-* [Running it in Docker](DOCKER.md)
-* [Configuration](CONFIG.md)
+* [Installing the HASS Add-On](docs/ADDON.md) - for HAOS and Supervised HASS users
+* [Running it in Docker](docs/DOCKER.md)
+* [Configuration](docs/CONFIG.md)
 
 ## Credits
 
