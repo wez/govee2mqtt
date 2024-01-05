@@ -1,4 +1,7 @@
 on:
+  push:
+    tags:
+      - "20*"
   pull_request:
     branches:
       - main
@@ -143,7 +146,7 @@ jobs:
         run: |
           docker buildx imagetools inspect ${{ env.IMAGE }}:${{ steps.meta.outputs.version }}
   addon:
-    if: ${{ github.event_name != 'pull_request' }}
+    if: ${{ github.event_name == 'tag' }}
     runs-on: ubuntu-latest
     needs:
       - merge
@@ -159,6 +162,8 @@ jobs:
           registry: https://ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Apply tag to version
+        run: apply-tag.sh
       - name: Build and Publish Home Assistant Add On
         uses: home-assistant/builder@master
         with:
