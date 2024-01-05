@@ -48,6 +48,8 @@ on some networks, especially across wifi access points and routers.
 |`--global-broadcast`|`GOVEE_LAN_BROADCAST_GLOBAL=true`|`global_broadcast`|Send discovery packets to the global broadcast address `255.255.255.255`. This may be a possible solution if multicast-UDP doesn't work well on your network.|
 |`--scan`|`GOVEE_LAN_SCAN=10.0.0.1,10.0.0.2`|`scan`|Specify a list of addresses that should be scanned by sending them discovery packets. Each element in the list can be an individual IP address (eg: the address of a specific device: be sure to assign it a static IP in your DHCP or other network setup!) or a network broadcast address like `10.0.0.255` for networks that are reachable but not directly plumbed on the machine where `govee2mqtt` is running.|
 
+[Read more about LAN API Requirements here](LAN.md)
+
 ## MQTT Configuration
 
 In order to make your devices appear in Home Assistant, you will need to have configured Home Assistant with an MQTT broker.
