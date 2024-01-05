@@ -36,7 +36,6 @@ enum SubCommand {
         #[arg(value_parser=maybe_hex::<u8>)]
         data: Vec<u8>,
     },
-    ShowOneClick {},
     Scene {
         /// List available scenes
         #[arg(long)]
@@ -49,7 +48,7 @@ enum SubCommand {
 }
 
 impl LanControlCommand {
-    pub async fn run(&self, args: &crate::Args) -> anyhow::Result<()> {
+    pub async fn run(&self, _args: &crate::Args) -> anyhow::Result<()> {
         let (client, _scan) = Client::new(DiscoOptions::default()).await?;
 
         let device = client.scan_ip(self.ip).await?;
@@ -72,12 +71,6 @@ impl LanControlCommand {
                 device
                     .send_color_rgb(crate::lan_api::DeviceColor { r, g, b })
                     .await?;
-            }
-            SubCommand::ShowOneClick {} => {
-                let client = args.undoc_args.api_client()?;
-                let token = client.login_community().await?;
-                let res = client.get_saved_one_click_shortcuts(&token).await?;
-                println!("{res:#?}");
             }
             SubCommand::Scene { list, scene } => {
                 let mut scene_code_by_name = BTreeMap::new();

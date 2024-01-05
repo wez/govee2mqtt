@@ -4,3 +4,4 @@ pub mod lan_disco;
 pub mod list;
 pub mod list_http;
 pub mod serve;
+pub mod undoc;
