@@ -6,19 +6,25 @@ pub struct UndocCommand {
 
 #[derive(clap::Parser, Debug)]
 enum SubCommand {
-    ShowOneClick {},
+    ShowOneClick {
+        #[arg(long)]
+        verbose: bool,
+    },
 }
 
 impl UndocCommand {
     pub async fn run(&self, args: &crate::Args) -> anyhow::Result<()> {
         match &self.cmd {
-            SubCommand::ShowOneClick {} => {
+            SubCommand::ShowOneClick { verbose } => {
                 let client = args.undoc_args.api_client()?;
                 let token = client.login_community().await?;
                 let res = client.get_saved_one_click_shortcuts(&token).await?;
-                println!("{res:#?}");
 
-                println!("-------------------");
+                if *verbose {
+                    println!("{res:#?}");
+
+                    println!("-------------------");
+                }
 
                 for group in res {
                     for oc in group.one_clicks {
@@ -26,10 +32,13 @@ impl UndocCommand {
                             continue;
                         }
 
-                        let name = format!("{}: {}", group.name, oc.name);
+                        let name = format!("Govee One-Click: {}: {}", group.name, oc.name);
                         println!("{name}");
                         for rule in oc.iot_rules {
                             println!("    {} ({})", rule.device_obj.name, rule.device_obj.device);
+                            for r in rule.rule {
+                                println!("    {}", r.iot_msg);
+                            }
                         }
                     }
                 }

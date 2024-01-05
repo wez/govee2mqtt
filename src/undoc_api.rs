@@ -230,39 +230,60 @@ impl GoveeUndocumentedApi {
 
     /// Login to community-api.govee.com and return the bearer token
     pub async fn login_community(&self) -> anyhow::Result<String> {
-        let response = reqwest::Client::builder()
-            .timeout(Duration::from_secs(60))
-            .build()?
-            .request(Method::POST, "https://community-api.govee.com/os/v1/login")
-            .json(&serde_json::json!({
-                "email": self.email,
-                "password": self.password,
-            }))
-            .send()
-            .await?;
+        cache_get(
+            CacheGetOptions {
+                topic: "undoc-api",
+                key: "community-login",
+                soft_ttl: ONE_DAY,
+                hard_ttl: HALF_DAY,
+                negative_ttl: Duration::from_secs(10),
+                allow_stale: false,
+            },
+            async {
+                let response = reqwest::Client::builder()
+                    .timeout(Duration::from_secs(60))
+                    .build()?
+                    .request(Method::POST, "https://community-api.govee.com/os/v1/login")
+                    .json(&serde_json::json!({
+                        "email": self.email,
+                        "password": self.password,
+                    }))
+                    .send()
+                    .await?;
 
-        #[derive(Deserialize, Debug)]
-        #[allow(non_snake_case, dead_code)]
-        struct Response {
-            data: ResponseData,
-            message: String,
-            status: u64,
-        }
+                #[derive(Deserialize, Debug)]
+                #[allow(non_snake_case, dead_code)]
+                struct Response {
+                    data: ResponseData,
+                    message: String,
+                    status: u64,
+                }
 
-        #[derive(Deserialize, Debug)]
-        #[allow(non_snake_case, dead_code)]
-        struct ResponseData {
-            email: String,
-            expiredAt: u64,
-            headerUrl: String,
-            id: u64,
-            nickName: String,
-            token: String,
-        }
+                #[derive(Deserialize, Debug)]
+                #[allow(non_snake_case, dead_code)]
+                struct ResponseData {
+                    email: String,
+                    expiredAt: u64,
+                    headerUrl: String,
+                    id: u64,
+                    nickName: String,
+                    token: String,
+                }
 
-        let resp: Response = http_response_body(response).await?;
+                let resp: Response = http_response_body(response).await?;
 
-        Ok(resp.data.token)
+                let ts_ms = std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .expect("unix epoch in the past")
+                    .as_millis();
+
+                let ttl_ms = resp.data.expiredAt as u128 - ts_ms;
+                let ttl = Duration::from_millis(ttl_ms as u64).min(ONE_DAY);
+
+                Ok(CacheComputeResult::WithTtl(resp.data.token, ttl))
+            },
+        )
+        .await
     }
 
     pub async fn get_scenes_for_device(sku: &str) -> anyhow::Result<Vec<LightEffectCategory>> {
@@ -336,26 +357,39 @@ impl GoveeUndocumentedApi {
         &self,
         community_token: &str,
     ) -> anyhow::Result<Vec<OneClickComponent>> {
-        let response = reqwest::Client::builder()
-            .timeout(Duration::from_secs(10))
-            .build()?
-            .request(
-                Method::GET,
-                "https://app2.govee.com/bff-app/v1/exec-plat/home",
-            )
-            .header("Authorization", format!("Bearer {community_token}"))
-            .header("appVersion", APP_VERSION)
-            .header("clientId", &self.client_id)
-            .header("clientType", "1")
-            .header("iotVersion", "0")
-            .header("timestamp", ms_timestamp())
-            .header("User-Agent", user_agent())
-            .send()
-            .await?;
+        cache_get(
+            CacheGetOptions {
+                topic: "undoc-api",
+                key: "one-click-shortcuts",
+                soft_ttl: ONE_DAY,
+                hard_ttl: ONE_WEEK,
+                negative_ttl: Duration::from_secs(1),
+                allow_stale: true,
+            },
+            async {
+                let response = reqwest::Client::builder()
+                    .timeout(Duration::from_secs(10))
+                    .build()?
+                    .request(
+                        Method::GET,
+                        "https://app2.govee.com/bff-app/v1/exec-plat/home",
+                    )
+                    .header("Authorization", format!("Bearer {community_token}"))
+                    .header("appVersion", APP_VERSION)
+                    .header("clientId", &self.client_id)
+                    .header("clientType", "1")
+                    .header("iotVersion", "0")
+                    .header("timestamp", ms_timestamp())
+                    .header("User-Agent", user_agent())
+                    .send()
+                    .await?;
 
-        let resp: OneClickResponse = http_response_body(response).await?;
+                let resp: OneClickResponse = http_response_body(response).await?;
 
-        Ok(resp.data.components)
+                Ok(CacheComputeResult::Value(resp.data.components))
+            },
+        )
+        .await
     }
 }
 
@@ -442,14 +476,14 @@ pub struct OneClickResponse {
     pub status: u32,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 #[cfg_attr(debug_assertions, serde(deny_unknown_fields))]
 pub struct OneClickComponentList {
     pub components: Vec<OneClickComponent>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 #[cfg_attr(debug_assertions, serde(deny_unknown_fields))]
 pub struct OneClickComponent {
@@ -481,7 +515,7 @@ pub struct OneClickComponent {
     pub one_clicks: Vec<OneClick>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 #[cfg_attr(debug_assertions, serde(deny_unknown_fields))]
 pub struct OneClick {
@@ -501,7 +535,7 @@ pub struct OneClick {
     pub iot_rules: Vec<OneClickIotRule>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 #[cfg_attr(debug_assertions, serde(deny_unknown_fields))]
 pub struct OneClickIotRule {
@@ -509,21 +543,21 @@ pub struct OneClickIotRule {
     pub rule: Vec<OneClickIotRuleEntry>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 #[cfg_attr(debug_assertions, serde(deny_unknown_fields))]
 pub struct OneClickIotRuleEntry {
-    #[serde(deserialize_with = "embedded_json")]
+    #[serde(deserialize_with = "embedded_json", serialize_with = "as_json")]
     pub blue_msg: JsonValue,
     pub cmd_type: u64,
-    #[serde(deserialize_with = "embedded_json")]
+    #[serde(deserialize_with = "embedded_json", serialize_with = "as_json")]
     pub cmd_val: OneClickIotRuleEntryCmd,
     pub device_type: u32,
-    #[serde(deserialize_with = "embedded_json")]
+    #[serde(deserialize_with = "embedded_json", serialize_with = "as_json")]
     pub iot_msg: JsonValue,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 #[cfg_attr(debug_assertions, serde(deny_unknown_fields))]
 pub struct OneClickIotRuleEntryCmd {
@@ -534,7 +568,7 @@ pub struct OneClickIotRuleEntryCmd {
     pub scence_param_id: Option<u16>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 #[cfg_attr(debug_assertions, serde(deny_unknown_fields))]
 pub struct OneClickIotRuleDevice {
@@ -636,11 +670,11 @@ pub struct DeviceEntry {
 #[serde(rename_all = "camelCase")]
 #[cfg_attr(debug_assertions, serde(deny_unknown_fields))]
 pub struct DeviceEntryExt {
-    #[serde(deserialize_with = "embedded_json")]
+    #[serde(deserialize_with = "embedded_json", serialize_with = "as_json")]
     pub device_settings: DeviceSettings,
-    #[serde(deserialize_with = "embedded_json")]
+    #[serde(deserialize_with = "embedded_json", serialize_with = "as_json")]
     pub ext_resources: ExtResources,
-    #[serde(deserialize_with = "embedded_json")]
+    #[serde(deserialize_with = "embedded_json", serialize_with = "as_json")]
     pub last_device_data: LastDeviceData,
 }
 
@@ -696,6 +730,18 @@ pub struct ExtResources {
 #[cfg_attr(debug_assertions, serde(deny_unknown_fields))]
 pub struct LastDeviceData {
     pub online: bool,
+}
+
+pub fn as_json<S, T>(value: &T, serializer: S) -> Result<S::Ok, S::Error>
+where
+    T: Serialize,
+    S: serde::Serializer,
+{
+    use serde::ser::Error as _;
+
+    let s = serde_json::to_string(value).map_err(|e| S::Error::custom(format!("{e:#}")))?;
+
+    s.serialize(serializer)
 }
 
 pub fn embedded_json<'de, T: DeserializeOwned, D: serde::de::Deserializer<'de>>(

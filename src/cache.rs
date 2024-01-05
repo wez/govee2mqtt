@@ -79,13 +79,21 @@ where
     let mut cache_entry: Option<CacheEntry<T>> = None;
 
     if let Some(current) = &current_value {
-        if let Ok(entry) = serde_json::from_slice::<CacheEntry<T>>(&current.data) {
-            if now < entry.expires {
-                log::trace!("cache hit for {}", options.key);
-                return entry.result.into_result();
-            }
+        match serde_json::from_slice::<CacheEntry<T>>(&current.data) {
+            Ok(entry) => {
+                if now < entry.expires {
+                    log::trace!("cache hit for {}", options.key);
+                    return entry.result.into_result();
+                }
 
-            cache_entry.replace(entry);
+                cache_entry.replace(entry);
+            }
+            Err(err) => {
+                log::warn!(
+                    "Error parsing CacheEntry: {err:#} {:?}",
+                    String::from_utf8_lossy(&current.data)
+                );
+            }
         }
     }
 
