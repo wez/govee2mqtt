@@ -126,6 +126,7 @@ jobs:
           tags: |
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
             type=ref,event=branch,enable=${{ github.ref != 'refs/heads/main' }}
+            type=ref,event=tag,enable=${{ github.ref_type == 'tag' }}
             type=ref,event=pr
       - name: Login to GHCR
         if: ${{ github.event_name != 'pull_request' }}
