@@ -68,17 +68,16 @@ where
     }
 }
 
-#[tokio::main(worker_threads = 2)]
-async fn main() -> anyhow::Result<()> {
-    color_backtrace::install();
-    if let Ok(path) = dotenvy::dotenv() {
-        eprintln!("Loading environment overrides from {path:?}");
+fn setup_logger() {
+    fn resolve_timezone() -> chrono_tz::Tz {
+        std::env::var("TZ")
+            .or_else(|_| iana_time_zone::get_timezone())
+            .ok()
+            .and_then(|name| name.parse().ok())
+            .unwrap_or(chrono_tz::UTC)
     }
 
-    let tz: chrono_tz::Tz = iana_time_zone::get_timezone()
-        .ok()
-        .and_then(|name| name.parse().ok())
-        .unwrap_or(chrono_tz::UTC);
+    let tz = resolve_timezone();
     let utc_suffix = if tz == chrono_tz::UTC { "Z" } else { "" };
 
     env_logger::builder()
@@ -110,6 +109,16 @@ async fn main() -> anyhow::Result<()> {
         .filter_level(log::LevelFilter::Info)
         .parse_env("RUST_LOG")
         .init();
+}
+
+#[tokio::main(worker_threads = 2)]
+async fn main() -> anyhow::Result<()> {
+    color_backtrace::install();
+    if let Ok(path) = dotenvy::dotenv() {
+        eprintln!("Loading environment overrides from {path:?}");
+    }
+
+    setup_logger();
 
     let args = Args::parse();
     args.run().await
