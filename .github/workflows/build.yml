@@ -1,11 +1,10 @@
 on:
-  push:
-    tags:
-      - "20*"
   pull_request:
     branches:
       - main
   push:
+    tags:
+      - "20*"
     branches:
       - main
     paths:
