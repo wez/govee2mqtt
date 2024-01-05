@@ -58,6 +58,9 @@ pub struct DeviceState {
     /// The brightness in percent (0-100)
     pub brightness: u8,
 
+    /// The active effect mode, if known
+    pub scene: Option<String>,
+
     /// Where the information came from
     pub source: &'static str,
     pub updated: DateTime<Utc>,
@@ -182,6 +185,7 @@ impl Device {
             brightness: status.brightness,
             color: status.color,
             kelvin: status.color_temperature_kelvin,
+            scene: None,
             source: "AWS IoT API",
             updated,
         })
@@ -197,6 +201,7 @@ impl Device {
             brightness: status.brightness,
             color: status.color,
             kelvin: status.color_temperature_kelvin,
+            scene: None,
             source: "LAN API",
             updated,
         })
@@ -255,6 +260,7 @@ impl Device {
             brightness,
             color,
             kelvin,
+            scene: None,
             source: "PLATFORM API",
             updated,
         })
