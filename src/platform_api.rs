@@ -245,6 +245,9 @@ impl GoveeApiClient {
                     Some(DeviceParameters::Enum { .. }) => {
                         result.push(cap.clone());
                     }
+                    None => {
+                        // This device has no scenes, skip it.
+                    }
                     _ => {
                         log::warn!(
                             "get_scene_caps(sku={sku} device={id}): \
