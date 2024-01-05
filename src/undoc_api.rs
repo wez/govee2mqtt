@@ -391,6 +391,48 @@ impl GoveeUndocumentedApi {
         )
         .await
     }
+
+    pub async fn parse_one_clicks(&self) -> anyhow::Result<Vec<ParsedOneClick>> {
+        let token = self.login_community().await?;
+        let res = self.get_saved_one_click_shortcuts(&token).await?;
+        let mut result = vec![];
+
+        for group in res {
+            for oc in group.one_clicks {
+                if oc.iot_rules.is_empty() {
+                    continue;
+                }
+
+                let name = format!("Govee One-Click: {}: {}", group.name, oc.name);
+
+                let mut entries = vec![];
+                for rule in oc.iot_rules {
+                    let msgs = rule.rule.into_iter().map(|r| r.iot_msg).collect();
+                    entries.push(ParsedOneClickEntry {
+                        topic: rule.device_obj.topic,
+                        device: rule.device_obj.device,
+                        msgs,
+                    });
+                }
+
+                result.push(ParsedOneClick { name, entries });
+            }
+        }
+        Ok(result)
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct ParsedOneClick {
+    pub name: String,
+    pub entries: Vec<ParsedOneClickEntry>,
+}
+
+#[derive(Debug, Clone)]
+pub struct ParsedOneClickEntry {
+    pub topic: String,
+    pub device: String,
+    pub msgs: Vec<JsonValue>,
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]

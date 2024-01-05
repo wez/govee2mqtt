@@ -1,3 +1,6 @@
+use crate::service::iot::start_iot_client;
+use std::sync::Arc;
+
 #[derive(clap::Parser, Debug)]
 pub struct UndocCommand {
     #[command(subcommand)]
@@ -6,42 +9,39 @@ pub struct UndocCommand {
 
 #[derive(clap::Parser, Debug)]
 enum SubCommand {
-    ShowOneClick {
-        #[arg(long)]
-        verbose: bool,
-    },
+    DumpOneClick {},
+    ShowOneClick {},
+    OneClick { name: String },
 }
 
 impl UndocCommand {
     pub async fn run(&self, args: &crate::Args) -> anyhow::Result<()> {
         match &self.cmd {
-            SubCommand::ShowOneClick { verbose } => {
+            SubCommand::DumpOneClick {} => {
                 let client = args.undoc_args.api_client()?;
                 let token = client.login_community().await?;
                 let res = client.get_saved_one_click_shortcuts(&token).await?;
 
-                if *verbose {
-                    println!("{res:#?}");
+                println!("{res:#?}");
+            }
+            SubCommand::ShowOneClick {} => {
+                let client = args.undoc_args.api_client()?;
+                let items = client.parse_one_clicks().await?;
+                println!("{items:#?}");
+            }
+            SubCommand::OneClick { name } => {
+                let client = args.undoc_args.api_client()?;
+                let items = client.parse_one_clicks().await?;
+                let item = items
+                    .iter()
+                    .find(|item| &item.name == name)
+                    .ok_or_else(|| anyhow::anyhow!("didn't find item {name}"))?;
 
-                    println!("-------------------");
-                }
+                let state = Arc::new(crate::service::state::State::new());
+                start_iot_client(args, state.clone()).await?;
+                let iot = state.get_iot_client().await.expect("just started iot");
 
-                for group in res {
-                    for oc in group.one_clicks {
-                        if oc.iot_rules.is_empty() {
-                            continue;
-                        }
-
-                        let name = format!("Govee One-Click: {}: {}", group.name, oc.name);
-                        println!("{name}");
-                        for rule in oc.iot_rules {
-                            println!("    {} ({})", rule.device_obj.name, rule.device_obj.device);
-                            for r in rule.rule {
-                                println!("    {}", r.iot_msg);
-                            }
-                        }
-                    }
-                }
+                iot.activate_one_click(&item).await?;
             }
         }
         Ok(())

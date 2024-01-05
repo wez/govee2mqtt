@@ -1,6 +1,6 @@
 use crate::lan_api::{DeviceColor, DeviceStatus};
 use crate::service::state::StateHandle;
-use crate::undoc_api::{ms_timestamp, DeviceEntry};
+use crate::undoc_api::{ms_timestamp, DeviceEntry, ParsedOneClick};
 use crate::Args;
 use anyhow::Context;
 use mosquitto_rs::QoS;
@@ -32,6 +32,23 @@ impl IotClient {
             )
             .await?;
 
+        Ok(())
+    }
+
+    pub async fn activate_one_click(&self, item: &ParsedOneClick) -> anyhow::Result<()> {
+        for entry in &item.entries {
+            for command in &entry.msgs {
+                self.client
+                    .publish(
+                        &entry.topic,
+                        serde_json::to_string(command)?,
+                        QoS::AtMostOnce,
+                        false,
+                    )
+                    .await
+                    .context("sending OneClick")?;
+            }
+        }
         Ok(())
     }
 }
