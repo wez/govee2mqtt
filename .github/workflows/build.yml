@@ -13,8 +13,8 @@ on:
       - "**/Cargo.*"
       - ".github/workflows/build.yml"
       - ".cargo/config.toml"
-      - "build-cross.sh"
-      - "build-docker.sh"
+      - "scripts/build-cross.sh"
+      - "scripts/build-docker.sh"
       - "Dockerfile"
       - ".dockerignore"
 
@@ -64,7 +64,7 @@ jobs:
         with:
           crate: "cross"
       - name: Build executable
-        run: ./build-cross.sh ${{ matrix.platform }}
+        run: ./scripts/build-cross.sh ${{ matrix.platform }}
       - name: Build No Push
         if: ${{ github.event_name == 'pull_request' }}
         uses: docker/build-push-action@v5
