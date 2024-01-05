@@ -163,7 +163,7 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Apply tag to version
-        run: apply-tag.sh
+        run: ./apply-tag.sh
       - name: Build and Publish Home Assistant Add On
         uses: home-assistant/builder@master
         with:
