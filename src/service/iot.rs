@@ -141,7 +141,7 @@ pub async fn start_iot_client(
                     #[allow(dead_code)]
                     struct Packet {
                         sku: Option<String>,
-                        device: String,
+                        device: Option<String>,
                         cmd: String,
                         state: StateUpdate,
                     }
@@ -155,6 +155,7 @@ pub async fn start_iot_client(
                         #[serde(rename = "colorTemInKelvin")]
                         pub color_temperature_kelvin: Option<u32>,
                         pub sku: Option<String>,
+                        pub device: Option<String>,
                     }
 
                     impl Packet {
@@ -165,45 +166,59 @@ pub async fn start_iot_client(
                             }
                             self.state.sku.as_deref()
                         }
+                        fn device(&self) -> Option<&str> {
+                            if let Some(device) = self.device.as_deref() {
+                                return Some(device);
+                            }
+                            self.state.device.as_deref()
+                        }
+
+                        fn sku_and_device(&self) -> Option<(&str, &str)> {
+                            let sku = self.sku()?;
+                            let device = self.device()?;
+                            Some((sku, device))
+                        }
                     }
 
                     match from_json::<Packet, _>(&msg.payload) {
                         Ok(packet) => {
                             log::debug!("{packet:?}");
-                            if let Some(sku) = packet.sku() {
-                                let mut device = state.device_mut(sku, &packet.device).await;
-                                let mut state = match device.iot_device_status.clone() {
-                                    Some(state) => state,
-                                    None => match device.device_state() {
-                                        Some(state) => DeviceStatus {
-                                            on: state.on,
-                                            brightness: state.brightness,
-                                            color: state.color,
-                                            color_temperature_kelvin: state.kelvin,
+                            if let Some((sku, device_id)) = packet.sku_and_device() {
+                                {
+                                    let mut device = state.device_mut(sku, device_id).await;
+                                    let mut state = match device.iot_device_status.clone() {
+                                        Some(state) => state,
+                                        None => match device.device_state() {
+                                            Some(state) => DeviceStatus {
+                                                on: state.on,
+                                                brightness: state.brightness,
+                                                color: state.color,
+                                                color_temperature_kelvin: state.kelvin,
+                                            },
+                                            None => DeviceStatus::default(),
                                         },
-                                        None => DeviceStatus::default(),
-                                    },
-                                };
-                                if let Some(v) = packet.state.brightness {
-                                    state.brightness = v;
-                                    state.on = v != 0;
+                                    };
+                                    if let Some(v) = packet.state.brightness {
+                                        state.brightness = v;
+                                        state.on = v != 0;
+                                    }
+                                    if let Some(v) = packet.state.color {
+                                        state.color = v;
+                                        state.on = true;
+                                    }
+                                    if let Some(v) = packet.state.color_temperature_kelvin {
+                                        state.color_temperature_kelvin = v;
+                                        state.on = true;
+                                    }
+                                    // Check on/off last, as we can synthesize "on"
+                                    // if the other fields are present
+                                    if let Some(on_off) = packet.state.on_off {
+                                        state.on = on_off != 0;
+                                    }
+                                    device.set_iot_device_status(state);
                                 }
-                                if let Some(v) = packet.state.color {
-                                    state.color = v;
-                                    state.on = true;
-                                }
-                                if let Some(v) = packet.state.color_temperature_kelvin {
-                                    state.color_temperature_kelvin = v;
-                                    state.on = true;
-                                }
-                                // Check on/off last, as we can synthesize "on"
-                                // if the other fields are present
-                                if let Some(on_off) = packet.state.on_off {
-                                    state.on = on_off != 0;
-                                }
-                                device.set_iot_device_status(state);
+                                state.notify_of_state_change(device_id).await?;
                             }
-                            state.notify_of_state_change(&packet.device).await?;
                         }
                         Err(err) => {
                             log::error!("Decoding IoT Packet: {err:#} {payload}");
