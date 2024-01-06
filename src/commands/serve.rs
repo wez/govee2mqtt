@@ -155,6 +155,29 @@ impl ServeCommand {
             state.set_undoc_client(client).await;
         }
 
+        log::info!("Devices returned from Govee's APIs");
+        for device in state.devices().await {
+            log::info!("{device} sku={}", device.sku);
+            if let Some(http_info) = &device.http_device_info {
+                let kind = &http_info.device_type;
+                let rgb = http_info.supports_rgb();
+                let bright = http_info.supports_brightness();
+                let color_temp = http_info.get_color_temperature_range();
+                log::info!("  Platform API: {kind}. supports_rgb={rgb} supports_brightness={bright} color_temp={color_temp:?}");
+            }
+            if let Some(undoc) = &device.undoc_device_info {
+                let room = &undoc.room_name;
+                let supports_iot = undoc.entry.device_ext.device_settings.topic.is_some();
+                let ble_only = undoc.entry.device_ext.device_settings.wifi_name.is_none();
+                log::info!(
+                    "  Undoc: room={room:?} supports_iot={supports_iot} ble_only={ble_only}"
+                );
+            }
+            if let Some(quirk) = crate::service::quirks::resolve_quirk(&device.sku) {
+                log::info!("  Quirk: {quirk:?}");
+            }
+        }
+
         // Now start discovery
 
         let options = args.lan_disco_args.to_disco_options()?;

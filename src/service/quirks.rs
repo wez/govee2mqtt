@@ -1,3 +1,4 @@
+#[derive(Debug)]
 pub struct Quirk {
     pub sku: &'static str,
     pub supports_rgb: bool,
