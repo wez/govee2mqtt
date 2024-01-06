@@ -39,7 +39,7 @@ strum_macros = "0.25.3"
 strum = { version = "0.25.0", features = ["strum_macros"] }
 
 [dependencies.mosquitto-rs]
-version="0.9.0"
+version="0.10.0"
 features = ["vendored-openssl"]
 #path = "../mosquitto-rs/mosquitto-rs"
 

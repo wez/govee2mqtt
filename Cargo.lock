@@ -1157,9 +1157,9 @@ checksum = "302d7ab3130588088d277783b1e2d2e10c9e9e4a16dd9050e6ec93fb3e7048f4"
 
 [[package]]
 name = "libmosquitto-sys"
-version = "0.2.2"
+version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7ac187e7a4c5a12c496c717774975041ea13b963fbd4e3a0ecce2c78c6e255d8"
+checksum = "7eb2b9577b3f9d963d047cafc836bae23cc56fc87263ccf2e90db4dfb104f341"
 dependencies = [
  "cc",
  "openssl-sys",
@@ -1256,15 +1256,16 @@ dependencies = [
 
 [[package]]
 name = "mosquitto-rs"
-version = "0.9.1"
+version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b5e6d29a460f054a8eca460f5e9a4a9640e38f3596c4ec97e3c19a218c29294f"
+checksum = "20857eac7e47af5c94047273c19087a4cd0e080626acba0e7e8f0c2194d40869"
 dependencies = [
  "anyhow",
  "async-channel",
  "lazy_static",
  "libc",
  "libmosquitto-sys",
+ "log",
  "matchit",
  "serde",
  "serde_json",

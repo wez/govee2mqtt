@@ -7,7 +7,7 @@ use crate::version_info::govee_version;
 use anyhow::Context;
 use async_channel::Receiver;
 use mosquitto_rs::router::{MqttRouter, Params, Payload, State};
-use mosquitto_rs::{Client, Message, QoS};
+use mosquitto_rs::{Client, Event, QoS};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::sync::Arc;
@@ -976,48 +976,73 @@ async fn mqtt_homeassitant_status(
 
 async fn run_mqtt_loop(
     state: StateHandle,
-    subscriber: Receiver<Message>,
+    subscriber: Receiver<Event>,
     client: Client,
 ) -> anyhow::Result<()> {
     // Give LAN disco a chance to get current state before
     // we register with hass
     tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
 
-    let mut router: MqttRouter<StateHandle> = MqttRouter::new(client);
+    async fn rebuild_router(
+        client: &Client,
+        state: &StateHandle,
+    ) -> anyhow::Result<Arc<MqttRouter<StateHandle>>> {
+        let disco_prefix = state.get_hass_disco_prefix().await;
+        let mut router: MqttRouter<StateHandle> = MqttRouter::new(client.clone());
 
-    let disco_prefix = state.get_hass_disco_prefix().await;
-    router
-        .route(format!("{disco_prefix}/status"), mqtt_homeassitant_status)
-        .await?;
+        router
+            .route(format!("{disco_prefix}/status"), mqtt_homeassitant_status)
+            .await?;
 
-    router
-        .route("gv2mqtt/light/:id/command", mqtt_light_command)
-        .await?;
-    router
-        .route("gv2mqtt/switch/:id/command/:instance", mqtt_switch_command)
-        .await?;
+        router
+            .route("gv2mqtt/light/:id/command", mqtt_light_command)
+            .await?;
+        router
+            .route("gv2mqtt/switch/:id/command/:instance", mqtt_switch_command)
+            .await?;
 
-    router.route(oneclick_topic(), mqtt_oneclick).await?;
+        router.route(oneclick_topic(), mqtt_oneclick).await?;
 
-    state
-        .get_hass_client()
-        .await
-        .expect("have hass client")
-        .register_with_hass(&state)
-        .await
-        .context("register_with_hass")?;
+        state
+            .get_hass_client()
+            .await
+            .expect("have hass client")
+            .register_with_hass(&state)
+            .await
+            .context("register_with_hass")?;
 
-    let router = Arc::new(router);
-
-    while let Ok(msg) = subscriber.recv().await {
-        let router = router.clone();
-        let state = state.clone();
-        tokio::spawn(async move {
-            if let Err(err) = router.dispatch(msg.clone(), state.clone()).await {
-                log::error!("While dispatching {msg:?}: {err:#}");
-            }
-        });
+        Ok(Arc::new(router))
     }
+
+    let mut router = rebuild_router(&client, &state).await?;
+    let mut need_rebuild = false;
+
+    while let Ok(event) = subscriber.recv().await {
+        match event {
+            Event::Message(msg) => {
+                let router = router.clone();
+                let state = state.clone();
+                tokio::spawn(async move {
+                    if let Err(err) = router.dispatch(msg.clone(), state.clone()).await {
+                        log::error!("While dispatching {msg:?}: {err:#}");
+                    }
+                });
+            }
+            Event::Disconnected(reason) => {
+                log::warn!("MQTT disconnected with reason={reason}");
+                need_rebuild = true;
+            }
+            Event::Connected(status) => {
+                log::info!("MQTT connected with status={status}");
+                if need_rebuild {
+                    router = rebuild_router(&client, &state).await?;
+                }
+            }
+        }
+    }
+
+    log::info!("subscriber.recv loop terminated");
+
     Ok(())
 }
 
@@ -1039,7 +1064,7 @@ pub async fn spawn_hass_integration(
         .connect(
             &mqtt_host,
             mqtt_port.into(),
-            Duration::from_secs(10),
+            Duration::from_secs(120),
             args.mqtt_bind_address.as_deref(),
         )
         .await
@@ -1063,6 +1088,9 @@ pub async fn spawn_hass_integration(
             log::error!("Pausing for 30 seconds before terminating.");
             tokio::time::sleep(tokio::time::Duration::from_secs(30)).await;
             std::process::exit(1);
+        } else {
+            log::info!("run_mqtt_loop exited. We should do something to shutdown gracefully here");
+            std::process::exit(0);
         }
     });
 

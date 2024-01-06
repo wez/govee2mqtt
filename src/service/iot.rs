@@ -3,7 +3,7 @@ use crate::service::state::StateHandle;
 use crate::undoc_api::{ms_timestamp, DeviceEntry, ParsedOneClick};
 use crate::Args;
 use anyhow::Context;
-use mosquitto_rs::QoS;
+use mosquitto_rs::{Event, QoS};
 use serde::Deserialize;
 use std::time::Duration;
 
@@ -95,83 +95,98 @@ pub async fn start_iot_client(args: &Args, state: StateHandle) -> anyhow::Result
         )
         .context("configure_tls")?;
     let status = client
-        .connect(&res.endpoint, 8883, Duration::from_secs(10), None)
+        .connect(&res.endpoint, 8883, Duration::from_secs(120), None)
         .await
         .context("connect")?;
     log::info!("Connected to IoT: {status}");
 
     let subscriptions = client.subscriber().expect("first and only");
 
-    client
-        .subscribe(&acct.topic, mosquitto_rs::QoS::AtMostOnce)
-        .await?;
-
-    state.set_iot_client(IotClient { client }).await;
+    state
+        .set_iot_client(IotClient {
+            client: client.clone(),
+        })
+        .await;
 
     tokio::spawn(async move {
-        while let Ok(msg) = subscriptions.recv().await {
-            let payload = String::from_utf8_lossy(&msg.payload);
-            log::trace!("{} -> {payload}", msg.topic);
+        while let Ok(event) = subscriptions.recv().await {
+            match event {
+                Event::Message(msg) => {
+                    let payload = String::from_utf8_lossy(&msg.payload);
+                    log::trace!("{} -> {payload}", msg.topic);
 
-            #[derive(Deserialize, Debug)]
-            #[allow(dead_code)]
-            struct Packet {
-                sku: String,
-                device: String,
-                cmd: String,
-                state: StateUpdate,
-            }
-
-            #[derive(Deserialize, Debug)]
-            struct StateUpdate {
-                #[serde(rename = "onOff")]
-                pub on_off: Option<u8>,
-                pub brightness: Option<u8>,
-                pub color: Option<DeviceColor>,
-                #[serde(rename = "colorTemInKelvin")]
-                pub color_temperature_kelvin: Option<u32>,
-            }
-
-            match serde_json::from_slice::<Packet>(&msg.payload) {
-                Ok(packet) => {
-                    log::debug!("{packet:?}");
-                    {
-                        let mut device = state.device_mut(&packet.sku, &packet.device).await;
-                        let mut state = match device.iot_device_status.clone() {
-                            Some(state) => state,
-                            None => match device.device_state() {
-                                Some(state) => DeviceStatus {
-                                    on: state.on,
-                                    brightness: state.brightness,
-                                    color: state.color,
-                                    color_temperature_kelvin: state.kelvin,
-                                },
-                                None => DeviceStatus::default(),
-                            },
-                        };
-                        if let Some(v) = packet.state.brightness {
-                            state.brightness = v;
-                            state.on = v != 0;
-                        }
-                        if let Some(v) = packet.state.color {
-                            state.color = v;
-                            state.on = true;
-                        }
-                        if let Some(v) = packet.state.color_temperature_kelvin {
-                            state.color_temperature_kelvin = v;
-                            state.on = true;
-                        }
-                        // Check on/off last, as we can synthesize "on"
-                        // if the other fields are present
-                        if let Some(on_off) = packet.state.on_off {
-                            state.on = on_off != 0;
-                        }
-                        device.set_iot_device_status(state);
+                    #[derive(Deserialize, Debug)]
+                    #[allow(dead_code)]
+                    struct Packet {
+                        sku: String,
+                        device: String,
+                        cmd: String,
+                        state: StateUpdate,
                     }
-                    state.notify_of_state_change(&packet.device).await?;
+
+                    #[derive(Deserialize, Debug)]
+                    struct StateUpdate {
+                        #[serde(rename = "onOff")]
+                        pub on_off: Option<u8>,
+                        pub brightness: Option<u8>,
+                        pub color: Option<DeviceColor>,
+                        #[serde(rename = "colorTemInKelvin")]
+                        pub color_temperature_kelvin: Option<u32>,
+                    }
+
+                    match serde_json::from_slice::<Packet>(&msg.payload) {
+                        Ok(packet) => {
+                            log::debug!("{packet:?}");
+                            {
+                                let mut device =
+                                    state.device_mut(&packet.sku, &packet.device).await;
+                                let mut state = match device.iot_device_status.clone() {
+                                    Some(state) => state,
+                                    None => match device.device_state() {
+                                        Some(state) => DeviceStatus {
+                                            on: state.on,
+                                            brightness: state.brightness,
+                                            color: state.color,
+                                            color_temperature_kelvin: state.kelvin,
+                                        },
+                                        None => DeviceStatus::default(),
+                                    },
+                                };
+                                if let Some(v) = packet.state.brightness {
+                                    state.brightness = v;
+                                    state.on = v != 0;
+                                }
+                                if let Some(v) = packet.state.color {
+                                    state.color = v;
+                                    state.on = true;
+                                }
+                                if let Some(v) = packet.state.color_temperature_kelvin {
+                                    state.color_temperature_kelvin = v;
+                                    state.on = true;
+                                }
+                                // Check on/off last, as we can synthesize "on"
+                                // if the other fields are present
+                                if let Some(on_off) = packet.state.on_off {
+                                    state.on = on_off != 0;
+                                }
+                                device.set_iot_device_status(state);
+                            }
+                            state.notify_of_state_change(&packet.device).await?;
+                        }
+                        Err(err) => {
+                            log::error!("{err:#} {payload}");
+                        }
+                    }
                 }
-                Err(err) => {
-                    log::error!("{err:#} {payload}");
+                Event::Disconnected(reason) => {
+                    log::warn!("IoT disconnected with reason {reason}");
+                }
+                Event::Connected(status) => {
+                    log::info!("IoT (re)connected with status {status}");
+
+                    client
+                        .subscribe(&acct.topic, mosquitto_rs::QoS::AtMostOnce)
+                        .await?;
                 }
             }
         }
