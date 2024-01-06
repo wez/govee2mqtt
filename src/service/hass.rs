@@ -620,6 +620,10 @@ impl Config {
         state: &ServiceState,
         configs: &mut Vec<(&'a ServiceDevice, Self)>,
     ) -> anyhow::Result<()> {
+        if !d.is_controllable() {
+            return Ok(());
+        }
+
         configs.push((d, Config::Light(LightConfig::for_device(&d, state).await?)));
         if let Some(info) = &d.http_device_info {
             for cap in &info.capabilities {

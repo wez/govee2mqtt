@@ -357,6 +357,22 @@ impl Device {
             .map(|info| info.supports_rgb())
             .unwrap_or(false)
     }
+
+    pub fn is_ble_only_device(&self) -> Option<bool> {
+        if let Some(info) = &self.undoc_device_info {
+            Some(info.entry.device_ext.device_settings.wifi_name.is_none())
+        } else {
+            // Don't know for sure
+            None
+        }
+    }
+
+    pub fn is_controllable(&self) -> bool {
+        match self.is_ble_only_device() {
+            Some(true) => false,
+            _ => true,
+        }
+    }
 }
 
 #[cfg(test)]
