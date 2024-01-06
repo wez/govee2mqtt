@@ -3,6 +3,6 @@
 # creating a tag based on the current commit.
 TAG_NAME=${TAG_NAME:-$(git -c "core.abbrev=8" show -s "--format=%cd-%h" "--date=format:%Y.%m.%d")}
 git tag $TAG_NAME
-./apply-tag.sh
+./scripts/apply-tag.sh
 git add addon/config.yaml
 git commit -m "Tag $TAG_NAME"
