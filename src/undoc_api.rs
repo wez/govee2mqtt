@@ -212,6 +212,7 @@ impl GoveeUndocumentedApi {
         .await
     }
 
+    #[allow(dead_code)]
     pub async fn login_account(&self) -> anyhow::Result<LoginAccountResponse> {
         let value = self.login_account_impl().await?;
         Ok(value.into_inner())

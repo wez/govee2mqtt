@@ -66,6 +66,7 @@ pub enum CacheComputeResult<T> {
 }
 
 impl<T> CacheComputeResult<T> {
+    #[allow(dead_code)]
     pub fn into_inner(self) -> T {
         match self {
             Self::Value(v) | Self::WithTtl(v, _) => v,
