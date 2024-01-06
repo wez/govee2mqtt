@@ -428,7 +428,12 @@ async fn lan_disco(
     options: DiscoOptions,
     inner: Arc<ClientInner>,
 ) -> anyhow::Result<Receiver<LanDevice>> {
-    let listen = UdpSocket::bind(("0.0.0.0", LISTEN_PORT)).await?;
+    let listen = UdpSocket::bind(("0.0.0.0", LISTEN_PORT)).await.context(
+        "Cannot bind to UDP Port 4002, which is required \
+        for the Govee LAN API to function. Most likely cause is that you \
+        are running another integration that is already bound to that port. \
+        Both cannot run on the same machine at the same time.",
+    )?;
     let (tx, rx) = channel(8);
 
     async fn process_packet(
