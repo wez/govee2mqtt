@@ -162,6 +162,10 @@ impl GoveeUndocumentedApi {
         .await
     }
 
+    pub fn invalidate_account_login(&self) {
+        crate::cache::invalidate_key("undoc-api", "account-info").ok();
+    }
+
     pub async fn login_account(&self) -> anyhow::Result<LoginAccountResponse> {
         cache_get(
             CacheGetOptions {
@@ -223,9 +227,17 @@ impl GoveeUndocumentedApi {
             .send()
             .await?;
 
+        if response.status() == reqwest::StatusCode::UNAUTHORIZED {
+            self.invalidate_account_login();
+        }
+
         let resp: DevicesResponse = http_response_body(response).await?;
 
         Ok(resp)
+    }
+
+    pub fn invalidate_community_login(&self) {
+        crate::cache::invalidate_key("undoc-api", "community-login").ok();
     }
 
     /// Login to community-api.govee.com and return the bearer token
@@ -383,6 +395,10 @@ impl GoveeUndocumentedApi {
                     .header("User-Agent", user_agent())
                     .send()
                     .await?;
+
+                if response.status() == reqwest::StatusCode::UNAUTHORIZED {
+                    self.invalidate_community_login();
+                }
 
                 let resp: OneClickResponse = http_response_body(response).await?;
 

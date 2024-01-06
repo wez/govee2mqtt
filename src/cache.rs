@@ -65,6 +65,11 @@ pub enum CacheComputeResult<T> {
     WithTtl(T, Duration),
 }
 
+pub fn invalidate_key(topic: &str, key: &str) -> anyhow::Result<()> {
+    let topic = CACHE.topic(topic)?;
+    Ok(topic.delete(key)?)
+}
+
 /// Cache an item with a soft TTL; we'll retry the operation
 /// if the TTL has expired, but allow stale reads
 pub async fn cache_get<T, Fut>(options: CacheGetOptions<'_>, future: Fut) -> anyhow::Result<T>
