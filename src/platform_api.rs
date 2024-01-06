@@ -745,6 +745,7 @@ pub struct StructField {
     #[serde(rename = "defaultValue")]
     pub default_value: Option<JsonValue>,
 
+    #[serde(default)]
     pub required: bool,
 }
 
