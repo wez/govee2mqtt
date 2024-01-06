@@ -140,7 +140,7 @@ pub async fn start_iot_client(
                     #[derive(Deserialize, Debug)]
                     #[allow(dead_code)]
                     struct Packet {
-                        sku: String,
+                        sku: Option<String>,
                         device: String,
                         cmd: String,
                         state: StateUpdate,
@@ -154,14 +154,24 @@ pub async fn start_iot_client(
                         pub color: Option<DeviceColor>,
                         #[serde(rename = "colorTemInKelvin")]
                         pub color_temperature_kelvin: Option<u32>,
+                        pub sku: Option<String>,
+                    }
+
+                    impl Packet {
+                        /// The sku can be in a couple of different places(!)
+                        fn sku(&self) -> Option<&str> {
+                            if let Some(sku) = self.sku.as_deref() {
+                                return Some(sku);
+                            }
+                            self.state.sku.as_deref()
+                        }
                     }
 
                     match from_json::<Packet, _>(&msg.payload) {
                         Ok(packet) => {
                             log::debug!("{packet:?}");
-                            {
-                                let mut device =
-                                    state.device_mut(&packet.sku, &packet.device).await;
+                            if let Some(sku) = packet.sku() {
+                                let mut device = state.device_mut(sku, &packet.device).await;
                                 let mut state = match device.iot_device_status.clone() {
                                     Some(state) => state,
                                     None => match device.device_state() {
@@ -196,7 +206,7 @@ pub async fn start_iot_client(
                             state.notify_of_state_change(&packet.device).await?;
                         }
                         Err(err) => {
-                            log::error!("{err:#} {payload}");
+                            log::error!("Decoding IoT Packet: {err:#} {payload}");
                         }
                     }
                 }
