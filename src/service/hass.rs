@@ -663,10 +663,13 @@ impl Config {
             return Ok(());
         }
 
-        configs.push((
-            d,
-            Config::Light(LightConfig::for_device(&d, state, None).await?),
-        ));
+        if d.supports_rgb() || d.get_color_temperature_range().is_some() || d.supports_brightness()
+        {
+            configs.push((
+                d,
+                Config::Light(LightConfig::for_device(&d, state, None).await?),
+            ));
+        }
 
         if let Some(info) = &d.http_device_info {
             for cap in &info.capabilities {

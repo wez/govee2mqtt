@@ -347,6 +347,17 @@ impl Device {
             .and_then(|info| info.get_color_temperature_range())
     }
 
+    pub fn supports_brightness(&self) -> bool {
+        if let Some(quirk) = resolve_quirk(&self.sku) {
+            return quirk.supports_brightness;
+        }
+
+        self.http_device_info
+            .as_ref()
+            .map(|info| info.supports_brightness())
+            .unwrap_or(false)
+    }
+
     pub fn supports_rgb(&self) -> bool {
         if let Some(quirk) = resolve_quirk(&self.sku) {
             return quirk.supports_rgb;
