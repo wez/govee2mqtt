@@ -8,12 +8,16 @@ DevicesResponse {
             device: "XX:XX:XX:XX:XX:XX:07:4D",
             device_ext: DeviceEntryExt {
                 device_settings: DeviceSettings {
-                    wifi_name: "TP-Link_IoT_2G",
+                    wifi_name: Some(
+                        "TP-Link_IoT_2G",
+                    ),
                     address: Some(
                         "XX:XX:XX:XX:XX:XX",
                     ),
                     ble_name: "GBK_H618A_074D",
-                    topic: "GD/",
+                    topic: Some(
+                        "GD/",
+                    ),
                     wifi_mac: Some(
                         "XX:XX:XX:XX:XX:XX",
                     ),
@@ -91,12 +95,16 @@ DevicesResponse {
             device: "XX:XX:XX:XX:XX:XX:4C:67",
             device_ext: DeviceEntryExt {
                 device_settings: DeviceSettings {
-                    wifi_name: "TP-Link_IoT_2G",
+                    wifi_name: Some(
+                        "TP-Link_IoT_2G",
+                    ),
                     address: Some(
                         "XX:XX:XX:XX:XX:XX",
                     ),
                     ble_name: "Govee_H6199_4C67",
-                    topic: "GD/",
+                    topic: Some(
+                        "GD/",
+                    ),
                     wifi_mac: Some(
                         "XX:XX:XX:XX:XX:XX",
                     ),
@@ -172,12 +180,16 @@ DevicesResponse {
             device: "XX:XX:XX:XX:XX:XX:B4:D0",
             device_ext: DeviceEntryExt {
                 device_settings: DeviceSettings {
-                    wifi_name: "TP-Link_IoT_2G",
+                    wifi_name: Some(
+                        "TP-Link_IoT_2G",
+                    ),
                     address: Some(
                         "XX:XX:XX:XX:XX:XX",
                     ),
                     ble_name: "GBK_H618C_B4D0",
-                    topic: "GD/",
+                    topic: Some(
+                        "GD/",
+                    ),
                     wifi_mac: Some(
                         "XX:XX:XX:XX:XX:XX",
                     ),
@@ -255,12 +267,16 @@ DevicesResponse {
             device: "XX:XX:XX:XX:XX:XX:96:A0",
             device_ext: DeviceEntryExt {
                 device_settings: DeviceSettings {
-                    wifi_name: "TP-Link_IoT_2G",
+                    wifi_name: Some(
+                        "TP-Link_IoT_2G",
+                    ),
                     address: Some(
                         "XX:XX:XX:XX:XX:XX",
                     ),
                     ble_name: "GBK_H618A_96A0",
-                    topic: "GD/",
+                    topic: Some(
+                        "GD/",
+                    ),
                     wifi_mac: None,
                     pact_type: Some(
                         2,
@@ -336,12 +352,16 @@ DevicesResponse {
             device: "XX:XX:XX:XX:XX:XX:32:27",
             device_ext: DeviceEntryExt {
                 device_settings: DeviceSettings {
-                    wifi_name: "TP-Link_IoT_2G",
+                    wifi_name: Some(
+                        "TP-Link_IoT_2G",
+                    ),
                     address: Some(
                         "XX:XX:XX:XX:XX:XX",
                     ),
                     ble_name: "GBK_H618C_3227",
-                    topic: "GD/",
+                    topic: Some(
+                        "GD/",
+                    ),
                     wifi_mac: Some(
                         "XX:XX:XX:XX:XX:XX",
                     ),
@@ -419,10 +439,14 @@ DevicesResponse {
             device: "XX:XX:XX:XX:XX:XX:AD:23",
             device_ext: DeviceEntryExt {
                 device_settings: DeviceSettings {
-                    wifi_name: "TP-Link_IoT_2G",
+                    wifi_name: Some(
+                        "TP-Link_IoT_2G",
+                    ),
                     address: None,
                     ble_name: "ihoment_H6159_AD23",
-                    topic: "GD/",
+                    topic: Some(
+                        "GD/",
+                    ),
                     wifi_mac: None,
                     pact_type: None,
                     pact_code: None,
@@ -488,12 +512,16 @@ DevicesResponse {
             device: "XX:XX:XX:XX:XX:XX:8E:63",
             device_ext: DeviceEntryExt {
                 device_settings: DeviceSettings {
-                    wifi_name: "TP-Link_IoT_2G",
+                    wifi_name: Some(
+                        "TP-Link_IoT_2G",
+                    ),
                     address: Some(
                         "XX:XX:XX:XX:XX:XX",
                     ),
                     ble_name: "GBK_H618A_8E63",
-                    topic: "GD/",
+                    topic: Some(
+                        "GD/",
+                    ),
                     wifi_mac: Some(
                         "XX:XX:XX:XX:XX:XX",
                     ),
@@ -571,10 +599,14 @@ DevicesResponse {
             device: "XX:XX:XX:XX:XX:XX:24:5F",
             device_ext: DeviceEntryExt {
                 device_settings: DeviceSettings {
-                    wifi_name: "TP-Link_IoT_2G",
+                    wifi_name: Some(
+                        "TP-Link_IoT_2G",
+                    ),
                     address: None,
                     ble_name: "ihoment_H6159_245F",
-                    topic: "GD/",
+                    topic: Some(
+                        "GD/",
+                    ),
                     wifi_mac: None,
                     pact_type: None,
                     pact_code: None,

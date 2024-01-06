@@ -13,8 +13,22 @@ pub struct IotClient {
 }
 
 impl IotClient {
+    pub fn is_device_compatible(&self, device: &DeviceEntry) -> bool {
+        device.device_ext.device_settings.topic.is_some()
+    }
+
     pub async fn request_status_update(&self, device: &DeviceEntry) -> anyhow::Result<()> {
-        let device_topic = &device.device_ext.device_settings.topic;
+        let device_topic = device
+            .device_ext
+            .device_settings
+            .topic
+            .as_ref()
+            .ok_or_else(|| {
+                anyhow::anyhow!(
+                    "device {id} has no topic, is it a BLE-only device?",
+                    id = device.device
+                )
+            })?;
 
         self.client
             .publish(

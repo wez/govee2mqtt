@@ -751,7 +751,7 @@ pub struct DeviceSettings {
     pub wifi_name: Option<String>,
     pub address: Option<String>,
     pub ble_name: String,
-    pub topic: String,
+    pub topic: Option<String>,
     pub wifi_mac: Option<String>,
     pub pact_type: Option<u32>,
     pub pact_code: Option<u32>,

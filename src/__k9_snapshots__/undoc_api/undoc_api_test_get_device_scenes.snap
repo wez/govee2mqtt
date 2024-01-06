@@ -6,12 +6,16 @@ DevicesResponse {
             device: "47:13:CF:00:00:00:00:25",
             device_ext: DeviceEntryExt {
                 device_settings: DeviceSettings {
-                    wifi_name: "MySSID",
+                    wifi_name: Some(
+                        "MySSID",
+                    ),
                     address: Some(
                         "CF:00:00:00:00:25",
                     ),
                     ble_name: "Govee_H6072_5225",
-                    topic: "GD/",
+                    topic: Some(
+                        "GD/",
+                    ),
                     wifi_mac: Some(
                         "",
                     ),
@@ -81,12 +85,16 @@ DevicesResponse {
             device: "02:EC:CF:00:00:00:00:48",
             device_ext: DeviceEntryExt {
                 device_settings: DeviceSettings {
-                    wifi_name: "MySSID",
+                    wifi_name: Some(
+                        "MySSID",
+                    ),
                     address: Some(
                         "CF:00:00:00:00:48",
                     ),
                     ble_name: "Govee_H6072_5048",
-                    topic: "GD/",
+                    topic: Some(
+                        "GD/",
+                    ),
                     wifi_mac: Some(
                         "",
                     ),
@@ -156,12 +164,16 @@ DevicesResponse {
             device: "51:2A:D1:00:00:00:00:93",
             device_ext: DeviceEntryExt {
                 device_settings: DeviceSettings {
-                    wifi_name: "MySSID",
+                    wifi_name: Some(
+                        "MySSID",
+                    ),
                     address: Some(
                         "D1:00:00:00:00:93",
                     ),
                     ble_name: "Govee_H6072_3193",
-                    topic: "GD/",
+                    topic: Some(
+                        "GD/",
+                    ),
                     wifi_mac: Some(
                         "",
                     ),
@@ -231,12 +243,16 @@ DevicesResponse {
             device: "",
             device_ext: DeviceEntryExt {
                 device_settings: DeviceSettings {
-                    wifi_name: "MySSID",
+                    wifi_name: Some(
+                        "MySSID",
+                    ),
                     address: Some(
                         "",
                     ),
                     ble_name: "Govee_H6058_163C",
-                    topic: "GD/",
+                    topic: Some(
+                        "GD/",
+                    ),
                     wifi_mac: Some(
                         "",
                     ),
@@ -308,12 +324,16 @@ DevicesResponse {
             device: "",
             device_ext: DeviceEntryExt {
                 device_settings: DeviceSettings {
-                    wifi_name: "MySSID",
+                    wifi_name: Some(
+                        "MySSID",
+                    ),
                     address: Some(
                         "",
                     ),
                     ble_name: "Govee_H610A_0C6F",
-                    topic: "GD/",
+                    topic: Some(
+                        "GD/",
+                    ),
                     wifi_mac: Some(
                         "",
                     ),
@@ -389,12 +409,16 @@ DevicesResponse {
             device: "",
             device_ext: DeviceEntryExt {
                 device_settings: DeviceSettings {
-                    wifi_name: "MySSID",
+                    wifi_name: Some(
+                        "MySSID",
+                    ),
                     address: Some(
                         "",
                     ),
                     ble_name: "GBK_H61A2_0D17",
-                    topic: "GD/",
+                    topic: Some(
+                        "GD/",
+                    ),
                     wifi_mac: Some(
                         "",
                     ),
@@ -466,12 +490,16 @@ DevicesResponse {
             device: "",
             device_ext: DeviceEntryExt {
                 device_settings: DeviceSettings {
-                    wifi_name: "MySSID",
+                    wifi_name: Some(
+                        "MySSID",
+                    ),
                     address: Some(
                         "",
                     ),
                     ble_name: "GBK_H619A_DA4B",
-                    topic: "GD/",
+                    topic: Some(
+                        "GD/",
+                    ),
                     wifi_mac: Some(
                         "",
                     ),
@@ -543,12 +571,16 @@ DevicesResponse {
             device: "",
             device_ext: DeviceEntryExt {
                 device_settings: DeviceSettings {
-                    wifi_name: "MySSID",
+                    wifi_name: Some(
+                        "MySSID",
+                    ),
                     address: Some(
                         "",
                     ),
                     ble_name: "GBK_H619A_CDF5",
-                    topic: "GD/",
+                    topic: Some(
+                        "GD/",
+                    ),
                     wifi_mac: Some(
                         "",
                     ),
@@ -620,12 +652,16 @@ DevicesResponse {
             device: "",
             device_ext: DeviceEntryExt {
                 device_settings: DeviceSettings {
-                    wifi_name: "MySSID",
+                    wifi_name: Some(
+                        "MySSID",
+                    ),
                     address: Some(
                         "",
                     ),
                     ble_name: "Govee_H6072_3529",
-                    topic: "GD/",
+                    topic: Some(
+                        "GD/",
+                    ),
                     wifi_mac: Some(
                         "",
                     ),
@@ -695,12 +731,16 @@ DevicesResponse {
             device: "",
             device_ext: DeviceEntryExt {
                 device_settings: DeviceSettings {
-                    wifi_name: "MySSID",
+                    wifi_name: Some(
+                        "MySSID",
+                    ),
                     address: Some(
                         "",
                     ),
                     ble_name: "Govee_H6072_3411",
-                    topic: "GD/",
+                    topic: Some(
+                        "GD/",
+                    ),
                     wifi_mac: Some(
                         "",
                     ),
