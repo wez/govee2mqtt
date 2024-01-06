@@ -1,0 +1,182 @@
+{
+  "devices": [
+    {
+      "groupId": 0,
+      "device": "XX:XX:XX:XX:XX:XX:07:4D",
+      "sku": "H618A",
+      "spec": "",
+      "versionHard": "2.01.02",
+      "versionSoft": "2.06.15",
+      "deviceName": "Led Bar",
+      "deviceExt": {
+        "deviceSettings": "{\"wifiName\":\"TP-Link_IoT_2G\",\"address\":\"XX:XX:XX:XX:XX:XX\",\"bleName\":\"GBK_H618A_074D\",\"topic\":\"GD/\",\"wifiMac\":\"XX:XX:XX:XX:XX:XX\",\"pactType\":2,\"pactCode\":1,\"wifiSoftVersion\":\"2.05.08\",\"wifiHardVersion\":\"1.02.00\",\"ic\":15,\"secretCode\":\"=\",\"boilWaterCompletedNotiOnOff\":1,\"completionNotiOnOff\":1,\"autoShutDownOnOff\":1,\"sku\":\"H618A\",\"device\":\"XX:XX:XX:XX:XX:XX:07:4D\",\"deviceName\":\"Led Bar\",\"versionHard\":\"2.01.02\",\"versionSoft\":\"2.06.15\",\"playState\":false}",
+        "lastDeviceData": "{\"online\":false}",
+        "extResources": "{\"skuUrl\":\"https://d1f2504ijhdyjw.cloudfront.net/sku-img/1888088d25fbf1fedd34316acccf9ee3-add_list_type_device_618ac.png.png\",\"headOnImg\":\"https://d1f2504ijhdyjw.cloudfront.net/sku-img/eed1b442fc5d3aaa28563ded4284e057-new_light_title_6160_on.png\",\"headOnImgNew\":\"\",\"headOffImg\":\"https://d1f2504ijhdyjw.cloudfront.net/sku-img/cb48afdb8618c2ddfd8fe16673336af0-new_light_title_6160_off.png\",\"headOffImgNew\":\"\",\"ext\":\"\",\"ic\":15}"
+      },
+      "pactType": 2,
+      "pactCode": 1,
+      "share": 0,
+      "deviceId": 12154591,
+      "goodsType": 74,
+      "attributesId": 17,
+      "supportScene": 1
+    },
+    {
+      "groupId": 0,
+      "device": "XX:XX:XX:XX:XX:XX:4C:67",
+      "sku": "H6199",
+      "spec": "",
+      "versionHard": "3.02.01",
+      "versionSoft": "1.10.04",
+      "deviceName": "DreamView T1",
+      "deviceExt": {
+        "deviceSettings": "{\"wifiName\":\"TP-Link_IoT_2G\",\"address\":\"XX:XX:XX:XX:XX:XX\",\"bleName\":\"Govee_H6199_4C67\",\"topic\":\"GD/\",\"wifiMac\":\"XX:XX:XX:XX:XX:XX\",\"pactType\":2,\"pactCode\":1,\"wifiSoftVersion\":\"1.00.33\",\"wifiHardVersion\":\"1.03.00\",\"ic\":50,\"boilWaterCompletedNotiOnOff\":1,\"completionNotiOnOff\":1,\"autoShutDownOnOff\":1,\"sku\":\"H6199\",\"device\":\"XX:XX:XX:XX:XX:XX:4C:67\",\"deviceName\":\"DreamView T1\",\"versionHard\":\"3.02.01\",\"versionSoft\":\"1.10.04\",\"playState\":false}",
+        "lastDeviceData": "{\"online\":false}",
+        "extResources": "{\"skuUrl\":\"https://d1f2504ijhdyjw.cloudfront.net/sku-img/77af67823455a4cd4a65c9d490a8fec9-add_list_type_device_6199.png\",\"headOnImg\":\"https://d1f2504ijhdyjw.cloudfront.net/sku-img/f888cb880ed3646868ebfb52db643569-new_light_title_6104_alexa_on.png\",\"headOnImgNew\":\"\",\"headOffImg\":\"https://d1f2504ijhdyjw.cloudfront.net/sku-img/c163d1b2aa45e3278b4ff7a25b69e8c8-new_light_title_6104_alexa_off.png\",\"headOffImgNew\":\"\",\"ext\":\"\",\"ic\":50}"
+      },
+      "pactType": 2,
+      "pactCode": 1,
+      "share": 0,
+      "deviceId": 10874276,
+      "goodsType": 24,
+      "attributesId": 1,
+      "supportScene": 1
+    },
+    {
+      "groupId": 0,
+      "device": "XX:XX:XX:XX:XX:XX:B4:D0",
+      "sku": "H618C",
+      "spec": "",
+      "versionHard": "2.01.02",
+      "versionSoft": "2.06.15",
+      "deviceName": "Led Escalier Bas Govee",
+      "deviceExt": {
+        "deviceSettings": "{\"wifiName\":\"TP-Link_IoT_2G\",\"address\":\"XX:XX:XX:XX:XX:XX\",\"bleName\":\"GBK_H618C_B4D0\",\"topic\":\"GD/\",\"wifiMac\":\"XX:XX:XX:XX:XX:XX\",\"pactType\":2,\"pactCode\":1,\"wifiSoftVersion\":\"2.05.08\",\"wifiHardVersion\":\"1.02.00\",\"ic\":30,\"secretCode\":\"/K3UYYw=\",\"boilWaterCompletedNotiOnOff\":1,\"completionNotiOnOff\":1,\"autoShutDownOnOff\":1,\"sku\":\"H618C\",\"device\":\"XX:XX:XX:XX:XX:XX:B4:D0\",\"deviceName\":\"Led Escalier Bas Govee\",\"versionHard\":\"2.01.02\",\"versionSoft\":\"2.06.15\",\"playState\":false}",
+        "lastDeviceData": "{\"online\":false}",
+        "extResources": "{\"skuUrl\":\"https://d1f2504ijhdyjw.cloudfront.net/sku-img/1888088d25fbf1fedd34316acccf9ee3-add_list_type_device_618ac.png.png\",\"headOnImg\":\"https://d1f2504ijhdyjw.cloudfront.net/sku-img/eed1b442fc5d3aaa28563ded4284e057-new_light_title_6160_on.png\",\"headOnImgNew\":\"\",\"headOffImg\":\"https://d1f2504ijhdyjw.cloudfront.net/sku-img/cb48afdb8618c2ddfd8fe16673336af0-new_light_title_6160_off.png\",\"headOffImgNew\":\"\",\"ext\":\"\",\"ic\":30}"
+      },
+      "pactType": 2,
+      "pactCode": 1,
+      "share": 0,
+      "deviceId": 7450178,
+      "goodsType": 71,
+      "attributesId": 1,
+      "supportScene": 1
+    },
+    {
+      "groupId": 0,
+      "device": "XX:XX:XX:XX:XX:XX:96:A0",
+      "sku": "H618A",
+      "spec": "",
+      "versionHard": "2.01.02",
+      "versionSoft": "2.06.15",
+      "deviceName": "Led Enfants Govee",
+      "deviceExt": {
+        "deviceSettings": "{\"wifiName\":\"TP-Link_IoT_2G\",\"address\":\"XX:XX:XX:XX:XX:XX\",\"bleName\":\"GBK_H618A_96A0\",\"topic\":\"GD/\",\"pactType\":2,\"pactCode\":1,\"wifiSoftVersion\":\"2.05.08\",\"wifiHardVersion\":\"1.02.00\",\"ic\":15,\"secretCode\":\"=\",\"boilWaterCompletedNotiOnOff\":1,\"completionNotiOnOff\":1,\"autoShutDownOnOff\":1,\"sku\":\"H618A\",\"device\":\"XX:XX:XX:XX:XX:XX:96:A0\",\"deviceName\":\"Led Enfants Govee\",\"versionHard\":\"2.01.02\",\"versionSoft\":\"2.06.15\",\"playState\":false}",
+        "lastDeviceData": "{\"online\":false}",
+        "extResources": "{\"skuUrl\":\"https://d1f2504ijhdyjw.cloudfront.net/sku-img/1888088d25fbf1fedd34316acccf9ee3-add_list_type_device_618ac.png.png\",\"headOnImg\":\"https://d1f2504ijhdyjw.cloudfront.net/sku-img/eed1b442fc5d3aaa28563ded4284e057-new_light_title_6160_on.png\",\"headOnImgNew\":\"\",\"headOffImg\":\"https://d1f2504ijhdyjw.cloudfront.net/sku-img/cb48afdb8618c2ddfd8fe16673336af0-new_light_title_6160_off.png\",\"headOffImgNew\":\"\",\"ext\":\"\",\"ic\":15}"
+      },
+      "pactType": 2,
+      "pactCode": 1,
+      "share": 0,
+      "deviceId": 7450936,
+      "goodsType": 74,
+      "attributesId": 17,
+      "supportScene": 1
+    },
+    {
+      "groupId": 0,
+      "device": "XX:XX:XX:XX:XX:XX:32:27",
+      "sku": "H618C",
+      "spec": "",
+      "versionHard": "2.01.02",
+      "versionSoft": "2.06.15",
+      "deviceName": "Led Escalier Haut Gove",
+      "deviceExt": {
+        "deviceSettings": "{\"wifiName\":\"TP-Link_IoT_2G\",\"address\":\"XX:XX:XX:XX:XX:XX\",\"bleName\":\"GBK_H618C_3227\",\"topic\":\"GD/\",\"wifiMac\":\"XX:XX:XX:XX:XX:XX\",\"pactType\":2,\"pactCode\":1,\"wifiSoftVersion\":\"2.05.08\",\"wifiHardVersion\":\"1.02.00\",\"ic\":30,\"secretCode\":\"=\",\"boilWaterCompletedNotiOnOff\":1,\"completionNotiOnOff\":1,\"autoShutDownOnOff\":1,\"sku\":\"H618C\",\"device\":\"XX:XX:XX:XX:XX:XX:32:27\",\"deviceName\":\"Led Escalier Haut Gove\",\"versionHard\":\"2.01.02\",\"versionSoft\":\"2.06.15\",\"playState\":false}",
+        "lastDeviceData": "{\"online\":false}",
+        "extResources": "{\"skuUrl\":\"https://d1f2504ijhdyjw.cloudfront.net/sku-img/1888088d25fbf1fedd34316acccf9ee3-add_list_type_device_618ac.png.png\",\"headOnImg\":\"https://d1f2504ijhdyjw.cloudfront.net/sku-img/eed1b442fc5d3aaa28563ded4284e057-new_light_title_6160_on.png\",\"headOnImgNew\":\"\",\"headOffImg\":\"https://d1f2504ijhdyjw.cloudfront.net/sku-img/cb48afdb8618c2ddfd8fe16673336af0-new_light_title_6160_off.png\",\"headOffImgNew\":\"\",\"ext\":\"\",\"ic\":30}"
+      },
+      "pactType": 2,
+      "pactCode": 1,
+      "share": 0,
+      "deviceId": 7450755,
+      "goodsType": 71,
+      "attributesId": 1,
+      "supportScene": 1
+    },
+    {
+      "groupId": 0,
+      "device": "XX:XX:XX:XX:XX:XX:AD:23",
+      "sku": "H6159",
+      "spec": "",
+      "versionHard": "1.00.02",
+      "versionSoft": "1.07.02",
+      "deviceName": "Govee Bureau Schumi",
+      "deviceExt": {
+        "deviceSettings": "{\"wifiName\":\"TP-Link_IoT_2G\",\"bleName\":\"ihoment_H6159_AD23\",\"topic\":\"GD/\",\"wifiSoftVersion\":\"1.03.05\",\"wifiHardVersion\":\"1.00.01\",\"ic\":0,\"boilWaterCompletedNotiOnOff\":1,\"completionNotiOnOff\":1,\"autoShutDownOnOff\":1,\"sku\":\"H6159\",\"device\":\"XX:XX:XX:XX:XX:XX:AD:23\",\"deviceName\":\"Govee Bureau Schumi\",\"versionHard\":\"1.00.02\",\"versionSoft\":\"1.07.02\",\"playState\":false}",
+        "lastDeviceData": "{\"online\":false}",
+        "extResources": "{\"skuUrl\":\"https://d1f2504ijhdyjw.cloudfront.net/sku-img/78e03221416cd93f51a3da091b720a1c-add_list_type_device_6159.png\",\"headOnImg\":\"https://d1f2504ijhdyjw.cloudfront.net/sku-img/eed1b442fc5d3aaa28563ded4284e057-new_light_title_6160_on.png\",\"headOnImgNew\":\"\",\"headOffImg\":\"https://d1f2504ijhdyjw.cloudfront.net/sku-img/cb48afdb8618c2ddfd8fe16673336af0-new_light_title_6160_off.png\",\"headOffImgNew\":\"\",\"ext\":\"\",\"ic\":0}"
+      },
+      "share": 0,
+      "deviceId": 6678775,
+      "goodsType": 0,
+      "attributesId": 2,
+      "supportScene": 1
+    },
+    {
+      "groupId": 0,
+      "device": "XX:XX:XX:XX:XX:XX:8E:63",
+      "sku": "H618A",
+      "spec": "",
+      "versionHard": "2.01.02",
+      "versionSoft": "2.06.15",
+      "deviceName": "Govee Bureau",
+      "deviceExt": {
+        "deviceSettings": "{\"wifiName\":\"TP-Link_IoT_2G\",\"address\":\"XX:XX:XX:XX:XX:XX\",\"bleName\":\"GBK_H618A_8E63\",\"topic\":\"GD/\",\"wifiMac\":\"XX:XX:XX:XX:XX:XX\",\"pactType\":2,\"pactCode\":1,\"wifiSoftVersion\":\"2.05.08\",\"wifiHardVersion\":\"1.02.00\",\"ic\":15,\"secretCode\":\"=\",\"boilWaterCompletedNotiOnOff\":1,\"completionNotiOnOff\":1,\"autoShutDownOnOff\":1,\"sku\":\"H618A\",\"device\":\"XX:XX:XX:XX:XX:XX:8E:63\",\"deviceName\":\"Govee Bureau\",\"versionHard\":\"2.01.02\",\"versionSoft\":\"2.06.15\",\"playState\":false}",
+        "lastDeviceData": "{\"online\":false}",
+        "extResources": "{\"skuUrl\":\"https://d1f2504ijhdyjw.cloudfront.net/sku-img/1888088d25fbf1fedd34316acccf9ee3-add_list_type_device_618ac.png.png\",\"headOnImg\":\"https://d1f2504ijhdyjw.cloudfront.net/sku-img/eed1b442fc5d3aaa28563ded4284e057-new_light_title_6160_on.png\",\"headOnImgNew\":\"\",\"headOffImg\":\"https://d1f2504ijhdyjw.cloudfront.net/sku-img/cb48afdb8618c2ddfd8fe16673336af0-new_light_title_6160_off.png\",\"headOffImgNew\":\"\",\"ext\":\"\",\"ic\":15}"
+      },
+      "pactType": 2,
+      "pactCode": 1,
+      "share": 0,
+      "deviceId": 6885213,
+      "goodsType": 74,
+      "attributesId": 17,
+      "supportScene": 1
+    },
+    {
+      "groupId": 0,
+      "device": "XX:XX:XX:XX:XX:XX:24:5F",
+      "sku": "H6159",
+      "spec": "",
+      "versionHard": "1.00.02",
+      "versionSoft": "1.07.02",
+      "deviceName": "Govee Bureau Cocotte",
+      "deviceExt": {
+        "deviceSettings": "{\"wifiName\":\"TP-Link_IoT_2G\",\"bleName\":\"ihoment_H6159_245F\",\"topic\":\"GD/\",\"wifiSoftVersion\":\"1.03.05\",\"wifiHardVersion\":\"1.00.01\",\"ic\":0,\"boilWaterCompletedNotiOnOff\":1,\"completionNotiOnOff\":1,\"autoShutDownOnOff\":1,\"sku\":\"H6159\",\"device\":\"XX:XX:XX:XX:XX:XX:24:5F\",\"deviceName\":\"Govee Bureau Cocotte\",\"versionHard\":\"1.00.02\",\"versionSoft\":\"1.07.02\",\"playState\":false}",
+        "lastDeviceData": "{\"online\":false}",
+        "extResources": "{\"skuUrl\":\"https://d1f2504ijhdyjw.cloudfront.net/sku-img/78e03221416cd93f51a3da091b720a1c-add_list_type_device_6159.png\",\"headOnImg\":\"https://d1f2504ijhdyjw.cloudfront.net/sku-img/eed1b442fc5d3aaa28563ded4284e057-new_light_title_6160_on.png\",\"headOnImgNew\":\"\",\"headOffImg\":\"https://d1f2504ijhdyjw.cloudfront.net/sku-img/cb48afdb8618c2ddfd8fe16673336af0-new_light_title_6160_off.png\",\"headOffImgNew\":\"\",\"ext\":\"\",\"ic\":0}"
+      },
+      "share": 0,
+      "deviceId": 6810875,
+      "goodsType": 0,
+      "attributesId": 2,
+      "supportScene": 1
+    }
+  ],
+  "groups": [
+    {
+      "groupId": 4932730,
+      "groupName": "Chambre"
+    },
+    {
+      "groupId": 4932731,
+      "groupName": "Salon"
+    }
+  ],
+  "sort": [],
+  "sortTime": 0,
+  "message": "",
+  "status": 200
+}

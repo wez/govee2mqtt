@@ -7,15 +7,27 @@ DevicesResponse {
             device_ext: DeviceEntryExt {
                 device_settings: DeviceSettings {
                     wifi_name: "MySSID",
-                    address: "CF:00:00:00:00:25",
+                    address: Some(
+                        "CF:00:00:00:00:25",
+                    ),
                     ble_name: "Govee_H6072_5225",
                     topic: "GD/",
-                    wifi_mac: "",
-                    pact_type: 2,
-                    pact_code: 1,
+                    wifi_mac: Some(
+                        "",
+                    ),
+                    pact_type: Some(
+                        2,
+                    ),
+                    pact_code: Some(
+                        1,
+                    ),
                     dsp_version_soft: None,
-                    wifi_soft_version: "2.05.08",
-                    wifi_hard_version: "1.02.00",
+                    wifi_soft_version: Some(
+                        "2.05.08",
+                    ),
+                    wifi_hard_version: Some(
+                        "1.02.00",
+                    ),
                     ic: Some(
                         66,
                     ),
@@ -48,9 +60,15 @@ DevicesResponse {
             device_name: "Primary Bed Hers",
             goods_type: 30,
             group_id: 1001,
-            pact_code: 1,
-            pact_type: 2,
-            share: 0,
+            pact_code: Some(
+                1,
+            ),
+            pact_type: Some(
+                2,
+            ),
+            share: Some(
+                0,
+            ),
             sku: "H6072",
             spec: "",
             support_scene: false,
@@ -64,15 +82,27 @@ DevicesResponse {
             device_ext: DeviceEntryExt {
                 device_settings: DeviceSettings {
                     wifi_name: "MySSID",
-                    address: "CF:00:00:00:00:48",
+                    address: Some(
+                        "CF:00:00:00:00:48",
+                    ),
                     ble_name: "Govee_H6072_5048",
                     topic: "GD/",
-                    wifi_mac: "",
-                    pact_type: 2,
-                    pact_code: 1,
+                    wifi_mac: Some(
+                        "",
+                    ),
+                    pact_type: Some(
+                        2,
+                    ),
+                    pact_code: Some(
+                        1,
+                    ),
                     dsp_version_soft: None,
-                    wifi_soft_version: "2.05.08",
-                    wifi_hard_version: "1.02.00",
+                    wifi_soft_version: Some(
+                        "2.05.08",
+                    ),
+                    wifi_hard_version: Some(
+                        "1.02.00",
+                    ),
                     ic: Some(
                         66,
                     ),
@@ -105,9 +135,15 @@ DevicesResponse {
             device_name: "Primary Bed His",
             goods_type: 30,
             group_id: 1001,
-            pact_code: 1,
-            pact_type: 2,
-            share: 0,
+            pact_code: Some(
+                1,
+            ),
+            pact_type: Some(
+                2,
+            ),
+            share: Some(
+                0,
+            ),
             sku: "H6072",
             spec: "",
             support_scene: false,
@@ -121,15 +157,27 @@ DevicesResponse {
             device_ext: DeviceEntryExt {
                 device_settings: DeviceSettings {
                     wifi_name: "MySSID",
-                    address: "D1:00:00:00:00:93",
+                    address: Some(
+                        "D1:00:00:00:00:93",
+                    ),
                     ble_name: "Govee_H6072_3193",
                     topic: "GD/",
-                    wifi_mac: "",
-                    pact_type: 2,
-                    pact_code: 1,
+                    wifi_mac: Some(
+                        "",
+                    ),
+                    pact_type: Some(
+                        2,
+                    ),
+                    pact_code: Some(
+                        1,
+                    ),
                     dsp_version_soft: None,
-                    wifi_soft_version: "2.05.08",
-                    wifi_hard_version: "1.02.00",
+                    wifi_soft_version: Some(
+                        "2.05.08",
+                    ),
+                    wifi_hard_version: Some(
+                        "1.02.00",
+                    ),
                     ic: Some(
                         66,
                     ),
@@ -162,9 +210,15 @@ DevicesResponse {
             device_name: "Study Floor Lamp 4",
             goods_type: 30,
             group_id: 1003,
-            pact_code: 1,
-            pact_type: 2,
-            share: 0,
+            pact_code: Some(
+                1,
+            ),
+            pact_type: Some(
+                2,
+            ),
+            share: Some(
+                0,
+            ),
             sku: "H6072",
             spec: "",
             support_scene: false,
@@ -178,15 +232,27 @@ DevicesResponse {
             device_ext: DeviceEntryExt {
                 device_settings: DeviceSettings {
                     wifi_name: "MySSID",
-                    address: "",
+                    address: Some(
+                        "",
+                    ),
                     ble_name: "Govee_H6058_163C",
                     topic: "GD/",
-                    wifi_mac: "",
-                    pact_type: 1,
-                    pact_code: 1,
+                    wifi_mac: Some(
+                        "",
+                    ),
+                    pact_type: Some(
+                        1,
+                    ),
+                    pact_code: Some(
+                        1,
+                    ),
                     dsp_version_soft: None,
-                    wifi_soft_version: "2.00.20",
-                    wifi_hard_version: "1.02.00",
+                    wifi_soft_version: Some(
+                        "2.00.20",
+                    ),
+                    wifi_hard_version: Some(
+                        "1.02.00",
+                    ),
                     ic: Some(
                         0,
                     ),
@@ -221,9 +287,15 @@ DevicesResponse {
             device_name: "Portable Table Lamp",
             goods_type: 59,
             group_id: 1001,
-            pact_code: 1,
-            pact_type: 1,
-            share: 0,
+            pact_code: Some(
+                1,
+            ),
+            pact_type: Some(
+                1,
+            ),
+            share: Some(
+                0,
+            ),
             sku: "H6058",
             spec: "",
             support_scene: false,
@@ -237,15 +309,27 @@ DevicesResponse {
             device_ext: DeviceEntryExt {
                 device_settings: DeviceSettings {
                     wifi_name: "MySSID",
-                    address: "",
+                    address: Some(
+                        "",
+                    ),
                     ble_name: "Govee_H610A_0C6F",
                     topic: "GD/",
-                    wifi_mac: "",
-                    pact_type: 1,
-                    pact_code: 1,
+                    wifi_mac: Some(
+                        "",
+                    ),
+                    pact_type: Some(
+                        1,
+                    ),
+                    pact_code: Some(
+                        1,
+                    ),
                     dsp_version_soft: None,
-                    wifi_soft_version: "2.05.08",
-                    wifi_hard_version: "1.02.00",
+                    wifi_soft_version: Some(
+                        "2.05.08",
+                    ),
+                    wifi_hard_version: Some(
+                        "1.02.00",
+                    ),
                     ic: Some(
                         24,
                     ),
@@ -284,9 +368,15 @@ DevicesResponse {
             device_name: "Govee Glide Lively 1",
             goods_type: 80,
             group_id: 0,
-            pact_code: 1,
-            pact_type: 1,
-            share: 0,
+            pact_code: Some(
+                1,
+            ),
+            pact_type: Some(
+                1,
+            ),
+            share: Some(
+                0,
+            ),
             sku: "H610A",
             spec: "",
             support_scene: true,
@@ -300,15 +390,27 @@ DevicesResponse {
             device_ext: DeviceEntryExt {
                 device_settings: DeviceSettings {
                     wifi_name: "MySSID",
-                    address: "",
+                    address: Some(
+                        "",
+                    ),
                     ble_name: "GBK_H61A2_0D17",
                     topic: "GD/",
-                    wifi_mac: "",
-                    pact_type: 2,
-                    pact_code: 1,
+                    wifi_mac: Some(
+                        "",
+                    ),
+                    pact_type: Some(
+                        2,
+                    ),
+                    pact_code: Some(
+                        1,
+                    ),
                     dsp_version_soft: None,
-                    wifi_soft_version: "2.05.08",
-                    wifi_hard_version: "1.02.00",
+                    wifi_soft_version: Some(
+                        "2.05.08",
+                    ),
+                    wifi_hard_version: Some(
+                        "1.02.00",
+                    ),
                     ic: Some(
                         70,
                     ),
@@ -343,9 +445,15 @@ DevicesResponse {
             device_name: "Study Neon",
             goods_type: 71,
             group_id: 1003,
-            pact_code: 1,
-            pact_type: 2,
-            share: 0,
+            pact_code: Some(
+                1,
+            ),
+            pact_type: Some(
+                2,
+            ),
+            share: Some(
+                0,
+            ),
             sku: "H61A2",
             spec: "",
             support_scene: true,
@@ -359,15 +467,27 @@ DevicesResponse {
             device_ext: DeviceEntryExt {
                 device_settings: DeviceSettings {
                     wifi_name: "MySSID",
-                    address: "",
+                    address: Some(
+                        "",
+                    ),
                     ble_name: "GBK_H619A_DA4B",
                     topic: "GD/",
-                    wifi_mac: "",
-                    pact_type: 2,
-                    pact_code: 1,
+                    wifi_mac: Some(
+                        "",
+                    ),
+                    pact_type: Some(
+                        2,
+                    ),
+                    pact_code: Some(
+                        1,
+                    ),
                     dsp_version_soft: None,
-                    wifi_soft_version: "2.05.08",
-                    wifi_hard_version: "1.02.00",
+                    wifi_soft_version: Some(
+                        "2.05.08",
+                    ),
+                    wifi_hard_version: Some(
+                        "1.02.00",
+                    ),
                     ic: Some(
                         20,
                     ),
@@ -402,9 +522,15 @@ DevicesResponse {
             device_name: "Primary Headboard",
             goods_type: 75,
             group_id: 1001,
-            pact_code: 1,
-            pact_type: 2,
-            share: 0,
+            pact_code: Some(
+                1,
+            ),
+            pact_type: Some(
+                2,
+            ),
+            share: Some(
+                0,
+            ),
             sku: "H619A",
             spec: "",
             support_scene: true,
@@ -418,15 +544,27 @@ DevicesResponse {
             device_ext: DeviceEntryExt {
                 device_settings: DeviceSettings {
                     wifi_name: "MySSID",
-                    address: "",
+                    address: Some(
+                        "",
+                    ),
                     ble_name: "GBK_H619A_CDF5",
                     topic: "GD/",
-                    wifi_mac: "",
-                    pact_type: 2,
-                    pact_code: 1,
+                    wifi_mac: Some(
+                        "",
+                    ),
+                    pact_type: Some(
+                        2,
+                    ),
+                    pact_code: Some(
+                        1,
+                    ),
                     dsp_version_soft: None,
-                    wifi_soft_version: "2.05.08",
-                    wifi_hard_version: "1.02.00",
+                    wifi_soft_version: Some(
+                        "2.05.08",
+                    ),
+                    wifi_hard_version: Some(
+                        "1.02.00",
+                    ),
                     ic: Some(
                         20,
                     ),
@@ -461,9 +599,15 @@ DevicesResponse {
             device_name: "H619A_CDF5",
             goods_type: 75,
             group_id: 0,
-            pact_code: 1,
-            pact_type: 2,
-            share: 0,
+            pact_code: Some(
+                1,
+            ),
+            pact_type: Some(
+                2,
+            ),
+            share: Some(
+                0,
+            ),
             sku: "H619A",
             spec: "",
             support_scene: true,
@@ -477,15 +621,27 @@ DevicesResponse {
             device_ext: DeviceEntryExt {
                 device_settings: DeviceSettings {
                     wifi_name: "MySSID",
-                    address: "",
+                    address: Some(
+                        "",
+                    ),
                     ble_name: "Govee_H6072_3529",
                     topic: "GD/",
-                    wifi_mac: "",
-                    pact_type: 2,
-                    pact_code: 1,
+                    wifi_mac: Some(
+                        "",
+                    ),
+                    pact_type: Some(
+                        2,
+                    ),
+                    pact_code: Some(
+                        1,
+                    ),
                     dsp_version_soft: None,
-                    wifi_soft_version: "1.02.11",
-                    wifi_hard_version: "1.00.10",
+                    wifi_soft_version: Some(
+                        "1.02.11",
+                    ),
+                    wifi_hard_version: Some(
+                        "1.00.10",
+                    ),
                     ic: Some(
                         66,
                     ),
@@ -518,9 +674,15 @@ DevicesResponse {
             device_name: "Study Floor Lamp 2",
             goods_type: 30,
             group_id: 1003,
-            pact_code: 1,
-            pact_type: 2,
-            share: 0,
+            pact_code: Some(
+                1,
+            ),
+            pact_type: Some(
+                2,
+            ),
+            share: Some(
+                0,
+            ),
             sku: "H6072",
             spec: "",
             support_scene: false,
@@ -534,15 +696,27 @@ DevicesResponse {
             device_ext: DeviceEntryExt {
                 device_settings: DeviceSettings {
                     wifi_name: "MySSID",
-                    address: "",
+                    address: Some(
+                        "",
+                    ),
                     ble_name: "Govee_H6072_3411",
                     topic: "GD/",
-                    wifi_mac: "",
-                    pact_type: 2,
-                    pact_code: 1,
+                    wifi_mac: Some(
+                        "",
+                    ),
+                    pact_type: Some(
+                        2,
+                    ),
+                    pact_code: Some(
+                        1,
+                    ),
                     dsp_version_soft: None,
-                    wifi_soft_version: "1.02.11",
-                    wifi_hard_version: "1.00.10",
+                    wifi_soft_version: Some(
+                        "1.02.11",
+                    ),
+                    wifi_hard_version: Some(
+                        "1.00.10",
+                    ),
                     ic: Some(
                         66,
                     ),
@@ -575,9 +749,15 @@ DevicesResponse {
             device_name: "Study Floor Lamp 1",
             goods_type: 30,
             group_id: 1003,
-            pact_code: 1,
-            pact_type: 2,
-            share: 0,
+            pact_code: Some(
+                1,
+            ),
+            pact_type: Some(
+                2,
+            ),
+            share: Some(
+                0,
+            ),
             sku: "H6072",
             spec: "",
             support_scene: false,

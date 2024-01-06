@@ -698,9 +698,9 @@ pub struct DeviceEntry {
     pub device_name: String,
     pub goods_type: u32,
     pub group_id: u64,
-    pub pact_code: u32,
-    pub pact_type: u32,
-    pub share: u32,
+    pub pact_code: Option<u32>,
+    pub pact_type: Option<u32>,
+    pub share: Option<u32>,
     pub sku: String,
     pub spec: String,
     #[serde(deserialize_with = "boolean_int")]
@@ -725,15 +725,15 @@ pub struct DeviceEntryExt {
 #[cfg_attr(debug_assertions, serde(deny_unknown_fields))]
 pub struct DeviceSettings {
     pub wifi_name: String,
-    pub address: String,
+    pub address: Option<String>,
     pub ble_name: String,
     pub topic: String,
-    pub wifi_mac: String,
-    pub pact_type: u32,
-    pub pact_code: u32,
+    pub wifi_mac: Option<String>,
+    pub pact_type: Option<u32>,
+    pub pact_code: Option<u32>,
     pub dsp_version_soft: Option<JsonValue>,
-    pub wifi_soft_version: String,
-    pub wifi_hard_version: String,
+    pub wifi_soft_version: Option<String>,
+    pub wifi_hard_version: Option<String>,
     pub ic: Option<u32>,
     #[serde(rename = "ic_sub_1")]
     pub ic_sub_1: Option<u32>,
@@ -791,32 +791,43 @@ pub fn embedded_json<'de, T: DeserializeOwned, D: serde::de::Deserializer<'de>>(
 ) -> Result<T, D::Error> {
     use serde::de::Error as _;
     let s = String::deserialize(deserializer)?;
-    serde_json::from_str(&s).map_err(|e| D::Error::custom(format!("{e:#}")))
+    serde_json::from_str(&s).map_err(|e| {
+        D::Error::custom(format!(
+            "{} {e:#} while processing embedded json text {s}",
+            std::any::type_name::<T>()
+        ))
+    })
 }
 
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::platform_api::from_json;
 
     #[test]
     fn get_device_scenes() {
         let resp: DevicesResponse =
-            serde_json::from_str(include_str!("../test-data/undoc-device-list.json")).unwrap();
+            from_json(include_str!("../test-data/undoc-device-list.json")).unwrap();
         k9::assert_matches_snapshot!(format!("{resp:#?}"));
     }
 
     #[test]
     fn get_one_click() {
         let resp: OneClickResponse =
-            serde_json::from_str(include_str!("../test-data/undoc-one-click.json")).unwrap();
+            from_json(include_str!("../test-data/undoc-one-click.json")).unwrap();
         k9::assert_matches_snapshot!(format!("{resp:#?}"));
     }
 
     #[test]
     fn light_effect_library() {
         let resp: LightEffectLibraryResponse =
-            serde_json::from_str(include_str!("../test-data/light-effect-library-h6072.json"))
-                .unwrap();
+            from_json(include_str!("../test-data/light-effect-library-h6072.json")).unwrap();
+        k9::assert_matches_snapshot!(format!("{resp:#?}"));
+    }
+
+    #[test]
+    fn issue_14() {
+        let resp: DevicesResponse = from_json(include_str!("../test-data/issue14.json")).unwrap();
         k9::assert_matches_snapshot!(format!("{resp:#?}"));
     }
 }

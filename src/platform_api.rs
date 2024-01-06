@@ -786,8 +786,13 @@ pub struct ArrayOption {
 
 pub fn from_json<T: serde::de::DeserializeOwned, S: AsRef<[u8]>>(text: S) -> anyhow::Result<T> {
     let text = text.as_ref();
-    serde_json_path_to_error::from_slice(text)
-        .map_err(|err| anyhow::anyhow!("{err}. Input: {}", String::from_utf8_lossy(text)))
+    serde_json_path_to_error::from_slice(text).map_err(|err| {
+        anyhow::anyhow!(
+            "{} {err}. Input: {}",
+            std::any::type_name::<T>(),
+            String::from_utf8_lossy(text)
+        )
+    })
 }
 
 pub async fn json_body<T: serde::de::DeserializeOwned>(

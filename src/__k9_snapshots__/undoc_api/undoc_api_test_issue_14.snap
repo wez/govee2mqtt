@@ -1,0 +1,648 @@
+DevicesResponse {
+    devices: [
+        DeviceEntry {
+            attributes_id: 17,
+            device_id: Some(
+                12154591,
+            ),
+            device: "XX:XX:XX:XX:XX:XX:07:4D",
+            device_ext: DeviceEntryExt {
+                device_settings: DeviceSettings {
+                    wifi_name: "TP-Link_IoT_2G",
+                    address: Some(
+                        "XX:XX:XX:XX:XX:XX",
+                    ),
+                    ble_name: "GBK_H618A_074D",
+                    topic: "GD/",
+                    wifi_mac: Some(
+                        "XX:XX:XX:XX:XX:XX",
+                    ),
+                    pact_type: Some(
+                        2,
+                    ),
+                    pact_code: Some(
+                        1,
+                    ),
+                    dsp_version_soft: None,
+                    wifi_soft_version: Some(
+                        "2.05.08",
+                    ),
+                    wifi_hard_version: Some(
+                        "1.02.00",
+                    ),
+                    ic: Some(
+                        15,
+                    ),
+                    ic_sub_1: None,
+                    ic_sub_2: None,
+                    secret_code: Some(
+                        "=",
+                    ),
+                    boil_water_completed_noti_on_off: true,
+                    completion_noti_on_off: true,
+                    auto_shut_down_on_off: true,
+                    sku: "H618A",
+                    device: "XX:XX:XX:XX:XX:XX:07:4D",
+                    device_name: "Led Bar",
+                    version_hard: "2.01.02",
+                    version_soft: "2.06.15",
+                    play_state: false,
+                },
+                ext_resources: ExtResources {
+                    sku_url: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/1888088d25fbf1fedd34316acccf9ee3-add_list_type_device_618ac.png.png",
+                    head_on_img_new: Some(
+                        "",
+                    ),
+                    head_on_img: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/eed1b442fc5d3aaa28563ded4284e057-new_light_title_6160_on.png",
+                    head_off_img: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/cb48afdb8618c2ddfd8fe16673336af0-new_light_title_6160_off.png",
+                    head_off_img_new: Some(
+                        "",
+                    ),
+                    ext: "",
+                    ic: 15,
+                },
+                last_device_data: LastDeviceData {
+                    online: false,
+                },
+            },
+            device_name: "Led Bar",
+            goods_type: 74,
+            group_id: 0,
+            pact_code: Some(
+                1,
+            ),
+            pact_type: Some(
+                2,
+            ),
+            share: Some(
+                0,
+            ),
+            sku: "H618A",
+            spec: "",
+            support_scene: true,
+            version_hard: "2.01.02",
+            version_soft: "2.06.15",
+        },
+        DeviceEntry {
+            attributes_id: 1,
+            device_id: Some(
+                10874276,
+            ),
+            device: "XX:XX:XX:XX:XX:XX:4C:67",
+            device_ext: DeviceEntryExt {
+                device_settings: DeviceSettings {
+                    wifi_name: "TP-Link_IoT_2G",
+                    address: Some(
+                        "XX:XX:XX:XX:XX:XX",
+                    ),
+                    ble_name: "Govee_H6199_4C67",
+                    topic: "GD/",
+                    wifi_mac: Some(
+                        "XX:XX:XX:XX:XX:XX",
+                    ),
+                    pact_type: Some(
+                        2,
+                    ),
+                    pact_code: Some(
+                        1,
+                    ),
+                    dsp_version_soft: None,
+                    wifi_soft_version: Some(
+                        "1.00.33",
+                    ),
+                    wifi_hard_version: Some(
+                        "1.03.00",
+                    ),
+                    ic: Some(
+                        50,
+                    ),
+                    ic_sub_1: None,
+                    ic_sub_2: None,
+                    secret_code: None,
+                    boil_water_completed_noti_on_off: true,
+                    completion_noti_on_off: true,
+                    auto_shut_down_on_off: true,
+                    sku: "H6199",
+                    device: "XX:XX:XX:XX:XX:XX:4C:67",
+                    device_name: "DreamView T1",
+                    version_hard: "3.02.01",
+                    version_soft: "1.10.04",
+                    play_state: false,
+                },
+                ext_resources: ExtResources {
+                    sku_url: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/77af67823455a4cd4a65c9d490a8fec9-add_list_type_device_6199.png",
+                    head_on_img_new: Some(
+                        "",
+                    ),
+                    head_on_img: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/f888cb880ed3646868ebfb52db643569-new_light_title_6104_alexa_on.png",
+                    head_off_img: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/c163d1b2aa45e3278b4ff7a25b69e8c8-new_light_title_6104_alexa_off.png",
+                    head_off_img_new: Some(
+                        "",
+                    ),
+                    ext: "",
+                    ic: 50,
+                },
+                last_device_data: LastDeviceData {
+                    online: false,
+                },
+            },
+            device_name: "DreamView T1",
+            goods_type: 24,
+            group_id: 0,
+            pact_code: Some(
+                1,
+            ),
+            pact_type: Some(
+                2,
+            ),
+            share: Some(
+                0,
+            ),
+            sku: "H6199",
+            spec: "",
+            support_scene: true,
+            version_hard: "3.02.01",
+            version_soft: "1.10.04",
+        },
+        DeviceEntry {
+            attributes_id: 1,
+            device_id: Some(
+                7450178,
+            ),
+            device: "XX:XX:XX:XX:XX:XX:B4:D0",
+            device_ext: DeviceEntryExt {
+                device_settings: DeviceSettings {
+                    wifi_name: "TP-Link_IoT_2G",
+                    address: Some(
+                        "XX:XX:XX:XX:XX:XX",
+                    ),
+                    ble_name: "GBK_H618C_B4D0",
+                    topic: "GD/",
+                    wifi_mac: Some(
+                        "XX:XX:XX:XX:XX:XX",
+                    ),
+                    pact_type: Some(
+                        2,
+                    ),
+                    pact_code: Some(
+                        1,
+                    ),
+                    dsp_version_soft: None,
+                    wifi_soft_version: Some(
+                        "2.05.08",
+                    ),
+                    wifi_hard_version: Some(
+                        "1.02.00",
+                    ),
+                    ic: Some(
+                        30,
+                    ),
+                    ic_sub_1: None,
+                    ic_sub_2: None,
+                    secret_code: Some(
+                        "/K3UYYw=",
+                    ),
+                    boil_water_completed_noti_on_off: true,
+                    completion_noti_on_off: true,
+                    auto_shut_down_on_off: true,
+                    sku: "H618C",
+                    device: "XX:XX:XX:XX:XX:XX:B4:D0",
+                    device_name: "Led Escalier Bas Govee",
+                    version_hard: "2.01.02",
+                    version_soft: "2.06.15",
+                    play_state: false,
+                },
+                ext_resources: ExtResources {
+                    sku_url: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/1888088d25fbf1fedd34316acccf9ee3-add_list_type_device_618ac.png.png",
+                    head_on_img_new: Some(
+                        "",
+                    ),
+                    head_on_img: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/eed1b442fc5d3aaa28563ded4284e057-new_light_title_6160_on.png",
+                    head_off_img: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/cb48afdb8618c2ddfd8fe16673336af0-new_light_title_6160_off.png",
+                    head_off_img_new: Some(
+                        "",
+                    ),
+                    ext: "",
+                    ic: 30,
+                },
+                last_device_data: LastDeviceData {
+                    online: false,
+                },
+            },
+            device_name: "Led Escalier Bas Govee",
+            goods_type: 71,
+            group_id: 0,
+            pact_code: Some(
+                1,
+            ),
+            pact_type: Some(
+                2,
+            ),
+            share: Some(
+                0,
+            ),
+            sku: "H618C",
+            spec: "",
+            support_scene: true,
+            version_hard: "2.01.02",
+            version_soft: "2.06.15",
+        },
+        DeviceEntry {
+            attributes_id: 17,
+            device_id: Some(
+                7450936,
+            ),
+            device: "XX:XX:XX:XX:XX:XX:96:A0",
+            device_ext: DeviceEntryExt {
+                device_settings: DeviceSettings {
+                    wifi_name: "TP-Link_IoT_2G",
+                    address: Some(
+                        "XX:XX:XX:XX:XX:XX",
+                    ),
+                    ble_name: "GBK_H618A_96A0",
+                    topic: "GD/",
+                    wifi_mac: None,
+                    pact_type: Some(
+                        2,
+                    ),
+                    pact_code: Some(
+                        1,
+                    ),
+                    dsp_version_soft: None,
+                    wifi_soft_version: Some(
+                        "2.05.08",
+                    ),
+                    wifi_hard_version: Some(
+                        "1.02.00",
+                    ),
+                    ic: Some(
+                        15,
+                    ),
+                    ic_sub_1: None,
+                    ic_sub_2: None,
+                    secret_code: Some(
+                        "=",
+                    ),
+                    boil_water_completed_noti_on_off: true,
+                    completion_noti_on_off: true,
+                    auto_shut_down_on_off: true,
+                    sku: "H618A",
+                    device: "XX:XX:XX:XX:XX:XX:96:A0",
+                    device_name: "Led Enfants Govee",
+                    version_hard: "2.01.02",
+                    version_soft: "2.06.15",
+                    play_state: false,
+                },
+                ext_resources: ExtResources {
+                    sku_url: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/1888088d25fbf1fedd34316acccf9ee3-add_list_type_device_618ac.png.png",
+                    head_on_img_new: Some(
+                        "",
+                    ),
+                    head_on_img: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/eed1b442fc5d3aaa28563ded4284e057-new_light_title_6160_on.png",
+                    head_off_img: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/cb48afdb8618c2ddfd8fe16673336af0-new_light_title_6160_off.png",
+                    head_off_img_new: Some(
+                        "",
+                    ),
+                    ext: "",
+                    ic: 15,
+                },
+                last_device_data: LastDeviceData {
+                    online: false,
+                },
+            },
+            device_name: "Led Enfants Govee",
+            goods_type: 74,
+            group_id: 0,
+            pact_code: Some(
+                1,
+            ),
+            pact_type: Some(
+                2,
+            ),
+            share: Some(
+                0,
+            ),
+            sku: "H618A",
+            spec: "",
+            support_scene: true,
+            version_hard: "2.01.02",
+            version_soft: "2.06.15",
+        },
+        DeviceEntry {
+            attributes_id: 1,
+            device_id: Some(
+                7450755,
+            ),
+            device: "XX:XX:XX:XX:XX:XX:32:27",
+            device_ext: DeviceEntryExt {
+                device_settings: DeviceSettings {
+                    wifi_name: "TP-Link_IoT_2G",
+                    address: Some(
+                        "XX:XX:XX:XX:XX:XX",
+                    ),
+                    ble_name: "GBK_H618C_3227",
+                    topic: "GD/",
+                    wifi_mac: Some(
+                        "XX:XX:XX:XX:XX:XX",
+                    ),
+                    pact_type: Some(
+                        2,
+                    ),
+                    pact_code: Some(
+                        1,
+                    ),
+                    dsp_version_soft: None,
+                    wifi_soft_version: Some(
+                        "2.05.08",
+                    ),
+                    wifi_hard_version: Some(
+                        "1.02.00",
+                    ),
+                    ic: Some(
+                        30,
+                    ),
+                    ic_sub_1: None,
+                    ic_sub_2: None,
+                    secret_code: Some(
+                        "=",
+                    ),
+                    boil_water_completed_noti_on_off: true,
+                    completion_noti_on_off: true,
+                    auto_shut_down_on_off: true,
+                    sku: "H618C",
+                    device: "XX:XX:XX:XX:XX:XX:32:27",
+                    device_name: "Led Escalier Haut Gove",
+                    version_hard: "2.01.02",
+                    version_soft: "2.06.15",
+                    play_state: false,
+                },
+                ext_resources: ExtResources {
+                    sku_url: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/1888088d25fbf1fedd34316acccf9ee3-add_list_type_device_618ac.png.png",
+                    head_on_img_new: Some(
+                        "",
+                    ),
+                    head_on_img: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/eed1b442fc5d3aaa28563ded4284e057-new_light_title_6160_on.png",
+                    head_off_img: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/cb48afdb8618c2ddfd8fe16673336af0-new_light_title_6160_off.png",
+                    head_off_img_new: Some(
+                        "",
+                    ),
+                    ext: "",
+                    ic: 30,
+                },
+                last_device_data: LastDeviceData {
+                    online: false,
+                },
+            },
+            device_name: "Led Escalier Haut Gove",
+            goods_type: 71,
+            group_id: 0,
+            pact_code: Some(
+                1,
+            ),
+            pact_type: Some(
+                2,
+            ),
+            share: Some(
+                0,
+            ),
+            sku: "H618C",
+            spec: "",
+            support_scene: true,
+            version_hard: "2.01.02",
+            version_soft: "2.06.15",
+        },
+        DeviceEntry {
+            attributes_id: 2,
+            device_id: Some(
+                6678775,
+            ),
+            device: "XX:XX:XX:XX:XX:XX:AD:23",
+            device_ext: DeviceEntryExt {
+                device_settings: DeviceSettings {
+                    wifi_name: "TP-Link_IoT_2G",
+                    address: None,
+                    ble_name: "ihoment_H6159_AD23",
+                    topic: "GD/",
+                    wifi_mac: None,
+                    pact_type: None,
+                    pact_code: None,
+                    dsp_version_soft: None,
+                    wifi_soft_version: Some(
+                        "1.03.05",
+                    ),
+                    wifi_hard_version: Some(
+                        "1.00.01",
+                    ),
+                    ic: Some(
+                        0,
+                    ),
+                    ic_sub_1: None,
+                    ic_sub_2: None,
+                    secret_code: None,
+                    boil_water_completed_noti_on_off: true,
+                    completion_noti_on_off: true,
+                    auto_shut_down_on_off: true,
+                    sku: "H6159",
+                    device: "XX:XX:XX:XX:XX:XX:AD:23",
+                    device_name: "Govee Bureau Schumi",
+                    version_hard: "1.00.02",
+                    version_soft: "1.07.02",
+                    play_state: false,
+                },
+                ext_resources: ExtResources {
+                    sku_url: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/78e03221416cd93f51a3da091b720a1c-add_list_type_device_6159.png",
+                    head_on_img_new: Some(
+                        "",
+                    ),
+                    head_on_img: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/eed1b442fc5d3aaa28563ded4284e057-new_light_title_6160_on.png",
+                    head_off_img: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/cb48afdb8618c2ddfd8fe16673336af0-new_light_title_6160_off.png",
+                    head_off_img_new: Some(
+                        "",
+                    ),
+                    ext: "",
+                    ic: 0,
+                },
+                last_device_data: LastDeviceData {
+                    online: false,
+                },
+            },
+            device_name: "Govee Bureau Schumi",
+            goods_type: 0,
+            group_id: 0,
+            pact_code: None,
+            pact_type: None,
+            share: Some(
+                0,
+            ),
+            sku: "H6159",
+            spec: "",
+            support_scene: true,
+            version_hard: "1.00.02",
+            version_soft: "1.07.02",
+        },
+        DeviceEntry {
+            attributes_id: 17,
+            device_id: Some(
+                6885213,
+            ),
+            device: "XX:XX:XX:XX:XX:XX:8E:63",
+            device_ext: DeviceEntryExt {
+                device_settings: DeviceSettings {
+                    wifi_name: "TP-Link_IoT_2G",
+                    address: Some(
+                        "XX:XX:XX:XX:XX:XX",
+                    ),
+                    ble_name: "GBK_H618A_8E63",
+                    topic: "GD/",
+                    wifi_mac: Some(
+                        "XX:XX:XX:XX:XX:XX",
+                    ),
+                    pact_type: Some(
+                        2,
+                    ),
+                    pact_code: Some(
+                        1,
+                    ),
+                    dsp_version_soft: None,
+                    wifi_soft_version: Some(
+                        "2.05.08",
+                    ),
+                    wifi_hard_version: Some(
+                        "1.02.00",
+                    ),
+                    ic: Some(
+                        15,
+                    ),
+                    ic_sub_1: None,
+                    ic_sub_2: None,
+                    secret_code: Some(
+                        "=",
+                    ),
+                    boil_water_completed_noti_on_off: true,
+                    completion_noti_on_off: true,
+                    auto_shut_down_on_off: true,
+                    sku: "H618A",
+                    device: "XX:XX:XX:XX:XX:XX:8E:63",
+                    device_name: "Govee Bureau",
+                    version_hard: "2.01.02",
+                    version_soft: "2.06.15",
+                    play_state: false,
+                },
+                ext_resources: ExtResources {
+                    sku_url: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/1888088d25fbf1fedd34316acccf9ee3-add_list_type_device_618ac.png.png",
+                    head_on_img_new: Some(
+                        "",
+                    ),
+                    head_on_img: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/eed1b442fc5d3aaa28563ded4284e057-new_light_title_6160_on.png",
+                    head_off_img: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/cb48afdb8618c2ddfd8fe16673336af0-new_light_title_6160_off.png",
+                    head_off_img_new: Some(
+                        "",
+                    ),
+                    ext: "",
+                    ic: 15,
+                },
+                last_device_data: LastDeviceData {
+                    online: false,
+                },
+            },
+            device_name: "Govee Bureau",
+            goods_type: 74,
+            group_id: 0,
+            pact_code: Some(
+                1,
+            ),
+            pact_type: Some(
+                2,
+            ),
+            share: Some(
+                0,
+            ),
+            sku: "H618A",
+            spec: "",
+            support_scene: true,
+            version_hard: "2.01.02",
+            version_soft: "2.06.15",
+        },
+        DeviceEntry {
+            attributes_id: 2,
+            device_id: Some(
+                6810875,
+            ),
+            device: "XX:XX:XX:XX:XX:XX:24:5F",
+            device_ext: DeviceEntryExt {
+                device_settings: DeviceSettings {
+                    wifi_name: "TP-Link_IoT_2G",
+                    address: None,
+                    ble_name: "ihoment_H6159_245F",
+                    topic: "GD/",
+                    wifi_mac: None,
+                    pact_type: None,
+                    pact_code: None,
+                    dsp_version_soft: None,
+                    wifi_soft_version: Some(
+                        "1.03.05",
+                    ),
+                    wifi_hard_version: Some(
+                        "1.00.01",
+                    ),
+                    ic: Some(
+                        0,
+                    ),
+                    ic_sub_1: None,
+                    ic_sub_2: None,
+                    secret_code: None,
+                    boil_water_completed_noti_on_off: true,
+                    completion_noti_on_off: true,
+                    auto_shut_down_on_off: true,
+                    sku: "H6159",
+                    device: "XX:XX:XX:XX:XX:XX:24:5F",
+                    device_name: "Govee Bureau Cocotte",
+                    version_hard: "1.00.02",
+                    version_soft: "1.07.02",
+                    play_state: false,
+                },
+                ext_resources: ExtResources {
+                    sku_url: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/78e03221416cd93f51a3da091b720a1c-add_list_type_device_6159.png",
+                    head_on_img_new: Some(
+                        "",
+                    ),
+                    head_on_img: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/eed1b442fc5d3aaa28563ded4284e057-new_light_title_6160_on.png",
+                    head_off_img: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/cb48afdb8618c2ddfd8fe16673336af0-new_light_title_6160_off.png",
+                    head_off_img_new: Some(
+                        "",
+                    ),
+                    ext: "",
+                    ic: 0,
+                },
+                last_device_data: LastDeviceData {
+                    online: false,
+                },
+            },
+            device_name: "Govee Bureau Cocotte",
+            goods_type: 0,
+            group_id: 0,
+            pact_code: None,
+            pact_type: None,
+            share: Some(
+                0,
+            ),
+            sku: "H6159",
+            spec: "",
+            support_scene: true,
+            version_hard: "1.00.02",
+            version_soft: "1.07.02",
+        },
+    ],
+    groups: [
+        GroupEntry {
+            group_id: 4932730,
+            group_name: "Chambre",
+        },
+        GroupEntry {
+            group_id: 4932731,
+            group_name: "Salon",
+        },
+    ],
+    message: "",
+    status: 200,
+}
