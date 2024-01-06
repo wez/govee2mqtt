@@ -19,6 +19,7 @@ const APP_VERSION: &str = "5.6.01";
 const HALF_DAY: Duration = Duration::from_secs(3600 * 12);
 const ONE_DAY: Duration = Duration::from_secs(86400);
 const ONE_WEEK: Duration = Duration::from_secs(86400 * 7);
+const FIFTEEN_MINS: Duration = Duration::from_secs(60 * 15);
 
 fn user_agent() -> String {
     format!(
@@ -204,7 +205,7 @@ impl GoveeUndocumentedApi {
                 key: "account-info",
                 soft_ttl: HALF_DAY,
                 hard_ttl: HALF_DAY,
-                negative_ttl: Duration::from_secs(10),
+                negative_ttl: FIFTEEN_MINS,
                 allow_stale: false,
             },
             async { self.login_account_impl().await },
