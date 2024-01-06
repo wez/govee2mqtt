@@ -168,6 +168,7 @@ impl ServeCommand {
                     "  Platform API: {kind}. supports_rgb={rgb} supports_brightness={bright}"
                 );
                 log::info!("                color_temp={color_temp:?} segment_rgb={segment_rgb:?}");
+                log::trace!("{http_info:#?}");
             }
             if let Some(undoc) = &device.undoc_device_info {
                 let room = &undoc.room_name;
@@ -176,6 +177,7 @@ impl ServeCommand {
                 log::info!(
                     "  Undoc: room={room:?} supports_iot={supports_iot} ble_only={ble_only}"
                 );
+                log::trace!("{undoc:#?}");
             }
             if let Some(quirk) = crate::service::quirks::resolve_quirk(&device.sku) {
                 log::info!("  Quirk: {quirk:?}");
