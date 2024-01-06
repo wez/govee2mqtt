@@ -8,6 +8,7 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde_json::Value as JsonValue;
 use std::collections::HashMap;
 use std::time::Duration;
+use thiserror::Error;
 
 // This file implements the Govee Platform API V1 as described at:
 // <https://developer.govee.com/reference/get-you-devices>
@@ -795,6 +796,20 @@ pub fn from_json<T: serde::de::DeserializeOwned, S: AsRef<[u8]>>(text: S) -> any
     })
 }
 
+#[derive(Deserialize, Debug)]
+struct EmbeddedRequestStatus {
+    #[serde(alias = "msg")]
+    message: String,
+    status: u16,
+}
+
+#[derive(Error, Debug)]
+#[error("Failed with status {status} {}: {content}", .status.canonical_reason().unwrap_or(""))]
+pub struct HttpRequestFailed {
+    status: reqwest::StatusCode,
+    content: String,
+}
+
 pub async fn json_body<T: serde::de::DeserializeOwned>(
     response: reqwest::Response,
 ) -> anyhow::Result<T> {
@@ -803,6 +818,30 @@ pub async fn json_body<T: serde::de::DeserializeOwned>(
         .bytes()
         .await
         .with_context(|| format!("read {url} response body"))?;
+
+    if let Ok(status) = from_json::<EmbeddedRequestStatus, _>(&data) {
+        if status.status != reqwest::StatusCode::OK.as_u16() {
+            if let Ok(code) = reqwest::StatusCode::from_u16(status.status) {
+                return Err(HttpRequestFailed {
+                    status: code,
+                    content: format!(
+                        "Request to {url} failed with code {code} {message}. Full response: {}",
+                        String::from_utf8_lossy(&data),
+                        message = status.message
+                    ),
+                })
+                .with_context(|| format!("parsing {url} response"));
+            }
+
+            anyhow::bail!(
+                "Request to {url} failed with status={status} {message}. Full response was: {}",
+                String::from_utf8_lossy(&data),
+                status = status.status,
+                message = status.message,
+            );
+        }
+    }
+
     from_json(&data).with_context(|| format!("parsing {url} response"))
 }
 

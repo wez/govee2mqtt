@@ -1,6 +1,6 @@
 use crate::lan_api::{DeviceColor, DeviceStatus};
 use crate::service::state::StateHandle;
-use crate::undoc_api::{ms_timestamp, DeviceEntry, ParsedOneClick};
+use crate::undoc_api::{ms_timestamp, DeviceEntry, LoginAccountResponse, ParsedOneClick};
 use crate::Args;
 use anyhow::Context;
 use mosquitto_rs::{Event, QoS};
@@ -53,9 +53,16 @@ impl IotClient {
     }
 }
 
-pub async fn start_iot_client(args: &Args, state: StateHandle) -> anyhow::Result<()> {
+pub async fn start_iot_client(
+    args: &Args,
+    state: StateHandle,
+    acct: Option<LoginAccountResponse>,
+) -> anyhow::Result<()> {
     let client = args.undoc_args.api_client()?;
-    let acct = client.login_account().await?;
+    let acct = match acct {
+        Some(a) => a,
+        None => client.login_account_cached().await?,
+    };
     log::trace!("{acct:#?}");
     let res = client.get_iot_key(&acct.token).await?;
     log::trace!("{res:#?}");

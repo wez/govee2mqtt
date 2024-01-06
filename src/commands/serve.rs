@@ -148,7 +148,7 @@ impl ServeCommand {
                 device.set_undoc_device_info(entry, room_name);
             }
 
-            start_iot_client(args, state.clone()).await?;
+            start_iot_client(args, state.clone(), Some(acct)).await?;
 
             state.set_undoc_client(client).await;
         }

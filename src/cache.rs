@@ -65,6 +65,14 @@ pub enum CacheComputeResult<T> {
     WithTtl(T, Duration),
 }
 
+impl<T> CacheComputeResult<T> {
+    pub fn into_inner(self) -> T {
+        match self {
+            Self::Value(v) | Self::WithTtl(v, _) => v,
+        }
+    }
+}
+
 pub fn invalidate_key(topic: &str, key: &str) -> anyhow::Result<()> {
     let topic = CACHE.topic(topic)?;
     Ok(topic.delete(key)?)

@@ -56,7 +56,7 @@ impl ListCommand {
             }
         }
         if let Ok(client) = args.undoc_args.api_client() {
-            let acct = client.login_account().await?;
+            let acct = client.login_account_cached().await?;
             let info = client.get_device_list(&acct.token).await?;
             let mut group_by_id = HashMap::new();
             for group in info.groups {

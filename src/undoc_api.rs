@@ -166,7 +166,37 @@ impl GoveeUndocumentedApi {
         crate::cache::invalidate_key("undoc-api", "account-info").ok();
     }
 
-    pub async fn login_account(&self) -> anyhow::Result<LoginAccountResponse> {
+    async fn login_account_impl(&self) -> anyhow::Result<CacheComputeResult<LoginAccountResponse>> {
+        let response = reqwest::Client::builder()
+            .timeout(Duration::from_secs(30))
+            .build()?
+            .request(
+                Method::POST,
+                "https://app2.govee.com/account/rest/account/v1/login",
+            )
+            .json(&serde_json::json!({
+                "email": self.email,
+                "password": self.password,
+                "client": &self.client_id,
+            }))
+            .send()
+            .await?;
+
+        let resp: Response = http_response_body(response).await?;
+
+        #[derive(Deserialize, Serialize, Debug)]
+        #[allow(non_snake_case, dead_code)]
+        struct Response {
+            client: LoginAccountResponse,
+            message: String,
+            status: u64,
+        }
+
+        let ttl = Duration::from_secs(resp.client.token_expire_cycle as u64);
+        Ok(CacheComputeResult::WithTtl(resp.client, ttl))
+    }
+
+    pub async fn login_account_cached(&self) -> anyhow::Result<LoginAccountResponse> {
         cache_get(
             CacheGetOptions {
                 topic: "undoc-api",
@@ -176,37 +206,14 @@ impl GoveeUndocumentedApi {
                 negative_ttl: Duration::from_secs(10),
                 allow_stale: false,
             },
-            async {
-                let response = reqwest::Client::builder()
-                    .timeout(Duration::from_secs(30))
-                    .build()?
-                    .request(
-                        Method::POST,
-                        "https://app2.govee.com/account/rest/account/v1/login",
-                    )
-                    .json(&serde_json::json!({
-                        "email": self.email,
-                        "password": self.password,
-                        "client": &self.client_id,
-                    }))
-                    .send()
-                    .await?;
-
-                let resp: Response = http_response_body(response).await?;
-
-                #[derive(Deserialize, Serialize, Debug)]
-                #[allow(non_snake_case, dead_code)]
-                struct Response {
-                    client: LoginAccountResponse,
-                    message: String,
-                    status: u64,
-                }
-
-                let ttl = Duration::from_secs(resp.client.token_expire_cycle as u64);
-                Ok(CacheComputeResult::WithTtl(resp.client, ttl))
-            },
+            async { self.login_account_impl().await },
         )
         .await
+    }
+
+    pub async fn login_account(&self) -> anyhow::Result<LoginAccountResponse> {
+        let value = self.login_account_impl().await?;
+        Ok(value.into_inner())
     }
 
     pub async fn get_device_list(&self, token: &str) -> anyhow::Result<DevicesResponse> {
@@ -693,7 +700,7 @@ pub struct DevicesResponse {
     pub devices: Vec<DeviceEntry>,
     pub groups: Vec<GroupEntry>,
     pub message: String,
-    pub status: u32,
+    pub status: u16,
 }
 
 #[derive(Deserialize, Debug)]
@@ -740,7 +747,8 @@ pub struct DeviceEntryExt {
 #[serde(rename_all = "camelCase")]
 #[cfg_attr(debug_assertions, serde(deny_unknown_fields))]
 pub struct DeviceSettings {
-    pub wifi_name: String,
+    /// Maybe be absent for BLE devices
+    pub wifi_name: Option<String>,
     pub address: Option<String>,
     pub ble_name: String,
     pub topic: String,

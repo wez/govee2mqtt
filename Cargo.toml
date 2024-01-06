@@ -37,6 +37,7 @@ async-channel = "2.1.1"
 serde_json_path_to_error = "0.1.4"
 strum_macros = "0.25.3"
 strum = { version = "0.25.0", features = ["strum_macros"] }
+thiserror = "1.0.56"
 
 [dependencies.mosquitto-rs]
 version="0.10.0"

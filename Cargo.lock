@@ -777,6 +777,7 @@ dependencies = [
  "sqlite-cache",
  "strum",
  "strum_macros",
+ "thiserror",
  "tokio",
  "tower-http",
  "uncased",
