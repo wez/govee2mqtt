@@ -773,12 +773,29 @@ pub struct DeviceSettings {
     pub completion_noti_on_off: bool,
     #[serde(deserialize_with = "boolean_int", default)]
     pub auto_shut_down_on_off: bool,
+    #[serde(deserialize_with = "boolean_int", default)]
+    pub water_shortage_on_off: bool,
+    pub mcu_soft_version: Option<String>,
+    pub mcu_hard_version: Option<String>,
     pub sku: String,
     pub device: String,
     pub device_name: String,
     pub version_hard: Option<String>,
     pub version_soft: Option<String>,
     pub play_state: Option<bool>,
+    pub tem_min: Option<i64>,
+    pub tem_max: Option<i64>,
+    pub tem_warning: Option<bool>,
+    pub fah_open: Option<bool>,
+    pub tem_cali: Option<i64>,
+    pub hum_min: Option<i64>,
+    pub hum_max: Option<i64>,
+    pub hum_warning: Option<bool>,
+    pub hum_cali: Option<i64>,
+    pub net_waring: Option<bool>,
+    pub upload_rate: Option<i64>,
+    pub battery: Option<u8>,
+    pub wifi_level: Option<u8>,
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -799,6 +816,13 @@ pub struct ExtResources {
 #[cfg_attr(debug_assertions, serde(deny_unknown_fields))]
 pub struct LastDeviceData {
     pub online: bool,
+
+    pub tem: Option<i64>,
+    pub hum: Option<i64>,
+    /// timestamp in milliseconds
+    pub last_time: Option<u64>,
+    pub avg_day_tem: Option<i64>,
+    pub avg_day_hum: Option<i64>,
 }
 
 pub fn as_json<S, T>(value: &T, serializer: S) -> Result<S::Ok, S::Error>
