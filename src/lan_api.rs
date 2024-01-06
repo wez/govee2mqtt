@@ -1,5 +1,6 @@
 use crate::ble::GoveeBlePacket;
 use crate::opt_env_var;
+use crate::platform_api::from_json;
 use crate::undoc_api::GoveeUndocumentedApi;
 use anyhow::Context;
 use if_addrs::IfAddr;
@@ -442,7 +443,7 @@ async fn lan_disco(
         inner: &Arc<ClientInner>,
         tx: &Sender<LanDevice>,
     ) -> anyhow::Result<()> {
-        let response: ResponseWrapper = serde_json::from_slice(data)
+        let response: ResponseWrapper = from_json(data)
             .with_context(|| format!("Parsing: {}", String::from_utf8_lossy(data)))?;
 
         let mut mux = inner.mux.lock().await;

@@ -2,7 +2,8 @@ use crate::cache::{cache_get, CacheComputeResult, CacheGetOptions};
 use crate::lan_api::boolean_int;
 use crate::opt_env_var;
 use crate::platform_api::{
-    http_response_body, DeviceCapability, DeviceCapabilityKind, DeviceParameters, EnumOption,
+    from_json, http_response_body, DeviceCapability, DeviceCapabilityKind, DeviceParameters,
+    EnumOption,
 };
 use reqwest::Method;
 use serde::de::DeserializeOwned;
@@ -815,7 +816,7 @@ pub fn embedded_json<'de, T: DeserializeOwned, D: serde::de::Deserializer<'de>>(
 ) -> Result<T, D::Error> {
     use serde::de::Error as _;
     let s = String::deserialize(deserializer)?;
-    serde_json::from_str(&s).map_err(|e| {
+    from_json(&s).map_err(|e| {
         D::Error::custom(format!(
             "{} {e:#} while processing embedded json text {s}",
             std::any::type_name::<T>()

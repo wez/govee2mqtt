@@ -1,4 +1,5 @@
 use crate::lan_api::{DeviceColor, DeviceStatus};
+use crate::platform_api::from_json;
 use crate::service::state::StateHandle;
 use crate::undoc_api::{ms_timestamp, DeviceEntry, LoginAccountResponse, ParsedOneClick};
 use crate::Args;
@@ -155,7 +156,7 @@ pub async fn start_iot_client(
                         pub color_temperature_kelvin: Option<u32>,
                     }
 
-                    match serde_json::from_slice::<Packet>(&msg.payload) {
+                    match from_json::<Packet, _>(&msg.payload) {
                         Ok(packet) => {
                             log::debug!("{packet:?}");
                             {
