@@ -44,18 +44,34 @@ DevicesResponse {
                     sku: "H6072",
                     device: "47:13:CF:00:00:00:00:25",
                     device_name: "Primary Bed Hers",
-                    version_hard: "3.02.00",
-                    version_soft: "2.04.05",
-                    play_state: false,
+                    version_hard: Some(
+                        "3.02.00",
+                    ),
+                    version_soft: Some(
+                        "2.04.05",
+                    ),
+                    play_state: Some(
+                        false,
+                    ),
                 },
                 ext_resources: ExtResources {
-                    sku_url: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/814c890088f34da331e1eecf8ea46fc2-add_list_type_device_6072.png",
+                    sku_url: Some(
+                        "https://d1f2504ijhdyjw.cloudfront.net/sku-img/814c890088f34da331e1eecf8ea46fc2-add_list_type_device_6072.png",
+                    ),
                     head_on_img_new: None,
-                    head_on_img: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/7136846363c3c97ce15fe516fd176366-new_light_title_6072_on%403x.png",
-                    head_off_img: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/7704c288c48f0b39033a5a28aedf473c-new_light_title_6072_off%403x.png",
+                    head_on_img: Some(
+                        "https://d1f2504ijhdyjw.cloudfront.net/sku-img/7136846363c3c97ce15fe516fd176366-new_light_title_6072_on%403x.png",
+                    ),
+                    head_off_img: Some(
+                        "https://d1f2504ijhdyjw.cloudfront.net/sku-img/7704c288c48f0b39033a5a28aedf473c-new_light_title_6072_off%403x.png",
+                    ),
                     head_off_img_new: None,
-                    ext: "",
-                    ic: 66,
+                    ext: Some(
+                        "",
+                    ),
+                    ic: Some(
+                        66,
+                    ),
                 },
                 last_device_data: LastDeviceData {
                     online: false,
@@ -123,18 +139,34 @@ DevicesResponse {
                     sku: "H6072",
                     device: "02:EC:CF:00:00:00:00:48",
                     device_name: "Primary Bed His",
-                    version_hard: "3.02.00",
-                    version_soft: "2.04.05",
-                    play_state: false,
+                    version_hard: Some(
+                        "3.02.00",
+                    ),
+                    version_soft: Some(
+                        "2.04.05",
+                    ),
+                    play_state: Some(
+                        false,
+                    ),
                 },
                 ext_resources: ExtResources {
-                    sku_url: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/814c890088f34da331e1eecf8ea46fc2-add_list_type_device_6072.png",
+                    sku_url: Some(
+                        "https://d1f2504ijhdyjw.cloudfront.net/sku-img/814c890088f34da331e1eecf8ea46fc2-add_list_type_device_6072.png",
+                    ),
                     head_on_img_new: None,
-                    head_on_img: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/7136846363c3c97ce15fe516fd176366-new_light_title_6072_on%403x.png",
-                    head_off_img: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/7704c288c48f0b39033a5a28aedf473c-new_light_title_6072_off%403x.png",
+                    head_on_img: Some(
+                        "https://d1f2504ijhdyjw.cloudfront.net/sku-img/7136846363c3c97ce15fe516fd176366-new_light_title_6072_on%403x.png",
+                    ),
+                    head_off_img: Some(
+                        "https://d1f2504ijhdyjw.cloudfront.net/sku-img/7704c288c48f0b39033a5a28aedf473c-new_light_title_6072_off%403x.png",
+                    ),
                     head_off_img_new: None,
-                    ext: "",
-                    ic: 66,
+                    ext: Some(
+                        "",
+                    ),
+                    ic: Some(
+                        66,
+                    ),
                 },
                 last_device_data: LastDeviceData {
                     online: false,
@@ -202,18 +234,34 @@ DevicesResponse {
                     sku: "H6072",
                     device: "51:2A:D1:00:00:00:00:93",
                     device_name: "Study Floor Lamp 4",
-                    version_hard: "3.02.00",
-                    version_soft: "2.04.05",
-                    play_state: false,
+                    version_hard: Some(
+                        "3.02.00",
+                    ),
+                    version_soft: Some(
+                        "2.04.05",
+                    ),
+                    play_state: Some(
+                        false,
+                    ),
                 },
                 ext_resources: ExtResources {
-                    sku_url: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/814c890088f34da331e1eecf8ea46fc2-add_list_type_device_6072.png",
+                    sku_url: Some(
+                        "https://d1f2504ijhdyjw.cloudfront.net/sku-img/814c890088f34da331e1eecf8ea46fc2-add_list_type_device_6072.png",
+                    ),
                     head_on_img_new: None,
-                    head_on_img: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/7136846363c3c97ce15fe516fd176366-new_light_title_6072_on%403x.png",
-                    head_off_img: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/7704c288c48f0b39033a5a28aedf473c-new_light_title_6072_off%403x.png",
+                    head_on_img: Some(
+                        "https://d1f2504ijhdyjw.cloudfront.net/sku-img/7136846363c3c97ce15fe516fd176366-new_light_title_6072_on%403x.png",
+                    ),
+                    head_off_img: Some(
+                        "https://d1f2504ijhdyjw.cloudfront.net/sku-img/7704c288c48f0b39033a5a28aedf473c-new_light_title_6072_off%403x.png",
+                    ),
                     head_off_img_new: None,
-                    ext: "",
-                    ic: 66,
+                    ext: Some(
+                        "",
+                    ),
+                    ic: Some(
+                        66,
+                    ),
                 },
                 last_device_data: LastDeviceData {
                     online: false,
@@ -283,18 +331,34 @@ DevicesResponse {
                     sku: "H6058",
                     device: "",
                     device_name: "Portable Table Lamp",
-                    version_hard: "3.02.02",
-                    version_soft: "1.01.13",
-                    play_state: false,
+                    version_hard: Some(
+                        "3.02.02",
+                    ),
+                    version_soft: Some(
+                        "1.01.13",
+                    ),
+                    play_state: Some(
+                        false,
+                    ),
                 },
                 ext_resources: ExtResources {
-                    sku_url: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/57f63144484399b4bcdc6dc52699fe0a-add_list_type_device_6058.png",
+                    sku_url: Some(
+                        "https://d1f2504ijhdyjw.cloudfront.net/sku-img/57f63144484399b4bcdc6dc52699fe0a-add_list_type_device_6058.png",
+                    ),
                     head_on_img_new: None,
-                    head_on_img: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/ac98ae14313d12a1d8cc092d733b00dc-new_light_title_6058_on.png",
-                    head_off_img: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/259fee05d104c051c3f5fee3e0860dc3-new_light_title_6058_off.png",
+                    head_on_img: Some(
+                        "https://d1f2504ijhdyjw.cloudfront.net/sku-img/ac98ae14313d12a1d8cc092d733b00dc-new_light_title_6058_on.png",
+                    ),
+                    head_off_img: Some(
+                        "https://d1f2504ijhdyjw.cloudfront.net/sku-img/259fee05d104c051c3f5fee3e0860dc3-new_light_title_6058_off.png",
+                    ),
                     head_off_img_new: None,
-                    ext: "",
-                    ic: 0,
+                    ext: Some(
+                        "",
+                    ),
+                    ic: Some(
+                        0,
+                    ),
                 },
                 last_device_data: LastDeviceData {
                     online: false,
@@ -368,18 +432,34 @@ DevicesResponse {
                     sku: "H610A",
                     device: "",
                     device_name: "Govee Glide Lively 1",
-                    version_hard: "3.01.01",
-                    version_soft: "1.01.08",
-                    play_state: false,
+                    version_hard: Some(
+                        "3.01.01",
+                    ),
+                    version_soft: Some(
+                        "1.01.08",
+                    ),
+                    play_state: Some(
+                        false,
+                    ),
                 },
                 ext_resources: ExtResources {
-                    sku_url: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/94adc398352f030d3b818ae8c2a805dd-add_list_type_device_610a.png",
+                    sku_url: Some(
+                        "https://d1f2504ijhdyjw.cloudfront.net/sku-img/94adc398352f030d3b818ae8c2a805dd-add_list_type_device_610a.png",
+                    ),
                     head_on_img_new: None,
-                    head_on_img: "",
-                    head_off_img: "",
+                    head_on_img: Some(
+                        "",
+                    ),
+                    head_off_img: Some(
+                        "",
+                    ),
                     head_off_img_new: None,
-                    ext: "",
-                    ic: 24,
+                    ext: Some(
+                        "",
+                    ),
+                    ic: Some(
+                        24,
+                    ),
                 },
                 last_device_data: LastDeviceData {
                     online: false,
@@ -449,18 +529,34 @@ DevicesResponse {
                     sku: "H61A2",
                     device: "",
                     device_name: "Study Neon",
-                    version_hard: "2.01.02",
-                    version_soft: "2.07.01",
-                    play_state: false,
+                    version_hard: Some(
+                        "2.01.02",
+                    ),
+                    version_soft: Some(
+                        "2.07.01",
+                    ),
+                    play_state: Some(
+                        false,
+                    ),
                 },
                 ext_resources: ExtResources {
-                    sku_url: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/2ed98b3cef79220b2e982f423b205418-add_list_type_device_61a2.png",
+                    sku_url: Some(
+                        "https://d1f2504ijhdyjw.cloudfront.net/sku-img/2ed98b3cef79220b2e982f423b205418-add_list_type_device_61a2.png",
+                    ),
                     head_on_img_new: None,
-                    head_on_img: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/8ff325193c130aa2b232bbc65f391b48-new_light_title_61a0_on.png",
-                    head_off_img: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/22e9bd69bc85f3a271ed997bc9fbb699-new_light_title_61a0_off.png",
+                    head_on_img: Some(
+                        "https://d1f2504ijhdyjw.cloudfront.net/sku-img/8ff325193c130aa2b232bbc65f391b48-new_light_title_61a0_on.png",
+                    ),
+                    head_off_img: Some(
+                        "https://d1f2504ijhdyjw.cloudfront.net/sku-img/22e9bd69bc85f3a271ed997bc9fbb699-new_light_title_61a0_off.png",
+                    ),
                     head_off_img_new: None,
-                    ext: "",
-                    ic: 70,
+                    ext: Some(
+                        "",
+                    ),
+                    ic: Some(
+                        70,
+                    ),
                 },
                 last_device_data: LastDeviceData {
                     online: false,
@@ -530,18 +626,34 @@ DevicesResponse {
                     sku: "H619A",
                     device: "",
                     device_name: "Primary Headboard",
-                    version_hard: "2.01.02",
-                    version_soft: "2.07.01",
-                    play_state: false,
+                    version_hard: Some(
+                        "2.01.02",
+                    ),
+                    version_soft: Some(
+                        "2.07.01",
+                    ),
+                    play_state: Some(
+                        false,
+                    ),
                 },
                 ext_resources: ExtResources {
-                    sku_url: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/eb8e4f41a30bfebb249c884209460525-add_list_type_device_619ac.png",
+                    sku_url: Some(
+                        "https://d1f2504ijhdyjw.cloudfront.net/sku-img/eb8e4f41a30bfebb249c884209460525-add_list_type_device_619ac.png",
+                    ),
                     head_on_img_new: None,
-                    head_on_img: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/eed1b442fc5d3aaa28563ded4284e057-new_light_title_6160_on.png",
-                    head_off_img: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/cb48afdb8618c2ddfd8fe16673336af0-new_light_title_6160_off.png",
+                    head_on_img: Some(
+                        "https://d1f2504ijhdyjw.cloudfront.net/sku-img/eed1b442fc5d3aaa28563ded4284e057-new_light_title_6160_on.png",
+                    ),
+                    head_off_img: Some(
+                        "https://d1f2504ijhdyjw.cloudfront.net/sku-img/cb48afdb8618c2ddfd8fe16673336af0-new_light_title_6160_off.png",
+                    ),
                     head_off_img_new: None,
-                    ext: "",
-                    ic: 20,
+                    ext: Some(
+                        "",
+                    ),
+                    ic: Some(
+                        20,
+                    ),
                 },
                 last_device_data: LastDeviceData {
                     online: false,
@@ -611,18 +723,34 @@ DevicesResponse {
                     sku: "H619A",
                     device: "",
                     device_name: "H619A_CDF5",
-                    version_hard: "2.01.02",
-                    version_soft: "2.06.06",
-                    play_state: false,
+                    version_hard: Some(
+                        "2.01.02",
+                    ),
+                    version_soft: Some(
+                        "2.06.06",
+                    ),
+                    play_state: Some(
+                        false,
+                    ),
                 },
                 ext_resources: ExtResources {
-                    sku_url: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/eb8e4f41a30bfebb249c884209460525-add_list_type_device_619ac.png",
+                    sku_url: Some(
+                        "https://d1f2504ijhdyjw.cloudfront.net/sku-img/eb8e4f41a30bfebb249c884209460525-add_list_type_device_619ac.png",
+                    ),
                     head_on_img_new: None,
-                    head_on_img: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/eed1b442fc5d3aaa28563ded4284e057-new_light_title_6160_on.png",
-                    head_off_img: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/cb48afdb8618c2ddfd8fe16673336af0-new_light_title_6160_off.png",
+                    head_on_img: Some(
+                        "https://d1f2504ijhdyjw.cloudfront.net/sku-img/eed1b442fc5d3aaa28563ded4284e057-new_light_title_6160_on.png",
+                    ),
+                    head_off_img: Some(
+                        "https://d1f2504ijhdyjw.cloudfront.net/sku-img/cb48afdb8618c2ddfd8fe16673336af0-new_light_title_6160_off.png",
+                    ),
                     head_off_img_new: None,
-                    ext: "",
-                    ic: 20,
+                    ext: Some(
+                        "",
+                    ),
+                    ic: Some(
+                        20,
+                    ),
                 },
                 last_device_data: LastDeviceData {
                     online: false,
@@ -690,18 +818,34 @@ DevicesResponse {
                     sku: "H6072",
                     device: "9",
                     device_name: "Study Floor Lamp 2",
-                    version_hard: "3.02.00",
-                    version_soft: "2.04.05",
-                    play_state: false,
+                    version_hard: Some(
+                        "3.02.00",
+                    ),
+                    version_soft: Some(
+                        "2.04.05",
+                    ),
+                    play_state: Some(
+                        false,
+                    ),
                 },
                 ext_resources: ExtResources {
-                    sku_url: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/814c890088f34da331e1eecf8ea46fc2-add_list_type_device_6072.png",
+                    sku_url: Some(
+                        "https://d1f2504ijhdyjw.cloudfront.net/sku-img/814c890088f34da331e1eecf8ea46fc2-add_list_type_device_6072.png",
+                    ),
                     head_on_img_new: None,
-                    head_on_img: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/7136846363c3c97ce15fe516fd176366-new_light_title_6072_on%403x.png",
-                    head_off_img: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/7704c288c48f0b39033a5a28aedf473c-new_light_title_6072_off%403x.png",
+                    head_on_img: Some(
+                        "https://d1f2504ijhdyjw.cloudfront.net/sku-img/7136846363c3c97ce15fe516fd176366-new_light_title_6072_on%403x.png",
+                    ),
+                    head_off_img: Some(
+                        "https://d1f2504ijhdyjw.cloudfront.net/sku-img/7704c288c48f0b39033a5a28aedf473c-new_light_title_6072_off%403x.png",
+                    ),
                     head_off_img_new: None,
-                    ext: "",
-                    ic: 66,
+                    ext: Some(
+                        "",
+                    ),
+                    ic: Some(
+                        66,
+                    ),
                 },
                 last_device_data: LastDeviceData {
                     online: false,
@@ -769,18 +913,34 @@ DevicesResponse {
                     sku: "H6072",
                     device: "",
                     device_name: "Study Floor Lamp 1",
-                    version_hard: "3.02.00",
-                    version_soft: "2.04.05",
-                    play_state: false,
+                    version_hard: Some(
+                        "3.02.00",
+                    ),
+                    version_soft: Some(
+                        "2.04.05",
+                    ),
+                    play_state: Some(
+                        false,
+                    ),
                 },
                 ext_resources: ExtResources {
-                    sku_url: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/814c890088f34da331e1eecf8ea46fc2-add_list_type_device_6072.png",
+                    sku_url: Some(
+                        "https://d1f2504ijhdyjw.cloudfront.net/sku-img/814c890088f34da331e1eecf8ea46fc2-add_list_type_device_6072.png",
+                    ),
                     head_on_img_new: None,
-                    head_on_img: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/7136846363c3c97ce15fe516fd176366-new_light_title_6072_on%403x.png",
-                    head_off_img: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/7704c288c48f0b39033a5a28aedf473c-new_light_title_6072_off%403x.png",
+                    head_on_img: Some(
+                        "https://d1f2504ijhdyjw.cloudfront.net/sku-img/7136846363c3c97ce15fe516fd176366-new_light_title_6072_on%403x.png",
+                    ),
+                    head_off_img: Some(
+                        "https://d1f2504ijhdyjw.cloudfront.net/sku-img/7704c288c48f0b39033a5a28aedf473c-new_light_title_6072_off%403x.png",
+                    ),
                     head_off_img_new: None,
-                    ext: "",
-                    ic: 66,
+                    ext: Some(
+                        "",
+                    ),
+                    ic: Some(
+                        66,
+                    ),
                 },
                 last_device_data: LastDeviceData {
                     online: false,

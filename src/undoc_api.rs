@@ -764,31 +764,31 @@ pub struct DeviceSettings {
     #[serde(rename = "ic_sub_2")]
     pub ic_sub_2: Option<u32>,
     pub secret_code: Option<String>,
-    #[serde(deserialize_with = "boolean_int")]
+    #[serde(deserialize_with = "boolean_int", default)]
     pub boil_water_completed_noti_on_off: bool,
-    #[serde(deserialize_with = "boolean_int")]
+    #[serde(deserialize_with = "boolean_int", default)]
     pub completion_noti_on_off: bool,
-    #[serde(deserialize_with = "boolean_int")]
+    #[serde(deserialize_with = "boolean_int", default)]
     pub auto_shut_down_on_off: bool,
     pub sku: String,
     pub device: String,
     pub device_name: String,
-    pub version_hard: String,
-    pub version_soft: String,
-    pub play_state: bool,
+    pub version_hard: Option<String>,
+    pub version_soft: Option<String>,
+    pub play_state: Option<bool>,
 }
 
 #[derive(Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 #[cfg_attr(debug_assertions, serde(deny_unknown_fields))]
 pub struct ExtResources {
-    pub sku_url: String,
+    pub sku_url: Option<String>,
     pub head_on_img_new: Option<String>,
-    pub head_on_img: String,
-    pub head_off_img: String,
+    pub head_on_img: Option<String>,
+    pub head_off_img: Option<String>,
     pub head_off_img_new: Option<String>,
-    pub ext: String,
-    pub ic: u32,
+    pub ext: Option<String>,
+    pub ic: Option<u32>,
 }
 
 #[derive(Deserialize, Debug, Clone)]

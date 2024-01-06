@@ -48,22 +48,38 @@ DevicesResponse {
                     sku: "H618A",
                     device: "XX:XX:XX:XX:XX:XX:07:4D",
                     device_name: "Led Bar",
-                    version_hard: "2.01.02",
-                    version_soft: "2.06.15",
-                    play_state: false,
+                    version_hard: Some(
+                        "2.01.02",
+                    ),
+                    version_soft: Some(
+                        "2.06.15",
+                    ),
+                    play_state: Some(
+                        false,
+                    ),
                 },
                 ext_resources: ExtResources {
-                    sku_url: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/1888088d25fbf1fedd34316acccf9ee3-add_list_type_device_618ac.png.png",
+                    sku_url: Some(
+                        "https://d1f2504ijhdyjw.cloudfront.net/sku-img/1888088d25fbf1fedd34316acccf9ee3-add_list_type_device_618ac.png.png",
+                    ),
                     head_on_img_new: Some(
                         "",
                     ),
-                    head_on_img: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/eed1b442fc5d3aaa28563ded4284e057-new_light_title_6160_on.png",
-                    head_off_img: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/cb48afdb8618c2ddfd8fe16673336af0-new_light_title_6160_off.png",
+                    head_on_img: Some(
+                        "https://d1f2504ijhdyjw.cloudfront.net/sku-img/eed1b442fc5d3aaa28563ded4284e057-new_light_title_6160_on.png",
+                    ),
+                    head_off_img: Some(
+                        "https://d1f2504ijhdyjw.cloudfront.net/sku-img/cb48afdb8618c2ddfd8fe16673336af0-new_light_title_6160_off.png",
+                    ),
                     head_off_img_new: Some(
                         "",
                     ),
-                    ext: "",
-                    ic: 15,
+                    ext: Some(
+                        "",
+                    ),
+                    ic: Some(
+                        15,
+                    ),
                 },
                 last_device_data: LastDeviceData {
                     online: false,
@@ -133,22 +149,38 @@ DevicesResponse {
                     sku: "H6199",
                     device: "XX:XX:XX:XX:XX:XX:4C:67",
                     device_name: "DreamView T1",
-                    version_hard: "3.02.01",
-                    version_soft: "1.10.04",
-                    play_state: false,
+                    version_hard: Some(
+                        "3.02.01",
+                    ),
+                    version_soft: Some(
+                        "1.10.04",
+                    ),
+                    play_state: Some(
+                        false,
+                    ),
                 },
                 ext_resources: ExtResources {
-                    sku_url: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/77af67823455a4cd4a65c9d490a8fec9-add_list_type_device_6199.png",
+                    sku_url: Some(
+                        "https://d1f2504ijhdyjw.cloudfront.net/sku-img/77af67823455a4cd4a65c9d490a8fec9-add_list_type_device_6199.png",
+                    ),
                     head_on_img_new: Some(
                         "",
                     ),
-                    head_on_img: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/f888cb880ed3646868ebfb52db643569-new_light_title_6104_alexa_on.png",
-                    head_off_img: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/c163d1b2aa45e3278b4ff7a25b69e8c8-new_light_title_6104_alexa_off.png",
+                    head_on_img: Some(
+                        "https://d1f2504ijhdyjw.cloudfront.net/sku-img/f888cb880ed3646868ebfb52db643569-new_light_title_6104_alexa_on.png",
+                    ),
+                    head_off_img: Some(
+                        "https://d1f2504ijhdyjw.cloudfront.net/sku-img/c163d1b2aa45e3278b4ff7a25b69e8c8-new_light_title_6104_alexa_off.png",
+                    ),
                     head_off_img_new: Some(
                         "",
                     ),
-                    ext: "",
-                    ic: 50,
+                    ext: Some(
+                        "",
+                    ),
+                    ic: Some(
+                        50,
+                    ),
                 },
                 last_device_data: LastDeviceData {
                     online: false,
@@ -220,22 +252,38 @@ DevicesResponse {
                     sku: "H618C",
                     device: "XX:XX:XX:XX:XX:XX:B4:D0",
                     device_name: "Led Escalier Bas Govee",
-                    version_hard: "2.01.02",
-                    version_soft: "2.06.15",
-                    play_state: false,
+                    version_hard: Some(
+                        "2.01.02",
+                    ),
+                    version_soft: Some(
+                        "2.06.15",
+                    ),
+                    play_state: Some(
+                        false,
+                    ),
                 },
                 ext_resources: ExtResources {
-                    sku_url: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/1888088d25fbf1fedd34316acccf9ee3-add_list_type_device_618ac.png.png",
+                    sku_url: Some(
+                        "https://d1f2504ijhdyjw.cloudfront.net/sku-img/1888088d25fbf1fedd34316acccf9ee3-add_list_type_device_618ac.png.png",
+                    ),
                     head_on_img_new: Some(
                         "",
                     ),
-                    head_on_img: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/eed1b442fc5d3aaa28563ded4284e057-new_light_title_6160_on.png",
-                    head_off_img: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/cb48afdb8618c2ddfd8fe16673336af0-new_light_title_6160_off.png",
+                    head_on_img: Some(
+                        "https://d1f2504ijhdyjw.cloudfront.net/sku-img/eed1b442fc5d3aaa28563ded4284e057-new_light_title_6160_on.png",
+                    ),
+                    head_off_img: Some(
+                        "https://d1f2504ijhdyjw.cloudfront.net/sku-img/cb48afdb8618c2ddfd8fe16673336af0-new_light_title_6160_off.png",
+                    ),
                     head_off_img_new: Some(
                         "",
                     ),
-                    ext: "",
-                    ic: 30,
+                    ext: Some(
+                        "",
+                    ),
+                    ic: Some(
+                        30,
+                    ),
                 },
                 last_device_data: LastDeviceData {
                     online: false,
@@ -305,22 +353,38 @@ DevicesResponse {
                     sku: "H618A",
                     device: "XX:XX:XX:XX:XX:XX:96:A0",
                     device_name: "Led Enfants Govee",
-                    version_hard: "2.01.02",
-                    version_soft: "2.06.15",
-                    play_state: false,
+                    version_hard: Some(
+                        "2.01.02",
+                    ),
+                    version_soft: Some(
+                        "2.06.15",
+                    ),
+                    play_state: Some(
+                        false,
+                    ),
                 },
                 ext_resources: ExtResources {
-                    sku_url: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/1888088d25fbf1fedd34316acccf9ee3-add_list_type_device_618ac.png.png",
+                    sku_url: Some(
+                        "https://d1f2504ijhdyjw.cloudfront.net/sku-img/1888088d25fbf1fedd34316acccf9ee3-add_list_type_device_618ac.png.png",
+                    ),
                     head_on_img_new: Some(
                         "",
                     ),
-                    head_on_img: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/eed1b442fc5d3aaa28563ded4284e057-new_light_title_6160_on.png",
-                    head_off_img: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/cb48afdb8618c2ddfd8fe16673336af0-new_light_title_6160_off.png",
+                    head_on_img: Some(
+                        "https://d1f2504ijhdyjw.cloudfront.net/sku-img/eed1b442fc5d3aaa28563ded4284e057-new_light_title_6160_on.png",
+                    ),
+                    head_off_img: Some(
+                        "https://d1f2504ijhdyjw.cloudfront.net/sku-img/cb48afdb8618c2ddfd8fe16673336af0-new_light_title_6160_off.png",
+                    ),
                     head_off_img_new: Some(
                         "",
                     ),
-                    ext: "",
-                    ic: 15,
+                    ext: Some(
+                        "",
+                    ),
+                    ic: Some(
+                        15,
+                    ),
                 },
                 last_device_data: LastDeviceData {
                     online: false,
@@ -392,22 +456,38 @@ DevicesResponse {
                     sku: "H618C",
                     device: "XX:XX:XX:XX:XX:XX:32:27",
                     device_name: "Led Escalier Haut Gove",
-                    version_hard: "2.01.02",
-                    version_soft: "2.06.15",
-                    play_state: false,
+                    version_hard: Some(
+                        "2.01.02",
+                    ),
+                    version_soft: Some(
+                        "2.06.15",
+                    ),
+                    play_state: Some(
+                        false,
+                    ),
                 },
                 ext_resources: ExtResources {
-                    sku_url: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/1888088d25fbf1fedd34316acccf9ee3-add_list_type_device_618ac.png.png",
+                    sku_url: Some(
+                        "https://d1f2504ijhdyjw.cloudfront.net/sku-img/1888088d25fbf1fedd34316acccf9ee3-add_list_type_device_618ac.png.png",
+                    ),
                     head_on_img_new: Some(
                         "",
                     ),
-                    head_on_img: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/eed1b442fc5d3aaa28563ded4284e057-new_light_title_6160_on.png",
-                    head_off_img: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/cb48afdb8618c2ddfd8fe16673336af0-new_light_title_6160_off.png",
+                    head_on_img: Some(
+                        "https://d1f2504ijhdyjw.cloudfront.net/sku-img/eed1b442fc5d3aaa28563ded4284e057-new_light_title_6160_on.png",
+                    ),
+                    head_off_img: Some(
+                        "https://d1f2504ijhdyjw.cloudfront.net/sku-img/cb48afdb8618c2ddfd8fe16673336af0-new_light_title_6160_off.png",
+                    ),
                     head_off_img_new: Some(
                         "",
                     ),
-                    ext: "",
-                    ic: 30,
+                    ext: Some(
+                        "",
+                    ),
+                    ic: Some(
+                        30,
+                    ),
                 },
                 last_device_data: LastDeviceData {
                     online: false,
@@ -469,22 +549,38 @@ DevicesResponse {
                     sku: "H6159",
                     device: "XX:XX:XX:XX:XX:XX:AD:23",
                     device_name: "Govee Bureau Schumi",
-                    version_hard: "1.00.02",
-                    version_soft: "1.07.02",
-                    play_state: false,
+                    version_hard: Some(
+                        "1.00.02",
+                    ),
+                    version_soft: Some(
+                        "1.07.02",
+                    ),
+                    play_state: Some(
+                        false,
+                    ),
                 },
                 ext_resources: ExtResources {
-                    sku_url: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/78e03221416cd93f51a3da091b720a1c-add_list_type_device_6159.png",
+                    sku_url: Some(
+                        "https://d1f2504ijhdyjw.cloudfront.net/sku-img/78e03221416cd93f51a3da091b720a1c-add_list_type_device_6159.png",
+                    ),
                     head_on_img_new: Some(
                         "",
                     ),
-                    head_on_img: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/eed1b442fc5d3aaa28563ded4284e057-new_light_title_6160_on.png",
-                    head_off_img: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/cb48afdb8618c2ddfd8fe16673336af0-new_light_title_6160_off.png",
+                    head_on_img: Some(
+                        "https://d1f2504ijhdyjw.cloudfront.net/sku-img/eed1b442fc5d3aaa28563ded4284e057-new_light_title_6160_on.png",
+                    ),
+                    head_off_img: Some(
+                        "https://d1f2504ijhdyjw.cloudfront.net/sku-img/cb48afdb8618c2ddfd8fe16673336af0-new_light_title_6160_off.png",
+                    ),
                     head_off_img_new: Some(
                         "",
                     ),
-                    ext: "",
-                    ic: 0,
+                    ext: Some(
+                        "",
+                    ),
+                    ic: Some(
+                        0,
+                    ),
                 },
                 last_device_data: LastDeviceData {
                     online: false,
@@ -552,22 +648,38 @@ DevicesResponse {
                     sku: "H618A",
                     device: "XX:XX:XX:XX:XX:XX:8E:63",
                     device_name: "Govee Bureau",
-                    version_hard: "2.01.02",
-                    version_soft: "2.06.15",
-                    play_state: false,
+                    version_hard: Some(
+                        "2.01.02",
+                    ),
+                    version_soft: Some(
+                        "2.06.15",
+                    ),
+                    play_state: Some(
+                        false,
+                    ),
                 },
                 ext_resources: ExtResources {
-                    sku_url: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/1888088d25fbf1fedd34316acccf9ee3-add_list_type_device_618ac.png.png",
+                    sku_url: Some(
+                        "https://d1f2504ijhdyjw.cloudfront.net/sku-img/1888088d25fbf1fedd34316acccf9ee3-add_list_type_device_618ac.png.png",
+                    ),
                     head_on_img_new: Some(
                         "",
                     ),
-                    head_on_img: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/eed1b442fc5d3aaa28563ded4284e057-new_light_title_6160_on.png",
-                    head_off_img: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/cb48afdb8618c2ddfd8fe16673336af0-new_light_title_6160_off.png",
+                    head_on_img: Some(
+                        "https://d1f2504ijhdyjw.cloudfront.net/sku-img/eed1b442fc5d3aaa28563ded4284e057-new_light_title_6160_on.png",
+                    ),
+                    head_off_img: Some(
+                        "https://d1f2504ijhdyjw.cloudfront.net/sku-img/cb48afdb8618c2ddfd8fe16673336af0-new_light_title_6160_off.png",
+                    ),
                     head_off_img_new: Some(
                         "",
                     ),
-                    ext: "",
-                    ic: 15,
+                    ext: Some(
+                        "",
+                    ),
+                    ic: Some(
+                        15,
+                    ),
                 },
                 last_device_data: LastDeviceData {
                     online: false,
@@ -629,22 +741,38 @@ DevicesResponse {
                     sku: "H6159",
                     device: "XX:XX:XX:XX:XX:XX:24:5F",
                     device_name: "Govee Bureau Cocotte",
-                    version_hard: "1.00.02",
-                    version_soft: "1.07.02",
-                    play_state: false,
+                    version_hard: Some(
+                        "1.00.02",
+                    ),
+                    version_soft: Some(
+                        "1.07.02",
+                    ),
+                    play_state: Some(
+                        false,
+                    ),
                 },
                 ext_resources: ExtResources {
-                    sku_url: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/78e03221416cd93f51a3da091b720a1c-add_list_type_device_6159.png",
+                    sku_url: Some(
+                        "https://d1f2504ijhdyjw.cloudfront.net/sku-img/78e03221416cd93f51a3da091b720a1c-add_list_type_device_6159.png",
+                    ),
                     head_on_img_new: Some(
                         "",
                     ),
-                    head_on_img: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/eed1b442fc5d3aaa28563ded4284e057-new_light_title_6160_on.png",
-                    head_off_img: "https://d1f2504ijhdyjw.cloudfront.net/sku-img/cb48afdb8618c2ddfd8fe16673336af0-new_light_title_6160_off.png",
+                    head_on_img: Some(
+                        "https://d1f2504ijhdyjw.cloudfront.net/sku-img/eed1b442fc5d3aaa28563ded4284e057-new_light_title_6160_on.png",
+                    ),
+                    head_off_img: Some(
+                        "https://d1f2504ijhdyjw.cloudfront.net/sku-img/cb48afdb8618c2ddfd8fe16673336af0-new_light_title_6160_off.png",
+                    ),
                     head_off_img_new: Some(
                         "",
                     ),
-                    ext: "",
-                    ic: 0,
+                    ext: Some(
+                        "",
+                    ),
+                    ic: Some(
+                        0,
+                    ),
                 },
                 last_device_data: LastDeviceData {
                     online: false,
