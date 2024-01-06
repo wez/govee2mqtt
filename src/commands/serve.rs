@@ -163,7 +163,11 @@ impl ServeCommand {
                 let rgb = http_info.supports_rgb();
                 let bright = http_info.supports_brightness();
                 let color_temp = http_info.get_color_temperature_range();
-                log::info!("  Platform API: {kind}. supports_rgb={rgb} supports_brightness={bright} color_temp={color_temp:?}");
+                let segment_rgb = http_info.supports_segmented_rgb();
+                log::info!(
+                    "  Platform API: {kind}. supports_rgb={rgb} supports_brightness={bright}"
+                );
+                log::info!("                color_temp={color_temp:?} segment_rgb={segment_rgb:?}");
             }
             if let Some(undoc) = &device.undoc_device_info {
                 let room = &undoc.room_name;
@@ -176,6 +180,7 @@ impl ServeCommand {
             if let Some(quirk) = crate::service::quirks::resolve_quirk(&device.sku) {
                 log::info!("  Quirk: {quirk:?}");
             }
+            log::info!("");
         }
 
         // Now start discovery

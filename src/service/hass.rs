@@ -1,6 +1,6 @@
 use crate::lan_api::DeviceColor;
 use crate::opt_env_var;
-use crate::platform_api::{DeviceCapability, DeviceCapabilityKind};
+use crate::platform_api::{from_json, DeviceCapability, DeviceCapabilityKind};
 use crate::service::device::Device as ServiceDevice;
 use crate::service::state::{State as ServiceState, StateHandle};
 use crate::version_info::govee_version;
@@ -420,7 +420,10 @@ pub struct LightConfig {
     pub schema: String,
 
     pub command_topic: String,
+    /// The docs say that this is optional, but hass errors out if
+    /// it is not passed
     pub state_topic: String,
+    pub optimistic: bool,
     pub supported_color_modes: Vec<String>,
     /// Flag that defines if the light supports color modes.
     pub color_mode: bool,
@@ -435,56 +438,87 @@ pub struct LightConfig {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub effect_list: Vec<String>,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub min_mireds: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub max_mireds: Option<u32>,
 
     pub payload_available: String,
 }
 
 impl LightConfig {
-    pub async fn for_device(device: &ServiceDevice, state: &ServiceState) -> anyhow::Result<Self> {
-        let command_topic = format!("gv2mqtt/light/{id}/command", id = topic_safe_id(device));
-        let state_topic = light_state_topic(device);
-        let availability_topic = availability_topic();
-        let unique_id = format!("gv2mqtt-{id}", id = topic_safe_id(device));
+    pub async fn for_device(
+        device: &ServiceDevice,
+        state: &ServiceState,
+        segment: Option<u32>,
+    ) -> anyhow::Result<Self> {
+        let command_topic = match segment {
+            None => format!("gv2mqtt/light/{id}/command", id = topic_safe_id(device)),
+            Some(seg) => format!(
+                "gv2mqtt/light/{id}/command/{seg}",
+                id = topic_safe_id(device)
+            ),
+        };
 
-        let effect_list = match state.device_list_scenes(device).await {
-            Ok(scenes) => scenes,
-            Err(err) => {
-                log::error!("Unable to list scenes for {device}: {err:#}");
-                vec![]
+        let state_topic = match segment {
+            Some(seg) => light_segment_state_topic(device, seg),
+            None => light_state_topic(device),
+        };
+        let availability_topic = availability_topic();
+        let unique_id = format!(
+            "gv2mqtt-{id}{seg}",
+            id = topic_safe_id(device),
+            seg = segment.map(|n| format!("-{n}")).unwrap_or(String::new())
+        );
+
+        let effect_list = if segment.is_some() {
+            vec![]
+        } else {
+            match state.device_list_scenes(device).await {
+                Ok(scenes) => scenes,
+                Err(err) => {
+                    log::error!("Unable to list scenes for {device}: {err:#}");
+                    vec![]
+                }
             }
         };
 
         let mut supported_color_modes = vec![];
         let mut color_mode = false;
 
-        if device.supports_rgb() {
+        if segment.is_some() || device.supports_rgb() {
             supported_color_modes.push("rgb".to_string());
             color_mode = true;
         }
 
-        let (min_mireds, max_mireds) =
-            if let Some((min, max)) = device.get_color_temperature_range() {
-                supported_color_modes.push("color_temp".to_string());
-                color_mode = true;
-                // Note that min and max are swapped by the translation
-                // from kelvin to mired
-                (Some(kelvin_to_mired(max)), Some(kelvin_to_mired(min)))
-            } else {
-                (None, None)
-            };
+        let (min_mireds, max_mireds) = if segment.is_some() {
+            (None, None)
+        } else if let Some((min, max)) = device.get_color_temperature_range() {
+            supported_color_modes.push("color_temp".to_string());
+            color_mode = true;
+            // Note that min and max are swapped by the translation
+            // from kelvin to mired
+            (Some(kelvin_to_mired(max)), Some(kelvin_to_mired(min)))
+        } else {
+            (None, None)
+        };
 
-        let brightness = device
-            .http_device_info
-            .as_ref()
-            .map(|info| info.supports_brightness())
-            .unwrap_or(false);
+        let brightness = segment.is_some()
+            || device
+                .http_device_info
+                .as_ref()
+                .map(|info| info.supports_brightness())
+                .unwrap_or(false);
+
+        let name = match segment {
+            Some(n) => Some(format!("Segment {:03}", n + 1)),
+            None => None,
+        };
 
         Ok(Self {
             base: EntityConfig {
                 availability_topic,
-                name: None,
+                name,
                 device_class: None,
                 origin: Origin::default(),
                 device: Device::for_device(device),
@@ -504,6 +538,7 @@ impl LightConfig {
             payload_available: "online".to_string(),
             max_mireds,
             min_mireds,
+            optimistic: segment.is_some(),
         })
     }
 
@@ -522,6 +557,10 @@ impl LightConfig {
         device: &ServiceDevice,
         client: &HassClient,
     ) -> anyhow::Result<()> {
+        if self.optimistic {
+            return Ok(());
+        }
+
         match device.device_state() {
             Some(device_state) => {
                 log::trace!("LightConfig::notify_state: state is {device_state:?}");
@@ -624,7 +663,11 @@ impl Config {
             return Ok(());
         }
 
-        configs.push((d, Config::Light(LightConfig::for_device(&d, state).await?)));
+        configs.push((
+            d,
+            Config::Light(LightConfig::for_device(&d, state, None).await?),
+        ));
+
         if let Some(info) = &d.http_device_info {
             for cap in &info.capabilities {
                 match cap.kind {
@@ -632,6 +675,15 @@ impl Config {
                         configs.push((d, Config::Switch(SwitchConfig::for_device(&d, cap).await?)));
                     }
                     _ => {}
+                }
+            }
+
+            if let Some(segments) = info.supports_segmented_rgb() {
+                for n in segments {
+                    configs.push((
+                        d,
+                        Config::Light(LightConfig::for_device(&d, state, Some(n)).await?),
+                    ));
                 }
             }
         }
@@ -806,6 +858,13 @@ fn light_state_topic(device: &ServiceDevice) -> String {
     format!("gv2mqtt/light/{id}/state", id = topic_safe_id(device))
 }
 
+fn light_segment_state_topic(device: &ServiceDevice, segment: u32) -> String {
+    format!(
+        "gv2mqtt/light/{id}/state/{segment}",
+        id = topic_safe_id(device)
+    )
+}
+
 /// All entities use the same topic so that we can mark unavailable
 /// via last-will
 fn availability_topic() -> String {
@@ -878,6 +937,51 @@ async fn mqtt_light_command(
         if power_on {
             state.device_power_on(&device, true).await?;
         }
+    }
+
+    Ok(())
+}
+
+#[derive(Deserialize)]
+struct IdAndSeg {
+    id: String,
+    segment: String,
+}
+
+async fn mqtt_light_segment_command(
+    Payload(payload): Payload<String>,
+    Params(IdAndSeg { id, segment }): Params<IdAndSeg>,
+    State(state): State<StateHandle>,
+) -> anyhow::Result<()> {
+    let device = state
+        .resolve_device(&id)
+        .await
+        .ok_or_else(|| anyhow::anyhow!("device '{id}' not found"))?;
+    let segment: u32 = segment.parse()?;
+
+    let command: HassLightCommand = from_json(&payload)?;
+    log::info!("Command for {device} segment {segment}: {payload}");
+
+    if let Some(client) = state.get_platform_client().await {
+        let info = device
+            .http_device_info
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("HTTP device info is missing"))?;
+
+        if let Some(brightness) = command.brightness {
+            client
+                .set_segment_brightness(&info, segment, brightness)
+                .await?;
+        } else if command.state == "OFF" {
+            client.set_segment_brightness(&info, segment, 0).await?;
+        }
+        if let Some(color) = &command.color {
+            client
+                .set_segment_rgb(&info, segment, color.r, color.g, color.b)
+                .await?;
+        }
+    } else {
+        anyhow::bail!("cannot set segments: platform API is not available");
     }
 
     Ok(())
@@ -1000,6 +1104,12 @@ async fn run_mqtt_loop(
 
         router
             .route("gv2mqtt/light/:id/command", mqtt_light_command)
+            .await?;
+        router
+            .route(
+                "gv2mqtt/light/:id/command/:segment",
+                mqtt_light_segment_command,
+            )
             .await?;
         router
             .route("gv2mqtt/switch/:id/command/:instance", mqtt_switch_command)

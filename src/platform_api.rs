@@ -5,7 +5,7 @@ use crate::undoc_api::GoveeUndocumentedApi;
 use anyhow::Context;
 use reqwest::Method;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use serde_json::Value as JsonValue;
+use serde_json::{json, Value as JsonValue};
 use std::collections::HashMap;
 use std::time::Duration;
 use thiserror::Error;
@@ -414,6 +414,56 @@ impl GoveeApiClient {
         let value = ((r as u32) << 16) | ((g as u32) << 8) | (b as u32);
         self.control_device(&device, &cap, value).await
     }
+
+    pub async fn set_segment_rgb(
+        &self,
+        device: &HttpDeviceInfo,
+        segment: u32,
+        r: u8,
+        g: u8,
+        b: u8,
+    ) -> anyhow::Result<ControlDeviceResponseCapability> {
+        let cap = device
+            .capability_by_instance("segmentedColorRgb")
+            .ok_or_else(|| anyhow::anyhow!("device has no segmentedColorRgb"))?;
+        let value = ((r as u32) << 16) | ((g as u32) << 8) | (b as u32);
+        self.control_device(
+            &device,
+            &cap,
+            json!({
+                "segment": vec![segment],
+                "rgb": value,
+            }),
+        )
+        .await
+    }
+
+    pub async fn set_segment_brightness(
+        &self,
+        device: &HttpDeviceInfo,
+        segment: u32,
+        percent: u8,
+    ) -> anyhow::Result<ControlDeviceResponseCapability> {
+        let cap = device
+            .capability_by_instance("segmentedBrightness")
+            .ok_or_else(|| anyhow::anyhow!("device has no segmentedBrightness"))?;
+
+        let (min, max) = device
+            .supports_segmented_brightness()
+            .ok_or_else(|| anyhow::anyhow!("device doesnt support segmented brightness"))?;
+
+        let value = (percent as u32).max(min).min(max);
+
+        self.control_device(
+            &device,
+            &cap,
+            json!({
+                "segment": vec![segment],
+                "brightness": value,
+            }),
+        )
+        .await
+    }
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -564,6 +614,50 @@ impl HttpDeviceInfo {
 
     pub fn supports_brightness(&self) -> bool {
         self.capability_by_instance("brightness").is_some()
+    }
+
+    /// If supported, returns the number of segments
+    pub fn supports_segmented_rgb(&self) -> Option<std::ops::Range<u32>> {
+        let cap = self.capability_by_instance("segmentedColorRgb")?;
+        let field = cap.struct_field_by_name("segment")?;
+        match field.field_type {
+            DeviceParameters::Array {
+                size:
+                    Some(ArraySize {
+                        // These are the display indices. eg: 1-based
+                        min: label_min,
+                        max: label_max,
+                    }),
+                element_range:
+                    Some(ElementRange {
+                        // These are the actual indices. eg: 0-based
+                        min: range_min,
+                        // We ignore the max here, because the data
+                        // reported by Govee can be bogus:
+                        // <https://developer.govee.com/discuss/6599afb91cb48d002dbed2b8>
+                        max: _,
+                    }),
+                ..
+            } => {
+                // This range is an inclusive range, so add 1
+                let num_segments = (1 + label_max).saturating_sub(label_min);
+                // Return our exclusive range
+                Some(range_min..range_min + num_segments)
+            }
+            _ => None,
+        }
+    }
+
+    pub fn supports_segmented_brightness(&self) -> Option<(u32, u32)> {
+        let cap = self.capability_by_instance("segmentedBrightness")?;
+        let field = cap.struct_field_by_name("brightness")?;
+        match &field.field_type {
+            DeviceParameters::Integer {
+                range: IntegerRange { min, max, .. },
+                ..
+            } => Some((*min, *max)),
+            _ => None,
+        }
     }
 
     pub fn get_color_temperature_range(&self) -> Option<(u32, u32)> {
