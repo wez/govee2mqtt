@@ -9,6 +9,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Instant;
 use tokio::sync::{MappedMutexGuard, Mutex, MutexGuard};
+use tokio::time::{sleep, Duration};
 
 #[derive(Default)]
 pub struct State {
@@ -131,7 +132,7 @@ impl State {
     ) -> anyhow::Result<()> {
         match self.get_lan_client().await {
             Some(client) => {
-                let deadline = Instant::now() + tokio::time::Duration::from_secs(5);
+                let deadline = Instant::now() + Duration::from_secs(5);
                 while Instant::now() <= deadline {
                     let status = client.query_status(device).await?;
                     let accepted = (acceptor)(&status);
@@ -141,7 +142,7 @@ impl State {
                     if accepted {
                         break;
                     }
-                    tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
+                    sleep(Duration::from_millis(100)).await;
                 }
                 self.notify_of_state_change(&device.device).await?;
                 Ok(())
