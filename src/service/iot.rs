@@ -142,7 +142,10 @@ pub async fn start_iot_client(
                     struct Packet {
                         sku: Option<String>,
                         device: Option<String>,
-                        cmd: String,
+                        /// may actually be found in msg.cmd
+                        cmd: Option<String>,
+                        /// This is an embedded json string
+                        msg: Option<String>,
                         state: StateUpdate,
                     }
 
