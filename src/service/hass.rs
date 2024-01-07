@@ -1251,6 +1251,11 @@ pub async fn spawn_hass_integration(
 
     client.set_last_will(availability_topic(), "offline", QoS::AtMostOnce, true)?;
 
+    if mqtt_username.is_some() != mqtt_password.is_some() {
+        log::error!(
+            "MQTT username and password either both need to be set, or both need to be unset"
+        );
+    }
     client.set_username_and_password(mqtt_username.as_deref(), mqtt_password.as_deref())?;
     client
         .connect(
