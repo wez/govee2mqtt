@@ -446,6 +446,11 @@ async fn lan_disco(
         inner: &Arc<ClientInner>,
         tx: &Sender<LanDevice>,
     ) -> anyhow::Result<()> {
+        log::trace!(
+            "process_packet: addr={addr:?} data={}",
+            String::from_utf8_lossy(data)
+        );
+
         let response: ResponseWrapper = from_json(data)
             .with_context(|| format!("Parsing: {}", String::from_utf8_lossy(data)))?;
 
@@ -554,9 +559,9 @@ impl Client {
         let mut rx = self.add_listener(device.ip).await?;
         let deadline = Instant::now() + Duration::from_secs(10);
         while Instant::now() <= deadline {
-            log::trace!("query status from {}", device.ip);
+            log::trace!("query status of {}", device.ip);
             device.send_request(Request::DevStatus {}).await?;
-            match tokio::time::timeout(Duration::from_millis(150), rx.recv()).await {
+            match tokio::time::timeout(Duration::from_millis(350), rx.recv()).await {
                 Ok(Some(Response::DevStatus(status))) => {
                     return Ok(status);
                 }

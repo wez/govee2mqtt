@@ -202,6 +202,7 @@ impl ServeCommand {
 
             tokio::spawn(async move {
                 while let Some(lan_device) = scan.recv().await {
+                    log::trace!("LAN disco: {lan_device:?}");
                     state
                         .device_mut(&lan_device.sku, &lan_device.device)
                         .await
