@@ -19,17 +19,7 @@ impl IotClient {
     }
 
     pub async fn request_status_update(&self, device: &DeviceEntry) -> anyhow::Result<()> {
-        let device_topic = device
-            .device_ext
-            .device_settings
-            .topic
-            .as_ref()
-            .ok_or_else(|| {
-                anyhow::anyhow!(
-                    "device {id} has no topic, is it a BLE-only device?",
-                    id = device.device
-                )
-            })?;
+        let device_topic = device.device_topic()?;
 
         self.client
             .publish(
@@ -47,6 +37,128 @@ impl IotClient {
             )
             .await?;
 
+        Ok(())
+    }
+
+    pub async fn set_power_state(&self, device: &DeviceEntry, on: bool) -> anyhow::Result<()> {
+        log::trace!("set_power_state for {} to {on}", device.device);
+        let device_topic = device.device_topic()?;
+        self.client
+            .publish(
+                device_topic,
+                serde_json::to_string(&serde_json::json!({
+                    "msg": {
+                        "cmd": "turn",
+                        "data": {
+                            "val": if on { 1 } else {0},
+                        },
+                        "cmdVersion": 0,
+                        "transaction": format!("v_{}000", ms_timestamp()),
+                        "type": 1,
+                    }
+                }))?,
+                QoS::AtMostOnce,
+                false,
+            )
+            .await
+            .context("IotClient::set_power_state")?;
+        Ok(())
+    }
+
+    pub async fn set_brightness(&self, device: &DeviceEntry, percent: u8) -> anyhow::Result<()> {
+        log::trace!("set_brightness for {} to {percent}", device.device);
+        let device_topic = device.device_topic()?;
+        self.client
+            .publish(
+                device_topic,
+                serde_json::to_string(&serde_json::json!({
+                    "msg": {
+                        "cmd": "brightness",
+                        "data": {
+                            "val": percent,
+                        },
+                        "cmdVersion": 0,
+                        "transaction": format!("v_{}000", ms_timestamp()),
+                        "type": 1,
+                    }
+                }))?,
+                QoS::AtMostOnce,
+                false,
+            )
+            .await
+            .context("IotClient::set_brightness")?;
+        Ok(())
+    }
+
+    pub async fn set_color_temperature(
+        &self,
+        device: &DeviceEntry,
+        kelvin: u32,
+    ) -> anyhow::Result<()> {
+        log::trace!("set_color_temperature for {} to {kelvin}", device.device);
+        let device_topic = device.device_topic()?;
+
+        self.client
+            .publish(
+                device_topic,
+                serde_json::to_string(&serde_json::json!({
+                    "msg": {
+                        "cmd": "colorwc",
+                        "data": {
+                            "color": {
+                                "r": 0,
+                                "g": 0,
+                                "b": 0,
+                            },
+                            "colorTemInKelvin": kelvin,
+                        },
+                        "cmdVersion": 0,
+                        "transaction": format!("v_{}000", ms_timestamp()),
+                        "type": 1,
+                    }
+                }))?,
+                QoS::AtMostOnce,
+                false,
+            )
+            .await
+            .context("IotClient::set_color_temperature")?;
+        Ok(())
+    }
+
+    pub async fn set_color_rgb(
+        &self,
+        device: &DeviceEntry,
+        r: u8,
+        g: u8,
+        b: u8,
+    ) -> anyhow::Result<()> {
+        log::trace!("set_color_rgb for {} to {r},{g},{b}", device.device);
+        let device_topic = device.device_topic()?;
+
+        self.client
+            .publish(
+                device_topic,
+                serde_json::to_string(&serde_json::json!({
+                    "msg": {
+                        "cmd": "colorwc",
+                        "data": {
+                            "color":{
+                                "r": r,
+                                "g": g,
+                                "b": b,
+                            },
+                            "colorTemInKelvin": 0,
+                        },
+                        "cmdVersion": 0,
+                        "transaction": format!("v_{}000", ms_timestamp()),
+                        "type": 1,
+                    }
+                }))?,
+                QoS::AtMostOnce,
+                false,
+            )
+            .await
+            .context("IotClient::set_color_rgb")?;
         Ok(())
     }
 

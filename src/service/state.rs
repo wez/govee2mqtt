@@ -158,6 +158,13 @@ impl State {
             return Ok(());
         }
 
+        if let Some(iot) = self.get_iot_client().await {
+            if let Some(info) = &device.undoc_device_info {
+                iot.set_power_state(&info.entry, on).await?;
+                return Ok(());
+            }
+        }
+
         if let Some(client) = self.get_platform_client().await {
             if let Some(info) = &device.http_device_info {
                 client.set_power_state(info, on).await?;
@@ -174,6 +181,13 @@ impl State {
             self.poll_lan_api(lan_dev, |status| status.brightness == percent)
                 .await?;
             return Ok(());
+        }
+
+        if let Some(iot) = self.get_iot_client().await {
+            if let Some(info) = &device.undoc_device_info {
+                iot.set_brightness(&info.entry, percent).await?;
+                return Ok(());
+            }
         }
 
         if let Some(client) = self.get_platform_client().await {
@@ -198,6 +212,13 @@ impl State {
                 .await
                 .set_active_scene(None);
             return Ok(());
+        }
+
+        if let Some(iot) = self.get_iot_client().await {
+            if let Some(info) = &device.undoc_device_info {
+                iot.set_color_temperature(&info.entry, kelvin).await?;
+                return Ok(());
+            }
         }
 
         if let Some(client) = self.get_platform_client().await {
@@ -228,6 +249,13 @@ impl State {
                 .await
                 .set_active_scene(None);
             return Ok(());
+        }
+
+        if let Some(iot) = self.get_iot_client().await {
+            if let Some(info) = &device.undoc_device_info {
+                iot.set_color_rgb(&info.entry, r, g, b).await?;
+                return Ok(());
+            }
         }
 
         if let Some(client) = self.get_platform_client().await {

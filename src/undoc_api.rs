@@ -734,6 +734,22 @@ pub struct DeviceEntry {
     pub version_hard: String,
     pub version_soft: String,
 }
+
+impl DeviceEntry {
+    pub fn device_topic(&self) -> anyhow::Result<&str> {
+        self.device_ext
+            .device_settings
+            .topic
+            .as_deref()
+            .ok_or_else(|| {
+                anyhow::anyhow!(
+                    "device {id} has no topic, is it a BLE-only device?",
+                    id = self.device
+                )
+            })
+    }
+}
+
 #[derive(Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 #[cfg_attr(debug_assertions, serde(deny_unknown_fields))]
