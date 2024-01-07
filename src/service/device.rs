@@ -1,8 +1,9 @@
 use crate::lan_api::{DeviceColor, DeviceStatus as LanDeviceStatus, LanDevice};
 use crate::platform_api::{HttpDeviceInfo, HttpDeviceState};
-use crate::service::quirks::resolve_quirk;
+use crate::service::quirks::{resolve_quirk, Quirk, BULB};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use std::borrow::Cow;
 use std::net::IpAddr;
 
 #[derive(Default, Clone, Debug)]
@@ -345,8 +346,23 @@ impl Device {
         }
     }
 
+    pub fn resolve_quirk(&self) -> Option<Quirk> {
+        match resolve_quirk(&self.sku) {
+            Some(q) => Some(q.clone()),
+            None => {
+                // It's an unknown device, but since it showed up via LAN disco,
+                // we can assume that it is a light
+                if self.lan_device.is_some() {
+                    Some(Quirk::light(Cow::Owned(self.sku.to_string()), BULB).with_lan_api())
+                } else {
+                    None
+                }
+            }
+        }
+    }
+
     pub fn get_color_temperature_range(&self) -> Option<(u32, u32)> {
-        if let Some(quirk) = resolve_quirk(&self.sku) {
+        if let Some(quirk) = self.resolve_quirk() {
             return quirk.color_temp_range;
         }
 
@@ -367,7 +383,7 @@ impl Device {
     }
 
     pub fn supports_rgb(&self) -> bool {
-        if let Some(quirk) = resolve_quirk(&self.sku) {
+        if let Some(quirk) = self.resolve_quirk() {
             return quirk.supports_rgb;
         }
 
@@ -378,7 +394,7 @@ impl Device {
     }
 
     pub fn is_ble_only_device(&self) -> Option<bool> {
-        if let Some(quirk) = resolve_quirk(&self.sku) {
+        if let Some(quirk) = self.resolve_quirk() {
             return Some(quirk.ble_only);
         }
 

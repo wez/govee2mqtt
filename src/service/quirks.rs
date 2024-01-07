@@ -15,7 +15,7 @@ pub struct Quirk {
 }
 
 impl Quirk {
-    fn light(sku: &'static str, icon: &'static str) -> Self {
+    pub fn light<SKU: Into<Cow<'static, str>>>(sku: SKU, icon: &'static str) -> Self {
         Quirk {
             sku: sku.into(),
             supports_rgb: true,
@@ -28,17 +28,17 @@ impl Quirk {
         }
     }
 
-    fn with_lan_api(mut self) -> Self {
+    pub fn with_lan_api(mut self) -> Self {
         self.lan_api_capable = true;
         self
     }
 
-    fn with_broken_platform(mut self) -> Self {
+    pub fn with_broken_platform(mut self) -> Self {
         self.avoid_platform_api = true;
         self
     }
 
-    fn lan_api_capable_light(sku: &'static str, icon: &'static str) -> Self {
+    pub fn lan_api_capable_light(sku: &'static str, icon: &'static str) -> Self {
         Self::light(sku, icon).with_lan_api()
     }
 }
@@ -49,7 +49,7 @@ const STRIP: &str = "mdi:led-strip-variant";
 const STRIP_ALT: &str = "mdi:led-strip";
 const FLOOD: &str = "mdi:light-flood-down";
 const STRING: &str = "mdi:string-lights";
-const BULB: &str = "mdi:light-bulb";
+pub const BULB: &str = "mdi:light-bulb";
 const FLOOR_LAMP: &str = "mdi:floor-lamp";
 const TV_BACK: &str = "mdi:television-ambient-light";
 const DESK: &str = "mdi:desk-lamp";
