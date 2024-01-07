@@ -976,7 +976,14 @@ async fn mqtt_light_segment_command(
                 .set_segment_brightness(&info, segment, brightness)
                 .await?;
         } else if command.state == "OFF" {
-            client.set_segment_brightness(&info, segment, 0).await?;
+            // Do nothing here. We used to set brightness to zero,
+            // but it is problematic:
+            // * Some devices don't have a 0
+            // * Setting it to 0 will power up the rest of the device,
+            //   so if HASS is turning off all lights in an area, the
+            //   effect is that they will turn off and then immediate
+            //   on again when there are segments involved
+            // client.set_segment_brightness(&info, segment, 0).await?;
         }
         if let Some(color) = &command.color {
             client
