@@ -2,6 +2,7 @@ use crate::lan_api::DeviceColor;
 use crate::opt_env_var;
 use crate::platform_api::{from_json, DeviceCapability, DeviceCapabilityKind};
 use crate::service::device::Device as ServiceDevice;
+use crate::service::quirks::resolve_quirk;
 use crate::service::state::{State as ServiceState, StateHandle};
 use crate::version_info::govee_version;
 use anyhow::Context;
@@ -441,6 +442,9 @@ pub struct LightConfig {
     /// Defines the maximum brightness value (i.e., 100%) of the MQTT device.
     pub brightness_scale: u32,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub icon: Option<String>,
+
     /// Flag that defines if the light supports effects.
     pub effect: bool,
     /// The list of effects the light supports.
@@ -467,6 +471,11 @@ impl LightConfig {
                 "gv2mqtt/light/{id}/command/{seg}",
                 id = topic_safe_id(device)
             ),
+        };
+
+        let icon = match segment {
+            Some(_) => None,
+            None => resolve_quirk(&device.sku).map(|q| q.icon.to_string()),
         };
 
         let state_topic = match segment {
@@ -548,6 +557,7 @@ impl LightConfig {
             max_mireds,
             min_mireds,
             optimistic: segment.is_some(),
+            icon,
         })
     }
 
