@@ -370,6 +370,10 @@ impl Device {
     }
 
     pub fn is_ble_only_device(&self) -> Option<bool> {
+        if let Some(quirk) = resolve_quirk(&self.sku) {
+            return Some(quirk.ble_only);
+        }
+
         if let Some(info) = &self.undoc_device_info {
             Some(info.entry.device_ext.device_settings.wifi_name.is_none())
         } else {

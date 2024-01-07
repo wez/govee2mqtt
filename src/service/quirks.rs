@@ -5,6 +5,7 @@ pub struct Quirk {
     pub supports_brightness: bool,
     pub color_temp_range: Option<(u32, u32)>,
     pub avoid_platform_api: bool,
+    pub ble_only: bool,
 }
 
 static QUIRKS: &[Quirk] = &[
@@ -18,6 +19,7 @@ static QUIRKS: &[Quirk] = &[
         // device
         // <https://github.com/wez/govee2mqtt/issues/7>
         avoid_platform_api: true,
+        ble_only: false,
     },
     Quirk {
         sku: "H6141",
@@ -29,6 +31,7 @@ static QUIRKS: &[Quirk] = &[
         // device
         // <https://github.com/wez/govee2mqtt/issues/15>
         avoid_platform_api: true,
+        ble_only: false,
     },
 ];
 
