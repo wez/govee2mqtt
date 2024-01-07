@@ -193,6 +193,7 @@ pub struct LanDevice {
 
 impl LanDevice {
     pub async fn send_request(&self, msg: Request) -> anyhow::Result<()> {
+        log::trace!("LanDevice::send_request to {:?} {msg:?}", self.ip);
         let client = udp_socket_for_target(self.ip).await?;
         let data = serde_json::to_string(&RequestMessage { msg })?;
         client.send_to(data.as_bytes(), (self.ip, CMD_PORT)).await?;
