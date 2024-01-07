@@ -777,7 +777,7 @@ pub struct DeviceSettings {
     pub water_shortage_on_off: bool,
     pub mcu_soft_version: Option<String>,
     pub mcu_hard_version: Option<String>,
-    pub sku: String,
+    pub sku: Option<String>,
     pub device: String,
     pub device_name: String,
     pub version_hard: Option<String>,

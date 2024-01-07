@@ -44,7 +44,9 @@ DevicesResponse {
                     water_shortage_on_off: false,
                     mcu_soft_version: None,
                     mcu_hard_version: None,
-                    sku: "H6072",
+                    sku: Some(
+                        "H6072",
+                    ),
                     device: "47:13:CF:00:00:00:00:25",
                     device_name: "Primary Bed Hers",
                     version_hard: Some(
@@ -160,7 +162,9 @@ DevicesResponse {
                     water_shortage_on_off: false,
                     mcu_soft_version: None,
                     mcu_hard_version: None,
-                    sku: "H6072",
+                    sku: Some(
+                        "H6072",
+                    ),
                     device: "02:EC:CF:00:00:00:00:48",
                     device_name: "Primary Bed His",
                     version_hard: Some(
@@ -276,7 +280,9 @@ DevicesResponse {
                     water_shortage_on_off: false,
                     mcu_soft_version: None,
                     mcu_hard_version: None,
-                    sku: "H6072",
+                    sku: Some(
+                        "H6072",
+                    ),
                     device: "51:2A:D1:00:00:00:00:93",
                     device_name: "Study Floor Lamp 4",
                     version_hard: Some(
@@ -394,7 +400,9 @@ DevicesResponse {
                     water_shortage_on_off: false,
                     mcu_soft_version: None,
                     mcu_hard_version: None,
-                    sku: "H6058",
+                    sku: Some(
+                        "H6058",
+                    ),
                     device: "",
                     device_name: "Portable Table Lamp",
                     version_hard: Some(
@@ -516,7 +524,9 @@ DevicesResponse {
                     water_shortage_on_off: false,
                     mcu_soft_version: None,
                     mcu_hard_version: None,
-                    sku: "H610A",
+                    sku: Some(
+                        "H610A",
+                    ),
                     device: "",
                     device_name: "Govee Glide Lively 1",
                     version_hard: Some(
@@ -634,7 +644,9 @@ DevicesResponse {
                     water_shortage_on_off: false,
                     mcu_soft_version: None,
                     mcu_hard_version: None,
-                    sku: "H61A2",
+                    sku: Some(
+                        "H61A2",
+                    ),
                     device: "",
                     device_name: "Study Neon",
                     version_hard: Some(
@@ -752,7 +764,9 @@ DevicesResponse {
                     water_shortage_on_off: false,
                     mcu_soft_version: None,
                     mcu_hard_version: None,
-                    sku: "H619A",
+                    sku: Some(
+                        "H619A",
+                    ),
                     device: "",
                     device_name: "Primary Headboard",
                     version_hard: Some(
@@ -870,7 +884,9 @@ DevicesResponse {
                     water_shortage_on_off: false,
                     mcu_soft_version: None,
                     mcu_hard_version: None,
-                    sku: "H619A",
+                    sku: Some(
+                        "H619A",
+                    ),
                     device: "",
                     device_name: "H619A_CDF5",
                     version_hard: Some(
@@ -986,7 +1002,9 @@ DevicesResponse {
                     water_shortage_on_off: false,
                     mcu_soft_version: None,
                     mcu_hard_version: None,
-                    sku: "H6072",
+                    sku: Some(
+                        "H6072",
+                    ),
                     device: "9",
                     device_name: "Study Floor Lamp 2",
                     version_hard: Some(
@@ -1102,7 +1120,9 @@ DevicesResponse {
                     water_shortage_on_off: false,
                     mcu_soft_version: None,
                     mcu_hard_version: None,
-                    sku: "H6072",
+                    sku: Some(
+                        "H6072",
+                    ),
                     device: "",
                     device_name: "Study Floor Lamp 1",
                     version_hard: Some(

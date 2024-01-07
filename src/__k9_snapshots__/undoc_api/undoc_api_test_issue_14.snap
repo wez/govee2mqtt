@@ -48,7 +48,9 @@ DevicesResponse {
                     water_shortage_on_off: false,
                     mcu_soft_version: None,
                     mcu_hard_version: None,
-                    sku: "H618A",
+                    sku: Some(
+                        "H618A",
+                    ),
                     device: "XX:XX:XX:XX:XX:XX:07:4D",
                     device_name: "Led Bar",
                     version_hard: Some(
@@ -170,7 +172,9 @@ DevicesResponse {
                     water_shortage_on_off: false,
                     mcu_soft_version: None,
                     mcu_hard_version: None,
-                    sku: "H6199",
+                    sku: Some(
+                        "H6199",
+                    ),
                     device: "XX:XX:XX:XX:XX:XX:4C:67",
                     device_name: "DreamView T1",
                     version_hard: Some(
@@ -294,7 +298,9 @@ DevicesResponse {
                     water_shortage_on_off: false,
                     mcu_soft_version: None,
                     mcu_hard_version: None,
-                    sku: "H618C",
+                    sku: Some(
+                        "H618C",
+                    ),
                     device: "XX:XX:XX:XX:XX:XX:B4:D0",
                     device_name: "Led Escalier Bas Govee",
                     version_hard: Some(
@@ -416,7 +422,9 @@ DevicesResponse {
                     water_shortage_on_off: false,
                     mcu_soft_version: None,
                     mcu_hard_version: None,
-                    sku: "H618A",
+                    sku: Some(
+                        "H618A",
+                    ),
                     device: "XX:XX:XX:XX:XX:XX:96:A0",
                     device_name: "Led Enfants Govee",
                     version_hard: Some(
@@ -540,7 +548,9 @@ DevicesResponse {
                     water_shortage_on_off: false,
                     mcu_soft_version: None,
                     mcu_hard_version: None,
-                    sku: "H618C",
+                    sku: Some(
+                        "H618C",
+                    ),
                     device: "XX:XX:XX:XX:XX:XX:32:27",
                     device_name: "Led Escalier Haut Gove",
                     version_hard: Some(
@@ -654,7 +664,9 @@ DevicesResponse {
                     water_shortage_on_off: false,
                     mcu_soft_version: None,
                     mcu_hard_version: None,
-                    sku: "H6159",
+                    sku: Some(
+                        "H6159",
+                    ),
                     device: "XX:XX:XX:XX:XX:XX:AD:23",
                     device_name: "Govee Bureau Schumi",
                     version_hard: Some(
@@ -774,7 +786,9 @@ DevicesResponse {
                     water_shortage_on_off: false,
                     mcu_soft_version: None,
                     mcu_hard_version: None,
-                    sku: "H618A",
+                    sku: Some(
+                        "H618A",
+                    ),
                     device: "XX:XX:XX:XX:XX:XX:8E:63",
                     device_name: "Govee Bureau",
                     version_hard: Some(
@@ -888,7 +902,9 @@ DevicesResponse {
                     water_shortage_on_off: false,
                     mcu_soft_version: None,
                     mcu_hard_version: None,
-                    sku: "H6159",
+                    sku: Some(
+                        "H6159",
+                    ),
                     device: "XX:XX:XX:XX:XX:XX:24:5F",
                     device_name: "Govee Bureau Cocotte",
                     version_hard: Some(
