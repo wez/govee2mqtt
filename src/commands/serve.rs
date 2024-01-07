@@ -21,6 +21,11 @@ pub struct ServeCommand {
 async fn poll_single_device(state: &StateHandle, device: &Device) -> anyhow::Result<()> {
     let now = Utc::now();
 
+    if device.is_ble_only_device() == Some(true) {
+        // We can't poll this device, we have no ble support
+        return Ok(());
+    }
+
     let can_update = match &device.last_polled {
         None => true,
         Some(last) => now - last > chrono::Duration::seconds(900),
