@@ -938,17 +938,26 @@ async fn mqtt_light_command(
     log::info!("Command for {device}: {payload}");
 
     if command.state == "OFF" {
-        state.device_power_on(&device, false).await?;
+        state
+            .device_power_on(&device, false)
+            .await
+            .context("mqtt_light_command: state.device_power_on")?;
     } else {
         let mut power_on = true;
 
         if let Some(brightness) = command.brightness {
-            state.device_set_brightness(&device, brightness).await?;
+            state
+                .device_set_brightness(&device, brightness)
+                .await
+                .context("mqtt_light_command: state.device_set_brightness")?;
             power_on = false;
         }
 
         if let Some(effect) = &command.effect {
-            state.device_set_scene(&device, effect).await?;
+            state
+                .device_set_scene(&device, effect)
+                .await
+                .context("mqtt_light_command: state.device_set_scene")?;
             // It doesn't make sense to vary color properties
             // at the same time as the scene properties, so
             // ignore those.
@@ -959,17 +968,22 @@ async fn mqtt_light_command(
         if let Some(color) = &command.color {
             state
                 .device_set_color_rgb(&device, color.r, color.g, color.b)
-                .await?;
+                .await
+                .context("mqtt_light_command: state.device_set_color_rgb")?;
             power_on = false;
         }
         if let Some(color_temp) = command.color_temp {
             state
                 .device_set_color_temperature(&device, mired_to_kelvin(color_temp))
-                .await?;
+                .await
+                .context("mqtt_light_command: state.device_set_color_temperature")?;
             power_on = false;
         }
         if power_on {
-            state.device_power_on(&device, true).await?;
+            state
+                .device_power_on(&device, true)
+                .await
+                .context("mqtt_light_command: state.device_power_on")?;
         }
     }
 
