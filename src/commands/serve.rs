@@ -9,7 +9,7 @@ use anyhow::Context;
 use chrono::Utc;
 use std::collections::HashMap;
 use std::sync::Arc;
-use tokio::time::Duration;
+use tokio::time::{sleep, Duration};
 
 #[derive(clap::Parser, Debug)]
 pub struct ServeCommand {
@@ -112,7 +112,7 @@ async fn poll_single_device(state: &StateHandle, device: &Device) -> anyhow::Res
 }
 
 async fn periodic_state_poll(state: StateHandle) -> anyhow::Result<()> {
-    tokio::time::sleep(Duration::from_secs(20)).await;
+    sleep(Duration::from_secs(20)).await;
     loop {
         for d in state.devices().await {
             if let Err(err) = poll_single_device(&state, &d).await {
@@ -120,7 +120,7 @@ async fn periodic_state_poll(state: StateHandle) -> anyhow::Result<()> {
             }
         }
 
-        tokio::time::sleep(Duration::from_secs(60)).await;
+        sleep(Duration::from_secs(60)).await;
     }
 }
 
@@ -160,36 +160,6 @@ impl ServeCommand {
             state.set_undoc_client(client).await;
         }
 
-        log::info!("Devices returned from Govee's APIs");
-        for device in state.devices().await {
-            log::info!("{device} sku={}", device.sku);
-            if let Some(http_info) = &device.http_device_info {
-                let kind = &http_info.device_type;
-                let rgb = http_info.supports_rgb();
-                let bright = http_info.supports_brightness();
-                let color_temp = http_info.get_color_temperature_range();
-                let segment_rgb = http_info.supports_segmented_rgb();
-                log::info!(
-                    "  Platform API: {kind}. supports_rgb={rgb} supports_brightness={bright}"
-                );
-                log::info!("                color_temp={color_temp:?} segment_rgb={segment_rgb:?}");
-                log::trace!("{http_info:#?}");
-            }
-            if let Some(undoc) = &device.undoc_device_info {
-                let room = &undoc.room_name;
-                let supports_iot = undoc.entry.device_ext.device_settings.topic.is_some();
-                let ble_only = undoc.entry.device_ext.device_settings.wifi_name.is_none();
-                log::info!(
-                    "  Undoc: room={room:?} supports_iot={supports_iot} ble_only={ble_only}"
-                );
-                log::trace!("{undoc:#?}");
-            }
-            if let Some(quirk) = crate::service::quirks::resolve_quirk(&device.sku) {
-                log::info!("  Quirk: {quirk:?}");
-            }
-            log::info!("");
-        }
-
         // Now start discovery
 
         let options = args.lan_disco_args.to_disco_options()?;
@@ -219,6 +189,41 @@ impl ServeCommand {
                     }
                 }
             });
+        }
+
+        sleep(Duration::from_secs(4)).await;
+
+        log::info!("Devices returned from Govee's APIs");
+        for device in state.devices().await {
+            log::info!("{device} sku={}", device.sku);
+            if let Some(lan) = &device.lan_device {
+                log::info!("  LAN API: ip={:?}", lan.ip);
+            }
+            if let Some(http_info) = &device.http_device_info {
+                let kind = &http_info.device_type;
+                let rgb = http_info.supports_rgb();
+                let bright = http_info.supports_brightness();
+                let color_temp = http_info.get_color_temperature_range();
+                let segment_rgb = http_info.supports_segmented_rgb();
+                log::info!(
+                    "  Platform API: {kind}. supports_rgb={rgb} supports_brightness={bright}"
+                );
+                log::info!("                color_temp={color_temp:?} segment_rgb={segment_rgb:?}");
+                log::trace!("{http_info:#?}");
+            }
+            if let Some(undoc) = &device.undoc_device_info {
+                let room = &undoc.room_name;
+                let supports_iot = undoc.entry.device_ext.device_settings.topic.is_some();
+                let ble_only = undoc.entry.device_ext.device_settings.wifi_name.is_none();
+                log::info!(
+                    "  Undoc: room={room:?} supports_iot={supports_iot} ble_only={ble_only}"
+                );
+                log::trace!("{undoc:#?}");
+            }
+            if let Some(quirk) = crate::service::quirks::resolve_quirk(&device.sku) {
+                log::info!("  Quirk: {quirk:?}");
+            }
+            log::info!("");
         }
 
         // Start periodic status polling
