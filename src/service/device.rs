@@ -129,9 +129,17 @@ impl Device {
     /// scan, or the default name for the device if not otherwise configured
     /// in the Govee App.
     pub fn computed_name(&self) -> String {
-        let mut name = format!("{}_{}", self.sku, &self.id[18..]);
-        name.retain(|c| c != ':');
-        name
+        // The id is usually "XX:XX:XX:XX:XX:XX:XX:XX" but some devices
+        // report it without colons, and in lowercase.  Normalize it.
+        let mut id = String::new();
+        for c in self.id.chars() {
+            if c == ':' {
+                continue;
+            }
+            id.push(c.to_ascii_uppercase());
+        }
+
+        format!("{}_{}", self.sku, &id[id.len().saturating_sub(4)..])
     }
 
     pub fn ip_addr(&self) -> Option<IpAddr> {
@@ -398,5 +406,11 @@ mod test {
     fn name_compute() {
         let device = Device::new("H6000", "AA:BB:CC:DD:EE:FF:42:2A");
         assert_eq!(device.name(), "H6000_422A");
+
+        let device = Device::new("H6127", "cef142b0b354995f");
+        assert_eq!(device.name(), "H6127_995F");
+
+        let device = Device::new("H6127", "ce");
+        assert_eq!(device.name(), "H6127_CE");
     }
 }
