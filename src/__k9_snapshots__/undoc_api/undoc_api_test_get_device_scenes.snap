@@ -12,7 +12,9 @@ DevicesResponse {
                     address: Some(
                         "CF:00:00:00:00:25",
                     ),
-                    ble_name: "Govee_H6072_5225",
+                    ble_name: Some(
+                        "Govee_H6072_5225",
+                    ),
                     topic: Some(
                         "GD/",
                     ),
@@ -47,8 +49,12 @@ DevicesResponse {
                     sku: Some(
                         "H6072",
                     ),
-                    device: "47:13:CF:00:00:00:00:25",
-                    device_name: "Primary Bed Hers",
+                    device: Some(
+                        "47:13:CF:00:00:00:00:25",
+                    ),
+                    device_name: Some(
+                        "Primary Bed Hers",
+                    ),
                     version_hard: Some(
                         "3.02.00",
                     ),
@@ -130,7 +136,9 @@ DevicesResponse {
                     address: Some(
                         "CF:00:00:00:00:48",
                     ),
-                    ble_name: "Govee_H6072_5048",
+                    ble_name: Some(
+                        "Govee_H6072_5048",
+                    ),
                     topic: Some(
                         "GD/",
                     ),
@@ -165,8 +173,12 @@ DevicesResponse {
                     sku: Some(
                         "H6072",
                     ),
-                    device: "02:EC:CF:00:00:00:00:48",
-                    device_name: "Primary Bed His",
+                    device: Some(
+                        "02:EC:CF:00:00:00:00:48",
+                    ),
+                    device_name: Some(
+                        "Primary Bed His",
+                    ),
                     version_hard: Some(
                         "3.02.00",
                     ),
@@ -248,7 +260,9 @@ DevicesResponse {
                     address: Some(
                         "D1:00:00:00:00:93",
                     ),
-                    ble_name: "Govee_H6072_3193",
+                    ble_name: Some(
+                        "Govee_H6072_3193",
+                    ),
                     topic: Some(
                         "GD/",
                     ),
@@ -283,8 +297,12 @@ DevicesResponse {
                     sku: Some(
                         "H6072",
                     ),
-                    device: "51:2A:D1:00:00:00:00:93",
-                    device_name: "Study Floor Lamp 4",
+                    device: Some(
+                        "51:2A:D1:00:00:00:00:93",
+                    ),
+                    device_name: Some(
+                        "Study Floor Lamp 4",
+                    ),
                     version_hard: Some(
                         "3.02.00",
                     ),
@@ -366,7 +384,9 @@ DevicesResponse {
                     address: Some(
                         "",
                     ),
-                    ble_name: "Govee_H6058_163C",
+                    ble_name: Some(
+                        "Govee_H6058_163C",
+                    ),
                     topic: Some(
                         "GD/",
                     ),
@@ -403,8 +423,12 @@ DevicesResponse {
                     sku: Some(
                         "H6058",
                     ),
-                    device: "",
-                    device_name: "Portable Table Lamp",
+                    device: Some(
+                        "",
+                    ),
+                    device_name: Some(
+                        "Portable Table Lamp",
+                    ),
                     version_hard: Some(
                         "3.02.02",
                     ),
@@ -486,7 +510,9 @@ DevicesResponse {
                     address: Some(
                         "",
                     ),
-                    ble_name: "Govee_H610A_0C6F",
+                    ble_name: Some(
+                        "Govee_H610A_0C6F",
+                    ),
                     topic: Some(
                         "GD/",
                     ),
@@ -527,8 +553,12 @@ DevicesResponse {
                     sku: Some(
                         "H610A",
                     ),
-                    device: "",
-                    device_name: "Govee Glide Lively 1",
+                    device: Some(
+                        "",
+                    ),
+                    device_name: Some(
+                        "Govee Glide Lively 1",
+                    ),
                     version_hard: Some(
                         "3.01.01",
                     ),
@@ -610,7 +640,9 @@ DevicesResponse {
                     address: Some(
                         "",
                     ),
-                    ble_name: "GBK_H61A2_0D17",
+                    ble_name: Some(
+                        "GBK_H61A2_0D17",
+                    ),
                     topic: Some(
                         "GD/",
                     ),
@@ -647,8 +679,12 @@ DevicesResponse {
                     sku: Some(
                         "H61A2",
                     ),
-                    device: "",
-                    device_name: "Study Neon",
+                    device: Some(
+                        "",
+                    ),
+                    device_name: Some(
+                        "Study Neon",
+                    ),
                     version_hard: Some(
                         "2.01.02",
                     ),
@@ -730,7 +766,9 @@ DevicesResponse {
                     address: Some(
                         "",
                     ),
-                    ble_name: "GBK_H619A_DA4B",
+                    ble_name: Some(
+                        "GBK_H619A_DA4B",
+                    ),
                     topic: Some(
                         "GD/",
                     ),
@@ -767,8 +805,12 @@ DevicesResponse {
                     sku: Some(
                         "H619A",
                     ),
-                    device: "",
-                    device_name: "Primary Headboard",
+                    device: Some(
+                        "",
+                    ),
+                    device_name: Some(
+                        "Primary Headboard",
+                    ),
                     version_hard: Some(
                         "2.01.02",
                     ),
@@ -850,7 +892,9 @@ DevicesResponse {
                     address: Some(
                         "",
                     ),
-                    ble_name: "GBK_H619A_CDF5",
+                    ble_name: Some(
+                        "GBK_H619A_CDF5",
+                    ),
                     topic: Some(
                         "GD/",
                     ),
@@ -887,8 +931,12 @@ DevicesResponse {
                     sku: Some(
                         "H619A",
                     ),
-                    device: "",
-                    device_name: "H619A_CDF5",
+                    device: Some(
+                        "",
+                    ),
+                    device_name: Some(
+                        "H619A_CDF5",
+                    ),
                     version_hard: Some(
                         "2.01.02",
                     ),
@@ -970,7 +1018,9 @@ DevicesResponse {
                     address: Some(
                         "",
                     ),
-                    ble_name: "Govee_H6072_3529",
+                    ble_name: Some(
+                        "Govee_H6072_3529",
+                    ),
                     topic: Some(
                         "GD/",
                     ),
@@ -1005,8 +1055,12 @@ DevicesResponse {
                     sku: Some(
                         "H6072",
                     ),
-                    device: "9",
-                    device_name: "Study Floor Lamp 2",
+                    device: Some(
+                        "9",
+                    ),
+                    device_name: Some(
+                        "Study Floor Lamp 2",
+                    ),
                     version_hard: Some(
                         "3.02.00",
                     ),
@@ -1088,7 +1142,9 @@ DevicesResponse {
                     address: Some(
                         "",
                     ),
-                    ble_name: "Govee_H6072_3411",
+                    ble_name: Some(
+                        "Govee_H6072_3411",
+                    ),
                     topic: Some(
                         "GD/",
                     ),
@@ -1123,8 +1179,12 @@ DevicesResponse {
                     sku: Some(
                         "H6072",
                     ),
-                    device: "",
-                    device_name: "Study Floor Lamp 1",
+                    device: Some(
+                        "",
+                    ),
+                    device_name: Some(
+                        "Study Floor Lamp 1",
+                    ),
                     version_hard: Some(
                         "3.02.00",
                     ),

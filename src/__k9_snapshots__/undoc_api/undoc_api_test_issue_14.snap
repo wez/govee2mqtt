@@ -14,7 +14,9 @@ DevicesResponse {
                     address: Some(
                         "XX:XX:XX:XX:XX:XX",
                     ),
-                    ble_name: "GBK_H618A_074D",
+                    ble_name: Some(
+                        "GBK_H618A_074D",
+                    ),
                     topic: Some(
                         "GD/",
                     ),
@@ -51,8 +53,12 @@ DevicesResponse {
                     sku: Some(
                         "H618A",
                     ),
-                    device: "XX:XX:XX:XX:XX:XX:07:4D",
-                    device_name: "Led Bar",
+                    device: Some(
+                        "XX:XX:XX:XX:XX:XX:07:4D",
+                    ),
+                    device_name: Some(
+                        "Led Bar",
+                    ),
                     version_hard: Some(
                         "2.01.02",
                     ),
@@ -140,7 +146,9 @@ DevicesResponse {
                     address: Some(
                         "XX:XX:XX:XX:XX:XX",
                     ),
-                    ble_name: "Govee_H6199_4C67",
+                    ble_name: Some(
+                        "Govee_H6199_4C67",
+                    ),
                     topic: Some(
                         "GD/",
                     ),
@@ -175,8 +183,12 @@ DevicesResponse {
                     sku: Some(
                         "H6199",
                     ),
-                    device: "XX:XX:XX:XX:XX:XX:4C:67",
-                    device_name: "DreamView T1",
+                    device: Some(
+                        "XX:XX:XX:XX:XX:XX:4C:67",
+                    ),
+                    device_name: Some(
+                        "DreamView T1",
+                    ),
                     version_hard: Some(
                         "3.02.01",
                     ),
@@ -264,7 +276,9 @@ DevicesResponse {
                     address: Some(
                         "XX:XX:XX:XX:XX:XX",
                     ),
-                    ble_name: "GBK_H618C_B4D0",
+                    ble_name: Some(
+                        "GBK_H618C_B4D0",
+                    ),
                     topic: Some(
                         "GD/",
                     ),
@@ -301,8 +315,12 @@ DevicesResponse {
                     sku: Some(
                         "H618C",
                     ),
-                    device: "XX:XX:XX:XX:XX:XX:B4:D0",
-                    device_name: "Led Escalier Bas Govee",
+                    device: Some(
+                        "XX:XX:XX:XX:XX:XX:B4:D0",
+                    ),
+                    device_name: Some(
+                        "Led Escalier Bas Govee",
+                    ),
                     version_hard: Some(
                         "2.01.02",
                     ),
@@ -390,7 +408,9 @@ DevicesResponse {
                     address: Some(
                         "XX:XX:XX:XX:XX:XX",
                     ),
-                    ble_name: "GBK_H618A_96A0",
+                    ble_name: Some(
+                        "GBK_H618A_96A0",
+                    ),
                     topic: Some(
                         "GD/",
                     ),
@@ -425,8 +445,12 @@ DevicesResponse {
                     sku: Some(
                         "H618A",
                     ),
-                    device: "XX:XX:XX:XX:XX:XX:96:A0",
-                    device_name: "Led Enfants Govee",
+                    device: Some(
+                        "XX:XX:XX:XX:XX:XX:96:A0",
+                    ),
+                    device_name: Some(
+                        "Led Enfants Govee",
+                    ),
                     version_hard: Some(
                         "2.01.02",
                     ),
@@ -514,7 +538,9 @@ DevicesResponse {
                     address: Some(
                         "XX:XX:XX:XX:XX:XX",
                     ),
-                    ble_name: "GBK_H618C_3227",
+                    ble_name: Some(
+                        "GBK_H618C_3227",
+                    ),
                     topic: Some(
                         "GD/",
                     ),
@@ -551,8 +577,12 @@ DevicesResponse {
                     sku: Some(
                         "H618C",
                     ),
-                    device: "XX:XX:XX:XX:XX:XX:32:27",
-                    device_name: "Led Escalier Haut Gove",
+                    device: Some(
+                        "XX:XX:XX:XX:XX:XX:32:27",
+                    ),
+                    device_name: Some(
+                        "Led Escalier Haut Gove",
+                    ),
                     version_hard: Some(
                         "2.01.02",
                     ),
@@ -638,7 +668,9 @@ DevicesResponse {
                         "TP-Link_IoT_2G",
                     ),
                     address: None,
-                    ble_name: "ihoment_H6159_AD23",
+                    ble_name: Some(
+                        "ihoment_H6159_AD23",
+                    ),
                     topic: Some(
                         "GD/",
                     ),
@@ -667,8 +699,12 @@ DevicesResponse {
                     sku: Some(
                         "H6159",
                     ),
-                    device: "XX:XX:XX:XX:XX:XX:AD:23",
-                    device_name: "Govee Bureau Schumi",
+                    device: Some(
+                        "XX:XX:XX:XX:XX:XX:AD:23",
+                    ),
+                    device_name: Some(
+                        "Govee Bureau Schumi",
+                    ),
                     version_hard: Some(
                         "1.00.02",
                     ),
@@ -752,7 +788,9 @@ DevicesResponse {
                     address: Some(
                         "XX:XX:XX:XX:XX:XX",
                     ),
-                    ble_name: "GBK_H618A_8E63",
+                    ble_name: Some(
+                        "GBK_H618A_8E63",
+                    ),
                     topic: Some(
                         "GD/",
                     ),
@@ -789,8 +827,12 @@ DevicesResponse {
                     sku: Some(
                         "H618A",
                     ),
-                    device: "XX:XX:XX:XX:XX:XX:8E:63",
-                    device_name: "Govee Bureau",
+                    device: Some(
+                        "XX:XX:XX:XX:XX:XX:8E:63",
+                    ),
+                    device_name: Some(
+                        "Govee Bureau",
+                    ),
                     version_hard: Some(
                         "2.01.02",
                     ),
@@ -876,7 +918,9 @@ DevicesResponse {
                         "TP-Link_IoT_2G",
                     ),
                     address: None,
-                    ble_name: "ihoment_H6159_245F",
+                    ble_name: Some(
+                        "ihoment_H6159_245F",
+                    ),
                     topic: Some(
                         "GD/",
                     ),
@@ -905,8 +949,12 @@ DevicesResponse {
                     sku: Some(
                         "H6159",
                     ),
-                    device: "XX:XX:XX:XX:XX:XX:24:5F",
-                    device_name: "Govee Bureau Cocotte",
+                    device: Some(
+                        "XX:XX:XX:XX:XX:XX:24:5F",
+                    ),
+                    device_name: Some(
+                        "Govee Bureau Cocotte",
+                    ),
                     version_hard: Some(
                         "1.00.02",
                     ),
