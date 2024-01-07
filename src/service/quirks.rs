@@ -33,6 +33,18 @@ static QUIRKS: &[Quirk] = &[
         avoid_platform_api: true,
         ble_only: false,
     },
+    Quirk {
+        sku: "H6159",
+        supports_rgb: true,
+        supports_brightness: true,
+        color_temp_range: Some((2000, 9000)),
+        // At the time of writing, the metadata
+        // returned by Govee is completely bogus for this
+        // device
+        // <https://github.com/wez/govee2mqtt/issues/14#issuecomment-1880050091>
+        avoid_platform_api: true,
+        ble_only: false,
+    },
 ];
 
 pub fn resolve_quirk(sku: &str) -> Option<&'static Quirk> {
