@@ -1,5 +1,6 @@
+use crate::ble::{GoveeBlePacket, HumidifierNightlightParams};
 use crate::lan_api::{Client as LanClient, DeviceStatus as LanDeviceStatus, LanDevice};
-use crate::platform_api::GoveeApiClient;
+use crate::platform_api::{DeviceType, GoveeApiClient};
 use crate::service::device::Device;
 use crate::service::hass::{topic_safe_id, HassClient};
 use crate::service::iot::IotClient;
@@ -151,6 +152,34 @@ impl State {
         }
     }
 
+    pub async fn device_light_power_on(&self, device: &Device, on: bool) -> anyhow::Result<()> {
+        if device.device_type() == DeviceType::Humidifier {
+            return self.humidifier_set_nightlight(device, |p| p.on = on).await;
+        }
+
+        if let Some(lan_dev) = &device.lan_device {
+            lan_dev.send_turn(on).await?;
+            self.poll_lan_api(lan_dev, |status| status.on == on).await?;
+            return Ok(());
+        }
+
+        if let Some(iot) = self.get_iot_client().await {
+            if let Some(info) = &device.undoc_device_info {
+                iot.set_power_state(&info.entry, on).await?;
+                return Ok(());
+            }
+        }
+
+        if let Some(client) = self.get_platform_client().await {
+            if let Some(info) = &device.http_device_info {
+                client.set_power_state(info, on).await?;
+                return Ok(());
+            }
+        }
+
+        anyhow::bail!("Unable to control power state for {device}");
+    }
+
     pub async fn device_power_on(&self, device: &Device, on: bool) -> anyhow::Result<()> {
         if let Some(lan_dev) = &device.lan_device {
             lan_dev.send_turn(on).await?;
@@ -176,6 +205,15 @@ impl State {
     }
 
     pub async fn device_set_brightness(&self, device: &Device, percent: u8) -> anyhow::Result<()> {
+        if device.device_type() == DeviceType::Humidifier {
+            return self
+                .humidifier_set_nightlight(device, |p| {
+                    p.brightness = percent;
+                    p.on = true;
+                })
+                .await;
+        }
+
         if let Some(lan_dev) = &device.lan_device {
             lan_dev.send_brightness(percent).await?;
             self.poll_lan_api(lan_dev, |status| status.brightness == percent)
@@ -233,6 +271,27 @@ impl State {
         anyhow::bail!("Unable to control color temperature for {device}");
     }
 
+    // FIXME: this function probably shouldn't exist here
+    async fn humidifier_set_nightlight<F: Fn(&mut HumidifierNightlightParams)>(
+        &self,
+        device: &Device,
+        apply: F,
+    ) -> anyhow::Result<()> {
+        let mut params = device.nightlight_state.clone().unwrap_or_default();
+        (apply)(&mut params);
+
+        let command = dbg!(GoveeBlePacket::SetHumidifierNightlight(params)).base64();
+
+        if let Some(iot) = self.get_iot_client().await {
+            if let Some(info) = &device.undoc_device_info {
+                iot.send_real(&info.entry, vec![command]).await?;
+                return Ok(());
+            }
+        }
+
+        anyhow::bail!("don't know how to talk to humidifier {device}");
+    }
+
     pub async fn device_set_color_rgb(
         &self,
         device: &Device,
@@ -240,6 +299,17 @@ impl State {
         g: u8,
         b: u8,
     ) -> anyhow::Result<()> {
+        if device.device_type() == DeviceType::Humidifier {
+            return self
+                .humidifier_set_nightlight(device, |p| {
+                    p.r = r;
+                    p.g = g;
+                    p.b = b;
+                    p.on = true;
+                })
+                .await;
+        }
+
         if let Some(lan_dev) = &device.lan_device {
             let color = crate::lan_api::DeviceColor { r, g, b };
             lan_dev.send_color_rgb(color).await?;

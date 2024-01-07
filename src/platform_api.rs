@@ -733,7 +733,7 @@ pub enum DeviceType {
     Socket = "devices.types.socket",
     Sensor = "devices.types.sensor",
     Heater = "devices.types.heater",
-    Humidifer = "devices.types.humidifier",
+    Humidifier = "devices.types.humidifier",
     Dehumidifer = "devices.types.dehumidifer",
     IceMaker = "devices.types.ice_maker",
     AromaDiffuser = "devices.types.aroma_diffuser",

@@ -92,7 +92,7 @@ impl LanControlCommand {
                 } else {
                     let scene = Uncased::new(scene.clone().expect("scene if not list"));
                     if let Some(code) = scene_code_by_name.get(&scene) {
-                        let encoded = GoveeBlePacket::scene_code(*code).base64();
+                        let encoded = GoveeBlePacket::SetSceneCode(*code).base64();
                         println!("Computed {encoded}");
                         device.send_real(vec![encoded]).await?;
                     } else {
@@ -101,7 +101,7 @@ impl LanControlCommand {
                 }
             }
             SubCommand::Command { data } => {
-                let encoded = GoveeBlePacket::with_bytes(data.to_vec()).finish().base64();
+                let encoded = GoveeBlePacket::with_bytes(data.to_vec()).base64();
                 println!("encoded: {encoded}");
                 device.send_real(vec![encoded]).await?;
             }

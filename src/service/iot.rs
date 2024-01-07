@@ -1,3 +1,4 @@
+use crate::ble::GoveeBlePacket;
 use crate::lan_api::{DeviceColor, DeviceStatus};
 use crate::platform_api::from_json;
 use crate::service::state::StateHandle;
@@ -162,6 +163,36 @@ impl IotClient {
         Ok(())
     }
 
+    pub async fn send_real(
+        &self,
+        device: &DeviceEntry,
+        commands: Vec<String>,
+    ) -> anyhow::Result<()> {
+        log::trace!("send_real for {} to {commands:?}", device.device);
+        let device_topic = device.device_topic()?;
+
+        self.client
+            .publish(
+                device_topic,
+                serde_json::to_string(&serde_json::json!({
+                    "msg": {
+                        "cmd": "ptReal",
+                        "data": {
+                            "command": commands,
+                        },
+                        "cmdVersion": 0,
+                        "transaction": format!("v_{}000", ms_timestamp()),
+                        "type": 1,
+                    }
+                }))?,
+                QoS::AtMostOnce,
+                false,
+            )
+            .await
+            .context("IotClient::send_real")?;
+        Ok(())
+    }
+
     pub async fn activate_one_click(&self, item: &ParsedOneClick) -> anyhow::Result<()> {
         for entry in &item.entries {
             for command in &entry.msgs {
@@ -259,6 +290,7 @@ pub async fn start_iot_client(
                         /// This is an embedded json string
                         msg: Option<String>,
                         state: StateUpdate,
+                        op: Option<OpData>,
                     }
 
                     #[derive(Deserialize, Debug)]
@@ -271,6 +303,11 @@ pub async fn start_iot_client(
                         pub color_temperature_kelvin: Option<u32>,
                         pub sku: Option<String>,
                         pub device: Option<String>,
+                    }
+
+                    #[derive(Deserialize, Debug)]
+                    struct OpData {
+                        command: Vec<GoveeBlePacket>,
                     }
 
                     impl Packet {
@@ -299,6 +336,9 @@ pub async fn start_iot_client(
                         Ok(packet) => {
                             log::debug!("{packet:?}");
                             if let Some((sku, device_id)) = packet.sku_and_device() {
+                                if sku == "H7160" {
+                                    log::info!("{packet:#?} {msg:?}");
+                                }
                                 {
                                     let mut device = state.device_mut(sku, device_id).await;
                                     let mut state = match device.iot_device_status.clone() {
@@ -313,6 +353,7 @@ pub async fn start_iot_client(
                                             None => DeviceStatus::default(),
                                         },
                                     };
+
                                     if let Some(v) = packet.state.brightness {
                                         state.brightness = v;
                                         state.on = v != 0;
@@ -325,6 +366,24 @@ pub async fn start_iot_client(
                                         state.color_temperature_kelvin = v;
                                         state.on = true;
                                     }
+
+                                    if let Some(op) = &packet.op {
+                                        for cmd in &op.command {
+                                            match cmd {
+                                                GoveeBlePacket::NotifyHumidifierNightlight(nl) => {
+                                                    state.brightness = nl.brightness;
+                                                    state.color = DeviceColor {
+                                                        r: nl.r,
+                                                        g: nl.g,
+                                                        b: nl.b,
+                                                    };
+                                                    device.set_nightlight_state(nl.clone());
+                                                }
+                                                _ => {}
+                                            }
+                                        }
+                                    }
+
                                     // Check on/off last, as we can synthesize "on"
                                     // if the other fields are present
                                     if let Some(on_off) = packet.state.on_off {

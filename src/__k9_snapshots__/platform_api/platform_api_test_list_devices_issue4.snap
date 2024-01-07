@@ -185,7 +185,7 @@ GetDevicesResponse {
             sku: "H7141",
             device: "AA:BB:CC:DD:EE:FF:00:11",
             device_name: "Smart Humidifier",
-            device_type: Humidifer,
+            device_type: Humidifier,
             capabilities: [
                 DeviceCapability {
                     kind: OnOff,

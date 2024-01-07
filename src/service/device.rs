@@ -1,5 +1,6 @@
+use crate::ble::HumidifierNightlightParams;
 use crate::lan_api::{DeviceColor, DeviceStatus as LanDeviceStatus, LanDevice};
-use crate::platform_api::{HttpDeviceInfo, HttpDeviceState};
+use crate::platform_api::{DeviceType, HttpDeviceInfo, HttpDeviceState};
 use crate::service::quirks::{resolve_quirk, Quirk, BULB};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -30,6 +31,8 @@ pub struct Device {
 
     pub iot_device_status: Option<LanDeviceStatus>,
     pub last_iot_device_status_update: Option<DateTime<Utc>>,
+
+    pub nightlight_state: Option<HumidifierNightlightParams>,
 
     pub last_polled: Option<DateTime<Utc>>,
 
@@ -149,6 +152,10 @@ impl Device {
 
     pub fn set_last_polled(&mut self) {
         self.last_polled.replace(Utc::now());
+    }
+
+    pub fn set_nightlight_state(&mut self, params: HumidifierNightlightParams) {
+        self.nightlight_state.replace(params);
     }
 
     /// Update the LAN device information
@@ -343,6 +350,16 @@ impl Device {
                 );
                 self.active_scene.take();
             }
+        }
+    }
+
+    pub fn device_type(&self) -> DeviceType {
+        if let Some(info) = &self.http_device_info {
+            info.device_type.clone()
+        } else if let Some(q) = resolve_quirk(&self.sku) {
+            q.device_type.clone()
+        } else {
+            DeviceType::Light
         }
     }
 

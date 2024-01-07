@@ -1,6 +1,6 @@
 use crate::lan_api::DeviceColor;
 use crate::opt_env_var;
-use crate::platform_api::{from_json, DeviceCapability, DeviceCapabilityKind};
+use crate::platform_api::{from_json, DeviceCapability, DeviceCapabilityKind, DeviceType};
 use crate::service::device::Device as ServiceDevice;
 use crate::service::quirks::resolve_quirk;
 use crate::service::state::{State as ServiceState, StateHandle};
@@ -465,6 +465,9 @@ impl LightConfig {
         state: &ServiceState,
         segment: Option<u32>,
     ) -> anyhow::Result<Self> {
+        let quirk = device.resolve_quirk();
+        let device_type = device.device_type();
+
         let command_topic = match segment {
             None => format!("gv2mqtt/light/{id}/command", id = topic_safe_id(device)),
             Some(seg) => format!(
@@ -475,7 +478,10 @@ impl LightConfig {
 
         let icon = match segment {
             Some(_) => None,
-            None => resolve_quirk(&device.sku).map(|q| q.icon.to_string()),
+            None if device_type == DeviceType::Light => {
+                resolve_quirk(&device.sku).map(|q| q.icon.to_string())
+            }
+            None => None,
         };
 
         let state_topic = match segment {
@@ -522,6 +528,10 @@ impl LightConfig {
         };
 
         let brightness = segment.is_some()
+            || quirk
+                .as_ref()
+                .map(|q| q.supports_brightness)
+                .unwrap_or(false)
             || device
                 .http_device_info
                 .as_ref()
@@ -530,6 +540,7 @@ impl LightConfig {
 
         let name = match segment {
             Some(n) => Some(format!("Segment {:03}", n + 1)),
+            None if device_type == DeviceType::Humidifier => Some("Night Light".to_string()),
             None => None,
         };
 
@@ -584,7 +595,17 @@ impl LightConfig {
             Some(device_state) => {
                 log::trace!("LightConfig::notify_state: state is {device_state:?}");
 
-                let light_state = if device_state.on {
+                let is_on = match device.device_type() {
+                    DeviceType::Light => device_state.on,
+                    DeviceType::Humidifier => device
+                        .nightlight_state
+                        .as_ref()
+                        .map(|s| s.on)
+                        .unwrap_or(false),
+                    _ => device_state.on,
+                };
+
+                let light_state = if is_on {
                     if device_state.kelvin == 0 {
                         json!({
                             "state": "ON",
@@ -949,7 +970,7 @@ async fn mqtt_light_command(
 
     if command.state == "OFF" {
         state
-            .device_power_on(&device, false)
+            .device_light_power_on(&device, false)
             .await
             .context("mqtt_light_command: state.device_power_on")?;
     } else {
@@ -991,7 +1012,7 @@ async fn mqtt_light_command(
         }
         if power_on {
             state
-                .device_power_on(&device, true)
+                .device_light_power_on(&device, true)
                 .await
                 .context("mqtt_light_command: state.device_power_on")?;
         }

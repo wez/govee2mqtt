@@ -1,3 +1,4 @@
+use crate::platform_api::DeviceType;
 use once_cell::sync::Lazy;
 use std::borrow::Cow;
 use std::collections::HashMap;
@@ -12,11 +13,12 @@ pub struct Quirk {
     pub avoid_platform_api: bool,
     pub ble_only: bool,
     pub lan_api_capable: bool,
+    pub device_type: DeviceType,
 }
 
 impl Quirk {
     pub fn light<SKU: Into<Cow<'static, str>>>(sku: SKU, icon: &'static str) -> Self {
-        Quirk {
+        Self {
             sku: sku.into(),
             supports_rgb: true,
             supports_brightness: true,
@@ -25,7 +27,38 @@ impl Quirk {
             ble_only: false,
             icon: icon.into(),
             lan_api_capable: false,
+            device_type: DeviceType::Light,
         }
+    }
+
+    pub fn humidifier<SKU: Into<Cow<'static, str>>>(sku: SKU) -> Self {
+        Self {
+            sku: sku.into(),
+            supports_rgb: false,
+            supports_brightness: false,
+            color_temp_range: None,
+            avoid_platform_api: false,
+            ble_only: false,
+            icon: "mdi:air-humidifier".into(),
+            lan_api_capable: false,
+            device_type: DeviceType::Humidifier,
+        }
+    }
+
+    pub fn with_rgb(mut self) -> Self {
+        self.supports_rgb = true;
+        self
+    }
+
+    pub fn with_brightness(mut self) -> Self {
+        self.supports_brightness = true;
+        self
+    }
+
+    #[allow(unused)]
+    pub fn with_color_temp(mut self) -> Self {
+        self.color_temp_range = Some((2000, 9000));
+        self
     }
 
     pub fn with_lan_api(mut self) -> Self {
@@ -78,6 +111,11 @@ fn load_quirks() -> HashMap<String, Quirk> {
         // device
         // <https://github.com/wez/govee2mqtt/issues/14#issuecomment-1880050091>
         Quirk::light("H6159", STRIP).with_broken_platform(),
+        // Humidifer with mangled platform API data
+        Quirk::humidifier("H7160")
+            .with_broken_platform()
+            .with_rgb()
+            .with_brightness(),
         // Lights from the list of LAN API enabled devices
         // at <https://app-h5.govee.com/user-manual/wlan-guide>
         Quirk::lan_api_capable_light("H6072", FLOOR_LAMP),
