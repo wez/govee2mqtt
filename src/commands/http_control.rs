@@ -52,6 +52,8 @@ enum SubCommand {
     },
     /// Get current status
     Status {},
+    /// Shows info about the device
+    Info {},
 }
 
 impl HttpControlCommand {
@@ -65,6 +67,10 @@ impl HttpControlCommand {
                     .set_power_state(&device, self.cmd == SubCommand::On)
                     .await?;
                 println!("{result:#?}");
+            }
+
+            SubCommand::Info {} => {
+                println!("{device:#?}");
             }
 
             SubCommand::Status {} => {
