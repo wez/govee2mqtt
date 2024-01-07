@@ -588,16 +588,16 @@ pub struct OneClickComponent {
 #[cfg_attr(debug_assertions, serde(deny_unknown_fields))]
 pub struct OneClick {
     pub name: String,
-    pub plan_type: u32,
-    pub preset_id: u32,
-    pub preset_state: u32,
-    pub siri_engine_id: u32,
+    pub plan_type: i64,
+    pub preset_id: i64,
+    pub preset_state: i64,
+    pub siri_engine_id: i64,
     #[serde(rename = "type")]
-    pub rule_type: u32,
+    pub rule_type: i64,
     pub desc: String,
     #[serde(default)]
     pub exec_rules: Vec<JsonValue>,
-    pub group_id: u64,
+    pub group_id: i64,
     pub group_name: String,
     #[serde(default)]
     pub iot_rules: Vec<OneClickIotRule>,
