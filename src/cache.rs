@@ -1,3 +1,5 @@
+use anyhow::Context;
+use arc_swap::ArcSwap;
 use chrono::{DateTime, Utc};
 use once_cell::sync::Lazy;
 use serde::de::DeserializeOwned;
@@ -5,19 +7,27 @@ use serde::{Deserialize, Serialize};
 use sqlite_cache::{Cache, CacheConfig};
 use std::future::Future;
 use std::path::PathBuf;
+use std::sync::Arc;
 use std::time::Duration;
 
-pub static CACHE: Lazy<Cache> = Lazy::new(|| {
+pub static CACHE: Lazy<ArcSwap<Cache>> =
+    Lazy::new(|| open_cache().expect("failed to initialize cache").into());
+
+fn cache_file_name() -> PathBuf {
     let cache_dir = std::env::var("GOVEE_CACHE_DIR")
         .ok()
         .map(PathBuf::from)
         .or_else(|| dirs_next::cache_dir())
         .expect("failed to resolve cache dir");
 
-    let cache_file = cache_dir.join("govee2mqtt-cache.sqlite");
+    cache_dir.join("govee2mqtt-cache.sqlite")
+}
+
+fn open_cache() -> anyhow::Result<Arc<Cache>> {
+    let cache_file = cache_file_name();
     let conn = sqlite_cache::rusqlite::Connection::open(&cache_file)
         .expect(&format!("failed to open {cache_file:?}"));
-    Cache::new(
+    Ok(Arc::new(Cache::new(
         // We have low cardinality and can be pretty relaxed
         CacheConfig {
             flush_gc_ratio: 1024,
@@ -25,9 +35,16 @@ pub static CACHE: Lazy<Cache> = Lazy::new(|| {
             max_ttl: None,
         },
         conn,
-    )
-    .expect("failed to initialize cache")
-});
+    )?))
+}
+
+pub fn purge_cache() -> anyhow::Result<()> {
+    let cache_file = cache_file_name();
+    std::fs::remove_file(&cache_file)
+        .with_context(|| format!("removing cache file {cache_file:?}"))?;
+    CACHE.store(open_cache()?.into());
+    Ok(())
+}
 
 #[derive(Deserialize, Serialize, Debug)]
 struct CacheEntry<T> {
@@ -75,7 +92,7 @@ impl<T> CacheComputeResult<T> {
 }
 
 pub fn invalidate_key(topic: &str, key: &str) -> anyhow::Result<()> {
-    let topic = CACHE.topic(topic)?;
+    let topic = CACHE.load().topic(topic)?;
     Ok(topic.delete(key)?)
 }
 
@@ -86,7 +103,7 @@ where
     T: Serialize + DeserializeOwned + std::fmt::Debug + Clone,
     Fut: Future<Output = anyhow::Result<CacheComputeResult<T>>>,
 {
-    let topic = CACHE.topic(options.topic)?;
+    let topic = CACHE.load().topic(options.topic)?;
     let (updater, current_value) = topic.get_for_update(options.key).await?;
     let now = Utc::now();
 

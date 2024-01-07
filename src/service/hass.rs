@@ -303,13 +303,22 @@ impl ButtonConfig {
         client.publish_obj(topic, self).await
     }
 
-    pub async fn notify_state(
-        &self,
-        _device: &ServiceDevice,
-        _client: &HassClient,
-    ) -> anyhow::Result<()> {
-        // Buttons have no state
-        Ok(())
+    pub fn global_button<T: Into<String>>(name: &str, command_topic: T) -> Self {
+        let unique_id = format!("global-{}", topic_safe_string(name));
+        Self {
+            base: EntityConfig {
+                availability_topic: availability_topic(),
+                name: Some(name.to_string()),
+                entity_category: None,
+                origin: Origin::default(),
+                device: Device::this_service(),
+                unique_id: unique_id.clone(),
+                device_class: None,
+                icon: None,
+            },
+            command_topic: command_topic.into(),
+            payload_press: None,
+        }
     }
 }
 
@@ -608,6 +617,7 @@ impl LightConfig {
 enum GlobalConfig {
     Sensor(SensorConfig),
     Scene(SceneConfig),
+    Button(ButtonConfig),
 }
 
 impl GlobalConfig {
@@ -615,6 +625,7 @@ impl GlobalConfig {
         match self {
             Self::Sensor(l) => l.publish(state, client).await,
             Self::Scene(s) => s.publish(state, client).await,
+            Self::Button(s) => s.publish(state, client).await,
         }
     }
 
@@ -622,6 +633,10 @@ impl GlobalConfig {
         match self {
             Self::Sensor(l) => l.notify_state(client, value).await,
             Self::Scene(s) => s.notify_state(client, value).await,
+            Self::Button(_) => {
+                // Buttons have no state
+                Ok(())
+            }
         }
     }
 }
@@ -650,7 +665,10 @@ impl Config {
         match self {
             Self::Light(l) => l.notify_state(device, client).await,
             Self::Switch(s) => s.notify_state(device, client).await,
-            Self::Button(s) => s.notify_state(device, client).await,
+            Self::Button(_) => {
+                // Buttons have no state
+                Ok(())
+            }
         }
     }
 
@@ -701,10 +719,19 @@ pub struct HassClient {
 
 impl HassClient {
     async fn register_with_hass(&self, state: &StateHandle) -> anyhow::Result<()> {
-        let mut globals = vec![(
-            GlobalConfig::Sensor(SensorConfig::global_fixed_diagnostic("Version")),
-            govee_version().to_string(),
-        )];
+        let mut globals = vec![
+            (
+                GlobalConfig::Sensor(SensorConfig::global_fixed_diagnostic("Version")),
+                govee_version().to_string(),
+            ),
+            (
+                GlobalConfig::Button(ButtonConfig::global_button(
+                    "Purge Caches",
+                    purge_cache_topic(),
+                )),
+                "".to_string(),
+            ),
+        ];
 
         if let Some(undoc) = state.get_undoc_client().await {
             match undoc.parse_one_clicks().await {
@@ -835,7 +862,7 @@ impl HassClient {
 pub fn topic_safe_string(s: &str) -> String {
     let mut result = String::new();
     for c in s.chars() {
-        if c == ':' {
+        if c == ':' || c == ' ' {
             result.push('_');
         } else {
             result.push(c.to_ascii_lowercase());
@@ -876,6 +903,10 @@ fn availability_topic() -> String {
 
 fn oneclick_topic() -> String {
     "gv2mqtt/oneclick".to_string()
+}
+
+fn purge_cache_topic() -> String {
+    "gv2mqtt/purge-caches".to_string()
 }
 
 #[derive(Deserialize)]
@@ -995,6 +1026,18 @@ async fn mqtt_light_segment_command(
     }
 
     Ok(())
+}
+
+async fn mqtt_purge_caches(State(state): State<StateHandle>) -> anyhow::Result<()> {
+    log::info!("mqtt_purge_caches");
+    crate::cache::purge_cache()?;
+    state
+        .get_hass_client()
+        .await
+        .expect("have hass client")
+        .register_with_hass(&state)
+        .await
+        .context("register_with_hass")
 }
 
 async fn mqtt_oneclick(
@@ -1126,6 +1169,7 @@ async fn run_mqtt_loop(
             .await?;
 
         router.route(oneclick_topic(), mqtt_oneclick).await?;
+        router.route(purge_cache_topic(), mqtt_purge_caches).await?;
 
         state
             .get_hass_client()
