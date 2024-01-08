@@ -1,30 +1,17 @@
-use crate::hass_mqtt::base::{Device, EntityConfig, Origin};
-use crate::hass_mqtt::button::ButtonConfig;
-use crate::hass_mqtt::humidifier::HumidifierConfig;
+use crate::hass_mqtt::enumerator::{enumerate_all_entites, enumerate_entities_for_device};
 use crate::hass_mqtt::instance::EntityList;
-use crate::hass_mqtt::light::DeviceLight;
-use crate::hass_mqtt::scene::SceneConfig;
-use crate::hass_mqtt::sensor::GlobalFixedDiagnostic;
-use crate::hass_mqtt::switch::CapabilitySwitch;
 use crate::lan_api::DeviceColor;
 use crate::opt_env_var;
-use crate::platform_api::{
-    from_json, DeviceCapability, DeviceCapabilityKind, DeviceParameters, DeviceType, EnumOption,
-};
+use crate::platform_api::from_json;
 use crate::service::device::Device as ServiceDevice;
-
-use crate::service::state::{State as ServiceState, StateHandle};
-use crate::version_info::govee_version;
+use crate::service::state::StateHandle;
 use anyhow::Context;
 use async_channel::Receiver;
 use mosquitto_rs::router::{MqttRouter, Params, Payload, State};
 use mosquitto_rs::{Client, Event, QoS};
 use serde::{Deserialize, Serialize};
-
-use std::ops::Range;
 use std::sync::Arc;
 use std::time::Duration;
-use uuid::Uuid;
 
 #[derive(clap::Parser, Debug)]
 pub struct HassArguments {
@@ -95,142 +82,6 @@ impl HassArguments {
     }
 }
 
-enum Config {
-    Humidifier(HumidifierConfig),
-}
-
-impl Config {
-    async fn publish(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
-        match self {
-            Self::Humidifier(s) => s.publish(state, client).await,
-        }
-    }
-
-    async fn notify_state(
-        &self,
-        device: &ServiceDevice,
-        client: &HassClient,
-    ) -> anyhow::Result<()> {
-        match self {
-            Self::Humidifier(s) => s.notify_state(device, client).await,
-        }
-    }
-
-    async fn for_work_mode<'a>(
-        _d: &'a ServiceDevice,
-        _state: &ServiceState,
-        cap: &DeviceCapability,
-        _configs: &mut Vec<(&'a ServiceDevice, Self)>,
-    ) -> anyhow::Result<()> {
-        #[derive(Deserialize, PartialOrd, Ord, PartialEq, Eq)]
-        struct NumericOption {
-            value: i64,
-        }
-
-        fn is_contiguous_range(opt_range: &mut Vec<NumericOption>) -> Option<Range<i64>> {
-            if opt_range.is_empty() {
-                return None;
-            }
-            opt_range.sort();
-
-            let min = opt_range.first().map(|r| r.value).expect("not empty");
-            let max = opt_range.last().map(|r| r.value).expect("not empty");
-
-            let mut expect = min;
-            for item in opt_range {
-                if item.value != expect {
-                    return None;
-                }
-                expect = expect + 1;
-            }
-
-            Some(min..max + 1)
-        }
-
-        fn extract_contiguous_range(opt: &EnumOption) -> Option<Range<i64>> {
-            let extra_opts = opt.extras.get("options")?;
-
-            let mut opt_range =
-                serde_json::from_value::<Vec<NumericOption>>(extra_opts.clone()).ok()?;
-
-            is_contiguous_range(&mut opt_range)
-        }
-
-        if let Some(wm) = cap.struct_field_by_name("modeValue") {
-            match &wm.field_type {
-                DeviceParameters::Enum { options } => {
-                    for opt in options {
-                        if let Some(_range) = extract_contiguous_range(opt) {
-                            log::warn!("should show this as a number slider");
-                        }
-                    }
-                }
-                _ => {}
-            }
-        }
-
-        Ok(())
-    }
-
-    async fn for_device<'a>(
-        d: &'a ServiceDevice,
-        state: &StateHandle,
-        configs: &mut Vec<(&'a ServiceDevice, Self)>,
-        entities: &mut EntityList,
-    ) -> anyhow::Result<()> {
-        if !d.is_controllable() {
-            return Ok(());
-        }
-
-        if d.supports_rgb() || d.get_color_temperature_range().is_some() || d.supports_brightness()
-        {
-            entities.add(DeviceLight::for_device(&d, state, None).await?);
-        }
-
-        if d.device_type() == DeviceType::Humidifier {
-            configs.push((
-                d,
-                Config::Humidifier(HumidifierConfig::for_device(&d, state).await?),
-            ));
-        }
-
-        if let Some(info) = &d.http_device_info {
-            for cap in &info.capabilities {
-                match &cap.kind {
-                    DeviceCapabilityKind::Toggle | DeviceCapabilityKind::OnOff => {
-                        entities.add(CapabilitySwitch::new(&d, state, cap).await?);
-                    }
-                    DeviceCapabilityKind::ColorSetting
-                    | DeviceCapabilityKind::SegmentColorSetting
-                    | DeviceCapabilityKind::MusicSetting
-                    | DeviceCapabilityKind::Event
-                    | DeviceCapabilityKind::DynamicScene => {}
-
-                    DeviceCapabilityKind::Range if cap.instance == "brightness" => {}
-                    DeviceCapabilityKind::Range if cap.instance == "humidity" => {}
-                    DeviceCapabilityKind::WorkMode => {
-                        Self::for_work_mode(d, state, cap, configs).await?;
-                    }
-
-                    kind => {
-                        log::warn!(
-                            "Do something about {kind:?} {} for {d} {cap:?}",
-                            cap.instance
-                        );
-                    }
-                }
-            }
-
-            if let Some(segments) = info.supports_segmented_rgb() {
-                for n in segments {
-                    entities.add(DeviceLight::for_device(&d, state, Some(n)).await?);
-                }
-            }
-        }
-        Ok(())
-    }
-}
-
 #[derive(Clone)]
 pub struct HassClient {
     client: Client,
@@ -238,64 +89,16 @@ pub struct HassClient {
 
 impl HassClient {
     async fn register_with_hass(&self, state: &StateHandle) -> anyhow::Result<()> {
-        let mut entities = EntityList::new();
-        entities.add(GlobalFixedDiagnostic::new("Version", govee_version()));
-        entities.add(ButtonConfig::new("Purge Caches", purge_cache_topic()));
-
-        if let Some(undoc) = state.get_undoc_client().await {
-            match undoc.parse_one_clicks().await {
-                Ok(items) => {
-                    for oc in items {
-                        let unique_id = format!(
-                            "gv2mqtt-one-click-{}",
-                            Uuid::new_v5(&Uuid::NAMESPACE_DNS, oc.name.as_bytes()).simple()
-                        );
-                        entities.add(SceneConfig {
-                            base: EntityConfig {
-                                availability_topic: availability_topic(),
-                                name: Some(oc.name.to_string()),
-                                entity_category: None,
-                                origin: Origin::default(),
-                                device: Device::this_service(),
-                                unique_id: unique_id.clone(),
-                                device_class: None,
-                                icon: None,
-                            },
-                            command_topic: oneclick_topic(),
-                            payload_on: oc.name,
-                        });
-                    }
-                }
-                Err(err) => {
-                    log::warn!("Failed to parse one-clicks: {err:#}");
-                }
-            }
-        }
-
-        let devices = state.devices().await;
-
-        let mut configs = vec![];
-
-        for d in &devices {
-            Config::for_device(d, state, &mut configs, &mut entities)
-                .await
-                .with_context(|| format!("Config::for_device({d})"))?;
-        }
+        let entities = enumerate_all_entites(state).await?;
 
         // Register the configs
         log::trace!("register_with_hass: register entities");
         entities.publish_config(state, self).await?;
-        for (d, c) in &configs {
-            c.publish(state, self)
-                .await
-                .with_context(|| format!("delete hass config for {d}"))?;
-        }
 
         // Allow hass time to register the entities
-        tokio::time::sleep(tokio::time::Duration::from_millis(
-            (50 * configs.len()) as u64,
-        ))
-        .await;
+        let delay = tokio::time::Duration::from_millis((50 * entities.len()) as u64);
+        log::info!("Wait {delay:?} for hass to settle on entity configs");
+        tokio::time::sleep(delay).await;
 
         // Mark as available
         log::trace!("register_with_hass: mark as online");
@@ -306,11 +109,6 @@ impl HassClient {
         // report initial state
         log::trace!("register_with_hass: reporting state");
         entities.notify_state(self).await.context("notify_state")?;
-        for (d, c) in &configs {
-            c.notify_state(d, self)
-                .await
-                .with_context(|| format!("publish state for {d}"))?;
-        }
 
         log::trace!("register_with_hass: done");
 
@@ -347,13 +145,9 @@ impl HassClient {
         device: &ServiceDevice,
         state: &StateHandle,
     ) -> anyhow::Result<()> {
-        let mut configs = vec![];
         let mut entities = EntityList::new();
-        Config::for_device(device, state, &mut configs, &mut entities).await?;
+        enumerate_entities_for_device(device, state, &mut entities).await?;
         entities.notify_state(self).await?;
-        for (d, c) in configs {
-            c.notify_state(d, self).await?;
-        }
 
         Ok(())
     }

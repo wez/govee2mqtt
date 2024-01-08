@@ -1,6 +1,7 @@
 pub mod base;
 pub mod button;
 pub mod cover;
+pub mod enumerator;
 pub mod humidifier;
 pub mod instance;
 pub mod light;

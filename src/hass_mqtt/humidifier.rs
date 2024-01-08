@@ -1,8 +1,10 @@
 use crate::hass_mqtt::base::{Device, EntityConfig, Origin};
+use crate::hass_mqtt::instance::EntityInstance;
 use crate::platform_api::{DeviceParameters, DeviceType, IntegerRange};
 use crate::service::device::Device as ServiceDevice;
 use crate::service::hass::{availability_topic, topic_safe_id, HassClient};
-use crate::service::state::{State as ServiceState, StateHandle};
+use crate::service::state::StateHandle;
+use async_trait::async_trait;
 use serde::Serialize;
 use serde_json::json;
 
@@ -36,7 +38,26 @@ pub struct HumidifierConfig {
 }
 
 impl HumidifierConfig {
-    pub async fn for_device(device: &ServiceDevice, _state: &ServiceState) -> anyhow::Result<Self> {
+    pub async fn publish(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
+        let disco = state.get_hass_disco_prefix().await;
+        let topic = format!(
+            "{disco}/humidifier/{unique_id}/config",
+            unique_id = self.base.unique_id
+        );
+
+        client.publish_obj(topic, self).await
+    }
+}
+
+#[derive(Clone)]
+pub struct Humidifier {
+    humidifier: HumidifierConfig,
+    state: StateHandle,
+    device_id: String,
+}
+
+impl Humidifier {
+    pub async fn new(device: &ServiceDevice, state: &StateHandle) -> anyhow::Result<Self> {
         let _quirk = device.resolve_quirk();
         let command_topic = format!(
             "gv2mqtt/humidifier/{id}/command",
@@ -97,66 +118,75 @@ impl HumidifierConfig {
         }
 
         Ok(Self {
-            base: EntityConfig {
-                availability_topic: availability_topic(),
-                name: if device.device_type() == DeviceType::Humidifier {
-                    None
-                } else {
-                    Some("Humidifier".to_string())
+            humidifier: HumidifierConfig {
+                base: EntityConfig {
+                    availability_topic: availability_topic(),
+                    name: if device.device_type() == DeviceType::Humidifier {
+                        None
+                    } else {
+                        Some("Humidifier".to_string())
+                    },
+                    device_class: None,
+                    origin: Origin::default(),
+                    device: Device::for_device(device),
+                    unique_id,
+                    entity_category: None,
+                    icon: None,
                 },
-                device_class: None,
-                origin: Origin::default(),
-                device: Device::for_device(device),
-                unique_id,
-                entity_category: None,
-                icon: None,
+                command_topic,
+                target_humidity_command_topic,
+                target_humidity_state_topic,
+
+                min_humidity,
+                max_humidity,
+
+                mode_command_topic,
+                mode_state_topic,
+                modes,
+                state_topic,
             },
-            command_topic,
-            target_humidity_command_topic,
-            target_humidity_state_topic,
-
-            min_humidity,
-            max_humidity,
-
-            mode_command_topic,
-            mode_state_topic,
-            modes,
-            state_topic,
+            device_id: device.id.to_string(),
+            state: state.clone(),
         })
     }
+}
 
-    pub async fn publish(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
-        let disco = state.get_hass_disco_prefix().await;
-        let topic = format!(
-            "{disco}/humidifier/{unique_id}/config",
-            unique_id = self.base.unique_id
-        );
-
-        client.publish_obj(topic, self).await
+#[async_trait]
+impl EntityInstance for Humidifier {
+    async fn publish_config(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
+        self.humidifier.publish(state, client).await
     }
 
-    pub async fn notify_state(
-        &self,
-        device: &ServiceDevice,
-        client: &HassClient,
-    ) -> anyhow::Result<()> {
+    async fn notify_state(&self, client: &HassClient) -> anyhow::Result<()> {
+        let device = self
+            .state
+            .device_by_id(&self.device_id)
+            .await
+            .expect("device to exist");
+
         // TODO: update on/off state and mode
 
         match device.device_state() {
             Some(device_state) => {
                 let is_on = device_state.on;
                 client
-                    .publish(&self.state_topic, if is_on { "ON" } else { "OFF" })
+                    .publish(
+                        &self.humidifier.state_topic,
+                        if is_on { "ON" } else { "OFF" },
+                    )
                     .await?;
             }
             None => {
-                client.publish(&self.state_topic, "OFF").await?;
+                client.publish(&self.humidifier.state_topic, "OFF").await?;
             }
         }
 
         if let Some(humidity) = device.target_humidity_percent {
             client
-                .publish(&self.target_humidity_state_topic, humidity.to_string())
+                .publish(
+                    &self.humidifier.target_humidity_state_topic,
+                    humidity.to_string(),
+                )
                 .await?;
         }
         if let Some(mode_value) = device.humidifier_work_mode {
@@ -169,7 +199,10 @@ impl HumidifierConfig {
                                 for opt in options {
                                     if opt.value == mode_value_json {
                                         client
-                                            .publish(&self.mode_state_topic, opt.name.to_string())
+                                            .publish(
+                                                &self.humidifier.mode_state_topic,
+                                                opt.name.to_string(),
+                                            )
                                             .await?;
 
                                         break;

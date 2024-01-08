@@ -24,6 +24,10 @@ impl EntityList {
         self.entities.push(Arc::new(e));
     }
 
+    pub fn len(&self) -> usize {
+        self.entities.len()
+    }
+
     pub async fn publish_config(
         &self,
         state: &StateHandle,
