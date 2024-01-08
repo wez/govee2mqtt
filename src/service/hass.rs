@@ -95,24 +95,6 @@ impl HassArguments {
     }
 }
 
-enum GlobalConfig {
-    Scene(SceneConfig),
-}
-
-impl GlobalConfig {
-    async fn publish(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
-        match self {
-            Self::Scene(s) => s.publish(state, client).await,
-        }
-    }
-
-    pub async fn notify_state(&self, client: &HassClient, value: &str) -> anyhow::Result<()> {
-        match self {
-            Self::Scene(s) => s.notify_state(client, value).await,
-        }
-    }
-}
-
 enum Config {
     Light(LightConfig),
     Switch(SwitchConfig),
@@ -271,8 +253,6 @@ impl HassClient {
         entities.add(GlobalFixedDiagnostic::new("Version", govee_version()));
         entities.add(ButtonConfig::new("Purge Caches", purge_cache_topic()));
 
-        let mut globals: Vec<(GlobalConfig, String)> = vec![];
-
         if let Some(undoc) = state.get_undoc_client().await {
             match undoc.parse_one_clicks().await {
                 Ok(items) => {
@@ -281,23 +261,20 @@ impl HassClient {
                             "gv2mqtt-one-click-{}",
                             Uuid::new_v5(&Uuid::NAMESPACE_DNS, oc.name.as_bytes()).simple()
                         );
-                        globals.push((
-                            GlobalConfig::Scene(SceneConfig {
-                                base: EntityConfig {
-                                    availability_topic: availability_topic(),
-                                    name: Some(oc.name.to_string()),
-                                    entity_category: None,
-                                    origin: Origin::default(),
-                                    device: Device::this_service(),
-                                    unique_id: unique_id.clone(),
-                                    device_class: None,
-                                    icon: None,
-                                },
-                                command_topic: oneclick_topic(),
-                                payload_on: oc.name,
-                            }),
-                            "".into(),
-                        ));
+                        entities.add(SceneConfig {
+                            base: EntityConfig {
+                                availability_topic: availability_topic(),
+                                name: Some(oc.name.to_string()),
+                                entity_category: None,
+                                origin: Origin::default(),
+                                device: Device::this_service(),
+                                unique_id: unique_id.clone(),
+                                device_class: None,
+                                icon: None,
+                            },
+                            command_topic: oneclick_topic(),
+                            payload_on: oc.name,
+                        });
                     }
                 }
                 Err(err) => {
@@ -319,11 +296,6 @@ impl HassClient {
         // Register the configs
         log::trace!("register_with_hass: register entities");
         entities.publish_config(state, self).await?;
-        for (s, _) in &globals {
-            s.publish(state, self)
-                .await
-                .context("create hass config for a global item")?;
-        }
         for (d, c) in &configs {
             c.publish(state, self)
                 .await
@@ -345,11 +317,6 @@ impl HassClient {
         // report initial state
         log::trace!("register_with_hass: reporting state");
         entities.notify_state(self).await.context("notify_state")?;
-        for (s, v) in &globals {
-            s.notify_state(self, v)
-                .await
-                .context("publish state for a global item")?;
-        }
         for (d, c) in &configs {
             c.notify_state(d, self)
                 .await

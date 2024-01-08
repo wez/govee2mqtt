@@ -1,6 +1,8 @@
 use crate::hass_mqtt::base::EntityConfig;
+use crate::hass_mqtt::instance::EntityInstance;
 use crate::service::hass::HassClient;
 use crate::service::state::StateHandle;
+use async_trait::async_trait;
 use serde::Serialize;
 
 #[derive(Serialize, Clone, Debug)]
@@ -22,8 +24,15 @@ impl SceneConfig {
 
         client.publish_obj(topic, self).await
     }
+}
 
-    pub async fn notify_state(&self, _client: &HassClient, _: &str) -> anyhow::Result<()> {
+#[async_trait]
+impl EntityInstance for SceneConfig {
+    async fn publish_config(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
+        self.publish(&state, &client).await
+    }
+
+    async fn notify_state(&self, _client: &HassClient) -> anyhow::Result<()> {
         // Scenes have no state
         Ok(())
     }
