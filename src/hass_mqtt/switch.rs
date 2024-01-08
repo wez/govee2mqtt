@@ -1,11 +1,13 @@
 use crate::hass_mqtt::base::{Device, EntityConfig, Origin};
+use crate::hass_mqtt::instance::EntityInstance;
 use crate::platform_api::DeviceCapability;
 use crate::service::device::Device as ServiceDevice;
 use crate::service::hass::{
-    availability_topic, camel_case_to_space_separated, instance_from_topic,
-    switch_instance_state_topic, topic_safe_id, HassClient,
+    availability_topic, camel_case_to_space_separated, switch_instance_state_topic, topic_safe_id,
+    HassClient,
 };
 use crate::service::state::StateHandle;
+use async_trait::async_trait;
 use serde::Serialize;
 
 #[derive(Serialize, Clone, Debug)]
@@ -59,18 +61,51 @@ impl SwitchConfig {
 
         client.publish_obj(topic, self).await
     }
+}
 
-    pub async fn notify_state(
-        &self,
+pub struct CapabilitySwitch {
+    switch: SwitchConfig,
+    device_id: String,
+    state: StateHandle,
+    instance_name: String,
+}
+
+impl CapabilitySwitch {
+    pub async fn new(
         device: &ServiceDevice,
-        client: &HassClient,
-    ) -> anyhow::Result<()> {
-        let instance = instance_from_topic(&self.command_topic).expect("topic to be valid");
+        state: &StateHandle,
+        instance: &DeviceCapability,
+    ) -> anyhow::Result<Self> {
+        let switch = SwitchConfig::for_device(device, instance).await?;
+        Ok(Self {
+            switch,
+            device_id: device.id.to_string(),
+            state: state.clone(),
+            instance_name: instance.instance.to_string(),
+        })
+    }
+}
 
-        if instance == "powerSwitch" {
+#[async_trait]
+impl EntityInstance for CapabilitySwitch {
+    async fn publish_config(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
+        self.switch.publish(&state, &client).await
+    }
+
+    async fn notify_state(&self, client: &HassClient) -> anyhow::Result<()> {
+        let device = self
+            .state
+            .device_by_id(&self.device_id)
+            .await
+            .expect("device to exist");
+
+        if self.instance_name == "powerSwitch" {
             if let Some(state) = device.device_state() {
                 client
-                    .publish(&self.state_topic, if state.on { "ON" } else { "OFF" })
+                    .publish(
+                        &self.switch.state_topic,
+                        if state.on { "ON" } else { "OFF" },
+                    )
                     .await?;
             }
             return Ok(());
@@ -86,13 +121,16 @@ impl SwitchConfig {
         // <https://developer.govee.com/discuss/6596e84c901fb900312d5968>
         if let Some(state) = &device.http_device_state {
             for cap in &state.capabilities {
-                if cap.instance == instance {
-                    log::warn!("SwitchConfig::notify_state: Do something with {cap:#?}");
+                if cap.instance == self.instance_name {
+                    log::warn!("CapabilitySwitch::notify_state: Do something with {cap:#?}");
                     return Ok(());
                 }
             }
         }
-        log::trace!("SelectConfig::notify_state: didn't find state for {device} {instance}");
+        log::trace!(
+            "CapabilitySwitch::notify_state: didn't find state for {device} {instance}",
+            instance = self.instance_name
+        );
         Ok(())
     }
 }

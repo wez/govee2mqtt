@@ -5,7 +5,7 @@ use crate::hass_mqtt::instance::EntityList;
 use crate::hass_mqtt::light::DeviceLight;
 use crate::hass_mqtt::scene::SceneConfig;
 use crate::hass_mqtt::sensor::GlobalFixedDiagnostic;
-use crate::hass_mqtt::switch::SwitchConfig;
+use crate::hass_mqtt::switch::CapabilitySwitch;
 use crate::lan_api::DeviceColor;
 use crate::opt_env_var;
 use crate::platform_api::{
@@ -96,14 +96,12 @@ impl HassArguments {
 }
 
 enum Config {
-    Switch(SwitchConfig),
     Humidifier(HumidifierConfig),
 }
 
 impl Config {
     async fn publish(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
         match self {
-            Self::Switch(s) => s.publish(state, client).await,
             Self::Humidifier(s) => s.publish(state, client).await,
         }
     }
@@ -114,7 +112,6 @@ impl Config {
         client: &HassClient,
     ) -> anyhow::Result<()> {
         match self {
-            Self::Switch(s) => s.notify_state(device, client).await,
             Self::Humidifier(s) => s.notify_state(device, client).await,
         }
     }
@@ -201,7 +198,7 @@ impl Config {
             for cap in &info.capabilities {
                 match &cap.kind {
                     DeviceCapabilityKind::Toggle | DeviceCapabilityKind::OnOff => {
-                        configs.push((d, Config::Switch(SwitchConfig::for_device(&d, cap).await?)));
+                        entities.add(CapabilitySwitch::new(&d, state, cap).await?);
                     }
                     DeviceCapabilityKind::ColorSetting
                     | DeviceCapabilityKind::SegmentColorSetting
@@ -805,18 +802,5 @@ fn test_camel_case_to_space_separated() {
     assert_eq!(
         camel_case_to_space_separated("oscillationToggle"),
         "Oscillation Toggle"
-    );
-}
-
-pub fn instance_from_topic(topic: &str) -> Option<&str> {
-    topic.rsplit_once('/').map(|(_, instance)| instance)
-}
-
-#[cfg(test)]
-#[test]
-fn test_instance_from_topic() {
-    assert_eq!(
-        instance_from_topic("hello/there/powerSwitch").unwrap(),
-        "powerSwitch"
     );
 }
