@@ -97,24 +97,18 @@ impl HassArguments {
 
 enum GlobalConfig {
     Scene(SceneConfig),
-    Button(ButtonConfig),
 }
 
 impl GlobalConfig {
     async fn publish(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
         match self {
             Self::Scene(s) => s.publish(state, client).await,
-            Self::Button(s) => s.publish(state, client).await,
         }
     }
 
     pub async fn notify_state(&self, client: &HassClient, value: &str) -> anyhow::Result<()> {
         match self {
             Self::Scene(s) => s.notify_state(client, value).await,
-            Self::Button(_) => {
-                // Buttons have no state
-                Ok(())
-            }
         }
     }
 }
@@ -122,8 +116,6 @@ impl GlobalConfig {
 enum Config {
     Light(LightConfig),
     Switch(SwitchConfig),
-    #[allow(dead_code)]
-    Button(ButtonConfig),
     Humidifier(HumidifierConfig),
 }
 
@@ -132,7 +124,6 @@ impl Config {
         match self {
             Self::Light(l) => l.publish(state, client).await,
             Self::Switch(s) => s.publish(state, client).await,
-            Self::Button(s) => s.publish(state, client).await,
             Self::Humidifier(s) => s.publish(state, client).await,
         }
     }
@@ -146,10 +137,6 @@ impl Config {
             Self::Light(l) => l.notify_state(device, client).await,
             Self::Switch(s) => s.notify_state(device, client).await,
             Self::Humidifier(s) => s.notify_state(device, client).await,
-            Self::Button(_) => {
-                // Buttons have no state
-                Ok(())
-            }
         }
     }
 
@@ -282,14 +269,9 @@ impl HassClient {
     async fn register_with_hass(&self, state: &StateHandle) -> anyhow::Result<()> {
         let mut entities = EntityList::new();
         entities.add(GlobalFixedDiagnostic::new("Version", govee_version()));
+        entities.add(ButtonConfig::new("Purge Caches", purge_cache_topic()));
 
-        let mut globals = vec![(
-            GlobalConfig::Button(ButtonConfig::global_button(
-                "Purge Caches",
-                purge_cache_topic(),
-            )),
-            "".to_string(),
-        )];
+        let mut globals: Vec<(GlobalConfig, String)> = vec![];
 
         if let Some(undoc) = state.get_undoc_client().await {
             match undoc.parse_one_clicks().await {

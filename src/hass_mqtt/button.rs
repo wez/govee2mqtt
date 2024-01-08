@@ -1,10 +1,12 @@
 use crate::hass_mqtt::base::{Device, EntityConfig, Origin};
+use crate::hass_mqtt::instance::EntityInstance;
 use crate::platform_api::DeviceCapability;
 use crate::service::device::Device as ServiceDevice;
 use crate::service::hass::{
     availability_topic, camel_case_to_space_separated, topic_safe_id, topic_safe_string, HassClient,
 };
 use crate::service::state::StateHandle;
+use async_trait::async_trait;
 use serde::Serialize;
 
 #[derive(Serialize, Clone, Debug)]
@@ -61,8 +63,9 @@ impl ButtonConfig {
         client.publish_obj(topic, self).await
     }
 
-    pub fn global_button<T: Into<String>>(name: &str, command_topic: T) -> Self {
-        let unique_id = format!("global-{}", topic_safe_string(name));
+    pub fn new<NAME: Into<String>, TOPIC: Into<String>>(name: NAME, topic: TOPIC) -> Self {
+        let name = name.into();
+        let unique_id = format!("global-{}", topic_safe_string(&name));
         Self {
             base: EntityConfig {
                 availability_topic: availability_topic(),
@@ -74,8 +77,20 @@ impl ButtonConfig {
                 device_class: None,
                 icon: None,
             },
-            command_topic: command_topic.into(),
+            command_topic: topic.into(),
             payload_press: None,
         }
+    }
+}
+
+#[async_trait]
+impl EntityInstance for ButtonConfig {
+    async fn publish_config(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
+        self.publish(&state, &client).await
+    }
+
+    async fn notify_state(&self, _client: &HassClient) -> anyhow::Result<()> {
+        // Buttons have no state
+        Ok(())
     }
 }
