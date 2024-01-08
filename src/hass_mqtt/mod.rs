@@ -2,6 +2,7 @@ pub mod base;
 pub mod button;
 pub mod cover;
 pub mod humidifier;
+pub mod instance;
 pub mod light;
 pub mod number;
 pub mod scene;

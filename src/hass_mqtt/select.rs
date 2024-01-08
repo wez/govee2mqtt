@@ -1,5 +1,5 @@
-use serde::Serialize;
 use crate::hass_mqtt::base::EntityConfig;
+use serde::Serialize;
 
 #[derive(Serialize, Clone, Debug)]
 pub struct SelectConfig {

@@ -757,6 +757,7 @@ dependencies = [
  "anyhow",
  "arc-swap",
  "async-channel",
+ "async-trait",
  "axum",
  "chrono",
  "chrono-tz",
@@ -1264,9 +1265,9 @@ dependencies = [
 
 [[package]]
 name = "mosquitto-rs"
-version = "0.10.0"
+version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "20857eac7e47af5c94047273c19087a4cd0e080626acba0e7e8f0c2194d40869"
+checksum = "bd5bb571c883b88d99f30c1b70ebf591a1edd811d852deb134515b6a0b59d6a8"
 dependencies = [
  "anyhow",
  "async-channel",

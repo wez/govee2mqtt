@@ -1,9 +1,10 @@
 use crate::hass_mqtt::base::{Device, EntityConfig, Origin};
 use crate::hass_mqtt::button::ButtonConfig;
 use crate::hass_mqtt::humidifier::HumidifierConfig;
+use crate::hass_mqtt::instance::EntityList;
 use crate::hass_mqtt::light::LightConfig;
 use crate::hass_mqtt::scene::SceneConfig;
-use crate::hass_mqtt::sensor::SensorConfig;
+use crate::hass_mqtt::sensor::GlobalFixedDiagnostic;
 use crate::hass_mqtt::switch::SwitchConfig;
 use crate::lan_api::DeviceColor;
 use crate::opt_env_var;
@@ -95,7 +96,6 @@ impl HassArguments {
 }
 
 enum GlobalConfig {
-    Sensor(SensorConfig),
     Scene(SceneConfig),
     Button(ButtonConfig),
 }
@@ -103,7 +103,6 @@ enum GlobalConfig {
 impl GlobalConfig {
     async fn publish(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
         match self {
-            Self::Sensor(l) => l.publish(state, client).await,
             Self::Scene(s) => s.publish(state, client).await,
             Self::Button(s) => s.publish(state, client).await,
         }
@@ -111,7 +110,6 @@ impl GlobalConfig {
 
     pub async fn notify_state(&self, client: &HassClient, value: &str) -> anyhow::Result<()> {
         match self {
-            Self::Sensor(l) => l.notify_state(client, value).await,
             Self::Scene(s) => s.notify_state(client, value).await,
             Self::Button(_) => {
                 // Buttons have no state
@@ -282,19 +280,16 @@ pub struct HassClient {
 
 impl HassClient {
     async fn register_with_hass(&self, state: &StateHandle) -> anyhow::Result<()> {
-        let mut globals = vec![
-            (
-                GlobalConfig::Sensor(SensorConfig::global_fixed_diagnostic("Version")),
-                govee_version().to_string(),
-            ),
-            (
-                GlobalConfig::Button(ButtonConfig::global_button(
-                    "Purge Caches",
-                    purge_cache_topic(),
-                )),
-                "".to_string(),
-            ),
-        ];
+        let mut entities = EntityList::new();
+        entities.add(GlobalFixedDiagnostic::new("Version", govee_version()));
+
+        let mut globals = vec![(
+            GlobalConfig::Button(ButtonConfig::global_button(
+                "Purge Caches",
+                purge_cache_topic(),
+            )),
+            "".to_string(),
+        )];
 
         if let Some(undoc) = state.get_undoc_client().await {
             match undoc.parse_one_clicks().await {
@@ -341,6 +336,7 @@ impl HassClient {
 
         // Register the configs
         log::trace!("register_with_hass: register entities");
+        entities.publish_config(state, self).await?;
         for (s, _) in &globals {
             s.publish(state, self)
                 .await
@@ -366,6 +362,7 @@ impl HassClient {
 
         // report initial state
         log::trace!("register_with_hass: reporting state");
+        entities.notify_state(self).await.context("notify_state")?;
         for (s, v) in &globals {
             s.notify_state(self, v)
                 .await

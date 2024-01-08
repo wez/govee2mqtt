@@ -1,12 +1,12 @@
-use crate::service::hass::{instance_from_topic, switch_instance_state_topic};
-use serde::Serialize;
 use crate::hass_mqtt::base::{Device, EntityConfig, Origin};
 use crate::platform_api::DeviceCapability;
 use crate::service::device::Device as ServiceDevice;
 use crate::service::hass::{
-    availability_topic, camel_case_to_space_separated, topic_safe_id, HassClient,
+    availability_topic, camel_case_to_space_separated, instance_from_topic,
+    switch_instance_state_topic, topic_safe_id, HassClient,
 };
 use crate::service::state::StateHandle;
+use serde::Serialize;
 
 #[derive(Serialize, Clone, Debug)]
 pub struct SwitchConfig {

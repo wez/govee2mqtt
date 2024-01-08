@@ -1,7 +1,7 @@
-use serde::Serialize;
 use crate::hass_mqtt::base::EntityConfig;
 use crate::service::hass::HassClient;
 use crate::service::state::StateHandle;
+use serde::Serialize;
 
 #[derive(Serialize, Clone, Debug)]
 pub struct SceneConfig {
