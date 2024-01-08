@@ -379,6 +379,19 @@ pub async fn start_iot_client(
                                                     };
                                                     device.set_nightlight_state(nl.clone());
                                                 }
+                                                GoveeBlePacket::NotifyHumidifierAutoMode {
+                                                    param,
+                                                } => {
+                                                    device.set_target_humidity(param.as_percent());
+                                                }
+                                                GoveeBlePacket::NotifyHumidifierMode {
+                                                    mode,
+                                                    param,
+                                                } => {
+                                                    device.set_humidifier_work_mode_and_param(
+                                                        *mode, *param,
+                                                    );
+                                                }
                                                 _ => {}
                                             }
                                         }

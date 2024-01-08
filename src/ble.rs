@@ -18,6 +18,26 @@ pub struct HumidifierNightlightParams {
     pub brightness: u8,
 }
 
+/// Data is offset by 128 with increments of 1%,
+/// so 0% is 128, 100% is 228%
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct TargetHumidity(u8);
+
+impl TargetHumidity {
+    pub fn as_percent(&self) -> u8 {
+        self.0 - 128
+    }
+
+    pub fn into_inner(self) -> u8 {
+        self.0
+    }
+
+    #[allow(unused)]
+    pub fn from_percent(&self, percent: u8) -> Self {
+        Self(percent + 128)
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum GoveeBlePacket {
     Generic(HexBytes),
@@ -33,6 +53,9 @@ pub enum GoveeBlePacket {
         on: bool,
     },
     NotifyHumidifierAutoMode {
+        param: TargetHumidity,
+    },
+    NotifyHumidifierManualMode {
         param: u8,
     },
     NotifyHumidifierNightlight(HumidifierNightlightParams),
@@ -102,7 +125,10 @@ impl GoveeBlePacket {
             Self::NotifyHumidifierMode { mode, param } => {
                 finish(vec![0xaa, 0x05, 0x0, mode, param])
             }
-            Self::NotifyHumidifierAutoMode { param } => finish(vec![0xaa, 0x05, 0x03, param]),
+            Self::NotifyHumidifierAutoMode { param } => {
+                finish(vec![0xaa, 0x05, 0x03, param.into_inner()])
+            }
+            Self::NotifyHumidifierManualMode { param } => finish(vec![0xaa, 0x05, 0x01, param]),
             Self::NotifyHumidifierTimer { on } => finish(vec![0xaa, 0x11, btoi(on)]),
         }
     }
@@ -155,7 +181,12 @@ impl GoveeBlePacket {
                 Self::NotifyHumidifierTimer { on: itob(on) }
             }
             [0xaa, 0x05, 0x03, param, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] => {
-                Self::NotifyHumidifierAutoMode { param: *param }
+                Self::NotifyHumidifierAutoMode {
+                    param: TargetHumidity(*param),
+                }
+            }
+            [0xaa, 0x05, 0x01, param, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] => {
+                Self::NotifyHumidifierManualMode { param: *param }
             }
             _ => Self::Generic(HexBytes(data.to_vec())),
         })

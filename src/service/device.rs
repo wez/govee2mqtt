@@ -5,6 +5,7 @@ use crate::service::quirks::{resolve_quirk, Quirk, BULB};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
+use std::collections::HashMap;
 use std::net::IpAddr;
 
 #[derive(Default, Clone, Debug)]
@@ -33,6 +34,9 @@ pub struct Device {
     pub last_iot_device_status_update: Option<DateTime<Utc>>,
 
     pub nightlight_state: Option<HumidifierNightlightParams>,
+    pub target_humidity_percent: Option<u8>,
+    pub humidifier_work_mode: Option<u8>,
+    pub humidifier_param_by_mode: HashMap<u8, u8>,
 
     pub last_polled: Option<DateTime<Utc>>,
 
@@ -156,6 +160,16 @@ impl Device {
 
     pub fn set_nightlight_state(&mut self, params: HumidifierNightlightParams) {
         self.nightlight_state.replace(params);
+    }
+
+    pub fn set_target_humidity(&mut self, percent: u8) {
+        log::info!("Updating target humidity to {percent}%");
+        self.target_humidity_percent.replace(percent);
+    }
+
+    pub fn set_humidifier_work_mode_and_param(&mut self, mode: u8, param: u8) {
+        self.humidifier_work_mode.replace(mode);
+        self.humidifier_param_by_mode.insert(mode, param);
     }
 
     /// Update the LAN device information

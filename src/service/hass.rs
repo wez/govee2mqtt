@@ -1,6 +1,9 @@
 use crate::lan_api::DeviceColor;
 use crate::opt_env_var;
-use crate::platform_api::{from_json, DeviceCapability, DeviceCapabilityKind, DeviceType};
+use crate::platform_api::{
+    from_json, DeviceCapability, DeviceCapabilityKind, DeviceParameters, DeviceType, EnumOption,
+    IntegerRange,
+};
 use crate::service::device::Device as ServiceDevice;
 use crate::service::quirks::resolve_quirk;
 use crate::service::state::{State as ServiceState, StateHandle};
@@ -11,6 +14,7 @@ use mosquitto_rs::router::{MqttRouter, Params, Payload, State};
 use mosquitto_rs::{Client, Event, QoS};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use std::ops::Range;
 use std::sync::Arc;
 use std::time::Duration;
 use uuid::Uuid;
@@ -413,6 +417,18 @@ impl SwitchConfig {
 }
 
 #[derive(Serialize, Clone, Debug)]
+pub struct NumberConfig {
+    #[serde(flatten)]
+    pub base: EntityConfig,
+
+    pub command_topic: String,
+    pub state_topic: String,
+    pub min: f32,
+    pub max: f32,
+    pub step: f32,
+}
+
+#[derive(Serialize, Clone, Debug)]
 pub struct SelectConfig {
     #[serde(flatten)]
     pub base: EntityConfig,
@@ -420,6 +436,187 @@ pub struct SelectConfig {
     pub command_topic: String,
     pub options: Vec<String>,
     pub state_topic: String,
+}
+
+/// <https://www.home-assistant.io/integrations/humidifier.mqtt>
+#[derive(Serialize, Clone, Debug)]
+pub struct HumidifierConfig {
+    #[serde(flatten)]
+    pub base: EntityConfig,
+
+    pub command_topic: String,
+    /// HASS will publish here to change the humidity target percentage
+    pub target_humidity_command_topic: String,
+    /// HASS will subscribe here to receive the humidity target percentage
+    pub target_humidity_state_topic: String,
+
+    /// HASS will publish here to change the current mode
+    pub mode_command_topic: String,
+    /// we will publish the current mode here
+    pub mode_state_topic: String,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub min_humidity: Option<u8>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub max_humidity: Option<u8>,
+
+    /// The list of supported modes
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub modes: Vec<String>,
+
+    pub state_topic: String,
+}
+
+impl HumidifierConfig {
+    pub async fn for_device(device: &ServiceDevice, _state: &ServiceState) -> anyhow::Result<Self> {
+        let quirk = device.resolve_quirk();
+        let command_topic = format!(
+            "gv2mqtt/humidifier/{id}/command",
+            id = topic_safe_id(device)
+        );
+        let target_humidity_command_topic = format!(
+            "gv2mqtt/humidifier/{id}/set-target",
+            id = topic_safe_id(device)
+        );
+        let target_humidity_state_topic = format!(
+            "gv2mqtt/humidifier/{id}/notify-target",
+            id = topic_safe_id(device)
+        );
+        let state_topic = format!("gv2mqtt/humidifier/{id}/state", id = topic_safe_id(device));
+
+        let mode_command_topic = format!(
+            "gv2mqtt/humidifier/{id}/set-mode",
+            id = topic_safe_id(device)
+        );
+        let mode_state_topic = format!(
+            "gv2mqtt/humidifier/{id}/notify-mode",
+            id = topic_safe_id(device)
+        );
+
+        let unique_id = format!("gv2mqtt-{id}-humidifier", id = topic_safe_id(device),);
+
+        let mut modes = vec![];
+        let mut min_humidity = None;
+        let mut max_humidity = None;
+
+        if let Some(info) = &device.http_device_info {
+            if let Some(cap) = info.capability_by_instance("workMode") {
+                if let Some(wm) = cap.struct_field_by_name("workMode") {
+                    match &wm.field_type {
+                        DeviceParameters::Enum { options } => {
+                            for opt in options {
+                                modes.push(opt.name.to_string());
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+            }
+            if let Some(cap) = info.capability_by_instance("humidity") {
+                match &cap.parameters {
+                    Some(DeviceParameters::Integer {
+                        range: IntegerRange { min, max, .. },
+                        unit,
+                    }) => {
+                        if unit.as_deref() == Some("unit.percent") {
+                            min_humidity.replace(*min as u8);
+                            max_humidity.replace(*max as u8);
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        }
+
+        Ok(Self {
+            base: EntityConfig {
+                availability_topic: availability_topic(),
+                name: if device.device_type() == DeviceType::Humidifier {
+                    None
+                } else {
+                    Some("Humidifier".to_string())
+                },
+                device_class: None,
+                origin: Origin::default(),
+                device: Device::for_device(device),
+                unique_id,
+                entity_category: None,
+                icon: None,
+            },
+            command_topic,
+            target_humidity_command_topic,
+            target_humidity_state_topic,
+
+            min_humidity,
+            max_humidity,
+
+            mode_command_topic,
+            mode_state_topic,
+            modes,
+            state_topic,
+        })
+    }
+
+    pub async fn publish(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
+        let disco = state.get_hass_disco_prefix().await;
+        let topic = format!(
+            "{disco}/humidifier/{unique_id}/config",
+            unique_id = self.base.unique_id
+        );
+
+        client.publish_obj(topic, self).await
+    }
+
+    pub async fn notify_state(
+        &self,
+        device: &ServiceDevice,
+        client: &HassClient,
+    ) -> anyhow::Result<()> {
+        // TODO: update on/off state and mode
+
+        match device.device_state() {
+            Some(device_state) => {
+                let is_on = device_state.on;
+                client
+                    .publish(&self.state_topic, if is_on { "ON" } else { "OFF" })
+                    .await?;
+            }
+            None => {
+                client.publish(&self.state_topic, "OFF").await?;
+            }
+        }
+
+        if let Some(humidity) = device.target_humidity_percent {
+            client
+                .publish(&self.target_humidity_state_topic, humidity.to_string())
+                .await?;
+        }
+        if let Some(mode_value) = device.humidifier_work_mode {
+            if let Some(info) = &device.http_device_info {
+                if let Some(cap) = info.capability_by_instance("workMode") {
+                    if let Some(wm) = cap.struct_field_by_name("workMode") {
+                        match &wm.field_type {
+                            DeviceParameters::Enum { options } => {
+                                let mode_value_json = json!(mode_value);
+                                for opt in options {
+                                    if opt.value == mode_value_json {
+                                        client
+                                            .publish(&self.mode_state_topic, opt.name.to_string())
+                                            .await?;
+
+                                        break;
+                                    }
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+            }
+        }
+
+        Ok(())
+    }
 }
 
 /// <https://www.home-assistant.io/integrations/light.mqtt/#json-schema>
@@ -677,6 +874,7 @@ enum Config {
     Switch(SwitchConfig),
     #[allow(dead_code)]
     Button(ButtonConfig),
+    Humidifier(HumidifierConfig),
 }
 
 impl Config {
@@ -685,6 +883,7 @@ impl Config {
             Self::Light(l) => l.publish(state, client).await,
             Self::Switch(s) => s.publish(state, client).await,
             Self::Button(s) => s.publish(state, client).await,
+            Self::Humidifier(s) => s.publish(state, client).await,
         }
     }
 
@@ -696,11 +895,68 @@ impl Config {
         match self {
             Self::Light(l) => l.notify_state(device, client).await,
             Self::Switch(s) => s.notify_state(device, client).await,
+            Self::Humidifier(s) => s.notify_state(device, client).await,
             Self::Button(_) => {
                 // Buttons have no state
                 Ok(())
             }
         }
+    }
+
+    async fn for_work_mode<'a>(
+        d: &'a ServiceDevice,
+        state: &ServiceState,
+        cap: &DeviceCapability,
+        configs: &mut Vec<(&'a ServiceDevice, Self)>,
+    ) -> anyhow::Result<()> {
+        #[derive(Deserialize, PartialOrd, Ord, PartialEq, Eq)]
+        struct NumericOption {
+            value: i64,
+        }
+
+        fn is_contiguous_range(opt_range: &mut Vec<NumericOption>) -> Option<Range<i64>> {
+            if opt_range.is_empty() {
+                return None;
+            }
+            opt_range.sort();
+
+            let min = opt_range.first().map(|r| r.value).expect("not empty");
+            let max = opt_range.last().map(|r| r.value).expect("not empty");
+
+            let mut expect = min;
+            for item in opt_range {
+                if item.value != expect {
+                    return None;
+                }
+                expect = expect + 1;
+            }
+
+            Some(min..max + 1)
+        }
+
+        fn extract_contiguous_range(opt: &EnumOption) -> Option<Range<i64>> {
+            let extra_opts = opt.extras.get("options")?;
+
+            let mut opt_range =
+                serde_json::from_value::<Vec<NumericOption>>(extra_opts.clone()).ok()?;
+
+            is_contiguous_range(&mut opt_range)
+        }
+
+        if let Some(wm) = cap.struct_field_by_name("modeValue") {
+            match &wm.field_type {
+                DeviceParameters::Enum { options } => {
+                    for opt in options {
+                        if let Some(range) = extract_contiguous_range(opt) {
+                            log::warn!("should show this as a number slider");
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        Ok(())
     }
 
     async fn for_device<'a>(
@@ -720,13 +976,37 @@ impl Config {
             ));
         }
 
+        if d.device_type() == DeviceType::Humidifier {
+            configs.push((
+                d,
+                Config::Humidifier(HumidifierConfig::for_device(&d, state).await?),
+            ));
+        }
+
         if let Some(info) = &d.http_device_info {
             for cap in &info.capabilities {
-                match cap.kind {
+                match &cap.kind {
                     DeviceCapabilityKind::Toggle | DeviceCapabilityKind::OnOff => {
                         configs.push((d, Config::Switch(SwitchConfig::for_device(&d, cap).await?)));
                     }
-                    _ => {}
+                    DeviceCapabilityKind::ColorSetting
+                    | DeviceCapabilityKind::SegmentColorSetting
+                    | DeviceCapabilityKind::MusicSetting
+                    | DeviceCapabilityKind::Event
+                    | DeviceCapabilityKind::DynamicScene => {}
+
+                    DeviceCapabilityKind::Range if cap.instance == "brightness" => {}
+                    DeviceCapabilityKind::Range if cap.instance == "humidity" => {}
+                    DeviceCapabilityKind::WorkMode => {
+                        Self::for_work_mode(d, state, cap, configs).await?;
+                    }
+
+                    kind => {
+                        log::warn!(
+                            "Do something about {kind:?} {} for {d} {cap:?}",
+                            cap.instance
+                        );
+                    }
                 }
             }
 
