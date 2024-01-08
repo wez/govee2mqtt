@@ -1,4 +1,5 @@
 use crate::hass_mqtt::base::{Device, EntityConfig, Origin};
+use crate::hass_mqtt::instance::EntityInstance;
 use crate::platform_api::DeviceType;
 use crate::service::device::Device as ServiceDevice;
 use crate::service::hass::{
@@ -6,7 +7,8 @@ use crate::service::hass::{
     topic_safe_id, HassClient,
 };
 use crate::service::quirks::resolve_quirk;
-use crate::service::state::{State as ServiceState, StateHandle};
+use crate::service::state::StateHandle;
+use async_trait::async_trait;
 use serde::Serialize;
 use serde_json::json;
 
@@ -48,9 +50,101 @@ pub struct LightConfig {
 }
 
 impl LightConfig {
+    pub async fn publish(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
+        let disco = state.get_hass_disco_prefix().await;
+        let topic = format!(
+            "{disco}/light/{unique_id}/config",
+            unique_id = self.base.unique_id
+        );
+
+        client.publish_obj(topic, self).await
+    }
+}
+
+#[derive(Clone)]
+pub struct DeviceLight {
+    light: LightConfig,
+    device_id: String,
+    state: StateHandle,
+}
+
+#[async_trait]
+impl EntityInstance for DeviceLight {
+    async fn publish_config(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
+        self.light.publish(&state, &client).await
+    }
+
+    async fn notify_state(&self, client: &HassClient) -> anyhow::Result<()> {
+        if self.light.optimistic {
+            return Ok(());
+        }
+
+        let device = self
+            .state
+            .device_by_id(&self.device_id)
+            .await
+            .expect("device to exist");
+
+        match device.device_state() {
+            Some(device_state) => {
+                log::trace!("LightConfig::notify_state: state is {device_state:?}");
+
+                let is_on = match device.device_type() {
+                    DeviceType::Light => device_state.on,
+                    DeviceType::Humidifier => device
+                        .nightlight_state
+                        .as_ref()
+                        .map(|s| s.on)
+                        .unwrap_or(false),
+                    _ => device_state.on,
+                };
+
+                let light_state = if is_on {
+                    if device_state.kelvin == 0 {
+                        json!({
+                            "state": "ON",
+                            "color_mode": "rgb",
+                            "color": {
+                                "r": device_state.color.r,
+                                "g": device_state.color.g,
+                                "b": device_state.color.b,
+                            },
+                            "brightness": device_state.brightness,
+                            "effect": device_state.scene,
+                        })
+                    } else {
+                        json!({
+                            "state": "ON",
+                            "color_mode": "color_temp",
+                            "brightness": device_state.brightness,
+                            "color_temp": kelvin_to_mired(device_state.kelvin),
+                            "effect": device_state.scene,
+                        })
+                    }
+                } else {
+                    json!({"state":"OFF"})
+                };
+
+                client
+                    .publish_obj(&self.light.state_topic, &light_state)
+                    .await
+            }
+            None => {
+                // TODO: mark as unavailable or something? Don't
+                // want to prevent attempting to control it though,
+                // as that could cause it to wake up.
+                client
+                    .publish_obj(&self.light.state_topic, &json!({"state":"OFF"}))
+                    .await
+            }
+        }
+    }
+}
+
+impl DeviceLight {
     pub async fn for_device(
         device: &ServiceDevice,
-        state: &ServiceState,
+        state: &StateHandle,
         segment: Option<u32>,
     ) -> anyhow::Result<Self> {
         let quirk = device.resolve_quirk();
@@ -133,102 +227,34 @@ impl LightConfig {
         };
 
         Ok(Self {
-            base: EntityConfig {
-                availability_topic,
-                name,
-                device_class: None,
-                origin: Origin::default(),
-                device: Device::for_device(device),
-                unique_id,
-                entity_category: None,
-                icon: None,
+            light: LightConfig {
+                base: EntityConfig {
+                    availability_topic,
+                    name,
+                    device_class: None,
+                    origin: Origin::default(),
+                    device: Device::for_device(device),
+                    unique_id,
+                    entity_category: None,
+                    icon: None,
+                },
+                schema: "json".to_string(),
+                command_topic,
+                state_topic,
+                supported_color_modes,
+                color_mode,
+                brightness,
+                brightness_scale: 100,
+                effect: true,
+                effect_list,
+                payload_available: "online".to_string(),
+                max_mireds,
+                min_mireds,
+                optimistic: segment.is_some(),
+                icon,
             },
-            schema: "json".to_string(),
-            command_topic,
-            state_topic,
-            supported_color_modes,
-            color_mode,
-            brightness,
-            brightness_scale: 100,
-            effect: true,
-            effect_list,
-            payload_available: "online".to_string(),
-            max_mireds,
-            min_mireds,
-            optimistic: segment.is_some(),
-            icon,
+            device_id: device.id.to_string(),
+            state: state.clone(),
         })
-    }
-
-    pub async fn publish(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
-        let disco = state.get_hass_disco_prefix().await;
-        let topic = format!(
-            "{disco}/light/{unique_id}/config",
-            unique_id = self.base.unique_id
-        );
-
-        client.publish_obj(topic, self).await
-    }
-
-    pub async fn notify_state(
-        &self,
-        device: &ServiceDevice,
-        client: &HassClient,
-    ) -> anyhow::Result<()> {
-        if self.optimistic {
-            return Ok(());
-        }
-
-        match device.device_state() {
-            Some(device_state) => {
-                log::trace!("LightConfig::notify_state: state is {device_state:?}");
-
-                let is_on = match device.device_type() {
-                    DeviceType::Light => device_state.on,
-                    DeviceType::Humidifier => device
-                        .nightlight_state
-                        .as_ref()
-                        .map(|s| s.on)
-                        .unwrap_or(false),
-                    _ => device_state.on,
-                };
-
-                let light_state = if is_on {
-                    if device_state.kelvin == 0 {
-                        json!({
-                            "state": "ON",
-                            "color_mode": "rgb",
-                            "color": {
-                                "r": device_state.color.r,
-                                "g": device_state.color.g,
-                                "b": device_state.color.b,
-                            },
-                            "brightness": device_state.brightness,
-                            "effect": device_state.scene,
-                        })
-                    } else {
-                        json!({
-                            "state": "ON",
-                            "color_mode": "color_temp",
-                            "brightness": device_state.brightness,
-                            "color_temp": kelvin_to_mired(device_state.kelvin),
-                            "effect": device_state.scene,
-                        })
-                    }
-                } else {
-                    json!({"state":"OFF"})
-                };
-
-                client.publish_obj(&self.state_topic, &light_state).await
-            }
-            None => {
-                // TODO: mark as unavailable or something? Don't
-                // want to prevent attempting to control it though,
-                // as that could cause it to wake up.
-                client
-                    .publish_obj(&self.state_topic, &json!({"state":"OFF"}))
-                    .await
-            }
-        }
     }
 }

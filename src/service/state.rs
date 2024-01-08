@@ -127,7 +127,7 @@ impl State {
     }
 
     async fn poll_lan_api<F: Fn(&LanDeviceStatus) -> bool>(
-        &self,
+        self: &Arc<Self>,
         device: &LanDevice,
         acceptor: F,
     ) -> anyhow::Result<()> {
@@ -152,7 +152,11 @@ impl State {
         }
     }
 
-    pub async fn device_light_power_on(&self, device: &Device, on: bool) -> anyhow::Result<()> {
+    pub async fn device_light_power_on(
+        self: &Arc<Self>,
+        device: &Device,
+        on: bool,
+    ) -> anyhow::Result<()> {
         if device.device_type() == DeviceType::Humidifier {
             return self.humidifier_set_nightlight(device, |p| p.on = on).await;
         }
@@ -180,7 +184,11 @@ impl State {
         anyhow::bail!("Unable to control power state for {device}");
     }
 
-    pub async fn device_power_on(&self, device: &Device, on: bool) -> anyhow::Result<()> {
+    pub async fn device_power_on(
+        self: &Arc<Self>,
+        device: &Device,
+        on: bool,
+    ) -> anyhow::Result<()> {
         if let Some(lan_dev) = &device.lan_device {
             lan_dev.send_turn(on).await?;
             self.poll_lan_api(lan_dev, |status| status.on == on).await?;
@@ -204,7 +212,11 @@ impl State {
         anyhow::bail!("Unable to control power state for {device}");
     }
 
-    pub async fn device_set_brightness(&self, device: &Device, percent: u8) -> anyhow::Result<()> {
+    pub async fn device_set_brightness(
+        self: &Arc<Self>,
+        device: &Device,
+        percent: u8,
+    ) -> anyhow::Result<()> {
         if device.device_type() == DeviceType::Humidifier {
             return self
                 .humidifier_set_nightlight(device, |p| {
@@ -238,7 +250,7 @@ impl State {
     }
 
     pub async fn device_set_color_temperature(
-        &self,
+        self: &Arc<Self>,
         device: &Device,
         kelvin: u32,
     ) -> anyhow::Result<()> {
@@ -293,7 +305,7 @@ impl State {
     }
 
     pub async fn device_set_color_rgb(
-        &self,
+        self: &Arc<Self>,
         device: &Device,
         r: u8,
         g: u8,
@@ -387,7 +399,7 @@ impl State {
 
     // Take care not to call this while you hold a mutable device
     // reference, as that will deadlock!
-    pub async fn notify_of_state_change(&self, device_id: &str) -> anyhow::Result<()> {
+    pub async fn notify_of_state_change(self: &Arc<Self>, device_id: &str) -> anyhow::Result<()> {
         let Some(canonical_device) = self.device_by_id(&device_id).await else {
             anyhow::bail!("cannot find device {device_id}!?");
         };

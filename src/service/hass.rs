@@ -2,7 +2,7 @@ use crate::hass_mqtt::base::{Device, EntityConfig, Origin};
 use crate::hass_mqtt::button::ButtonConfig;
 use crate::hass_mqtt::humidifier::HumidifierConfig;
 use crate::hass_mqtt::instance::EntityList;
-use crate::hass_mqtt::light::LightConfig;
+use crate::hass_mqtt::light::DeviceLight;
 use crate::hass_mqtt::scene::SceneConfig;
 use crate::hass_mqtt::sensor::GlobalFixedDiagnostic;
 use crate::hass_mqtt::switch::SwitchConfig;
@@ -96,7 +96,6 @@ impl HassArguments {
 }
 
 enum Config {
-    Light(LightConfig),
     Switch(SwitchConfig),
     Humidifier(HumidifierConfig),
 }
@@ -104,7 +103,6 @@ enum Config {
 impl Config {
     async fn publish(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
         match self {
-            Self::Light(l) => l.publish(state, client).await,
             Self::Switch(s) => s.publish(state, client).await,
             Self::Humidifier(s) => s.publish(state, client).await,
         }
@@ -116,7 +114,6 @@ impl Config {
         client: &HassClient,
     ) -> anyhow::Result<()> {
         match self {
-            Self::Light(l) => l.notify_state(device, client).await,
             Self::Switch(s) => s.notify_state(device, client).await,
             Self::Humidifier(s) => s.notify_state(device, client).await,
         }
@@ -180,8 +177,9 @@ impl Config {
 
     async fn for_device<'a>(
         d: &'a ServiceDevice,
-        state: &ServiceState,
+        state: &StateHandle,
         configs: &mut Vec<(&'a ServiceDevice, Self)>,
+        entities: &mut EntityList,
     ) -> anyhow::Result<()> {
         if !d.is_controllable() {
             return Ok(());
@@ -189,10 +187,7 @@ impl Config {
 
         if d.supports_rgb() || d.get_color_temperature_range().is_some() || d.supports_brightness()
         {
-            configs.push((
-                d,
-                Config::Light(LightConfig::for_device(&d, state, None).await?),
-            ));
+            entities.add(DeviceLight::for_device(&d, state, None).await?);
         }
 
         if d.device_type() == DeviceType::Humidifier {
@@ -231,10 +226,7 @@ impl Config {
 
             if let Some(segments) = info.supports_segmented_rgb() {
                 for n in segments {
-                    configs.push((
-                        d,
-                        Config::Light(LightConfig::for_device(&d, state, Some(n)).await?),
-                    ));
+                    entities.add(DeviceLight::for_device(&d, state, Some(n)).await?);
                 }
             }
         }
@@ -288,7 +280,7 @@ impl HassClient {
         let mut configs = vec![];
 
         for d in &devices {
-            Config::for_device(d, state, &mut configs)
+            Config::for_device(d, state, &mut configs, &mut entities)
                 .await
                 .with_context(|| format!("Config::for_device({d})"))?;
         }
@@ -356,10 +348,12 @@ impl HassClient {
     pub async fn advise_hass_of_light_state(
         &self,
         device: &ServiceDevice,
-        state: &ServiceState,
+        state: &StateHandle,
     ) -> anyhow::Result<()> {
         let mut configs = vec![];
-        Config::for_device(device, state, &mut configs).await?;
+        let mut entities = EntityList::new();
+        Config::for_device(device, state, &mut configs, &mut entities).await?;
+        entities.notify_state(self).await?;
         for (d, c) in configs {
             c.notify_state(d, self).await?;
         }
