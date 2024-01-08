@@ -8,6 +8,7 @@ use std::str::FromStr;
 mod ble;
 mod cache;
 mod commands;
+mod hass_mqtt;
 mod lan_api;
 mod platform_api;
 mod service;

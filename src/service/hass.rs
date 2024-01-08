@@ -1,11 +1,17 @@
+use crate::hass_mqtt::base::{Device, EntityConfig, Origin};
+use crate::hass_mqtt::button::ButtonConfig;
+use crate::hass_mqtt::humidifier::HumidifierConfig;
+use crate::hass_mqtt::light::LightConfig;
+use crate::hass_mqtt::scene::SceneConfig;
+use crate::hass_mqtt::sensor::SensorConfig;
+use crate::hass_mqtt::switch::SwitchConfig;
 use crate::lan_api::DeviceColor;
 use crate::opt_env_var;
 use crate::platform_api::{
     from_json, DeviceCapability, DeviceCapabilityKind, DeviceParameters, DeviceType, EnumOption,
-    IntegerRange,
 };
 use crate::service::device::Device as ServiceDevice;
-use crate::service::quirks::resolve_quirk;
+
 use crate::service::state::{State as ServiceState, StateHandle};
 use crate::version_info::govee_version;
 use anyhow::Context;
@@ -13,14 +19,11 @@ use async_channel::Receiver;
 use mosquitto_rs::router::{MqttRouter, Params, Payload, State};
 use mosquitto_rs::{Client, Event, QoS};
 use serde::{Deserialize, Serialize};
-use serde_json::json;
+
 use std::ops::Range;
 use std::sync::Arc;
 use std::time::Duration;
 use uuid::Uuid;
-
-const MODEL: &str = "gv2mqtt";
-const URL: &str = "https://github.com/wez/govee2mqtt";
 
 #[derive(clap::Parser, Debug)]
 pub struct HassArguments {
@@ -91,757 +94,6 @@ impl HassArguments {
     }
 }
 
-#[derive(Serialize, Clone, Debug, Default)]
-pub struct EntityConfig {
-    pub availability_topic: String,
-    pub name: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub device_class: Option<String>,
-    pub origin: Origin,
-    pub device: Device,
-    pub unique_id: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub entity_category: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub icon: Option<String>,
-}
-
-#[derive(Serialize, Clone, Debug)]
-pub struct Origin {
-    pub name: &'static str,
-    pub sw_version: &'static str,
-    pub url: &'static str,
-}
-
-impl Default for Origin {
-    fn default() -> Self {
-        Self {
-            name: MODEL,
-            sw_version: govee_version(),
-            url: URL,
-        }
-    }
-}
-
-#[derive(Serialize, Clone, Debug, Default)]
-pub struct Device {
-    pub name: String,
-    pub manufacturer: String,
-    pub model: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub sw_version: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub suggested_area: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub via_device: Option<String>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub identifiers: Vec<String>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub connections: Vec<(String, String)>,
-}
-
-impl Device {
-    pub fn for_device(device: &ServiceDevice) -> Self {
-        Self {
-            name: device.name(),
-            manufacturer: "Govee".to_string(),
-            model: device.sku.to_string(),
-            sw_version: None,
-            suggested_area: device.room_name().map(|s| s.to_string()),
-            via_device: Some("gv2mqtt".to_string()),
-            identifiers: vec![
-                format!("gv2mqtt-{}", topic_safe_id(device)),
-                /*
-                device.computed_name(),
-                device.id.to_string(),
-                */
-            ],
-            connections: vec![],
-        }
-    }
-
-    pub fn this_service() -> Self {
-        Self {
-            name: "Govee to MQTT".to_string(),
-            manufacturer: "Wez Furlong".to_string(),
-            model: "govee2mqtt".to_string(),
-            sw_version: Some(govee_version().to_string()),
-            suggested_area: None,
-            via_device: None,
-            identifiers: vec!["gv2mqtt".to_string()],
-            connections: vec![],
-        }
-    }
-}
-
-#[derive(Serialize, Clone, Debug)]
-pub struct CoverConfig {
-    #[serde(flatten)]
-    pub base: EntityConfig,
-
-    pub state_topic: String,
-    pub position_topic: String,
-    pub set_position_topic: String,
-    pub command_topic: String,
-}
-
-#[derive(Serialize, Clone, Debug)]
-pub struct SceneConfig {
-    #[serde(flatten)]
-    pub base: EntityConfig,
-
-    pub command_topic: String,
-    pub payload_on: String,
-}
-
-impl SceneConfig {
-    pub async fn publish(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
-        let disco = state.get_hass_disco_prefix().await;
-        let topic = format!(
-            "{disco}/scene/{unique_id}/config",
-            unique_id = self.base.unique_id
-        );
-
-        client.publish_obj(topic, self).await
-    }
-
-    pub async fn notify_state(&self, _client: &HassClient, _: &str) -> anyhow::Result<()> {
-        // Scenes have no state
-        Ok(())
-    }
-}
-
-#[derive(Serialize, Clone, Debug)]
-pub struct SensorConfig {
-    #[serde(flatten)]
-    pub base: EntityConfig,
-
-    pub state_topic: String,
-    pub unit_of_measurement: Option<String>,
-}
-
-impl SensorConfig {
-    pub fn global_fixed_diagnostic(name: &str) -> Self {
-        let unique_id = format!("global-{}", topic_safe_string(name));
-        Self {
-            base: EntityConfig {
-                availability_topic: availability_topic(),
-                name: Some(name.to_string()),
-                entity_category: Some("diagnostic".to_string()),
-                origin: Origin::default(),
-                device: Device::this_service(),
-                unique_id: unique_id.clone(),
-                device_class: None,
-                icon: None,
-            },
-            state_topic: format!("gv2mqtt/sensor/{unique_id}/state"),
-            unit_of_measurement: None,
-        }
-    }
-
-    pub async fn publish(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
-        let disco = state.get_hass_disco_prefix().await;
-        let topic = format!(
-            "{disco}/sensor/{unique_id}/config",
-            unique_id = self.base.unique_id
-        );
-
-        client.publish_obj(topic, self).await
-    }
-
-    pub async fn notify_state(&self, client: &HassClient, value: &str) -> anyhow::Result<()> {
-        client.publish(&self.state_topic, value).await
-    }
-}
-
-#[derive(Serialize, Clone, Debug)]
-pub struct ButtonConfig {
-    #[serde(flatten)]
-    pub base: EntityConfig,
-
-    pub command_topic: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub payload_press: Option<String>,
-}
-
-impl ButtonConfig {
-    #[allow(dead_code)]
-    pub async fn for_device(
-        device: &ServiceDevice,
-        instance: &DeviceCapability,
-    ) -> anyhow::Result<Self> {
-        let command_topic = format!(
-            "gv2mqtt/switch/{id}/command/{inst}",
-            id = topic_safe_id(device),
-            inst = instance.instance
-        );
-        let availability_topic = availability_topic();
-        let unique_id = format!(
-            "gv2mqtt-{id}-{inst}",
-            id = topic_safe_id(device),
-            inst = instance.instance
-        );
-
-        Ok(Self {
-            base: EntityConfig {
-                availability_topic,
-                name: Some(camel_case_to_space_separated(&instance.instance)),
-                device_class: None,
-                origin: Origin::default(),
-                device: Device::for_device(device),
-                unique_id,
-                entity_category: None,
-                icon: None,
-            },
-            command_topic,
-            payload_press: None,
-        })
-    }
-
-    pub async fn publish(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
-        let disco = state.get_hass_disco_prefix().await;
-        let topic = format!(
-            "{disco}/button/{unique_id}/config",
-            unique_id = self.base.unique_id
-        );
-
-        client.publish_obj(topic, self).await
-    }
-
-    pub fn global_button<T: Into<String>>(name: &str, command_topic: T) -> Self {
-        let unique_id = format!("global-{}", topic_safe_string(name));
-        Self {
-            base: EntityConfig {
-                availability_topic: availability_topic(),
-                name: Some(name.to_string()),
-                entity_category: None,
-                origin: Origin::default(),
-                device: Device::this_service(),
-                unique_id: unique_id.clone(),
-                device_class: None,
-                icon: None,
-            },
-            command_topic: command_topic.into(),
-            payload_press: None,
-        }
-    }
-}
-
-#[derive(Serialize, Clone, Debug)]
-pub struct SwitchConfig {
-    #[serde(flatten)]
-    pub base: EntityConfig,
-    pub command_topic: String,
-    pub state_topic: String,
-}
-
-impl SwitchConfig {
-    pub async fn for_device(
-        device: &ServiceDevice,
-        instance: &DeviceCapability,
-    ) -> anyhow::Result<Self> {
-        let command_topic = format!(
-            "gv2mqtt/switch/{id}/command/{inst}",
-            id = topic_safe_id(device),
-            inst = instance.instance
-        );
-        let state_topic = switch_instance_state_topic(device, &instance.instance);
-        let availability_topic = availability_topic();
-        let unique_id = format!(
-            "gv2mqtt-{id}-{inst}",
-            id = topic_safe_id(device),
-            inst = instance.instance
-        );
-
-        Ok(Self {
-            base: EntityConfig {
-                availability_topic,
-                name: Some(camel_case_to_space_separated(&instance.instance)),
-                device_class: None,
-                origin: Origin::default(),
-                device: Device::for_device(device),
-                unique_id,
-                entity_category: None,
-                icon: None,
-            },
-            command_topic,
-            state_topic,
-        })
-    }
-
-    pub async fn publish(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
-        let disco = state.get_hass_disco_prefix().await;
-        let topic = format!(
-            "{disco}/switch/{unique_id}/config",
-            unique_id = self.base.unique_id
-        );
-
-        client.publish_obj(topic, self).await
-    }
-
-    pub async fn notify_state(
-        &self,
-        device: &ServiceDevice,
-        client: &HassClient,
-    ) -> anyhow::Result<()> {
-        let instance = instance_from_topic(&self.command_topic).expect("topic to be valid");
-
-        if instance == "powerSwitch" {
-            if let Some(state) = device.device_state() {
-                client
-                    .publish(&self.state_topic, if state.on { "ON" } else { "OFF" })
-                    .await?;
-            }
-            return Ok(());
-        }
-
-        // TODO: currently, Govee don't return any meaningful data on
-        // additional states. When they do, we'll need to start reporting
-        // it here, but we'll also need to start polling it from the
-        // platform API in order for it to even be available here.
-        // Until then, the switch will show in the hass UI with an
-        // unknown state but provide you with separate on and off push
-        // buttons so that you can at least send the commands to the device.
-        // <https://developer.govee.com/discuss/6596e84c901fb900312d5968>
-        if let Some(state) = &device.http_device_state {
-            for cap in &state.capabilities {
-                if cap.instance == instance {
-                    log::warn!("SwitchConfig::notify_state: Do something with {cap:#?}");
-                    return Ok(());
-                }
-            }
-        }
-        log::trace!("SelectConfig::notify_state: didn't find state for {device} {instance}");
-        Ok(())
-    }
-}
-
-#[derive(Serialize, Clone, Debug)]
-pub struct NumberConfig {
-    #[serde(flatten)]
-    pub base: EntityConfig,
-
-    pub command_topic: String,
-    pub state_topic: String,
-    pub min: f32,
-    pub max: f32,
-    pub step: f32,
-}
-
-#[derive(Serialize, Clone, Debug)]
-pub struct SelectConfig {
-    #[serde(flatten)]
-    pub base: EntityConfig,
-
-    pub command_topic: String,
-    pub options: Vec<String>,
-    pub state_topic: String,
-}
-
-/// <https://www.home-assistant.io/integrations/humidifier.mqtt>
-#[derive(Serialize, Clone, Debug)]
-pub struct HumidifierConfig {
-    #[serde(flatten)]
-    pub base: EntityConfig,
-
-    pub command_topic: String,
-    /// HASS will publish here to change the humidity target percentage
-    pub target_humidity_command_topic: String,
-    /// HASS will subscribe here to receive the humidity target percentage
-    pub target_humidity_state_topic: String,
-
-    /// HASS will publish here to change the current mode
-    pub mode_command_topic: String,
-    /// we will publish the current mode here
-    pub mode_state_topic: String,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub min_humidity: Option<u8>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub max_humidity: Option<u8>,
-
-    /// The list of supported modes
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub modes: Vec<String>,
-
-    pub state_topic: String,
-}
-
-impl HumidifierConfig {
-    pub async fn for_device(device: &ServiceDevice, _state: &ServiceState) -> anyhow::Result<Self> {
-        let quirk = device.resolve_quirk();
-        let command_topic = format!(
-            "gv2mqtt/humidifier/{id}/command",
-            id = topic_safe_id(device)
-        );
-        let target_humidity_command_topic = format!(
-            "gv2mqtt/humidifier/{id}/set-target",
-            id = topic_safe_id(device)
-        );
-        let target_humidity_state_topic = format!(
-            "gv2mqtt/humidifier/{id}/notify-target",
-            id = topic_safe_id(device)
-        );
-        let state_topic = format!("gv2mqtt/humidifier/{id}/state", id = topic_safe_id(device));
-
-        let mode_command_topic = format!(
-            "gv2mqtt/humidifier/{id}/set-mode",
-            id = topic_safe_id(device)
-        );
-        let mode_state_topic = format!(
-            "gv2mqtt/humidifier/{id}/notify-mode",
-            id = topic_safe_id(device)
-        );
-
-        let unique_id = format!("gv2mqtt-{id}-humidifier", id = topic_safe_id(device),);
-
-        let mut modes = vec![];
-        let mut min_humidity = None;
-        let mut max_humidity = None;
-
-        if let Some(info) = &device.http_device_info {
-            if let Some(cap) = info.capability_by_instance("workMode") {
-                if let Some(wm) = cap.struct_field_by_name("workMode") {
-                    match &wm.field_type {
-                        DeviceParameters::Enum { options } => {
-                            for opt in options {
-                                modes.push(opt.name.to_string());
-                            }
-                        }
-                        _ => {}
-                    }
-                }
-            }
-            if let Some(cap) = info.capability_by_instance("humidity") {
-                match &cap.parameters {
-                    Some(DeviceParameters::Integer {
-                        range: IntegerRange { min, max, .. },
-                        unit,
-                    }) => {
-                        if unit.as_deref() == Some("unit.percent") {
-                            min_humidity.replace(*min as u8);
-                            max_humidity.replace(*max as u8);
-                        }
-                    }
-                    _ => {}
-                }
-            }
-        }
-
-        Ok(Self {
-            base: EntityConfig {
-                availability_topic: availability_topic(),
-                name: if device.device_type() == DeviceType::Humidifier {
-                    None
-                } else {
-                    Some("Humidifier".to_string())
-                },
-                device_class: None,
-                origin: Origin::default(),
-                device: Device::for_device(device),
-                unique_id,
-                entity_category: None,
-                icon: None,
-            },
-            command_topic,
-            target_humidity_command_topic,
-            target_humidity_state_topic,
-
-            min_humidity,
-            max_humidity,
-
-            mode_command_topic,
-            mode_state_topic,
-            modes,
-            state_topic,
-        })
-    }
-
-    pub async fn publish(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
-        let disco = state.get_hass_disco_prefix().await;
-        let topic = format!(
-            "{disco}/humidifier/{unique_id}/config",
-            unique_id = self.base.unique_id
-        );
-
-        client.publish_obj(topic, self).await
-    }
-
-    pub async fn notify_state(
-        &self,
-        device: &ServiceDevice,
-        client: &HassClient,
-    ) -> anyhow::Result<()> {
-        // TODO: update on/off state and mode
-
-        match device.device_state() {
-            Some(device_state) => {
-                let is_on = device_state.on;
-                client
-                    .publish(&self.state_topic, if is_on { "ON" } else { "OFF" })
-                    .await?;
-            }
-            None => {
-                client.publish(&self.state_topic, "OFF").await?;
-            }
-        }
-
-        if let Some(humidity) = device.target_humidity_percent {
-            client
-                .publish(&self.target_humidity_state_topic, humidity.to_string())
-                .await?;
-        }
-        if let Some(mode_value) = device.humidifier_work_mode {
-            if let Some(info) = &device.http_device_info {
-                if let Some(cap) = info.capability_by_instance("workMode") {
-                    if let Some(wm) = cap.struct_field_by_name("workMode") {
-                        match &wm.field_type {
-                            DeviceParameters::Enum { options } => {
-                                let mode_value_json = json!(mode_value);
-                                for opt in options {
-                                    if opt.value == mode_value_json {
-                                        client
-                                            .publish(&self.mode_state_topic, opt.name.to_string())
-                                            .await?;
-
-                                        break;
-                                    }
-                                }
-                            }
-                            _ => {}
-                        }
-                    }
-                }
-            }
-        }
-
-        Ok(())
-    }
-}
-
-/// <https://www.home-assistant.io/integrations/light.mqtt/#json-schema>
-#[derive(Serialize, Clone, Debug)]
-pub struct LightConfig {
-    #[serde(flatten)]
-    pub base: EntityConfig,
-    pub schema: String,
-
-    pub command_topic: String,
-    /// The docs say that this is optional, but hass errors out if
-    /// it is not passed
-    pub state_topic: String,
-    pub optimistic: bool,
-    pub supported_color_modes: Vec<String>,
-    /// Flag that defines if the light supports color modes.
-    pub color_mode: bool,
-    /// Flag that defines if the light supports brightness.
-    pub brightness: bool,
-    /// Defines the maximum brightness value (i.e., 100%) of the MQTT device.
-    pub brightness_scale: u32,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub icon: Option<String>,
-
-    /// Flag that defines if the light supports effects.
-    pub effect: bool,
-    /// The list of effects the light supports.
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub effect_list: Vec<String>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub min_mireds: Option<u32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub max_mireds: Option<u32>,
-
-    pub payload_available: String,
-}
-
-impl LightConfig {
-    pub async fn for_device(
-        device: &ServiceDevice,
-        state: &ServiceState,
-        segment: Option<u32>,
-    ) -> anyhow::Result<Self> {
-        let quirk = device.resolve_quirk();
-        let device_type = device.device_type();
-
-        let command_topic = match segment {
-            None => format!("gv2mqtt/light/{id}/command", id = topic_safe_id(device)),
-            Some(seg) => format!(
-                "gv2mqtt/light/{id}/command/{seg}",
-                id = topic_safe_id(device)
-            ),
-        };
-
-        let icon = match segment {
-            Some(_) => None,
-            None if device_type == DeviceType::Light => {
-                resolve_quirk(&device.sku).map(|q| q.icon.to_string())
-            }
-            None => None,
-        };
-
-        let state_topic = match segment {
-            Some(seg) => light_segment_state_topic(device, seg),
-            None => light_state_topic(device),
-        };
-        let availability_topic = availability_topic();
-        let unique_id = format!(
-            "gv2mqtt-{id}{seg}",
-            id = topic_safe_id(device),
-            seg = segment.map(|n| format!("-{n}")).unwrap_or(String::new())
-        );
-
-        let effect_list = if segment.is_some() {
-            vec![]
-        } else {
-            match state.device_list_scenes(device).await {
-                Ok(scenes) => scenes,
-                Err(err) => {
-                    log::error!("Unable to list scenes for {device}: {err:#}");
-                    vec![]
-                }
-            }
-        };
-
-        let mut supported_color_modes = vec![];
-        let mut color_mode = false;
-
-        if segment.is_some() || device.supports_rgb() {
-            supported_color_modes.push("rgb".to_string());
-            color_mode = true;
-        }
-
-        let (min_mireds, max_mireds) = if segment.is_some() {
-            (None, None)
-        } else if let Some((min, max)) = device.get_color_temperature_range() {
-            supported_color_modes.push("color_temp".to_string());
-            color_mode = true;
-            // Note that min and max are swapped by the translation
-            // from kelvin to mired
-            (Some(kelvin_to_mired(max)), Some(kelvin_to_mired(min)))
-        } else {
-            (None, None)
-        };
-
-        let brightness = segment.is_some()
-            || quirk
-                .as_ref()
-                .map(|q| q.supports_brightness)
-                .unwrap_or(false)
-            || device
-                .http_device_info
-                .as_ref()
-                .map(|info| info.supports_brightness())
-                .unwrap_or(false);
-
-        let name = match segment {
-            Some(n) => Some(format!("Segment {:03}", n + 1)),
-            None if device_type == DeviceType::Humidifier => Some("Night Light".to_string()),
-            None => None,
-        };
-
-        Ok(Self {
-            base: EntityConfig {
-                availability_topic,
-                name,
-                device_class: None,
-                origin: Origin::default(),
-                device: Device::for_device(device),
-                unique_id,
-                entity_category: None,
-                icon: None,
-            },
-            schema: "json".to_string(),
-            command_topic,
-            state_topic,
-            supported_color_modes,
-            color_mode,
-            brightness,
-            brightness_scale: 100,
-            effect: true,
-            effect_list,
-            payload_available: "online".to_string(),
-            max_mireds,
-            min_mireds,
-            optimistic: segment.is_some(),
-            icon,
-        })
-    }
-
-    pub async fn publish(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
-        let disco = state.get_hass_disco_prefix().await;
-        let topic = format!(
-            "{disco}/light/{unique_id}/config",
-            unique_id = self.base.unique_id
-        );
-
-        client.publish_obj(topic, self).await
-    }
-
-    pub async fn notify_state(
-        &self,
-        device: &ServiceDevice,
-        client: &HassClient,
-    ) -> anyhow::Result<()> {
-        if self.optimistic {
-            return Ok(());
-        }
-
-        match device.device_state() {
-            Some(device_state) => {
-                log::trace!("LightConfig::notify_state: state is {device_state:?}");
-
-                let is_on = match device.device_type() {
-                    DeviceType::Light => device_state.on,
-                    DeviceType::Humidifier => device
-                        .nightlight_state
-                        .as_ref()
-                        .map(|s| s.on)
-                        .unwrap_or(false),
-                    _ => device_state.on,
-                };
-
-                let light_state = if is_on {
-                    if device_state.kelvin == 0 {
-                        json!({
-                            "state": "ON",
-                            "color_mode": "rgb",
-                            "color": {
-                                "r": device_state.color.r,
-                                "g": device_state.color.g,
-                                "b": device_state.color.b,
-                            },
-                            "brightness": device_state.brightness,
-                            "effect": device_state.scene,
-                        })
-                    } else {
-                        json!({
-                            "state": "ON",
-                            "color_mode": "color_temp",
-                            "brightness": device_state.brightness,
-                            "color_temp": kelvin_to_mired(device_state.kelvin),
-                            "effect": device_state.scene,
-                        })
-                    }
-                } else {
-                    json!({"state":"OFF"})
-                };
-
-                client.publish_obj(&self.state_topic, &light_state).await
-            }
-            None => {
-                // TODO: mark as unavailable or something? Don't
-                // want to prevent attempting to control it though,
-                // as that could cause it to wake up.
-                client
-                    .publish_obj(&self.state_topic, &json!({"state":"OFF"}))
-                    .await
-            }
-        }
-    }
-}
-
 enum GlobalConfig {
     Sensor(SensorConfig),
     Scene(SceneConfig),
@@ -904,10 +156,10 @@ impl Config {
     }
 
     async fn for_work_mode<'a>(
-        d: &'a ServiceDevice,
-        state: &ServiceState,
+        _d: &'a ServiceDevice,
+        _state: &ServiceState,
         cap: &DeviceCapability,
-        configs: &mut Vec<(&'a ServiceDevice, Self)>,
+        _configs: &mut Vec<(&'a ServiceDevice, Self)>,
     ) -> anyhow::Result<()> {
         #[derive(Deserialize, PartialOrd, Ord, PartialEq, Eq)]
         struct NumericOption {
@@ -947,7 +199,7 @@ impl Config {
             match &wm.field_type {
                 DeviceParameters::Enum { options } => {
                     for opt in options {
-                        if let Some(range) = extract_contiguous_range(opt) {
+                        if let Some(_range) = extract_contiguous_range(opt) {
                             log::warn!("should show this as a number slider");
                         }
                     }
@@ -1130,7 +382,7 @@ impl HassClient {
         Ok(())
     }
 
-    async fn publish<T: AsRef<str> + std::fmt::Display, P: AsRef<[u8]> + std::fmt::Display>(
+    pub async fn publish<T: AsRef<str> + std::fmt::Display, P: AsRef<[u8]> + std::fmt::Display>(
         &self,
         topic: T,
         payload: P,
@@ -1142,7 +394,7 @@ impl HassClient {
         Ok(())
     }
 
-    async fn publish_obj<T: AsRef<str> + std::fmt::Display, P: Serialize>(
+    pub async fn publish_obj<T: AsRef<str> + std::fmt::Display, P: Serialize>(
         &self,
         topic: T,
         payload: P,
@@ -1188,18 +440,18 @@ pub fn topic_safe_id(device: &ServiceDevice) -> String {
     id
 }
 
-fn switch_instance_state_topic(device: &ServiceDevice, instance: &str) -> String {
+pub fn switch_instance_state_topic(device: &ServiceDevice, instance: &str) -> String {
     format!(
         "gv2mqtt/switch/{id}/{instance}/state",
         id = topic_safe_id(device)
     )
 }
 
-fn light_state_topic(device: &ServiceDevice) -> String {
+pub fn light_state_topic(device: &ServiceDevice) -> String {
     format!("gv2mqtt/light/{id}/state", id = topic_safe_id(device))
 }
 
-fn light_segment_state_topic(device: &ServiceDevice, segment: u32) -> String {
+pub fn light_segment_state_topic(device: &ServiceDevice, segment: u32) -> String {
     format!(
         "gv2mqtt/light/{id}/state/{segment}",
         id = topic_safe_id(device)
@@ -1208,15 +460,15 @@ fn light_segment_state_topic(device: &ServiceDevice, segment: u32) -> String {
 
 /// All entities use the same topic so that we can mark unavailable
 /// via last-will
-fn availability_topic() -> String {
+pub fn availability_topic() -> String {
     "gv2mqtt/availability".to_string()
 }
 
-fn oneclick_topic() -> String {
+pub fn oneclick_topic() -> String {
     "gv2mqtt/oneclick".to_string()
 }
 
-fn purge_cache_topic() -> String {
+pub fn purge_cache_topic() -> String {
     "gv2mqtt/purge-caches".to_string()
 }
 
@@ -1595,7 +847,7 @@ pub async fn spawn_hass_integration(
     Ok(())
 }
 
-fn camel_case_to_space_separated(camel: &str) -> String {
+pub fn camel_case_to_space_separated(camel: &str) -> String {
     let mut result = camel[..1].to_ascii_uppercase();
     for c in camel.chars().skip(1) {
         if c.is_uppercase() {
@@ -1616,7 +868,7 @@ fn test_camel_case_to_space_separated() {
     );
 }
 
-fn instance_from_topic(topic: &str) -> Option<&str> {
+pub fn instance_from_topic(topic: &str) -> Option<&str> {
     topic.rsplit_once('/').map(|(_, instance)| instance)
 }
 
