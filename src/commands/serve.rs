@@ -189,9 +189,15 @@ impl ServeCommand {
                     }
                 }
             });
-        }
 
-        sleep(Duration::from_secs(4)).await;
+            // I don't love that this is 10 seconds but since our timeout
+            // for query_status is 10 seconds, and we show a warning for
+            // devices that didn't respond in the section below, in the
+            // interest of reducing false positives we need to wait long
+            // enough to provide high-signal warnings.
+            log::info!("Waiting 10 seconds for LAN API discovery");
+            sleep(Duration::from_secs(10)).await;
+        }
 
         log::info!("Devices returned from Govee's APIs");
         for device in state.devices().await {
@@ -222,7 +228,20 @@ impl ServeCommand {
             }
             if let Some(quirk) = device.resolve_quirk() {
                 log::info!("  Quirk: {quirk:?}");
+
+                // Sanity check for LAN devices: if we don't see an API for it,
+                // it may indicate a networking issue
+                if quirk.lan_api_capable && device.lan_device.is_none() {
+                    log::warn!(
+                        "  This device should be available via the LAN API, \
+                        but didn't respond to probing. Possible causes:"
+                    );
+                    log::warn!("  1) LAN API needs to be enabled in the Govee Home App.");
+                    log::warn!("  2) The device is offline.");
+                    log::warn!("  3) A network configuration issue is preventing communication.");
+                }
             }
+
             log::info!("");
         }
 
