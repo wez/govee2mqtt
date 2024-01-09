@@ -6,7 +6,6 @@ use crate::service::hass::{
     availability_topic, kelvin_to_mired, light_segment_state_topic, light_state_topic,
     topic_safe_id, HassClient,
 };
-use crate::service::quirks::resolve_quirk;
 use crate::service::state::StateHandle;
 use async_trait::async_trait;
 use serde::Serialize;
@@ -154,9 +153,7 @@ impl DeviceLight {
 
         let icon = match segment {
             Some(_) => None,
-            None if device_type == DeviceType::Light => {
-                resolve_quirk(&device.sku).map(|q| q.icon.to_string())
-            }
+            None if device_type == DeviceType::Light => quirk.as_ref().map(|q| q.icon.to_string()),
             None => None,
         };
 

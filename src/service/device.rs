@@ -430,7 +430,7 @@ impl Device {
     }
 
     pub fn supports_brightness(&self) -> bool {
-        if let Some(quirk) = resolve_quirk(&self.sku) {
+        if let Some(quirk) = self.resolve_quirk() {
             return quirk.supports_brightness;
         }
 

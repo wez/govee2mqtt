@@ -220,7 +220,7 @@ impl ServeCommand {
                 );
                 log::trace!("{undoc:#?}");
             }
-            if let Some(quirk) = crate::service::quirks::resolve_quirk(&device.sku) {
+            if let Some(quirk) = device.resolve_quirk() {
                 log::info!("  Quirk: {quirk:?}");
             }
             log::info!("");
