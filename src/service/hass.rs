@@ -178,6 +178,14 @@ pub fn switch_instance_state_topic(device: &ServiceDevice, instance: &str) -> St
     )
 }
 
+pub fn number_state_topic(device: &ServiceDevice, mode_name: &str) -> String {
+    format!(
+        "gv2mqtt/number/{id}/state/{mode}",
+        id = topic_safe_id(device),
+        mode = topic_safe_string(mode_name)
+    )
+}
+
 pub fn light_state_topic(device: &ServiceDevice) -> String {
     format!("gv2mqtt/light/{id}/state", id = topic_safe_id(device))
 }

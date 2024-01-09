@@ -3,6 +3,7 @@ use crate::hass_mqtt::button::ButtonConfig;
 use crate::hass_mqtt::humidifier::Humidifier;
 use crate::hass_mqtt::instance::EntityList;
 use crate::hass_mqtt::light::DeviceLight;
+use crate::hass_mqtt::number::WorkModeNumber;
 use crate::hass_mqtt::scene::SceneConfig;
 use crate::hass_mqtt::sensor::GlobalFixedDiagnostic;
 use crate::hass_mqtt::switch::CapabilitySwitch;
@@ -15,6 +16,7 @@ use crate::service::state::StateHandle;
 use crate::version_info::govee_version;
 use anyhow::Context;
 use serde::Deserialize;
+use std::collections::HashMap;
 use std::ops::Range;
 use uuid::Uuid;
 
@@ -79,9 +81,10 @@ async fn enumerate_scenes(state: &StateHandle, entities: &mut EntityList) -> any
 }
 
 async fn entities_for_work_mode<'a>(
-    _state: &StateHandle,
+    d: &ServiceDevice,
+    state: &StateHandle,
     cap: &DeviceCapability,
-    _entities: &mut EntityList,
+    entities: &mut EntityList,
 ) -> anyhow::Result<()> {
     #[derive(Deserialize, PartialOrd, Ord, PartialEq, Eq)]
     struct NumericOption {
@@ -117,12 +120,34 @@ async fn entities_for_work_mode<'a>(
         is_contiguous_range(&mut opt_range)
     }
 
+    let mut name_to_mode = HashMap::new();
+    if let Some(wm) = cap.struct_field_by_name("workMode") {
+        match &wm.field_type {
+            DeviceParameters::Enum { options } => {
+                for opt in options {
+                    name_to_mode.insert(opt.name.to_string(), opt.value.clone());
+                }
+            }
+            _ => {}
+        }
+    }
+
     if let Some(wm) = cap.struct_field_by_name("modeValue") {
         match &wm.field_type {
             DeviceParameters::Enum { options } => {
                 for opt in options {
-                    if let Some(_range) = extract_contiguous_range(opt) {
-                        log::warn!("should show this as a number slider");
+                    let mode_name = &opt.name;
+                    if let Some(work_mode) = name_to_mode.get(mode_name) {
+                        let range = extract_contiguous_range(opt);
+
+                        entities.add(WorkModeNumber::new(
+                            d,
+                            state,
+                            format!("{mode_name} Parameter"),
+                            mode_name,
+                            work_mode.clone(),
+                            range,
+                        ));
                     }
                 }
             }
@@ -165,7 +190,7 @@ pub async fn enumerate_entities_for_device<'a>(
                 DeviceCapabilityKind::Range if cap.instance == "brightness" => {}
                 DeviceCapabilityKind::Range if cap.instance == "humidity" => {}
                 DeviceCapabilityKind::WorkMode => {
-                    entities_for_work_mode(state, cap, entities).await?;
+                    entities_for_work_mode(d, state, cap, entities).await?;
                 }
 
                 kind => {
