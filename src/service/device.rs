@@ -396,6 +396,11 @@ impl Device {
             return quirk.color_temp_range;
         }
 
+        if self.lan_device.is_some() {
+            // LAN API support suggests that it is a light
+            return Some((2000, 9000));
+        }
+
         self.http_device_info
             .as_ref()
             .and_then(|info| info.get_color_temperature_range())
@@ -404,6 +409,11 @@ impl Device {
     pub fn supports_brightness(&self) -> bool {
         if let Some(quirk) = resolve_quirk(&self.sku) {
             return quirk.supports_brightness;
+        }
+
+        if self.lan_device.is_some() {
+            // LAN API support suggests that it is a light
+            return true;
         }
 
         self.http_device_info
@@ -415,6 +425,11 @@ impl Device {
     pub fn supports_rgb(&self) -> bool {
         if let Some(quirk) = self.resolve_quirk() {
             return quirk.supports_rgb;
+        }
+
+        if self.lan_device.is_some() {
+            // LAN API support suggests that it is a light
+            return true;
         }
 
         self.http_device_info
