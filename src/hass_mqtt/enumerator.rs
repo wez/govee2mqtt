@@ -164,6 +164,8 @@ async fn entities_for_work_mode<'a>(
                             work_mode.clone(),
                             range,
                         ));
+                    } else {
+                        log::warn!("entities_for_work_mode: {d} mode name {mode_name} not found in name_to_mode map");
                     }
                 }
             }
