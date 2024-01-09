@@ -1,5 +1,5 @@
 use crate::hass_mqtt::base::{Device, EntityConfig, Origin};
-use crate::hass_mqtt::instance::EntityInstance;
+use crate::hass_mqtt::instance::{publish_entity_config, EntityInstance};
 use crate::platform_api::DeviceCapability;
 use crate::service::device::Device as ServiceDevice;
 use crate::service::hass::{
@@ -53,16 +53,6 @@ impl ButtonConfig {
         })
     }
 
-    pub async fn publish(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
-        let disco = state.get_hass_disco_prefix().await;
-        let topic = format!(
-            "{disco}/button/{unique_id}/config",
-            unique_id = self.base.unique_id
-        );
-
-        client.publish_obj(topic, self).await
-    }
-
     pub fn new<NAME: Into<String>, TOPIC: Into<String>>(name: NAME, topic: TOPIC) -> Self {
         let name = name.into();
         let unique_id = format!("global-{}", topic_safe_string(&name));
@@ -86,7 +76,7 @@ impl ButtonConfig {
 #[async_trait]
 impl EntityInstance for ButtonConfig {
     async fn publish_config(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
-        self.publish(&state, &client).await
+        publish_entity_config("button", state, client, &self.base, self).await
     }
 
     async fn notify_state(&self, _client: &HassClient) -> anyhow::Result<()> {

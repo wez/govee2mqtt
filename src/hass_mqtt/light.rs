@@ -1,5 +1,5 @@
 use crate::hass_mqtt::base::{Device, EntityConfig, Origin};
-use crate::hass_mqtt::instance::EntityInstance;
+use crate::hass_mqtt::instance::{publish_entity_config, EntityInstance};
 use crate::platform_api::DeviceType;
 use crate::service::device::Device as ServiceDevice;
 use crate::service::hass::{
@@ -51,13 +51,7 @@ pub struct LightConfig {
 
 impl LightConfig {
     pub async fn publish(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
-        let disco = state.get_hass_disco_prefix().await;
-        let topic = format!(
-            "{disco}/light/{unique_id}/config",
-            unique_id = self.base.unique_id
-        );
-
-        client.publish_obj(topic, self).await
+        publish_entity_config("light", state, client, &self.base, self).await
     }
 }
 

@@ -1,5 +1,5 @@
 use crate::hass_mqtt::base::EntityConfig;
-use crate::hass_mqtt::instance::EntityInstance;
+use crate::hass_mqtt::instance::{publish_entity_config, EntityInstance};
 use crate::service::hass::HassClient;
 use crate::service::state::StateHandle;
 use async_trait::async_trait;
@@ -16,13 +16,7 @@ pub struct SceneConfig {
 
 impl SceneConfig {
     pub async fn publish(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
-        let disco = state.get_hass_disco_prefix().await;
-        let topic = format!(
-            "{disco}/scene/{unique_id}/config",
-            unique_id = self.base.unique_id
-        );
-
-        client.publish_obj(topic, self).await
+        publish_entity_config("scene", state, client, &self.base, self).await
     }
 }
 

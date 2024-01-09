@@ -1,5 +1,5 @@
 use crate::hass_mqtt::base::{Device, EntityConfig, Origin};
-use crate::hass_mqtt::instance::EntityInstance;
+use crate::hass_mqtt::instance::{publish_entity_config, EntityInstance};
 use crate::platform_api::{DeviceParameters, DeviceType, IntegerRange};
 use crate::service::device::Device as ServiceDevice;
 use crate::service::hass::{availability_topic, topic_safe_id, HassClient};
@@ -35,18 +35,6 @@ pub struct HumidifierConfig {
     pub modes: Vec<String>,
 
     pub state_topic: String,
-}
-
-impl HumidifierConfig {
-    pub async fn publish(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
-        let disco = state.get_hass_disco_prefix().await;
-        let topic = format!(
-            "{disco}/humidifier/{unique_id}/config",
-            unique_id = self.base.unique_id
-        );
-
-        client.publish_obj(topic, self).await
-    }
 }
 
 #[derive(Clone)]
@@ -154,7 +142,14 @@ impl Humidifier {
 #[async_trait]
 impl EntityInstance for Humidifier {
     async fn publish_config(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
-        self.humidifier.publish(state, client).await
+        publish_entity_config(
+            "humidifier",
+            state,
+            client,
+            &self.humidifier.base,
+            &self.humidifier,
+        )
+        .await
     }
 
     async fn notify_state(&self, client: &HassClient) -> anyhow::Result<()> {
