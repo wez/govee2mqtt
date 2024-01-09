@@ -786,11 +786,15 @@ pub struct DeviceSettings {
     #[serde(deserialize_with = "boolean_int", default)]
     pub boil_water_completed_noti_on_off: bool,
     #[serde(deserialize_with = "boolean_int", default)]
+    pub boil_water_exception_noti_on_off: bool,
+    #[serde(deserialize_with = "boolean_int", default)]
     pub completion_noti_on_off: bool,
     #[serde(deserialize_with = "boolean_int", default)]
     pub auto_shut_down_on_off: bool,
     #[serde(deserialize_with = "boolean_int", default)]
     pub water_shortage_on_off: bool,
+    #[serde(deserialize_with = "boolean_int", default)]
+    pub air_quality_on_off: bool,
     pub mcu_soft_version: Option<String>,
     pub mcu_hard_version: Option<String>,
     pub sku: Option<String>,
@@ -811,7 +815,22 @@ pub struct DeviceSettings {
     pub net_waring: Option<bool>,
     pub upload_rate: Option<i64>,
     pub battery: Option<u8>,
+    /// millisecond timestamp
+    pub time: Option<u64>,
     pub wifi_level: Option<u8>,
+
+    pub pm25_min: Option<i64>,
+    pub pm25_max: Option<i64>,
+    pub pm25_warning: Option<bool>,
+
+    /// `{"sub_0": {"name": "Device Name"}}`
+    pub sub_devices: Option<JsonValue>,
+    pub bd_type: Option<i64>,
+    #[serde(deserialize_with = "boolean_int", default)]
+    pub filter_expire_on_off: bool,
+
+    /// eg: Glide Hexa. Value is base64 encoded data
+    pub shapes: Option<String>,
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -831,7 +850,8 @@ pub struct ExtResources {
 #[serde(rename_all = "camelCase")]
 #[cfg_attr(debug_assertions, serde(deny_unknown_fields))]
 pub struct LastDeviceData {
-    pub online: bool,
+    pub online: Option<bool>,
+    pub bind: Option<bool>,
 
     pub tem: Option<i64>,
     pub hum: Option<i64>,
@@ -895,6 +915,13 @@ mod test {
     #[test]
     fn issue_14() {
         let resp: DevicesResponse = from_json(include_str!("../test-data/issue14.json")).unwrap();
+        k9::assert_matches_snapshot!(format!("{resp:#?}"));
+    }
+
+    #[test]
+    fn issue_21() {
+        let resp: DevicesResponse =
+            from_json(include_str!("../test-data/undoc-device-list-issue-21.json")).unwrap();
         k9::assert_matches_snapshot!(format!("{resp:#?}"));
     }
 }

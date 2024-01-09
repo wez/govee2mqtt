@@ -45,9 +45,11 @@ DevicesResponse {
                         "=",
                     ),
                     boil_water_completed_noti_on_off: true,
+                    boil_water_exception_noti_on_off: false,
                     completion_noti_on_off: true,
                     auto_shut_down_on_off: true,
                     water_shortage_on_off: false,
+                    air_quality_on_off: false,
                     mcu_soft_version: None,
                     mcu_hard_version: None,
                     sku: Some(
@@ -80,7 +82,15 @@ DevicesResponse {
                     net_waring: None,
                     upload_rate: None,
                     battery: None,
+                    time: None,
                     wifi_level: None,
+                    pm25_min: None,
+                    pm25_max: None,
+                    pm25_warning: None,
+                    sub_devices: None,
+                    bd_type: None,
+                    filter_expire_on_off: false,
+                    shapes: None,
                 },
                 ext_resources: ExtResources {
                     sku_url: Some(
@@ -106,7 +116,10 @@ DevicesResponse {
                     ),
                 },
                 last_device_data: LastDeviceData {
-                    online: false,
+                    online: Some(
+                        false,
+                    ),
+                    bind: None,
                     tem: None,
                     hum: None,
                     last_time: None,
@@ -175,9 +188,11 @@ DevicesResponse {
                     ic_sub_2: None,
                     secret_code: None,
                     boil_water_completed_noti_on_off: true,
+                    boil_water_exception_noti_on_off: false,
                     completion_noti_on_off: true,
                     auto_shut_down_on_off: true,
                     water_shortage_on_off: false,
+                    air_quality_on_off: false,
                     mcu_soft_version: None,
                     mcu_hard_version: None,
                     sku: Some(
@@ -210,7 +225,15 @@ DevicesResponse {
                     net_waring: None,
                     upload_rate: None,
                     battery: None,
+                    time: None,
                     wifi_level: None,
+                    pm25_min: None,
+                    pm25_max: None,
+                    pm25_warning: None,
+                    sub_devices: None,
+                    bd_type: None,
+                    filter_expire_on_off: false,
+                    shapes: None,
                 },
                 ext_resources: ExtResources {
                     sku_url: Some(
@@ -236,7 +259,10 @@ DevicesResponse {
                     ),
                 },
                 last_device_data: LastDeviceData {
-                    online: false,
+                    online: Some(
+                        false,
+                    ),
+                    bind: None,
                     tem: None,
                     hum: None,
                     last_time: None,
@@ -307,9 +333,11 @@ DevicesResponse {
                         "/K3UYYw=",
                     ),
                     boil_water_completed_noti_on_off: true,
+                    boil_water_exception_noti_on_off: false,
                     completion_noti_on_off: true,
                     auto_shut_down_on_off: true,
                     water_shortage_on_off: false,
+                    air_quality_on_off: false,
                     mcu_soft_version: None,
                     mcu_hard_version: None,
                     sku: Some(
@@ -342,7 +370,15 @@ DevicesResponse {
                     net_waring: None,
                     upload_rate: None,
                     battery: None,
+                    time: None,
                     wifi_level: None,
+                    pm25_min: None,
+                    pm25_max: None,
+                    pm25_warning: None,
+                    sub_devices: None,
+                    bd_type: None,
+                    filter_expire_on_off: false,
+                    shapes: None,
                 },
                 ext_resources: ExtResources {
                     sku_url: Some(
@@ -368,7 +404,10 @@ DevicesResponse {
                     ),
                 },
                 last_device_data: LastDeviceData {
-                    online: false,
+                    online: Some(
+                        false,
+                    ),
+                    bind: None,
                     tem: None,
                     hum: None,
                     last_time: None,
@@ -437,9 +476,11 @@ DevicesResponse {
                         "=",
                     ),
                     boil_water_completed_noti_on_off: true,
+                    boil_water_exception_noti_on_off: false,
                     completion_noti_on_off: true,
                     auto_shut_down_on_off: true,
                     water_shortage_on_off: false,
+                    air_quality_on_off: false,
                     mcu_soft_version: None,
                     mcu_hard_version: None,
                     sku: Some(
@@ -472,7 +513,15 @@ DevicesResponse {
                     net_waring: None,
                     upload_rate: None,
                     battery: None,
+                    time: None,
                     wifi_level: None,
+                    pm25_min: None,
+                    pm25_max: None,
+                    pm25_warning: None,
+                    sub_devices: None,
+                    bd_type: None,
+                    filter_expire_on_off: false,
+                    shapes: None,
                 },
                 ext_resources: ExtResources {
                     sku_url: Some(
@@ -498,7 +547,10 @@ DevicesResponse {
                     ),
                 },
                 last_device_data: LastDeviceData {
-                    online: false,
+                    online: Some(
+                        false,
+                    ),
+                    bind: None,
                     tem: None,
                     hum: None,
                     last_time: None,
@@ -569,9 +621,11 @@ DevicesResponse {
                         "=",
                     ),
                     boil_water_completed_noti_on_off: true,
+                    boil_water_exception_noti_on_off: false,
                     completion_noti_on_off: true,
                     auto_shut_down_on_off: true,
                     water_shortage_on_off: false,
+                    air_quality_on_off: false,
                     mcu_soft_version: None,
                     mcu_hard_version: None,
                     sku: Some(
@@ -604,7 +658,15 @@ DevicesResponse {
                     net_waring: None,
                     upload_rate: None,
                     battery: None,
+                    time: None,
                     wifi_level: None,
+                    pm25_min: None,
+                    pm25_max: None,
+                    pm25_warning: None,
+                    sub_devices: None,
+                    bd_type: None,
+                    filter_expire_on_off: false,
+                    shapes: None,
                 },
                 ext_resources: ExtResources {
                     sku_url: Some(
@@ -630,7 +692,10 @@ DevicesResponse {
                     ),
                 },
                 last_device_data: LastDeviceData {
-                    online: false,
+                    online: Some(
+                        false,
+                    ),
+                    bind: None,
                     tem: None,
                     hum: None,
                     last_time: None,
@@ -691,9 +756,11 @@ DevicesResponse {
                     ic_sub_2: None,
                     secret_code: None,
                     boil_water_completed_noti_on_off: true,
+                    boil_water_exception_noti_on_off: false,
                     completion_noti_on_off: true,
                     auto_shut_down_on_off: true,
                     water_shortage_on_off: false,
+                    air_quality_on_off: false,
                     mcu_soft_version: None,
                     mcu_hard_version: None,
                     sku: Some(
@@ -726,7 +793,15 @@ DevicesResponse {
                     net_waring: None,
                     upload_rate: None,
                     battery: None,
+                    time: None,
                     wifi_level: None,
+                    pm25_min: None,
+                    pm25_max: None,
+                    pm25_warning: None,
+                    sub_devices: None,
+                    bd_type: None,
+                    filter_expire_on_off: false,
+                    shapes: None,
                 },
                 ext_resources: ExtResources {
                     sku_url: Some(
@@ -752,7 +827,10 @@ DevicesResponse {
                     ),
                 },
                 last_device_data: LastDeviceData {
-                    online: false,
+                    online: Some(
+                        false,
+                    ),
+                    bind: None,
                     tem: None,
                     hum: None,
                     last_time: None,
@@ -819,9 +897,11 @@ DevicesResponse {
                         "=",
                     ),
                     boil_water_completed_noti_on_off: true,
+                    boil_water_exception_noti_on_off: false,
                     completion_noti_on_off: true,
                     auto_shut_down_on_off: true,
                     water_shortage_on_off: false,
+                    air_quality_on_off: false,
                     mcu_soft_version: None,
                     mcu_hard_version: None,
                     sku: Some(
@@ -854,7 +934,15 @@ DevicesResponse {
                     net_waring: None,
                     upload_rate: None,
                     battery: None,
+                    time: None,
                     wifi_level: None,
+                    pm25_min: None,
+                    pm25_max: None,
+                    pm25_warning: None,
+                    sub_devices: None,
+                    bd_type: None,
+                    filter_expire_on_off: false,
+                    shapes: None,
                 },
                 ext_resources: ExtResources {
                     sku_url: Some(
@@ -880,7 +968,10 @@ DevicesResponse {
                     ),
                 },
                 last_device_data: LastDeviceData {
-                    online: false,
+                    online: Some(
+                        false,
+                    ),
+                    bind: None,
                     tem: None,
                     hum: None,
                     last_time: None,
@@ -941,9 +1032,11 @@ DevicesResponse {
                     ic_sub_2: None,
                     secret_code: None,
                     boil_water_completed_noti_on_off: true,
+                    boil_water_exception_noti_on_off: false,
                     completion_noti_on_off: true,
                     auto_shut_down_on_off: true,
                     water_shortage_on_off: false,
+                    air_quality_on_off: false,
                     mcu_soft_version: None,
                     mcu_hard_version: None,
                     sku: Some(
@@ -976,7 +1069,15 @@ DevicesResponse {
                     net_waring: None,
                     upload_rate: None,
                     battery: None,
+                    time: None,
                     wifi_level: None,
+                    pm25_min: None,
+                    pm25_max: None,
+                    pm25_warning: None,
+                    sub_devices: None,
+                    bd_type: None,
+                    filter_expire_on_off: false,
+                    shapes: None,
                 },
                 ext_resources: ExtResources {
                     sku_url: Some(
@@ -1002,7 +1103,10 @@ DevicesResponse {
                     ),
                 },
                 last_device_data: LastDeviceData {
-                    online: false,
+                    online: Some(
+                        false,
+                    ),
+                    bind: None,
                     tem: None,
                     hum: None,
                     last_time: None,
