@@ -336,9 +336,6 @@ pub async fn start_iot_client(
                         Ok(packet) => {
                             log::debug!("{packet:?}");
                             if let Some((sku, device_id)) = packet.sku_and_device() {
-                                if sku == "H7160" {
-                                    log::info!("{packet:#?} {msg:?}");
-                                }
                                 {
                                     let mut device = state.device_mut(sku, device_id).await;
                                     let mut state = match device.iot_device_status.clone() {

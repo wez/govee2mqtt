@@ -292,7 +292,7 @@ impl State {
         let mut params = device.nightlight_state.clone().unwrap_or_default();
         (apply)(&mut params);
 
-        let command = dbg!(GoveeBlePacket::SetHumidifierNightlight(params)).base64();
+        let command = GoveeBlePacket::SetHumidifierNightlight(params).base64();
 
         if let Some(iot) = self.get_iot_client().await {
             if let Some(info) = &device.undoc_device_info {
@@ -302,6 +302,33 @@ impl State {
         }
 
         anyhow::bail!("don't know how to talk to humidifier {device}");
+    }
+
+    pub async fn humidifier_set_parameter(
+        self: &Arc<Self>,
+        device: &Device,
+        work_mode: i64,
+        value: i64,
+    ) -> anyhow::Result<()> {
+        if let Some(iot) = self.get_iot_client().await {
+            let command = GoveeBlePacket::SetHumidifierMode {
+                mode: work_mode as u8,
+                param: value as u8,
+            }
+            .base64();
+            if let Some(info) = &device.undoc_device_info {
+                iot.send_real(&info.entry, vec![command]).await?;
+                return Ok(());
+            }
+        }
+
+        if let Some(client) = self.get_platform_client().await {
+            if let Some(info) = &device.http_device_info {
+                client.set_work_mode(info, work_mode, value).await?;
+                return Ok(());
+            }
+        }
+        anyhow::bail!("Unable to control humidifier parameter work_mode={work_mode} for {device}");
     }
 
     pub async fn device_set_color_rgb(

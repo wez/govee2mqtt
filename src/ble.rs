@@ -32,8 +32,7 @@ impl TargetHumidity {
         self.0
     }
 
-    #[allow(unused)]
-    pub fn from_percent(&self, percent: u8) -> Self {
+    pub fn from_percent(percent: u8) -> Self {
         Self(percent + 128)
     }
 }
@@ -46,6 +45,10 @@ pub enum GoveeBlePacket {
     SetPower(bool),
     SetHumidifierNightlight(HumidifierNightlightParams),
     NotifyHumidifierMode {
+        mode: u8,
+        param: u8,
+    },
+    SetHumidifierMode {
         mode: u8,
         param: u8,
     },
@@ -125,6 +128,7 @@ impl GoveeBlePacket {
             Self::NotifyHumidifierMode { mode, param } => {
                 finish(vec![0xaa, 0x05, 0x0, mode, param])
             }
+            Self::SetHumidifierMode { mode, param } => finish(vec![0x33, 0x05, mode, param]),
             Self::NotifyHumidifierAutoMode { param } => {
                 finish(vec![0xaa, 0x05, 0x03, param.into_inner()])
             }
@@ -170,6 +174,12 @@ impl GoveeBlePacket {
                     b: *b,
                     brightness: *brightness,
                 })
+            }
+            [0x33, 0x05, mode, param, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] => {
+                Self::SetHumidifierMode {
+                    mode: *mode,
+                    param: *param,
+                }
             }
             [0xaa, 0x05, 0, mode, param, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] => {
                 Self::NotifyHumidifierMode {
@@ -267,14 +277,16 @@ mod test {
         on: false,
     },
     NotifyHumidifierAutoMode {
-        param: 188,
+        param: TargetHumidity(
+            188,
+        ),
     },
     Generic(
         [AA, 05, 02, 00, 09, 00, 3C, 00, 3C, 05, 00, 3C, 00, 3C, 01, FF, FF, FF, FF, A0],
     ),
-    Generic(
-        [AA, 05, 01, 09, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, A7],
-    ),
+    NotifyHumidifierManualMode {
+        param: 9,
+    },
     NotifyHumidifierMode {
         mode: 1,
         param: 9,

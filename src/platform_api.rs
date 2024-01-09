@@ -340,6 +340,24 @@ impl GoveeApiClient {
         anyhow::bail!("Scene '{scene}' is not available for this device");
     }
 
+    pub async fn set_work_mode(
+        &self,
+        device: &HttpDeviceInfo,
+        work_mode: i64,
+        value: i64,
+    ) -> anyhow::Result<ControlDeviceResponseCapability> {
+        let cap = device
+            .capability_by_instance("workMode")
+            .ok_or_else(|| anyhow::anyhow!("device has no workMode"))?;
+
+        let value = json!({
+            "workMode": work_mode,
+            "modeValue": value
+        });
+
+        self.control_device(&device, &cap, value).await
+    }
+
     pub async fn set_toggle_state(
         &self,
         device: &HttpDeviceInfo,

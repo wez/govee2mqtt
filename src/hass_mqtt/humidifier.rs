@@ -1,10 +1,12 @@
+use crate::ble::TargetHumidity;
 use crate::hass_mqtt::base::{Device, EntityConfig, Origin};
 use crate::hass_mqtt::instance::{publish_entity_config, EntityInstance};
-use crate::platform_api::{DeviceParameters, DeviceType, IntegerRange};
+use crate::platform_api::{DeviceParameters, DeviceType, EnumOption, IntegerRange};
 use crate::service::device::Device as ServiceDevice;
-use crate::service::hass::{availability_topic, topic_safe_id, HassClient};
+use crate::service::hass::{availability_topic, topic_safe_id, HassClient, IdParameter};
 use crate::service::state::StateHandle;
 use async_trait::async_trait;
+use mosquitto_rs::router::{Params, Payload, State};
 use serde::Serialize;
 use serde_json::json;
 
@@ -44,13 +46,29 @@ pub struct Humidifier {
     device_id: String,
 }
 
+fn resolve_work_mode(device: &ServiceDevice) -> Option<&[EnumOption]> {
+    let info = device.http_device_info.as_ref()?;
+    let wm = info
+        .capability_by_instance("workMode")
+        .and_then(|cap| cap.struct_field_by_name("workMode"))?;
+
+    match &wm.field_type {
+        DeviceParameters::Enum { options } => Some(options),
+        _ => None,
+    }
+}
+
 impl Humidifier {
     pub async fn new(device: &ServiceDevice, state: &StateHandle) -> anyhow::Result<Self> {
         let _quirk = device.resolve_quirk();
+
+        // command_topic controls the power state; just route it to
+        // the general power switch handler
         let command_topic = format!(
-            "gv2mqtt/humidifier/{id}/command",
+            "gv2mqtt/switch/{id}/command/powerSwitch",
             id = topic_safe_id(device)
         );
+
         let target_humidity_command_topic = format!(
             "gv2mqtt/humidifier/{id}/set-target",
             id = topic_safe_id(device)
@@ -76,19 +94,18 @@ impl Humidifier {
         let mut min_humidity = None;
         let mut max_humidity = None;
 
-        if let Some(info) = &device.http_device_info {
-            if let Some(cap) = info.capability_by_instance("workMode") {
-                if let Some(wm) = cap.struct_field_by_name("workMode") {
-                    match &wm.field_type {
-                        DeviceParameters::Enum { options } => {
-                            for opt in options {
-                                modes.push(opt.name.to_string());
-                            }
-                        }
-                        _ => {}
-                    }
+        if let Some(options) = resolve_work_mode(device) {
+            for opt in options {
+                if device.sku == "H7160" && opt.name == "Custom" {
+                    // Skip custom mode: we don't know how
+                    // to configure it correctly
+                    continue;
                 }
+
+                modes.push(opt.name.to_string());
             }
+        }
+        if let Some(info) = &device.http_device_info {
             if let Some(cap) = info.capability_by_instance("humidity") {
                 match &cap.parameters {
                     Some(DeviceParameters::Integer {
@@ -159,8 +176,6 @@ impl EntityInstance for Humidifier {
             .await
             .expect("device to exist");
 
-        // TODO: update on/off state and mode
-
         match device.device_state() {
             Some(device_state) => {
                 let is_on = device_state.on;
@@ -185,27 +200,15 @@ impl EntityInstance for Humidifier {
                 .await?;
         }
         if let Some(mode_value) = device.humidifier_work_mode {
-            if let Some(info) = &device.http_device_info {
-                if let Some(cap) = info.capability_by_instance("workMode") {
-                    if let Some(wm) = cap.struct_field_by_name("workMode") {
-                        match &wm.field_type {
-                            DeviceParameters::Enum { options } => {
-                                let mode_value_json = json!(mode_value);
-                                for opt in options {
-                                    if opt.value == mode_value_json {
-                                        client
-                                            .publish(
-                                                &self.humidifier.mode_state_topic,
-                                                opt.name.to_string(),
-                                            )
-                                            .await?;
+            if let Some(options) = resolve_work_mode(&device) {
+                let mode_value_json = json!(mode_value);
+                for opt in options {
+                    if opt.value == mode_value_json {
+                        client
+                            .publish(&self.humidifier.mode_state_topic, opt.name.to_string())
+                            .await?;
 
-                                        break;
-                                    }
-                                }
-                            }
-                            _ => {}
-                        }
+                        break;
                     }
                 }
             }
@@ -213,4 +216,69 @@ impl EntityInstance for Humidifier {
 
         Ok(())
     }
+}
+
+pub async fn mqtt_humidifier_set_mode(
+    Payload(mode): Payload<String>,
+    Params(IdParameter { id }): Params<IdParameter>,
+    State(state): State<StateHandle>,
+) -> anyhow::Result<()> {
+    log::info!("mqtt_humidifier_set_mode: {id}: {mode}");
+    let device = state
+        .resolve_device(&id)
+        .await
+        .ok_or_else(|| anyhow::anyhow!("device '{id}' not found"))?;
+
+    if let Some(options) = resolve_work_mode(&device) {
+        for opt in options {
+            if opt.name == mode {
+                let work_mode = opt
+                    .value
+                    .as_i64()
+                    .ok_or_else(|| anyhow::anyhow!("expected workMode to be a number"))?;
+
+                state
+                    .humidifier_set_parameter(&device, work_mode, 0)
+                    .await?;
+
+                break;
+            }
+        }
+    }
+
+    Ok(())
+}
+
+pub async fn mqtt_humidifier_set_target(
+    Payload(percent): Payload<i64>,
+    Params(IdParameter { id }): Params<IdParameter>,
+    State(state): State<StateHandle>,
+) -> anyhow::Result<()> {
+    log::info!("mqtt_humidifier_set_target: {id}: {percent}");
+
+    let device = state
+        .resolve_device(&id)
+        .await
+        .ok_or_else(|| anyhow::anyhow!("device '{id}' not found"))?;
+
+    if let Some(options) = resolve_work_mode(&device) {
+        for opt in options {
+            if opt.name == "Auto" {
+                let work_mode = opt
+                    .value
+                    .as_i64()
+                    .ok_or_else(|| anyhow::anyhow!("expected workMode to be a number"))?;
+
+                let value = TargetHumidity::from_percent(percent as u8);
+
+                state
+                    .humidifier_set_parameter(&device, work_mode, value.into_inner().into())
+                    .await?;
+
+                break;
+            }
+        }
+    }
+
+    Ok(())
 }

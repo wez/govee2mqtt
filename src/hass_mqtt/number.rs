@@ -1,10 +1,11 @@
 use crate::hass_mqtt::base::{Device, EntityConfig, Origin};
 use crate::hass_mqtt::instance::{publish_entity_config, EntityInstance};
 use crate::service::device::Device as ServiceDevice;
-use crate::service::hass::{availability_topic, number_state_topic, topic_safe_id, HassClient};
+use crate::service::hass::{availability_topic, topic_safe_id, topic_safe_string, HassClient};
 use crate::service::state::StateHandle;
 use async_trait::async_trait;
-use serde::Serialize;
+use mosquitto_rs::router::{Params, Payload, State};
+use serde::{Deserialize, Serialize};
 use serde_json::Value as JsonValue;
 use std::ops::Range;
 
@@ -46,10 +47,19 @@ impl WorkModeNumber {
         range: Option<Range<i64>>,
     ) -> Self {
         let command_topic = format!(
-            "gv2mqtt/number/{id}/command/{mode_name}",
+            "gv2mqtt/number/{id}/command/{mode_name}/{mode_num}",
             id = topic_safe_id(device),
+            mode_num = work_mode
+                .as_i64()
+                .map(|n| n.to_string())
+                .unwrap_or_else(|| "work-mode-was-not-int".to_string()),
         );
-        let state_topic = number_state_topic(device, mode_name);
+        let state_topic = format!(
+            "gv2mqtt/number/{id}/state/{mode}",
+            id = topic_safe_id(device),
+            mode = topic_safe_string(mode_name)
+        );
+
         let availability_topic = availability_topic();
         let unique_id = format!(
             "gv2mqtt-{id}-{mode_name}-number",
@@ -70,8 +80,11 @@ impl WorkModeNumber {
                 },
                 command_topic,
                 state_topic,
-                min: range.as_ref().map(|r| r.start as f32),
-                max: range.as_ref().map(|r| r.end.saturating_sub(1) as f32),
+                min: range.as_ref().map(|r| r.start as f32).or(Some(0.)),
+                max: range
+                    .as_ref()
+                    .map(|r| r.end.saturating_sub(1) as f32)
+                    .or(Some(255.)),
                 step: 1f32,
             },
             device_id: device.id.to_string(),
@@ -128,7 +141,8 @@ impl EntityInstance for WorkModeNumber {
             }
         }
 
-        log::warn!(
+        // We might get some data to report later, so this is just debug for now
+        log::debug!(
             "Don't know how to report state for {} workMode {} value",
             self.device_id,
             self.mode_name
@@ -136,4 +150,34 @@ impl EntityInstance for WorkModeNumber {
 
         Ok(())
     }
+}
+
+#[derive(Deserialize)]
+pub struct IdAndModeName {
+    id: String,
+    mode_name: String,
+    work_mode: String,
+}
+
+pub async fn mqtt_number_command(
+    Payload(value): Payload<i64>,
+    Params(IdAndModeName {
+        id,
+        mode_name,
+        work_mode,
+    }): Params<IdAndModeName>,
+    State(state): State<StateHandle>,
+) -> anyhow::Result<()> {
+    log::warn!("{mode_name} for {id}: {value}");
+    let work_mode: i64 = work_mode.parse()?;
+    let device = state
+        .resolve_device(&id)
+        .await
+        .ok_or_else(|| anyhow::anyhow!("device '{id}' not found"))?;
+
+    state
+        .humidifier_set_parameter(&device, work_mode, value)
+        .await?;
+
+    Ok(())
 }

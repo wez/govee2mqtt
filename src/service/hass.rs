@@ -1,5 +1,7 @@
 use crate::hass_mqtt::enumerator::{enumerate_all_entites, enumerate_entities_for_device};
+use crate::hass_mqtt::humidifier::{mqtt_humidifier_set_mode, mqtt_humidifier_set_target};
 use crate::hass_mqtt::instance::EntityList;
+use crate::hass_mqtt::number::mqtt_number_command;
 use crate::lan_api::DeviceColor;
 use crate::opt_env_var;
 use crate::platform_api::from_json;
@@ -178,14 +180,6 @@ pub fn switch_instance_state_topic(device: &ServiceDevice, instance: &str) -> St
     )
 }
 
-pub fn number_state_topic(device: &ServiceDevice, mode_name: &str) -> String {
-    format!(
-        "gv2mqtt/number/{id}/state/{mode}",
-        id = topic_safe_id(device),
-        mode = topic_safe_string(mode_name)
-    )
-}
-
 pub fn light_state_topic(device: &ServiceDevice) -> String {
     format!("gv2mqtt/light/{id}/state", id = topic_safe_id(device))
 }
@@ -212,8 +206,8 @@ pub fn purge_cache_topic() -> String {
 }
 
 #[derive(Deserialize)]
-struct IdParameter {
-    id: String,
+pub struct IdParameter {
+    pub id: String,
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -486,6 +480,21 @@ async fn run_mqtt_loop(
 
         router.route(oneclick_topic(), mqtt_oneclick).await?;
         router.route(purge_cache_topic(), mqtt_purge_caches).await?;
+        router
+            .route(
+                "gv2mqtt/number/:id/command/:mode_name/:work_mode",
+                mqtt_number_command,
+            )
+            .await?;
+        router
+            .route("gv2mqtt/humidifier/:id/set-mode", mqtt_humidifier_set_mode)
+            .await?;
+        router
+            .route(
+                "gv2mqtt/humidifier/:id/set-target",
+                mqtt_humidifier_set_target,
+            )
+            .await?;
 
         state
             .get_hass_client()

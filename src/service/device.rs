@@ -163,7 +163,6 @@ impl Device {
     }
 
     pub fn set_target_humidity(&mut self, percent: u8) {
-        log::info!("Updating target humidity to {percent}%");
         self.target_humidity_percent.replace(percent);
     }
 
