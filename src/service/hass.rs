@@ -312,6 +312,8 @@ async fn mqtt_light_segment_command(
             .as_ref()
             .ok_or_else(|| anyhow::anyhow!("HTTP device info is missing"))?;
 
+        log::info!("Using Platform API to control {device} segment");
+
         if let Some(brightness) = command.brightness {
             client
                 .set_segment_brightness(&info, segment, brightness)
@@ -332,7 +334,7 @@ async fn mqtt_light_segment_command(
                 .await?;
         }
     } else {
-        anyhow::bail!("cannot set segments: platform API is not available");
+        anyhow::bail!("set segments for {device}: Platform API is not available");
     }
 
     Ok(())

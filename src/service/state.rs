@@ -161,6 +161,7 @@ impl State {
         }
 
         if let Some(lan_dev) = &device.lan_device {
+            log::info!("Using LAN API to set {device} power state");
             lan_dev.send_turn(on).await?;
             self.poll_lan_api(lan_dev, |status| status.on == on).await?;
             return Ok(());
@@ -168,6 +169,7 @@ impl State {
 
         if let Some(iot) = self.get_iot_client().await {
             if let Some(info) = &device.undoc_device_info {
+                log::info!("Using IoT API to set {device} power state");
                 iot.set_power_state(&info.entry, on).await?;
                 return Ok(());
             }
@@ -175,6 +177,7 @@ impl State {
 
         if let Some(client) = self.get_platform_client().await {
             if let Some(info) = &device.http_device_info {
+                log::info!("Using Platform API to set {device} power state");
                 client.set_power_state(info, on).await?;
                 return Ok(());
             }
@@ -189,6 +192,7 @@ impl State {
         on: bool,
     ) -> anyhow::Result<()> {
         if let Some(lan_dev) = &device.lan_device {
+            log::info!("Using LAN API to set {device} power state");
             lan_dev.send_turn(on).await?;
             self.poll_lan_api(lan_dev, |status| status.on == on).await?;
             return Ok(());
@@ -196,6 +200,7 @@ impl State {
 
         if let Some(iot) = self.get_iot_client().await {
             if let Some(info) = &device.undoc_device_info {
+                log::info!("Using IoT API to set {device} power state");
                 iot.set_power_state(&info.entry, on).await?;
                 return Ok(());
             }
@@ -203,6 +208,7 @@ impl State {
 
         if let Some(client) = self.get_platform_client().await {
             if let Some(info) = &device.http_device_info {
+                log::info!("Using Platform API to set {device} power state");
                 client.set_power_state(info, on).await?;
                 return Ok(());
             }
@@ -226,6 +232,7 @@ impl State {
         }
 
         if let Some(lan_dev) = &device.lan_device {
+            log::info!("Using LAN API to set {device} brightness");
             lan_dev.send_brightness(percent).await?;
             self.poll_lan_api(lan_dev, |status| status.brightness == percent)
                 .await?;
@@ -234,6 +241,7 @@ impl State {
 
         if let Some(iot) = self.get_iot_client().await {
             if let Some(info) = &device.undoc_device_info {
+                log::info!("Using IoT API to set {device} brightness");
                 iot.set_brightness(&info.entry, percent).await?;
                 return Ok(());
             }
@@ -241,6 +249,7 @@ impl State {
 
         if let Some(client) = self.get_platform_client().await {
             if let Some(info) = &device.http_device_info {
+                log::info!("Using Platform API to set {device} brightness");
                 client.set_brightness(info, percent).await?;
                 return Ok(());
             }
@@ -254,6 +263,7 @@ impl State {
         kelvin: u32,
     ) -> anyhow::Result<()> {
         if let Some(lan_dev) = &device.lan_device {
+            log::info!("Using LAN API to set {device} color temperature");
             lan_dev.send_color_temperature_kelvin(kelvin).await?;
             self.poll_lan_api(lan_dev, |status| status.color_temperature_kelvin == kelvin)
                 .await?;
@@ -265,6 +275,7 @@ impl State {
 
         if let Some(iot) = self.get_iot_client().await {
             if let Some(info) = &device.undoc_device_info {
+                log::info!("Using IoT API to set {device} color temperature");
                 iot.set_color_temperature(&info.entry, kelvin).await?;
                 return Ok(());
             }
@@ -272,6 +283,7 @@ impl State {
 
         if let Some(client) = self.get_platform_client().await {
             if let Some(info) = &device.http_device_info {
+                log::info!("Using Platform API to set {device} color temperature");
                 client.set_color_temperature(info, kelvin).await?;
                 self.device_mut(&device.sku, &device.id)
                     .await
@@ -295,6 +307,7 @@ impl State {
 
         if let Some(iot) = self.get_iot_client().await {
             if let Some(info) = &device.undoc_device_info {
+                log::info!("Using Platform API to set {device} color");
                 iot.send_real(&info.entry, vec![command]).await?;
                 return Ok(());
             }
@@ -350,6 +363,7 @@ impl State {
 
         if let Some(lan_dev) = &device.lan_device {
             let color = crate::lan_api::DeviceColor { r, g, b };
+            log::info!("Using LAN API to set {device} color");
             lan_dev.send_color_rgb(color).await?;
             self.poll_lan_api(lan_dev, |status| status.color == color)
                 .await?;
@@ -361,6 +375,7 @@ impl State {
 
         if let Some(iot) = self.get_iot_client().await {
             if let Some(info) = &device.undoc_device_info {
+                log::info!("Using IoT API to set {device} color");
                 iot.set_color_rgb(&info.entry, r, g, b).await?;
                 return Ok(());
             }
@@ -368,6 +383,7 @@ impl State {
 
         if let Some(client) = self.get_platform_client().await {
             if let Some(info) = &device.http_device_info {
+                log::info!("Using Platform API to set {device} color");
                 client.set_color_rgb(info, r, g, b).await?;
                 self.device_mut(&device.sku, &device.id)
                     .await
@@ -397,6 +413,7 @@ impl State {
         if !avoid_platform_api {
             if let Some(client) = self.get_platform_client().await {
                 if let Some(info) = &device.http_device_info {
+                    log::info!("Using Platform API to set {device} to scene {scene}");
                     client.set_scene_by_name(info, scene).await?;
                     self.device_mut(&device.sku, &device.id)
                         .await
@@ -407,6 +424,7 @@ impl State {
         }
 
         if let Some(lan_dev) = &device.lan_device {
+            log::info!("Using LAN API to set {device} to scene {scene}");
             lan_dev.set_scene_by_name(scene).await?;
 
             self.device_mut(&device.sku, &device.id)
