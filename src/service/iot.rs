@@ -44,6 +44,20 @@ impl IotClient {
     pub async fn set_power_state(&self, device: &DeviceEntry, on: bool) -> anyhow::Result<()> {
         log::trace!("set_power_state for {} to {on}", device.device);
         let device_topic = device.device_topic()?;
+
+        fn pwr(is_on: bool, on: u8, off: u8) -> u8 {
+            if is_on {
+                on
+            } else {
+                off
+            }
+        }
+
+        let power_state = match device.sku.as_str() {
+            "H5080" | "H5083" => pwr(on, 17, 16),
+            _ => pwr(on, 1, 0),
+        };
+
         self.client
             .publish(
                 device_topic,
@@ -51,7 +65,7 @@ impl IotClient {
                     "msg": {
                         "cmd": "turn",
                         "data": {
-                            "val": if on { 1 } else {0},
+                            "val": power_state,
                         },
                         "cmdVersion": 0,
                         "transaction": format!("v_{}000", ms_timestamp()),
