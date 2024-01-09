@@ -1,0 +1,241 @@
+{
+  "status": 200,
+  "message": "Success",
+  "data": {
+    "components": [
+      {
+        "componentId": 19401031,
+        "name": "Environment Information",
+        "type": 4,
+        "canManage": 1,
+        "canDisable": null,
+        "environments": []
+      },
+      {
+        "componentId": 19401034,
+        "name": "Default",
+        "type": 1,
+        "canManage": 0,
+        "canDisable": 0,
+        "oneClicks": [
+          {
+            "name": "Turn off the tv light",
+            "planType": 0,
+            "siriEngineId": 148376,
+            "presetId": 0,
+            "groupName": "",
+            "groupId": 0,
+            "desc": "",
+            "presetState": 0,
+            "type": 0,
+            "iotRules": [
+              {
+                "deviceObj": {
+                  "name": "TV Backlight",
+                  "sku": "H6199",
+                  "device": "XX:XX:XX",
+                  "spec": "",
+                  "topic": "GD/",
+                  "bleName": "ihoment_H6199_3468",
+                  "bleAddress": "XX:XX:XX",
+                  "versionSoft": "1.07.02",
+                  "versionHard": "1.00.01",
+                  "wifiSoftVersion": "1.00.29",
+                  "wifiHardVersion": "1.00.01",
+                  "goodsType": 24,
+                  "pactType": 1,
+                  "pactCode": 1,
+                  "subDevices": {},
+                  "ic": 50,
+                  "ic_sub_1": 0,
+                  "ic_sub_2": 0,
+                  "subDevice": "",
+                  "settings": null,
+                  "feastId": 0,
+                  "feastName": "",
+                  "feastType": 0,
+                  "isFeast": 0,
+                  "subDeviceNum": 0,
+                  "deviceSplicingStatus": 0
+                },
+                "rule": [
+                  {
+                    "cmdType": 0,
+                    "deviceType": 2,
+                    "cmdVal": "{\n  \"open\" : 0\n}",
+                    "iotMsg": "{\"msg\":{\"transaction\":\"v_1627356304842075\",\"data\":{\"val\":0},\"accountTopic\":\"GA\\/86f8778be8053ab0ffc5fa8831bcdef9\",\"type\":1,\"cmdVersion\":0,\"cmd\":\"turn\"}}",
+                    "blueMsg": ""
+                  }
+                ]
+              }
+            ],
+            "execRules": []
+          },
+          {
+            "name": "Turn on the tv light",
+            "planType": 0,
+            "siriEngineId": 148364,
+            "presetId": 0,
+            "groupName": "",
+            "groupId": 0,
+            "desc": "",
+            "presetState": 0,
+            "type": 0,
+            "iotRules": [
+              {
+                "deviceObj": {
+                  "name": "TV Backlight",
+                  "sku": "H6199",
+                  "device": "XX:XX:XX",
+                  "spec": "",
+                  "topic": "GD/",
+                  "bleName": "ihoment_H6199_3468",
+                  "bleAddress": "XX:XX:XX",
+                  "versionSoft": "1.07.02",
+                  "versionHard": "1.00.01",
+                  "wifiSoftVersion": "1.00.29",
+                  "wifiHardVersion": "1.00.01",
+                  "goodsType": 24,
+                  "pactType": 1,
+                  "pactCode": 1,
+                  "subDevices": {},
+                  "ic": 50,
+                  "ic_sub_1": 0,
+                  "ic_sub_2": 0,
+                  "subDevice": "",
+                  "settings": null,
+                  "feastId": 0,
+                  "feastName": "",
+                  "feastType": 0,
+                  "isFeast": 0,
+                  "subDeviceNum": 0,
+                  "deviceSplicingStatus": 0
+                },
+                "rule": [
+                  {
+                    "cmdType": 0,
+                    "deviceType": 2,
+                    "cmdVal": "{\n  \"open\" : 1\n}",
+                    "iotMsg": "{\"msg\":{\"transaction\":\"v_1627356180144429\",\"data\":{\"val\":1},\"accountTopic\":\"GA\\/86f8778be8053ab0ffc5fa8831bcdef9\",\"type\":1,\"cmdVersion\":0,\"cmd\":\"turn\"}}",
+                    "blueMsg": ""
+                  }
+                ]
+              }
+            ],
+            "execRules": []
+          }
+        ],
+        "guideUrl": "https://d1f2504ijhdyjw.cloudfront.net/mp4/a7cdba10f8a30785265447a16cbfcc27-oneClick.mp4"
+      },
+      {
+        "componentId": 19401032,
+        "name": "DreamView",
+        "type": 2,
+        "canManage": 1,
+        "canDisable": null,
+        "h5Url": "https://app-h5.govee.com/user-manual/dreamview-intro",
+        "feastType": 3,
+        "mainDevice": {
+          "name": null,
+          "sku": null,
+          "device": null,
+          "spec": null,
+          "topic": null,
+          "bleName": null,
+          "bleAddress": null,
+          "versionSoft": null,
+          "versionHard": null,
+          "wifiSoftVersion": null,
+          "wifiHardVersion": null,
+          "goodsType": null,
+          "pactType": null,
+          "pactCode": null,
+          "subDevices": null,
+          "ic": null,
+          "ic_sub_1": null,
+          "ic_sub_2": null,
+          "subDevice": null
+        },
+        "videoUrl": "https://app-h5.govee.com/user-manual/faq/voice-guide?updateTime=21",
+        "feasts": []
+      },
+      {
+        "componentId": 19401033,
+        "name": "Group",
+        "type": 3,
+        "canManage": 1,
+        "canDisable": null,
+        "groups": [
+          {
+            "gId": -1,
+            "accountId": 2631851,
+            "name": "Basic Group Control",
+            "type": 1,
+            "enable": 1,
+            "presetStatus": null,
+            "isBasedGroup": 1,
+            "presetState": 1,
+            "presetId": 1,
+            "devices": [
+              {
+                "name": "H6046_3D43",
+                "sku": "H6046",
+                "device": "XX:XX:XX:3D:43",
+                "spec": "",
+                "topic": "GD/",
+                "bleName": "Govee_H6046_3D43",
+                "bleAddress": "XX:XX:XX",
+                "versionSoft": "1.00.09",
+                "versionHard": "3.02.01",
+                "wifiSoftVersion": "2.05.08",
+                "wifiHardVersion": "1.02.00",
+                "goodsType": 112,
+                "pactType": 1,
+                "pactCode": 1,
+                "subDevices": {},
+                "ic": 10,
+                "ic_sub_1": 0,
+                "ic_sub_2": 0,
+                "subDevice": null,
+                "settings": null,
+                "feastId": null,
+                "feastName": null,
+                "feastType": null,
+                "isFeast": null,
+                "secretCode": "redacted="
+              },
+              {
+                "name": "TV Backlight",
+                "sku": "H6199",
+                "device": "XX:XX:XX",
+                "spec": "",
+                "topic": "GD/",
+                "bleName": "ihoment_H6199_3468",
+                "bleAddress": "XX:XX:XX",
+                "versionSoft": "1.07.02",
+                "versionHard": "1.00.01",
+                "wifiSoftVersion": "1.00.29",
+                "wifiHardVersion": "1.00.01",
+                "goodsType": 24,
+                "pactType": 1,
+                "pactCode": 1,
+                "subDevices": {},
+                "ic": 50,
+                "ic_sub_1": 0,
+                "ic_sub_2": 0,
+                "subDevice": null,
+                "settings": null,
+                "feastId": null,
+                "feastName": null,
+                "feastType": null,
+                "isFeast": null,
+                "secretCode": null
+              }
+            ]
+          }
+        ],
+        "guideUrl": "https://d1f2504ijhdyjw.cloudfront.net/mp4/14656fc5953a4a05adbd880cbd9d2a42-group.mp4"
+      }
+    ]
+  }
+}

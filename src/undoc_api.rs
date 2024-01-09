@@ -878,7 +878,7 @@ pub fn embedded_json<'de, T: DeserializeOwned, D: serde::de::Deserializer<'de>>(
 ) -> Result<T, D::Error> {
     use serde::de::Error as _;
     let s = String::deserialize(deserializer)?;
-    from_json(&s).map_err(|e| {
+    from_json(if s.is_empty() { "null" } else { &s }).map_err(|e| {
         D::Error::custom(format!(
             "{} {e:#} while processing embedded json text {s}",
             std::any::type_name::<T>()
@@ -902,6 +902,13 @@ mod test {
     fn get_one_click() {
         let resp: OneClickResponse =
             from_json(include_str!("../test-data/undoc-one-click.json")).unwrap();
+        k9::assert_matches_snapshot!(format!("{resp:#?}"));
+    }
+
+    #[test]
+    fn issue36() {
+        let resp: OneClickResponse =
+            from_json(include_str!("../test-data/undoc-one-click-issue36.json")).unwrap();
         k9::assert_matches_snapshot!(format!("{resp:#?}"));
     }
 
