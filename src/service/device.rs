@@ -376,6 +376,29 @@ impl Device {
         }
     }
 
+    pub fn avoid_platform_api(&self) -> bool {
+        if let Some(quirk) = self.resolve_quirk() {
+            if quirk.avoid_platform_api {
+                return true;
+            }
+            if self.lan_device.is_some()
+                && !self
+                    .http_device_info
+                    .as_ref()
+                    .map(|info| info.supports_rgb())
+                    .unwrap_or(false)
+            {
+                // Conflicting information:
+                // Platform API says that this device isn't
+                // a light, but the LAN API support suggests
+                // that it is a light!
+                // Therefore we will not trust the Platform API
+                return true;
+            }
+        }
+        false
+    }
+
     pub fn resolve_quirk(&self) -> Option<Quirk> {
         match resolve_quirk(&self.sku) {
             Some(q) => Some(q.clone()),

@@ -4,7 +4,6 @@ use crate::platform_api::{DeviceType, GoveeApiClient};
 use crate::service::device::Device;
 use crate::service::hass::{topic_safe_id, HassClient};
 use crate::service::iot::IotClient;
-use crate::service::quirks::resolve_quirk;
 use crate::undoc_api::GoveeUndocumentedApi;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -393,12 +392,7 @@ impl State {
 
     pub async fn device_set_scene(&self, device: &Device, scene: &str) -> anyhow::Result<()> {
         // TODO: some plumbing to maintain offline scene controls for preferred-LAN control
-        let quirk = resolve_quirk(&device.sku);
-
-        let avoid_platform_api = quirk
-            .as_ref()
-            .map(|q| q.avoid_platform_api)
-            .unwrap_or(false);
+        let avoid_platform_api = device.avoid_platform_api();
 
         if !avoid_platform_api {
             if let Some(client) = self.get_platform_client().await {
