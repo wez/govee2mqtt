@@ -1,0 +1,58 @@
+name: New Issue Form
+description: Raise an issue or question about a device
+labels: bug
+assignees: []
+body:
+  - type: input
+    id: sku
+    attributes:
+      label: Govee Device SKU
+      description: |
+        The SKU/Model number of the Govee device
+      placeholder: "ex: H6072"
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Govee2MQTT Version
+      description: |
+        The version of Govee2MQTT that you are running
+      placeholder: "ex: 2024.01.10-5d35fb9b"
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the issue
+      description: |
+        A clear and concise description of what you're seeing or would like to see.
+    validations:
+      required: true
+  - type: textarea
+    id: startup_logs
+    attributes:
+      label: Startup Diagnostics
+      description: |
+        Please restart the addon/docker container and capture the startup diagnostics
+        here. They include more detailed information about your device and the current
+        status as reported by the various APIs.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Additional Logs
+      description: |
+        If you're having trouble controlling a device, please also capture logs from
+        your attempts to control the device, even if they are not being logged as
+        errors, the context is still helpful.
+  - type: textarea
+    id: other
+    attributes:
+      label: Anything else?
+      description: |
+        Add any other context here.  You can attach screenshots by clicking
+        this area to highlight it and then drag the files in, or just paste the image from
+        the clipboard to upload it.  When dealing with logs, please prefer to copy and paste
+        the logs or attach a text file rather than a screenshot.
