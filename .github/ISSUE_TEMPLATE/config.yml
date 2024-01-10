@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Frequently Asked Questions
+    url: https://github.com/wez/govee2mqtt/blob/main/docs/FAQ.md
+    about: Please check this before creating an issue.
