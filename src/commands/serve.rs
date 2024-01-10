@@ -189,11 +189,17 @@ impl ServeCommand {
                 if quirk.lan_api_capable && device.lan_device.is_none() {
                     log::warn!(
                         "  This device should be available via the LAN API, \
-                        but didn't respond to probing. Possible causes:"
+                        but didn't respond to probing yet. Possible causes:"
                     );
                     log::warn!("  1) LAN API needs to be enabled in the Govee Home App.");
                     log::warn!("  2) The device is offline.");
                     log::warn!("  3) A network configuration issue is preventing communication.");
+                }
+            } else if device.http_device_info.is_none() {
+                log::warn!("  Unknown device type. Cannot map to Home Assistant.");
+                if state.get_platform_client().await.is_none() {
+                    log::warn!("  Recommendation: configure your Govee API Key so that \
+                                  metadata can be fetched from Govee");
                 }
             }
 
