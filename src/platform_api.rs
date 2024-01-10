@@ -19,6 +19,7 @@ use thiserror::Error;
 
 const SERVER: &str = "https://openapi.api.govee.com";
 const ONE_WEEK: Duration = Duration::from_secs(86400 * 7);
+const FIVE_MINUTES: Duration = Duration::from_secs(5 * 60);
 
 fn endpoint(url: &str) -> String {
     format!("{SERVER}{url}")
@@ -153,7 +154,7 @@ impl GoveeApiClient {
                 key: &key,
                 soft_ttl: Duration::from_secs(300),
                 hard_ttl: ONE_WEEK,
-                negative_ttl: Duration::from_secs(60),
+                negative_ttl: FIVE_MINUTES,
                 allow_stale: true,
             },
             async {
@@ -187,7 +188,7 @@ impl GoveeApiClient {
                 key: &key,
                 soft_ttl: Duration::from_secs(300),
                 hard_ttl: ONE_WEEK,
-                negative_ttl: Duration::from_secs(60),
+                negative_ttl: FIVE_MINUTES,
                 allow_stale: true,
             },
             async {

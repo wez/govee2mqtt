@@ -14,6 +14,7 @@ pub struct Quirk {
     pub ble_only: bool,
     pub lan_api_capable: bool,
     pub device_type: DeviceType,
+    pub supports_scenes: Option<bool>,
 }
 
 impl Quirk {
@@ -28,6 +29,7 @@ impl Quirk {
             icon: icon.into(),
             lan_api_capable: false,
             device_type: DeviceType::Light,
+            supports_scenes: None,
         }
     }
 
@@ -42,7 +44,13 @@ impl Quirk {
             icon: "mdi:air-humidifier".into(),
             lan_api_capable: false,
             device_type: DeviceType::Humidifier,
+            supports_scenes: None,
         }
+    }
+
+    pub fn with_scenes(mut self, supports_scenes: Option<bool>) -> Self {
+        self.supports_scenes = supports_scenes;
+        self
     }
 
     pub fn with_rgb(mut self) -> Self {
@@ -115,6 +123,7 @@ fn load_quirks() -> HashMap<String, Quirk> {
         Quirk::humidifier("H7160")
             .with_broken_platform()
             .with_rgb()
+            .with_scenes(Some(false))
             .with_brightness(),
         // Lights from the list of LAN API enabled devices
         // at <https://app-h5.govee.com/user-manual/wlan-guide>
