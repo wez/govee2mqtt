@@ -156,7 +156,7 @@ impl ServeCommand {
 
         log::info!("Devices returned from Govee's APIs");
         for device in state.devices().await {
-            log::info!("{device} sku={}", device.sku);
+            log::info!("{device}");
             if let Some(lan) = &device.lan_device {
                 log::info!("  LAN API: ip={:?}", lan.ip);
             }

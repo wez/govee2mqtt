@@ -45,7 +45,7 @@ pub struct Device {
 
 impl std::fmt::Display for Device {
     fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(fmt, "{} ({})", self.name(), self.id)
+        write!(fmt, "{} ({} {})", self.name(), self.id, self.sku)
     }
 }
 
