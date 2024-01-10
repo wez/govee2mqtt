@@ -138,19 +138,17 @@ impl GoveeBlePacket {
     }
 
     pub fn parse_bytes(data: &[u8]) -> anyhow::Result<Self> {
+        if data.is_empty() {
+            return Ok(Self::Generic(HexBytes(vec![])));
+        }
+        let checksum = calculate_checksum(&data[0..data.len().saturating_sub(1)]);
+        let cs_byte = *data.last().expect("checked empty above");
         anyhow::ensure!(
-            data.len() == 20,
-            "packet must contain 20 bytes, have {}",
-            data.len()
-        );
-        let checksum = calculate_checksum(&data[0..19]);
-        anyhow::ensure!(
-            checksum == data[19],
-            "packet checksum is invalid. Expected {} but got {checksum}",
-            data[19]
+            checksum == cs_byte,
+            "packet checksum is invalid. Expected {cs_byte} but got {checksum}",
         );
 
-        Ok(match &data[0..19] {
+        Ok(match &data[0..data.len().saturating_sub(1)] {
             [0x33, 0x01, on, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] => {
                 Self::SetPower(itob(on))
             }
@@ -259,6 +257,7 @@ mod test {
             "qggYTTMzNc4AAAAAAAAAAAAAAAw=",
             "qhABA2RqAAAAAAAAAAAAAAAAALY=",
             "qhcAAAIAAAAAAAAAAAAAAAAAAL8=",
+            "6gEB6g==",
         ];
 
         let decoded: Vec<_> = input
@@ -311,6 +310,9 @@ mod test {
     ),
     Generic(
         [AA, 17, 00, 00, 02, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, BF],
+    ),
+    Generic(
+        [EA, 01, 01, EA],
     ),
 ]
 "
