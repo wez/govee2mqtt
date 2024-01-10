@@ -99,7 +99,10 @@ impl HassClient {
 
         // Allow hass time to register the entities
         let delay = tokio::time::Duration::from_millis((50 * entities.len()) as u64);
-        log::info!("Wait {delay:?} for hass to settle on {} entity configs", entities.len());
+        log::info!(
+            "Wait {delay:?} for hass to settle on {} entity configs",
+            entities.len()
+        );
         tokio::time::sleep(delay).await;
 
         // Mark as available

@@ -198,8 +198,10 @@ impl ServeCommand {
             } else if device.http_device_info.is_none() {
                 log::warn!("  Unknown device type. Cannot map to Home Assistant.");
                 if state.get_platform_client().await.is_none() {
-                    log::warn!("  Recommendation: configure your Govee API Key so that \
-                                  metadata can be fetched from Govee");
+                    log::warn!(
+                        "  Recommendation: configure your Govee API Key so that \
+                                  metadata can be fetched from Govee"
+                    );
                 }
             }
 
