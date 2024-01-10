@@ -925,6 +925,13 @@ pub struct HttpRequestFailed {
     content: String,
 }
 
+impl HttpRequestFailed {
+    #[allow(unused)]
+    pub fn from_err(err: &anyhow::Error) -> Option<&Self> {
+        err.root_cause().downcast_ref::<Self>()
+    }
+}
+
 pub async fn json_body<T: serde::de::DeserializeOwned>(
     response: reqwest::Response,
 ) -> anyhow::Result<T> {
