@@ -5,7 +5,7 @@ use crate::hass_mqtt::instance::EntityList;
 use crate::hass_mqtt::light::DeviceLight;
 use crate::hass_mqtt::number::WorkModeNumber;
 use crate::hass_mqtt::scene::SceneConfig;
-use crate::hass_mqtt::sensor::GlobalFixedDiagnostic;
+use crate::hass_mqtt::sensor::{CapabilitySensor, GlobalFixedDiagnostic};
 use crate::hass_mqtt::switch::CapabilitySwitch;
 use crate::platform_api::{
     DeviceCapability, DeviceCapabilityKind, DeviceParameters, DeviceType, EnumOption,
@@ -209,6 +209,10 @@ pub async fn enumerate_entities_for_device<'a>(
                 DeviceCapabilityKind::Range if cap.instance == "humidity" => {}
                 DeviceCapabilityKind::WorkMode => {
                     entities_for_work_mode(d, state, cap, entities).await?;
+                }
+
+                DeviceCapabilityKind::Property => {
+                    entities.add(CapabilitySensor::new(&d, state, cap).await?);
                 }
 
                 kind => {
