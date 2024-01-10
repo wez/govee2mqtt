@@ -36,3 +36,18 @@ Assistant and click the "Purge Caches" button.
 
 Now the Tap-to-Run shortcut will be mapped into Home Assistant as a Scene
 entity.
+
+## My Device(s) appear as Greyed Out and Unavailable in Home Assistant
+
+This suggests that there is a problem with (re)registering the entity
+in Home Assistant.
+
+There may be more information available in the Home Assistant logs.  Look for
+log entries that reference `gv2mqtt` or `mqtt`.  Please make a point of
+collecting that and reporting an issue.
+
+You may also wish to try deleting the device(s) from the MQTT integration
+in Home Assistant, then going to the "Govee to MQTT" device and clicking
+the "Purge Caches" button to see how the situation evolves.
+
+<img src="https://github.com/wez/govee2mqtt/assets/117777/565d8580-f068-4ec3-8c16-11d2808688bf" width="50%">
