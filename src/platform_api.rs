@@ -914,6 +914,7 @@ pub fn from_json<T: serde::de::DeserializeOwned, S: AsRef<[u8]>>(text: S) -> any
 struct EmbeddedRequestStatus {
     #[serde(alias = "msg")]
     message: String,
+    #[serde(alias = "code")]
     status: u16,
 }
 
