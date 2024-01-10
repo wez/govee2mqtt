@@ -5,7 +5,6 @@ use crate::service::http::run_http_server;
 use crate::service::iot::start_iot_client;
 use crate::service::state::StateHandle;
 use crate::version_info::govee_version;
-use anyhow::Context;
 use chrono::Utc;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -45,68 +44,24 @@ async fn poll_single_device(state: &StateHandle, device: &Device) -> anyhow::Res
         return Ok(());
     }
 
+    let needs_platform = device.needs_platform_poll();
+
     // Don't interrogate via HTTP if we can use the LAN.
     // If we have LAN and the device is stale, it is likely
     // offline and there is little sense in burning up request
     // quota to the platform API for it
-    if device.lan_device.is_some() {
+    if device.lan_device.is_some() && !needs_platform {
         log::trace!("LAN-available device {device} needs a status update; it's likely offline.");
         return Ok(());
     }
 
-    if let Some(iot) = state.get_iot_client().await {
-        if let Some(info) = device.undoc_device_info.clone() {
-            if iot.is_device_compatible(&info.entry) {
-                log::info!("requesting update via IoT MQTT {device} {device_state:?}");
-                match iot
-                    .request_status_update(&info.entry)
-                    .await
-                    .context("iot.request_status_update")
-                {
-                    Err(err) => {
-                        log::error!("Failed: {err:#}");
-                    }
-                    Ok(()) => {
-                        // The response will come in async via the mqtt loop in iot.rs
-                        // However, if the device is offline, nothing will change our state.
-                        // Let's explicitly mark the device as having been polled so that
-                        // we don't keep sending a request every minute.
-                        state
-                            .device_mut(&device.sku, &device.id)
-                            .await
-                            .set_last_polled();
-
-                        return Ok(());
-                    }
-                }
-            }
+    if !needs_platform {
+        if state.poll_iot_api(&device).await? {
+            return Ok(());
         }
     }
 
-    if let Some(client) = state.get_platform_client().await {
-        log::info!("requesting update via Platform API {device} {device_state:?}");
-        if let Some(info) = &device.http_device_info {
-            let http_state = client
-                .get_device_state(info)
-                .await
-                .context("get_device_state")?;
-            log::trace!("updated state for {device}");
-
-            {
-                let mut device = state.device_mut(&device.sku, &device.id).await;
-                device.set_http_device_state(http_state);
-                device.set_last_polled();
-            }
-            state
-                .notify_of_state_change(&device.id)
-                .await
-                .context("state.notify_of_state_change")?;
-        }
-    } else {
-        log::trace!(
-            "device {device} needs a status update, but there is no platform client available"
-        );
-    }
+    state.poll_platform_api(&device).await?;
 
     Ok(())
 }

@@ -5,7 +5,8 @@ use crate::service::device::Device;
 use crate::service::hass::{topic_safe_id, HassClient};
 use crate::service::iot::IotClient;
 use crate::undoc_api::GoveeUndocumentedApi;
-use std::collections::HashMap;
+use anyhow::Context;
+use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 use std::time::Instant;
 use tokio::sync::{MappedMutexGuard, Mutex, MutexGuard};
@@ -20,6 +21,7 @@ pub struct State {
     iot_client: Mutex<Option<IotClient>>,
     hass_client: Mutex<Option<HassClient>>,
     hass_discovery_prefix: Mutex<String>,
+    devices_to_poll: Mutex<HashSet<String>>,
 }
 
 pub type StateHandle = Arc<State>;
@@ -125,6 +127,67 @@ impl State {
         self.undoc_client.lock().await.clone()
     }
 
+    pub async fn poll_iot_api(self: &Arc<Self>, device: &Device) -> anyhow::Result<bool> {
+        if let Some(iot) = self.get_iot_client().await {
+            if let Some(info) = device.undoc_device_info.clone() {
+                if iot.is_device_compatible(&info.entry) {
+                    let device_state = device.device_state();
+                    log::info!("requesting update via IoT MQTT {device} {device_state:?}");
+                    match iot
+                        .request_status_update(&info.entry)
+                        .await
+                        .context("iot.request_status_update")
+                    {
+                        Err(err) => {
+                            log::error!("Failed: {err:#}");
+                        }
+                        Ok(()) => {
+                            // The response will come in async via the mqtt loop in iot.rs
+                            // However, if the device is offline, nothing will change our state.
+                            // Let's explicitly mark the device as having been polled so that
+                            // we don't keep sending a request every minute.
+                            self.device_mut(&device.sku, &device.id)
+                                .await
+                                .set_last_polled();
+
+                            return Ok(true);
+                        }
+                    }
+                }
+            }
+        }
+        Ok(false)
+    }
+
+    pub async fn poll_platform_api(self: &Arc<Self>, device: &Device) -> anyhow::Result<bool> {
+        if let Some(client) = self.get_platform_client().await {
+            let device_state = device.device_state();
+            log::info!("requesting update via Platform API {device} {device_state:?}");
+            if let Some(info) = &device.http_device_info {
+                let http_state = client
+                    .get_device_state(info)
+                    .await
+                    .context("get_device_state")?;
+                log::trace!("updated state for {device}");
+
+                {
+                    let mut device = self.device_mut(&device.sku, &device.id).await;
+                    device.set_http_device_state(http_state);
+                    device.set_last_polled();
+                }
+                self.notify_of_state_change(&device.id)
+                    .await
+                    .context("state.notify_of_state_change")?;
+                return Ok(true);
+            }
+        } else {
+            log::trace!(
+                "device {device} wanted a status update, but there is no platform client available"
+            );
+        }
+        Ok(false)
+    }
+
     async fn poll_lan_api<F: Fn(&LanDeviceStatus) -> bool>(
         self: &Arc<Self>,
         device: &LanDevice,
@@ -156,6 +219,7 @@ impl State {
         device: &Device,
         on: bool,
     ) -> anyhow::Result<()> {
+        self.device_was_controlled(device).await;
         if device.device_type() == DeviceType::Humidifier {
             return self.humidifier_set_nightlight(device, |p| p.on = on).await;
         }
@@ -191,6 +255,7 @@ impl State {
         device: &Device,
         on: bool,
     ) -> anyhow::Result<()> {
+        self.device_was_controlled(device).await;
         if let Some(lan_dev) = &device.lan_device {
             log::info!("Using LAN API to set {device} power state");
             lan_dev.send_turn(on).await?;
@@ -222,6 +287,7 @@ impl State {
         device: &Device,
         percent: u8,
     ) -> anyhow::Result<()> {
+        self.device_was_controlled(device).await;
         if device.device_type() == DeviceType::Humidifier {
             return self
                 .humidifier_set_nightlight(device, |p| {
@@ -262,6 +328,7 @@ impl State {
         device: &Device,
         kelvin: u32,
     ) -> anyhow::Result<()> {
+        self.device_was_controlled(device).await;
         if let Some(lan_dev) = &device.lan_device {
             log::info!("Using LAN API to set {device} color temperature");
             lan_dev.send_color_temperature_kelvin(kelvin).await?;
@@ -296,10 +363,11 @@ impl State {
 
     // FIXME: this function probably shouldn't exist here
     async fn humidifier_set_nightlight<F: Fn(&mut HumidifierNightlightParams)>(
-        &self,
+        self: &Arc<Self>,
         device: &Device,
         apply: F,
     ) -> anyhow::Result<()> {
+        self.device_was_controlled(device).await;
         let mut params = device.nightlight_state.clone().unwrap_or_default();
         (apply)(&mut params);
 
@@ -322,6 +390,7 @@ impl State {
         work_mode: i64,
         value: i64,
     ) -> anyhow::Result<()> {
+        self.device_was_controlled(device).await;
         if let Some(iot) = self.get_iot_client().await {
             let command = GoveeBlePacket::SetHumidifierMode {
                 mode: work_mode as u8,
@@ -350,6 +419,7 @@ impl State {
         g: u8,
         b: u8,
     ) -> anyhow::Result<()> {
+        self.device_was_controlled(device).await;
         if device.device_type() == DeviceType::Humidifier {
             return self
                 .humidifier_set_nightlight(device, |p| {
@@ -394,6 +464,28 @@ impl State {
         anyhow::bail!("Unable to control color for {device}");
     }
 
+    pub async fn device_was_controlled(self: &Arc<Self>, device: &Device) {
+        self.devices_to_poll
+            .lock()
+            .await
+            .insert(device.id.to_string());
+    }
+
+    pub async fn poll_after_control(self: &Arc<Self>) {
+        let device_ids: Vec<String> = self.devices_to_poll.lock().await.drain().collect();
+
+        for id in device_ids {
+            if let Some(device) = self.device_by_id(&id).await {
+                if device.needs_platform_poll() {
+                    log::info!("Polling {device} to get latest state after control");
+                    if let Err(err) = self.poll_platform_api(&device).await {
+                        log::error!("Polling {device} failed: {err:#}");
+                    }
+                }
+            }
+        }
+    }
+
     pub async fn device_list_scenes(&self, device: &Device) -> anyhow::Result<Vec<String>> {
         // TODO: some plumbing to maintain offline scene controls for preferred-LAN control
 
@@ -406,7 +498,11 @@ impl State {
         anyhow::bail!("Unable to list scenes for {device}");
     }
 
-    pub async fn device_set_scene(&self, device: &Device, scene: &str) -> anyhow::Result<()> {
+    pub async fn device_set_scene(
+        self: &Arc<Self>,
+        device: &Device,
+        scene: &str,
+    ) -> anyhow::Result<()> {
         // TODO: some plumbing to maintain offline scene controls for preferred-LAN control
         let avoid_platform_api = device.avoid_platform_api();
 

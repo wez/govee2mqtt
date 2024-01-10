@@ -520,6 +520,8 @@ async fn run_mqtt_loop(
                 tokio::spawn(async move {
                     if let Err(err) = router.dispatch(msg.clone(), state.clone()).await {
                         log::error!("While dispatching {msg:?}: {err:#}");
+                    } else {
+                        state.poll_after_control().await;
                     }
                 });
             }

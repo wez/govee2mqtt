@@ -376,6 +376,19 @@ impl Device {
         }
     }
 
+    /// Indicate whether we require the platform API data in order
+    /// to correctly report the device
+    pub fn needs_platform_poll(&self) -> bool {
+        let device_type = self.device_type();
+        match (device_type, self.sku.as_str()) {
+            (_, "H7160") => false,
+            (DeviceType::Humidifier, _) => true,
+            (DeviceType::Light, _) => false,
+            (DeviceType::Kettle, _) => true,
+            _ => true,
+        }
+    }
+
     pub fn avoid_platform_api(&self) -> bool {
         if let Some(quirk) = self.resolve_quirk() {
             if quirk.avoid_platform_api {

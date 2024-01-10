@@ -756,6 +756,7 @@ pub enum DeviceType {
     IceMaker = "devices.types.ice_maker",
     AromaDiffuser = "devices.types.aroma_diffuser",
     Fan = "devices.types.fan",
+    Kettle = "devices.types.kettle",
 }
 }
 
