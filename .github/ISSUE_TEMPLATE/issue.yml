@@ -48,6 +48,13 @@ body:
         your attempts to control the device, even if they are not being logged as
         errors, the context is still helpful.
   - type: textarea
+    id: hass_logs
+    attributes:
+      label: Home Assistant Logs
+      description: |
+        Anything relevant show up in the Home Assistant logs?
+        Please include it here!
+  - type: textarea
     id: other
     attributes:
       label: Anything else?
