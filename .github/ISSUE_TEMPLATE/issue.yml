@@ -1,6 +1,6 @@
 name: New Issue Form
 description: Raise an issue or question about a device.
-labels: bug
+labels: []
 assignees: []
 body:
   - type: input
