@@ -38,6 +38,10 @@ via the [Home Assistant MQTT Integration](https://www.home-assistant.io/integrat
 * [Running it in Docker](docs/DOCKER.md)
 * [Configuration](docs/CONFIG.md)
 
+## Have a question?
+
+* [Check out the FAQ](docs/FAQ.md)
+
 ## Credits
 
 This work is based on my earlier work with [Govee LAN
