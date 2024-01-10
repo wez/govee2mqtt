@@ -1,7 +1,5 @@
 name: New Issue Form
-description: |
-  Raise an issue or question about a device.
-  Please check out the [FAQ.md](docs/FAQ.md) before submitting!
+description: Raise an issue or question about a device.
 labels: bug
 assignees: []
 body:
