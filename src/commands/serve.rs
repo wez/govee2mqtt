@@ -182,7 +182,7 @@ impl ServeCommand {
                 log::trace!("{undoc:#?}");
             }
             if let Some(quirk) = device.resolve_quirk() {
-                log::info!("  Quirk: {quirk:?}");
+                log::info!("  {quirk:?}");
 
                 // Sanity check for LAN devices: if we don't see an API for it,
                 // it may indicate a networking issue
