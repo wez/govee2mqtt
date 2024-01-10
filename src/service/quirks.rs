@@ -104,11 +104,7 @@ const SPOTLIGHT: &str = "mdi:lightbulb-spot";
 fn load_quirks() -> HashMap<String, Quirk> {
     let mut map = HashMap::new();
     for quirk in [
-        // At the time of writing, the metadata
-        // returned by Govee is completely bogus for this
-        // device
-        // <https://github.com/wez/govee2mqtt/issues/7>
-        Quirk::lan_api_capable_light("H610A", STRIP).with_broken_platform(),
+        Quirk::lan_api_capable_light("H610A", STRIP),
         // At the time of writing, the metadata
         // returned by Govee is completely bogus for this
         // device
