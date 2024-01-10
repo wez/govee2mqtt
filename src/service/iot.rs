@@ -320,8 +320,21 @@ pub async fn start_iot_client(
                     }
 
                     #[derive(Deserialize, Debug)]
+                    #[allow(unused)]
                     struct OpData {
+                        #[serde(default)]
                         command: Vec<GoveeBlePacket>,
+
+                        // The next 4 fields are sourced from H6199
+                        // <https://github.com/wez/govee2mqtt/issues/36>
+                        #[serde(rename = "modeValue", default)]
+                        mode_value: Vec<GoveeBlePacket>,
+                        #[serde(rename = "sleepValue", default)]
+                        sleep_value: Vec<GoveeBlePacket>,
+                        #[serde(rename = "wakeupValue", default)]
+                        wakeup_value: Vec<GoveeBlePacket>,
+                        #[serde(rename = "timerValue", default)]
+                        timer_value: Vec<GoveeBlePacket>,
                     }
 
                     impl Packet {
