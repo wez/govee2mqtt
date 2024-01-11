@@ -116,8 +116,22 @@ impl EntityInstance for CapabilitySwitch {
         if let Some(state) = &device.http_device_state {
             for cap in &state.capabilities {
                 if cap.instance == self.instance_name {
-                    log::warn!("CapabilitySwitch::notify_state: Do something with {cap:#?}");
-                    return Ok(());
+                    match cap.state.pointer("/value").and_then(|v| v.as_i64()) {
+                        Some(n) => {
+                            return client
+                                .publish(
+                                    &self.switch.state_topic,
+                                    if n != 0 { "ON" } else { "OFF" },
+                                )
+                                .await;
+                        }
+                        None => {
+                            log::warn!(
+                                "CapabilitySwitch::notify_state: Do something with {cap:#?}"
+                            );
+                            return Ok(());
+                        }
+                    }
                 }
             }
         }
