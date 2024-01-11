@@ -814,10 +814,10 @@ pub struct DeviceSettings {
     pub hum_cali: Option<i64>,
     pub net_waring: Option<bool>,
     pub upload_rate: Option<i64>,
-    pub battery: Option<u8>,
+    pub battery: Option<i64>,
     /// millisecond timestamp
     pub time: Option<u64>,
-    pub wifi_level: Option<u8>,
+    pub wifi_level: Option<i64>,
 
     pub pm25_min: Option<i64>,
     pub pm25_max: Option<i64>,
