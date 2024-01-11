@@ -56,7 +56,7 @@ pub struct LanDiscoArguments {
     disco_timeout: u64,
 }
 
-fn truthy(s: &str) -> anyhow::Result<bool> {
+pub fn truthy(s: &str) -> anyhow::Result<bool> {
     if s.eq_ignore_ascii_case("true")
         || s.eq_ignore_ascii_case("yes")
         || s.eq_ignore_ascii_case("on")

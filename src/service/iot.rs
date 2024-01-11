@@ -1,9 +1,9 @@
 use crate::ble::GoveeBlePacket;
-use crate::lan_api::{DeviceColor, DeviceStatus};
+use crate::lan_api::{truthy, DeviceColor, DeviceStatus};
 use crate::platform_api::from_json;
 use crate::service::state::StateHandle;
 use crate::undoc_api::{ms_timestamp, DeviceEntry, LoginAccountResponse, ParsedOneClick};
-use crate::Args;
+use crate::{opt_env_var, Args};
 use anyhow::Context;
 use mosquitto_rs::{Event, QoS};
 use serde::Deserialize;
@@ -225,6 +225,15 @@ impl IotClient {
     }
 }
 
+/// Some data is not meant for human eyes except in very unusual circumstances.
+fn should_log_sensitive_data() -> bool {
+    if let Ok(Some(v)) = opt_env_var::<String>("GOVEE_LOG_SENSITIVE_DATA") {
+        truthy(&v).unwrap_or(false)
+    } else {
+        false
+    }
+}
+
 pub async fn start_iot_client(
     args: &Args,
     state: StateHandle,
@@ -235,9 +244,13 @@ pub async fn start_iot_client(
         Some(a) => a,
         None => client.login_account_cached().await?,
     };
-    log::trace!("{acct:#?}");
+    if should_log_sensitive_data() {
+        log::trace!("{acct:#?}");
+    }
     let res = client.get_iot_key(&acct.token).await?;
-    log::trace!("{res:#?}");
+    if should_log_sensitive_data() {
+        log::trace!("{res:#?}");
+    }
 
     let key_bytes = data_encoding::BASE64.decode(res.p12.as_bytes())?;
 
