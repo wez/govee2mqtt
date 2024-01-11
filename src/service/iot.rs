@@ -8,6 +8,7 @@ use anyhow::Context;
 use mosquitto_rs::{Event, QoS};
 use serde::Deserialize;
 use std::time::Duration;
+use tokio::time::timeout;
 
 #[derive(Clone)]
 pub struct IotClient {
@@ -254,6 +255,7 @@ pub async fn start_iot_client(
 
     let key_bytes = data_encoding::BASE64.decode(res.p12.as_bytes())?;
 
+    log::trace!("parsing IoT PFX key");
     let container = p12::PFX::parse(&key_bytes).context("PFX::parse")?;
     for key in container.key_bags(&res.p12_pass).context("key_bags")? {
         let priv_key = openssl::pkey::PKey::private_key_from_der(&key).context("from_der")?;
@@ -286,10 +288,14 @@ pub async fn start_iot_client(
             None,
         )
         .context("configure_tls")?;
-    let status = client
-        .connect(&res.endpoint, 8883, Duration::from_secs(120), None)
-        .await
-        .context("connect")?;
+    log::trace!("Connecting to IoT {} port 8883", res.endpoint);
+    let status = timeout(
+        Duration::from_secs(60),
+        client.connect(&res.endpoint, 8883, Duration::from_secs(120), None),
+    )
+    .await
+    .context("timeout connecting to IoT in AWS")?
+    .context("failed to connect to IoT in AWS")?;
     log::info!("Connected to IoT: {status}");
 
     let subscriptions = client.subscriber().expect("first and only");
