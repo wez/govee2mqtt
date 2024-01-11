@@ -53,3 +53,10 @@ services:
 ```console
 $ docker compose up -d
 ```
+
+5. If you need to review the logs:
+
+```console
+$ docker logs govee2mqtt --follow
+```
+

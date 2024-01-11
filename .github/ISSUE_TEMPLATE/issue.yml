@@ -37,6 +37,7 @@ body:
         Please restart the addon/docker container and capture the startup diagnostics
         here. They include more detailed information about your device and the current
         status as reported by the various APIs.
+        If you're running docker, you can view the logs by running `docker logs govee2mqtt`.
     validations:
       required: true
   - type: textarea
