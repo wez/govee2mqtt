@@ -1,5 +1,5 @@
 use crate::cache::{cache_get, CacheComputeResult, CacheGetOptions};
-use crate::lan_api::boolean_int;
+use crate::lan_api::{boolean_int, truthy};
 use crate::opt_env_var;
 use crate::platform_api::{
     from_json, http_response_body, DeviceCapability, DeviceCapabilityKind, DeviceParameters,
@@ -20,6 +20,36 @@ const HALF_DAY: Duration = Duration::from_secs(3600 * 12);
 const ONE_DAY: Duration = Duration::from_secs(86400);
 const ONE_WEEK: Duration = Duration::from_secs(86400 * 7);
 const FIFTEEN_MINS: Duration = Duration::from_secs(60 * 15);
+
+/// Some data is not meant for human eyes except in very unusual circumstances.
+#[derive(Deserialize, Serialize, Clone)]
+#[serde(transparent)]
+pub struct Redacted<T: std::fmt::Debug>(T);
+
+pub fn should_log_sensitive_data() -> bool {
+    if let Ok(Some(v)) = opt_env_var::<String>("GOVEE_LOG_SENSITIVE_DATA") {
+        truthy(&v).unwrap_or(false)
+    } else {
+        false
+    }
+}
+
+impl<T: std::fmt::Debug> std::fmt::Debug for Redacted<T> {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+        if should_log_sensitive_data() {
+            self.0.fmt(fmt)
+        } else {
+            fmt.write_str("REDACTED")
+        }
+    }
+}
+
+impl<T: std::fmt::Debug> std::ops::Deref for Redacted<T> {
+    type Target = T;
+    fn deref(&self) -> &T {
+        &self.0
+    }
+}
 
 fn user_agent() -> String {
     format!(
@@ -456,7 +486,7 @@ pub struct ParsedOneClick {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ParsedOneClickEntry {
-    pub topic: String,
+    pub topic: Redacted<String>,
     pub device: String,
     pub msgs: Vec<JsonValue>,
 }
@@ -467,8 +497,8 @@ pub struct ParsedOneClickEntry {
 pub struct IotKey {
     pub endpoint: String,
     pub log: String,
-    pub p12: String,
-    pub p12_pass: String,
+    pub p12: Redacted<String>,
+    pub p12_pass: Redacted<String>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -644,7 +674,7 @@ pub struct OneClickIotRuleDevice {
     pub device: String,
     pub sku: String,
 
-    pub topic: String,
+    pub topic: Redacted<String>,
 
     pub ble_address: String,
     pub ble_name: String,
@@ -679,22 +709,22 @@ pub struct OneClickIotRuleDevice {
 #[serde(rename_all = "camelCase")]
 pub struct LoginAccountResponse {
     #[serde(rename = "A")]
-    pub a: String,
+    pub a: Redacted<String>,
     #[serde(rename = "B")]
-    pub b: String,
-    pub account_id: u64,
+    pub b: Redacted<String>,
+    pub account_id: Redacted<u64>,
     /// this is the client id that we passed in
-    pub client: String,
+    pub client: Redacted<String>,
     pub is_savvy_user: bool,
-    pub refresh_token: Option<String>,
+    pub refresh_token: Option<Redacted<String>>,
     pub client_name: Option<String>,
-    pub push_token: Option<String>,
+    pub push_token: Option<Redacted<String>>,
     pub version_code: Option<String>,
     pub version_name: Option<String>,
     pub sys_version: Option<String>,
-    pub token: String,
+    pub token: Redacted<String>,
     pub token_expire_cycle: u32,
-    pub topic: String,
+    pub topic: Redacted<String>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -740,7 +770,8 @@ impl DeviceEntry {
         self.device_ext
             .device_settings
             .topic
-            .as_deref()
+            .as_ref()
+            .map(|t| t.as_str())
             .ok_or_else(|| {
                 anyhow::anyhow!(
                     "device {id} has no topic, is it a BLE-only device?",
@@ -770,7 +801,7 @@ pub struct DeviceSettings {
     pub wifi_name: Option<String>,
     pub address: Option<String>,
     pub ble_name: Option<String>,
-    pub topic: Option<String>,
+    pub topic: Option<Redacted<String>>,
     pub wifi_mac: Option<String>,
     pub pact_type: Option<u32>,
     pub pact_code: Option<u32>,
@@ -782,7 +813,7 @@ pub struct DeviceSettings {
     pub ic_sub_1: Option<u32>,
     #[serde(rename = "ic_sub_2")]
     pub ic_sub_2: Option<u32>,
-    pub secret_code: Option<String>,
+    pub secret_code: Option<Redacted<String>>,
     #[serde(deserialize_with = "boolean_int", default)]
     pub boil_water_completed_noti_on_off: bool,
     #[serde(deserialize_with = "boolean_int", default)]

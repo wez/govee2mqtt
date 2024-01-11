@@ -16,7 +16,7 @@ DevicesResponse {
                         "Govee_H6072_5225",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "",
@@ -153,7 +153,7 @@ DevicesResponse {
                         "Govee_H6072_5048",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "",
@@ -290,7 +290,7 @@ DevicesResponse {
                         "Govee_H6072_3193",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "",
@@ -427,7 +427,7 @@ DevicesResponse {
                         "Govee_H6058_163C",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "",
@@ -451,7 +451,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -566,7 +566,7 @@ DevicesResponse {
                         "Govee_H610A_0C6F",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "",
@@ -594,7 +594,7 @@ DevicesResponse {
                         12,
                     ),
                     secret_code: Some(
-                        "",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -709,7 +709,7 @@ DevicesResponse {
                         "GBK_H61A2_0D17",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "",
@@ -733,7 +733,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -848,7 +848,7 @@ DevicesResponse {
                         "GBK_H619A_DA4B",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "",
@@ -872,7 +872,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -987,7 +987,7 @@ DevicesResponse {
                         "GBK_H619A_CDF5",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "",
@@ -1011,7 +1011,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -1126,7 +1126,7 @@ DevicesResponse {
                         "Govee_H6072_3529",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "",
@@ -1263,7 +1263,7 @@ DevicesResponse {
                         "Govee_H6072_3411",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "",

@@ -18,7 +18,7 @@ DevicesResponse {
                         "Govee_H705B_5630",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -42,7 +42,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -163,7 +163,7 @@ DevicesResponse {
                         "GBK_H61A0_9A82",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -187,7 +187,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -308,7 +308,7 @@ DevicesResponse {
                         "Govee_H70C2_4D46",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -334,7 +334,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -455,7 +455,7 @@ DevicesResponse {
                         "ihoment_H5080_7949",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -479,7 +479,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -600,7 +600,7 @@ DevicesResponse {
                         "ihoment_H7161_D241",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -624,7 +624,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -749,7 +749,7 @@ DevicesResponse {
                         "Govee_H70C1_5C2D",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -775,7 +775,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -896,7 +896,7 @@ DevicesResponse {
                         "Govee_H6046_1573",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -920,7 +920,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -1041,7 +1041,7 @@ DevicesResponse {
                         "ihoment_H5080_8C07",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -1065,7 +1065,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -1186,7 +1186,7 @@ DevicesResponse {
                         "Govee_H61C3_1175",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -1210,7 +1210,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -1331,7 +1331,7 @@ DevicesResponse {
                         "Govee_H6099_1F25",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -1355,7 +1355,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -1476,7 +1476,7 @@ DevicesResponse {
                         "ihoment_H6010_B581",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -1619,7 +1619,7 @@ DevicesResponse {
                         "ihoment_H6010_31C0",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -1762,7 +1762,7 @@ DevicesResponse {
                         "Govee_H7065_0C79",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -1786,7 +1786,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -1907,7 +1907,7 @@ DevicesResponse {
                         "Govee_H70A1_5896",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -1931,7 +1931,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -2052,7 +2052,7 @@ DevicesResponse {
                         "ihoment_H5080_700C",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -2076,7 +2076,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -2197,7 +2197,7 @@ DevicesResponse {
                         "Govee_H7021_3712",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -2340,7 +2340,7 @@ DevicesResponse {
                         "Govee_H7065_3970",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -2364,7 +2364,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -2485,7 +2485,7 @@ DevicesResponse {
                         "Govee_H7065_7660",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -2509,7 +2509,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -2630,7 +2630,7 @@ DevicesResponse {
                         "ihoment_H5080_8595",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -2654,7 +2654,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -2775,7 +2775,7 @@ DevicesResponse {
                         "Govee_H608B_4A31",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -2799,7 +2799,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -2920,7 +2920,7 @@ DevicesResponse {
                         "Govee_H6076_3785",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -2944,7 +2944,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -3065,7 +3065,7 @@ DevicesResponse {
                         "ihoment_H5080_753F",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -3089,7 +3089,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -3210,7 +3210,7 @@ DevicesResponse {
                         "Govee_H7065_3D63",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -3234,7 +3234,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -3355,7 +3355,7 @@ DevicesResponse {
                         "ihoment_H5080_8063",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -3379,7 +3379,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -3500,7 +3500,7 @@ DevicesResponse {
                         "ihoment_H5080_7889",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -3524,7 +3524,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -3645,7 +3645,7 @@ DevicesResponse {
                         "ihoment_H5080_0EB7",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -3669,7 +3669,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -3790,7 +3790,7 @@ DevicesResponse {
                         "Govee_H610A_4688",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -3818,7 +3818,7 @@ DevicesResponse {
                         12,
                     ),
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -4066,7 +4066,7 @@ DevicesResponse {
                         "ihoment_H6110_6449",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: None,
                     pact_type: Some(
@@ -4336,7 +4336,7 @@ DevicesResponse {
                         "ihoment_H5080_6FC1",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -4360,7 +4360,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -4481,7 +4481,7 @@ DevicesResponse {
                         "ihoment_H5082_2D0B",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -4505,7 +4505,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -4635,7 +4635,7 @@ DevicesResponse {
                         "ihoment_H5080_6F87",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -4659,7 +4659,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -4780,7 +4780,7 @@ DevicesResponse {
                         "ihoment_H5080_144D",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -4804,7 +4804,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -4925,7 +4925,7 @@ DevicesResponse {
                         "ihoment_H5080_1D9B",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -4949,7 +4949,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -5070,7 +5070,7 @@ DevicesResponse {
                         "ihoment_H5080_4F01",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -5094,7 +5094,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -5215,7 +5215,7 @@ DevicesResponse {
                         "ihoment_H5080_17D3",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -5239,7 +5239,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -5360,7 +5360,7 @@ DevicesResponse {
                         "ihoment_H5082_5B01",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -5384,7 +5384,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -5514,7 +5514,7 @@ DevicesResponse {
                         "ihoment_H5082_1CD7",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -5538,7 +5538,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -5668,7 +5668,7 @@ DevicesResponse {
                         "ihoment_H5080_4F27",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -5692,7 +5692,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -5813,7 +5813,7 @@ DevicesResponse {
                         "ihoment_H5082_6375",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -5837,7 +5837,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -5967,7 +5967,7 @@ DevicesResponse {
                         "ihoment_H5080_1CBB",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -5991,7 +5991,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -6112,7 +6112,7 @@ DevicesResponse {
                         "ihoment_H5080_A521",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -6136,7 +6136,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -6257,7 +6257,7 @@ DevicesResponse {
                         "ihoment_H5080_11D1",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -6281,7 +6281,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -6402,7 +6402,7 @@ DevicesResponse {
                         "ihoment_H5080_1067",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -6426,7 +6426,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -6547,7 +6547,7 @@ DevicesResponse {
                         "ihoment_H5080_738F",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -6571,7 +6571,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -6692,7 +6692,7 @@ DevicesResponse {
                         "GBK_H6159_B4FD",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -6833,7 +6833,7 @@ DevicesResponse {
                         "ihoment_H6110_69EE",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: None,
                     pact_type: Some(
@@ -6974,7 +6974,7 @@ DevicesResponse {
                         "Govee_H6056_7E5D",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -7117,7 +7117,7 @@ DevicesResponse {
                         "Govee_H6087_3A85",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -7141,7 +7141,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -7262,7 +7262,7 @@ DevicesResponse {
                         "Govee_H7065_440A",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -7286,7 +7286,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -7407,7 +7407,7 @@ DevicesResponse {
                         "Govee_H6046_4877",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -7431,7 +7431,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -7552,7 +7552,7 @@ DevicesResponse {
                         "GBK_H6159_FCD7",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -7695,7 +7695,7 @@ DevicesResponse {
                         "GBK_H6159_28B3",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -7838,7 +7838,7 @@ DevicesResponse {
                         "Govee_H70B1_8500",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: None,
                     pact_type: Some(
@@ -7862,7 +7862,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -7983,7 +7983,7 @@ DevicesResponse {
                         "Govee_H7050_1261",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -8007,7 +8007,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -8128,7 +8128,7 @@ DevicesResponse {
                         "Govee_H7055_4955",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -8152,7 +8152,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -8273,7 +8273,7 @@ DevicesResponse {
                         "ihoment_H6008_575D",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -8416,7 +8416,7 @@ DevicesResponse {
                         "GBK_H6159_3EE2",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -8559,7 +8559,7 @@ DevicesResponse {
                         "Govee_H6056_2239",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -8702,7 +8702,7 @@ DevicesResponse {
                         "Govee_H6056_1455",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -9002,7 +9002,7 @@ DevicesResponse {
                         "ihoment_H7111_FD21",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -9026,7 +9026,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -9292,7 +9292,7 @@ DevicesResponse {
                         "Govee_H6052_5F1F",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -9435,7 +9435,7 @@ DevicesResponse {
                         "Govee_H6052_5F60",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -9578,7 +9578,7 @@ DevicesResponse {
                         "Govee_H6052_7431",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -9721,7 +9721,7 @@ DevicesResponse {
                         "Govee_H6056_1E82",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -9864,7 +9864,7 @@ DevicesResponse {
                         "ihoment_H6008_5A3F",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -10007,7 +10007,7 @@ DevicesResponse {
                         "Govee_H6056_1449",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -10150,7 +10150,7 @@ DevicesResponse {
                         "Govee_H6056_1F44",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -10293,7 +10293,7 @@ DevicesResponse {
                         "Govee_H6056_6B84",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -10583,7 +10583,7 @@ DevicesResponse {
                         "ihoment_H7111_8CAF",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -10607,7 +10607,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -10861,7 +10861,7 @@ DevicesResponse {
                         "GBK_H6159_3E76",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -11004,7 +11004,7 @@ DevicesResponse {
                         "GBK_H6159_9B9A",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -11147,7 +11147,7 @@ DevicesResponse {
                         "GBK_H6159_0BE2",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -11290,7 +11290,7 @@ DevicesResponse {
                         "GBK_H6159_0CEB",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -11433,7 +11433,7 @@ DevicesResponse {
                         "ihoment_H6008_42C1",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -11576,7 +11576,7 @@ DevicesResponse {
                         "ihoment_H6008_42DD",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -11977,7 +11977,7 @@ DevicesResponse {
                         "ihoment_H6008_5BC7",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -12120,7 +12120,7 @@ DevicesResponse {
                         "ihoment_H6008_3785",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -12263,7 +12263,7 @@ DevicesResponse {
                         "ihoment_H6008_C505",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -12406,7 +12406,7 @@ DevicesResponse {
                         "ihoment_H6008_5E07",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -12678,7 +12678,7 @@ DevicesResponse {
                         "ihoment_H6008_847B",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -12821,7 +12821,7 @@ DevicesResponse {
                         "ihoment_H6008_0F23",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -12964,7 +12964,7 @@ DevicesResponse {
                         "ihoment_H6008_1269",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -13236,7 +13236,7 @@ DevicesResponse {
                         "GBK_H6159_6DCD",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -13508,7 +13508,7 @@ DevicesResponse {
                         "ihoment_H6008_DFED",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -13651,7 +13651,7 @@ DevicesResponse {
                         "ihoment_H6008_862D",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -13794,7 +13794,7 @@ DevicesResponse {
                         "ihoment_H6008_9985",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -13937,7 +13937,7 @@ DevicesResponse {
                         "ihoment_H6008_3A87",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -14080,7 +14080,7 @@ DevicesResponse {
                         "ihoment_H6008_5BAF",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -14352,7 +14352,7 @@ DevicesResponse {
                         "ihoment_H6008_DFE5",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -14495,7 +14495,7 @@ DevicesResponse {
                         "ihoment_H6008_93C3",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -14638,7 +14638,7 @@ DevicesResponse {
                         "ihoment_H6008_315F",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -14781,7 +14781,7 @@ DevicesResponse {
                         "GBK_H6182_0C43",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -14924,7 +14924,7 @@ DevicesResponse {
                         "GBK_H61B2_E43F",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -14948,7 +14948,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -15069,7 +15069,7 @@ DevicesResponse {
                         "Govee_H605C_134F",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -15093,7 +15093,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -15214,7 +15214,7 @@ DevicesResponse {
                         "ihoment_H6141_C870",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -15357,7 +15357,7 @@ DevicesResponse {
                         "ihoment_H7123_61C9",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -15381,7 +15381,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -15506,7 +15506,7 @@ DevicesResponse {
                         "ihoment_H7170_8FEB",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -15530,7 +15530,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: true,
@@ -15655,7 +15655,7 @@ DevicesResponse {
                         "ihoment_H6071_A32D",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -15679,7 +15679,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -15800,7 +15800,7 @@ DevicesResponse {
                         "ihoment_H7121_2F07",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -15824,7 +15824,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -15949,7 +15949,7 @@ DevicesResponse {
                         "ihoment_H6142_7A4B",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -16332,7 +16332,7 @@ DevicesResponse {
                         "ihoment_H6110_F718",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: None,
                     pact_type: Some(
@@ -16473,7 +16473,7 @@ DevicesResponse {
                         "Govee_H6061_2C39",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -16497,7 +16497,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -16620,7 +16620,7 @@ DevicesResponse {
                         "GBK_H6143_7BEF",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -16761,7 +16761,7 @@ DevicesResponse {
                         "GVH5106_0445",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -16779,7 +16779,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: false,
                     boil_water_exception_noti_on_off: false,
@@ -16906,7 +16906,7 @@ DevicesResponse {
                         "ihoment_H6110_AC5B",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: None,
                     pact_type: Some(
@@ -17047,7 +17047,7 @@ DevicesResponse {
                         "ihoment_H5080_BB03",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -17071,7 +17071,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -17192,7 +17192,7 @@ DevicesResponse {
                         "ihoment_H5080_4451",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -17216,7 +17216,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -17337,7 +17337,7 @@ DevicesResponse {
                         "Govee_H705B_5594",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -17361,7 +17361,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -17482,7 +17482,7 @@ DevicesResponse {
                         "Govee_H7060_4598",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -17506,7 +17506,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -17627,7 +17627,7 @@ DevicesResponse {
                         "Govee_H7050_237C",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -17651,7 +17651,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -17911,7 +17911,7 @@ DevicesResponse {
                         "Govee_H7060_2616",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -17935,7 +17935,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -18056,7 +18056,7 @@ DevicesResponse {
                         "Govee_H7061_0C2C",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -18080,7 +18080,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -18340,7 +18340,7 @@ DevicesResponse {
                         "ihoment_H7111_70F9",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -18364,7 +18364,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -18489,7 +18489,7 @@ DevicesResponse {
                         "ihoment_H7121_EC67",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -18513,7 +18513,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -18638,7 +18638,7 @@ DevicesResponse {
                         "ihoment_H5080_1A1F",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -18662,7 +18662,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -18783,7 +18783,7 @@ DevicesResponse {
                         "ihoment_H6008_1DFB",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -18926,7 +18926,7 @@ DevicesResponse {
                         "ihoment_H6008_B659",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -19069,7 +19069,7 @@ DevicesResponse {
                         "ihoment_H6008_B67B",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -19212,7 +19212,7 @@ DevicesResponse {
                         "GBK_H6159_9D77",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -19355,7 +19355,7 @@ DevicesResponse {
                         "Govee_H7050_6F81",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -19379,7 +19379,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -19500,7 +19500,7 @@ DevicesResponse {
                         "Govee_H6056_0B67",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -19643,7 +19643,7 @@ DevicesResponse {
                         "ihoment_H6141_B46C",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -19786,7 +19786,7 @@ DevicesResponse {
                         "Govee_H6051_323E",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -19810,7 +19810,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -19931,7 +19931,7 @@ DevicesResponse {
                         "Govee_H610A_5249",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -19959,7 +19959,7 @@ DevicesResponse {
                         12,
                     ),
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -20094,7 +20094,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: false,
                     boil_water_exception_noti_on_off: false,
@@ -20213,7 +20213,7 @@ DevicesResponse {
                         "Govee_H7050_6D23",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",
@@ -20237,7 +20237,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "secret",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -20358,7 +20358,7 @@ DevicesResponse {
                         "Govee_H6199_113C",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX",

@@ -53,7 +53,7 @@ OneClickResponse {
                                     name: "Study Floor Lamp 1",
                                     device: "xx:34:11",
                                     sku: "H6072",
-                                    topic: "GD/",
+                                    topic: REDACTED,
                                     ble_address: "",
                                     ble_name: "Govee_H6072_3411",
                                     device_splicing_status: 0,

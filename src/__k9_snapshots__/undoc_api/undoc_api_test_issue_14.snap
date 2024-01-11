@@ -18,7 +18,7 @@ DevicesResponse {
                         "GBK_H618A_074D",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX:XX:XX:XX",
@@ -42,7 +42,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "=",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -163,7 +163,7 @@ DevicesResponse {
                         "Govee_H6199_4C67",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX:XX:XX:XX",
@@ -306,7 +306,7 @@ DevicesResponse {
                         "GBK_H618C_B4D0",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX:XX:XX:XX",
@@ -330,7 +330,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "/K3UYYw=",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -451,7 +451,7 @@ DevicesResponse {
                         "GBK_H618A_96A0",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: None,
                     pact_type: Some(
@@ -473,7 +473,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "=",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -594,7 +594,7 @@ DevicesResponse {
                         "GBK_H618C_3227",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX:XX:XX:XX",
@@ -618,7 +618,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "=",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -737,7 +737,7 @@ DevicesResponse {
                         "ihoment_H6159_AD23",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: None,
                     pact_type: None,
@@ -870,7 +870,7 @@ DevicesResponse {
                         "GBK_H618A_8E63",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: Some(
                         "XX:XX:XX:XX:XX:XX",
@@ -894,7 +894,7 @@ DevicesResponse {
                     ic_sub_1: None,
                     ic_sub_2: None,
                     secret_code: Some(
-                        "=",
+                        REDACTED,
                     ),
                     boil_water_completed_noti_on_off: true,
                     boil_water_exception_noti_on_off: false,
@@ -1013,7 +1013,7 @@ DevicesResponse {
                         "ihoment_H6159_245F",
                     ),
                     topic: Some(
-                        "GD/",
+                        REDACTED,
                     ),
                     wifi_mac: None,
                     pact_type: None,
