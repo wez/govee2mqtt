@@ -26,8 +26,8 @@ GOVEE_MQTT_PORT=1883
 # Always use colorized output
 RUST_LOG_STYLE=always
 
-# If you need to debug, uncomment this line
-#RUST_LOG=trace
+# If you are asked to set the debug level, uncomment the next line
+#RUST_LOG=govee=trace
 
 # Set the timezone for timestamps in the log
 TZ=America/Phoenix
