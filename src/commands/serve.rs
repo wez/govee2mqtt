@@ -6,9 +6,12 @@ use crate::service::iot::start_iot_client;
 use crate::service::state::StateHandle;
 use crate::version_info::govee_version;
 use chrono::Utc;
+use once_cell::sync::Lazy;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::time::{sleep, Duration};
+
+pub const POLL_INTERVAL: Lazy<chrono::Duration> = Lazy::new(|| chrono::Duration::seconds(900));
 
 #[derive(clap::Parser, Debug)]
 pub struct ServeCommand {
@@ -27,7 +30,7 @@ async fn poll_single_device(state: &StateHandle, device: &Device) -> anyhow::Res
 
     let can_update = match &device.last_polled {
         None => true,
-        Some(last) => now - last > chrono::Duration::seconds(900),
+        Some(last) => now - last > *POLL_INTERVAL,
     };
 
     if !can_update {
@@ -37,7 +40,7 @@ async fn poll_single_device(state: &StateHandle, device: &Device) -> anyhow::Res
     let device_state = device.device_state();
     let needs_update = match &device_state {
         None => true,
-        Some(state) => now - state.updated > chrono::Duration::seconds(900),
+        Some(state) => now - state.updated > *POLL_INTERVAL,
     };
 
     if !needs_update {

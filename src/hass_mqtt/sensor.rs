@@ -1,3 +1,4 @@
+use crate::commands::serve::POLL_INTERVAL;
 use crate::hass_mqtt::base::{Device, EntityConfig, Origin};
 use crate::hass_mqtt::instance::{publish_entity_config, EntityInstance};
 use crate::platform_api::DeviceCapability;
@@ -5,7 +6,9 @@ use crate::service::device::Device as ServiceDevice;
 use crate::service::hass::{availability_topic, topic_safe_id, topic_safe_string, HassClient};
 use crate::service::state::StateHandle;
 use async_trait::async_trait;
+use chrono::Utc;
 use serde::Serialize;
+use serde_json::json;
 
 #[derive(Serialize, Clone, Debug)]
 pub struct SensorConfig {
@@ -14,6 +17,7 @@ pub struct SensorConfig {
 
     pub state_topic: String,
     pub unit_of_measurement: Option<String>,
+    pub json_attributes_topic: Option<String>,
 }
 
 impl SensorConfig {
@@ -62,6 +66,7 @@ impl GlobalFixedDiagnostic {
                 },
                 state_topic: format!("gv2mqtt/sensor/{unique_id}/state"),
                 unit_of_measurement: None,
+                json_attributes_topic: None,
             },
             value: value.into(),
         }
@@ -96,6 +101,7 @@ impl CapabilitySensor {
         let name = match instance.instance.as_str() {
             "sensorTemperature" => "Temperature".to_string(),
             "sensorHumidity" => "Humidity".to_string(),
+            "online" => "Connected to Govee Cloud".to_string(),
             _ => instance.instance.to_string(),
         };
 
@@ -113,6 +119,7 @@ impl CapabilitySensor {
                 },
                 state_topic: format!("gv2mqtt/sensor/{unique_id}/state"),
                 unit_of_measurement,
+                json_attributes_topic: None,
             },
             device_id: device.id.to_string(),
             state: state.clone(),
@@ -173,6 +180,86 @@ impl EntityInstance for CapabilitySensor {
             "CapabilitySensor::notify_state: didn't find state for {device} {instance}",
             instance = self.instance_name
         );
+        Ok(())
+    }
+}
+
+pub struct DeviceStatusDiagnostic {
+    sensor: SensorConfig,
+    device_id: String,
+    state: StateHandle,
+}
+
+impl DeviceStatusDiagnostic {
+    pub fn new(device: &ServiceDevice, state: &StateHandle) -> Self {
+        let unique_id = format!("sensor-{id}-gv2mqtt-status", id = topic_safe_id(device),);
+
+        Self {
+            sensor: SensorConfig {
+                base: EntityConfig {
+                    availability_topic: availability_topic(),
+                    name: Some("Status".to_string()),
+                    entity_category: Some("diagnostic".to_string()),
+                    origin: Origin::default(),
+                    device: Device::for_device(device),
+                    unique_id: unique_id.clone(),
+                    device_class: None,
+                    icon: None,
+                },
+                state_topic: format!("gv2mqtt/sensor/{unique_id}/state"),
+                json_attributes_topic: Some(format!("gv2mqtt/sensor/{unique_id}/attributes")),
+                unit_of_measurement: None,
+            },
+            device_id: device.id.to_string(),
+            state: state.clone(),
+        }
+    }
+}
+
+#[async_trait]
+impl EntityInstance for DeviceStatusDiagnostic {
+    async fn publish_config(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
+        self.sensor.publish(&state, &client).await
+    }
+
+    async fn notify_state(&self, client: &HassClient) -> anyhow::Result<()> {
+        let device = self
+            .state
+            .device_by_id(&self.device_id)
+            .await
+            .expect("device to exist");
+
+        let iot_state = device.compute_iot_device_state();
+        let lan_state = device.compute_lan_device_state();
+        let http_state = device.compute_http_device_state();
+        let device_state = device.device_state();
+
+        let now = Utc::now();
+
+        let threshold = *POLL_INTERVAL + chrono::Duration::seconds(30);
+
+        let summary = match &device_state {
+            Some(state) => {
+                if now - state.updated > threshold {
+                    "Missing".to_string()
+                } else {
+                    "Available".to_string()
+                }
+            }
+            None => "Unknown".to_string(),
+        };
+
+        let attributes = json!({
+            "iot": iot_state,
+            "lan": lan_state,
+            "http": http_state,
+            "overall": device_state,
+        });
+
+        self.sensor.notify_state(&client, &summary).await?;
+        if let Some(topic) = &self.sensor.json_attributes_topic {
+            client.publish_obj(topic, attributes).await?;
+        }
         Ok(())
     }
 }

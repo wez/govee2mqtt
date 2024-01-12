@@ -5,7 +5,7 @@ use crate::hass_mqtt::instance::EntityList;
 use crate::hass_mqtt::light::DeviceLight;
 use crate::hass_mqtt::number::WorkModeNumber;
 use crate::hass_mqtt::scene::SceneConfig;
-use crate::hass_mqtt::sensor::{CapabilitySensor, GlobalFixedDiagnostic};
+use crate::hass_mqtt::sensor::{CapabilitySensor, DeviceStatusDiagnostic, GlobalFixedDiagnostic};
 use crate::hass_mqtt::switch::CapabilitySwitch;
 use crate::platform_api::{
     DeviceCapability, DeviceCapabilityKind, DeviceParameters, DeviceType, EnumOption,
@@ -184,6 +184,8 @@ pub async fn enumerate_entities_for_device<'a>(
     if !d.is_controllable() {
         return Ok(());
     }
+
+    entities.add(DeviceStatusDiagnostic::new(d, state));
 
     if d.supports_rgb() || d.get_color_temperature_range().is_some() || d.supports_brightness() {
         entities.add(DeviceLight::for_device(&d, state, None).await?);
