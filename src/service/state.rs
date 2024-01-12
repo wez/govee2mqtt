@@ -501,7 +501,9 @@ impl State {
             }
         }
 
-        anyhow::bail!("Unable to list scenes for {device}");
+        log::trace!("Platform API unavailable: Don't know how to list scenes for {device}");
+
+        Ok(vec![])
     }
 
     pub async fn device_set_scene(
