@@ -42,6 +42,16 @@ via the [Home Assistant MQTT Integration](https://www.home-assistant.io/integrat
 
 * [Check out the FAQ](docs/FAQ.md)
 
+## Want to show your support or gratitude?
+
+It takes significant effort to build, maintain and support users of software
+like this. If you can spare something to say thanks, it is appreciated!
+
+* [Sponsor me on Github](https://github.com/sponsors/wez)
+* [Sponsor me on Patreon](https://patreon.com/WezFurlong)
+* [Sponsor me on Ko-Fi](https://ko-fi.com/wezfurlong)
+* [Sponsor me via liberapay](https://liberapay.com/wez)
+
 ## Credits
 
 This work is based on my earlier work with [Govee LAN
