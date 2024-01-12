@@ -186,6 +186,7 @@ pub async fn enumerate_entities_for_device<'a>(
     }
 
     entities.add(DeviceStatusDiagnostic::new(d, state));
+    entities.add(ButtonConfig::request_platform_data_for_device(d));
 
     if d.supports_rgb() || d.get_color_temperature_range().is_some() || d.supports_brightness() {
         entities.add(DeviceLight::for_device(&d, state, None).await?);

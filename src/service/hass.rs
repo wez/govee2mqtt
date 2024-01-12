@@ -213,6 +213,22 @@ pub struct IdParameter {
     pub id: String,
 }
 
+/// Someone clicked the "Request Platform API State" button
+async fn mqtt_request_platform_data(
+    Params(IdParameter { id }): Params<IdParameter>,
+    State(state): State<StateHandle>,
+) -> anyhow::Result<()> {
+    let device = state
+        .resolve_device(&id)
+        .await
+        .ok_or_else(|| anyhow::anyhow!("device '{id}' not found"))?;
+    log::info!("Request Platform API State for {device}");
+    if !state.poll_platform_api(&device).await? {
+        log::warn!("Unable to poll platform API for {device}");
+    }
+    Ok(())
+}
+
 #[derive(Deserialize, Debug, Clone)]
 struct HassLightCommand {
     state: String,
@@ -485,6 +501,12 @@ async fn run_mqtt_loop(
 
         router.route(oneclick_topic(), mqtt_oneclick).await?;
         router.route(purge_cache_topic(), mqtt_purge_caches).await?;
+        router
+            .route(
+                "gv2mqtt/:id/request-platform-data",
+                mqtt_request_platform_data,
+            )
+            .await?;
         router
             .route(
                 "gv2mqtt/number/:id/command/:mode_name/:work_mode",

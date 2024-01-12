@@ -71,6 +71,31 @@ impl ButtonConfig {
             payload_press: None,
         }
     }
+
+    pub fn request_platform_data_for_device(device: &ServiceDevice) -> Self {
+        let unique_id = format!(
+            "gv2mqtt-{id}-request-platform-data",
+            id = topic_safe_id(device)
+        );
+        let command_topic = format!(
+            "gv2mqtt/{id}/request-platform-data",
+            id = topic_safe_id(device)
+        );
+        Self {
+            base: EntityConfig {
+                availability_topic: availability_topic(),
+                name: Some("Request Platform API State".to_string()),
+                entity_category: Some("diagnostic".to_string()),
+                origin: Origin::default(),
+                device: Device::for_device(device),
+                unique_id: unique_id.clone(),
+                device_class: None,
+                icon: None,
+            },
+            command_topic,
+            payload_press: None,
+        }
+    }
 }
 
 #[async_trait]

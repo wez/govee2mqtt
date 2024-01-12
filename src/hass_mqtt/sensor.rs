@@ -16,7 +16,9 @@ pub struct SensorConfig {
     pub base: EntityConfig,
 
     pub state_topic: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub unit_of_measurement: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub json_attributes_topic: Option<String>,
 }
 
@@ -232,6 +234,8 @@ impl EntityInstance for DeviceStatusDiagnostic {
         let iot_state = device.compute_iot_device_state();
         let lan_state = device.compute_lan_device_state();
         let http_state = device.compute_http_device_state();
+        let platform_metadata = &device.http_device_info;
+        let platform_state = &device.http_device_state;
         let device_state = device.device_state();
 
         let now = Utc::now();
@@ -253,6 +257,8 @@ impl EntityInstance for DeviceStatusDiagnostic {
             "iot": iot_state,
             "lan": lan_state,
             "http": http_state,
+            "platform_metadata": platform_metadata,
+            "platform_state": platform_state,
             "overall": device_state,
         });
 
