@@ -28,14 +28,14 @@ The Govee API doesn't support returning video effects, so they are not made
 available in the list of effects for a light.
 
 What you can do to make video effects available in Home Assistant is to use the
-Govee Home App to create a "Tap-to-Run" shortcut that activates the desired
-mode for the device.
+Govee Home App to create either a "Tap-to-Run" shortcut or a saved "Snapshot"
+that activates the desired mode for the device.
 
 Then, go to the "Govee to MQTT" device in the MQTT integration in Home
 Assistant and click the "Purge Caches" button.
 
-Now the Tap-to-Run shortcut will be mapped into Home Assistant as a Scene
-entity.
+* Tap-to-Run will be mapped into Home Assistant as a Scene entity.
+* Snapshots will appear in the list of Effects on the device itself.
 
 ## My Device(s) appear as Greyed Out and Unavailable in Home Assistant
 
