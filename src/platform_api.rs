@@ -147,6 +147,10 @@ impl GoveeApiClient {
         &self,
         device: &HttpDeviceInfo,
     ) -> anyhow::Result<Vec<DeviceCapability>> {
+        if !device.supports_dynamic_scenes() {
+            return Ok(vec![]);
+        }
+
         let key = format!("scene-list-diy-{}-{}", device.sku, device.device);
         cache_get(
             CacheGetOptions {
@@ -181,6 +185,10 @@ impl GoveeApiClient {
         &self,
         device: &HttpDeviceInfo,
     ) -> anyhow::Result<Vec<DeviceCapability>> {
+        if !device.supports_dynamic_scenes() {
+            return Ok(vec![]);
+        }
+
         let key = format!("scene-list-{}-{}", device.sku, device.device);
         cache_get(
             CacheGetOptions {
@@ -633,6 +641,13 @@ impl HttpDeviceInfo {
 
     pub fn supports_brightness(&self) -> bool {
         self.capability_by_instance("brightness").is_some()
+    }
+
+    pub fn supports_dynamic_scenes(&self) -> bool {
+        self
+            .capabilities
+            .iter()
+            .any(|cap| cap.kind == DeviceCapabilityKind::DynamicScene)
     }
 
     /// If supported, returns the number of segments

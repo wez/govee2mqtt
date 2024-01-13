@@ -488,13 +488,6 @@ impl State {
 
     pub async fn device_list_scenes(&self, device: &Device) -> anyhow::Result<Vec<String>> {
         // TODO: some plumbing to maintain offline scene controls for preferred-LAN control
-
-        if let Some(quirk) = device.resolve_quirk() {
-            if quirk.supports_scenes == Some(false) {
-                return Ok(vec![]);
-            }
-        }
-
         if let Some(client) = self.get_platform_client().await {
             if let Some(info) = &device.http_device_info {
                 return Ok(sort_and_dedup_scenes(client.list_scene_names(info).await?));
