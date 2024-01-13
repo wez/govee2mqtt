@@ -379,6 +379,10 @@ impl Device {
     /// Indicate whether we require the platform API data in order
     /// to correctly report the device
     pub fn needs_platform_poll(&self) -> bool {
+        if !self.iot_api_supported() {
+            return true;
+        }
+
         let device_type = self.device_type();
         match (device_type, self.sku.as_str()) {
             (_, "H7160") => false,
@@ -456,6 +460,14 @@ impl Device {
             .as_ref()
             .map(|info| info.supports_brightness())
             .unwrap_or(false)
+    }
+
+    pub fn iot_api_supported(&self) -> bool {
+        if let Some(quirk) = self.resolve_quirk() {
+            return quirk.iot_api_supported;
+        }
+
+        false
     }
 
     pub fn supports_rgb(&self) -> bool {

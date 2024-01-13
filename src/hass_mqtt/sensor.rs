@@ -4,6 +4,7 @@ use crate::hass_mqtt::instance::{publish_entity_config, EntityInstance};
 use crate::platform_api::DeviceCapability;
 use crate::service::device::Device as ServiceDevice;
 use crate::service::hass::{availability_topic, topic_safe_id, topic_safe_string, HassClient};
+use crate::service::quirks::{HumidityUnits, TemperatureUnits};
 use crate::service::state::StateHandle;
 use async_trait::async_trait;
 use chrono::Utc;
@@ -143,29 +144,36 @@ impl EntityInstance for CapabilitySensor {
             .await
             .expect("device to exist");
 
+        let quirk = device.resolve_quirk();
+
         if let Some(state) = &device.http_device_state {
             for cap in &state.capabilities {
                 if cap.instance == self.instance_name {
                     let value = match self.instance_name.as_str() {
                         "sensorTemperature" => {
-                            // Valid for H5103 at least
+                            let units = quirk
+                                .and_then(|q| q.platform_temperature_sensor_units)
+                                .unwrap_or(TemperatureUnits::Celsius);
+
                             match cap
                                 .state
                                 .pointer("/value")
                                 .and_then(|v| v.as_f64())
-                                .map(|v| v / 100.)
+                                .map(|v| units.from_reading_to_celsius(v))
                             {
                                 Some(v) => v.to_string(),
                                 None => "".to_string(),
                             }
                         }
                         "sensorHumidity" => {
-                            // Valid for H5103 at least
+                            let units = quirk
+                                .and_then(|q| q.platform_humidity_sensor_units)
+                                .unwrap_or(HumidityUnits::RelativePercent);
                             match cap
                                 .state
                                 .pointer("/value/currentHumidity")
                                 .and_then(|v| v.as_f64())
-                                .map(|v| v / 100.)
+                                .map(|v| units.from_reading_to_relative_percent(v))
                             {
                                 Some(v) => v.to_string(),
                                 None => "".to_string(),

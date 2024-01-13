@@ -3,6 +3,47 @@ use once_cell::sync::Lazy;
 use std::borrow::Cow;
 use std::collections::HashMap;
 
+#[allow(unused)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TemperatureUnits {
+    Celsius,
+    CelsiusTimes100,
+    Farenheit,
+    FarenheitTimes100,
+}
+
+/// Convert farenheit to celsius
+fn ftoc(f: f64) -> f64 {
+    (f - 32.) * (5. / 9.)
+}
+
+impl TemperatureUnits {
+    pub fn from_reading_to_celsius(&self, value: f64) -> f64 {
+        match self {
+            Self::Celsius => value,
+            Self::CelsiusTimes100 => value / 100.,
+            Self::Farenheit => ftoc(value),
+            Self::FarenheitTimes100 => ftoc(value / 100.),
+        }
+    }
+}
+
+#[allow(unused)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum HumidityUnits {
+    RelativePercent,
+    RelativePercentTimes100,
+}
+
+impl HumidityUnits {
+    pub fn from_reading_to_relative_percent(&self, value: f64) -> f64 {
+        match self {
+            Self::RelativePercent => value,
+            Self::RelativePercentTimes100 => value / 100.,
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct Quirk {
     pub sku: Cow<'static, str>,
@@ -14,24 +55,20 @@ pub struct Quirk {
     pub ble_only: bool,
     pub lan_api_capable: bool,
     pub device_type: DeviceType,
+    pub platform_temperature_sensor_units: Option<TemperatureUnits>,
+    pub platform_humidity_sensor_units: Option<HumidityUnits>,
+    /// If true, we can correctly parse all appropriate
+    /// packets from the MQTT subscription and apply
+    /// their state.
+    pub iot_api_supported: bool,
 }
 
 impl Quirk {
-    pub fn light<SKU: Into<Cow<'static, str>>>(sku: SKU, icon: &'static str) -> Self {
-        Self {
-            sku: sku.into(),
-            supports_rgb: true,
-            supports_brightness: true,
-            color_temp_range: Some((2000, 9000)),
-            avoid_platform_api: false,
-            ble_only: false,
-            icon: icon.into(),
-            lan_api_capable: false,
-            device_type: DeviceType::Light,
-        }
-    }
-
-    pub fn humidifier<SKU: Into<Cow<'static, str>>>(sku: SKU) -> Self {
+    pub fn device<SKU: Into<Cow<'static, str>>>(
+        sku: SKU,
+        device_type: DeviceType,
+        icon: &'static str,
+    ) -> Self {
         Self {
             sku: sku.into(),
             supports_rgb: false,
@@ -39,10 +76,33 @@ impl Quirk {
             color_temp_range: None,
             avoid_platform_api: false,
             ble_only: false,
-            icon: "mdi:air-humidifier".into(),
+            icon: icon.into(),
             lan_api_capable: false,
-            device_type: DeviceType::Humidifier,
+            device_type,
+            platform_temperature_sensor_units: None,
+            platform_humidity_sensor_units: None,
+            iot_api_supported: false,
         }
+    }
+
+    pub fn light<SKU: Into<Cow<'static, str>>>(sku: SKU, icon: &'static str) -> Self {
+        Self::device(sku, DeviceType::Light, icon)
+            .with_rgb()
+            .with_brightness()
+            .with_color_temp()
+            .with_iot_api_support(true)
+    }
+
+    pub fn space_heater<SKU: Into<Cow<'static, str>>>(sku: SKU) -> Self {
+        Self::device(sku, DeviceType::Heater, "mdi:heat-wave")
+    }
+
+    pub fn humidifier<SKU: Into<Cow<'static, str>>>(sku: SKU) -> Self {
+        Self::device(sku, DeviceType::Humidifier, "mdi:air-humidifier")
+    }
+
+    pub fn thermometer<SKU: Into<Cow<'static, str>>>(sku: SKU) -> Self {
+        Self::device(sku, DeviceType::Thermometer, "mdi:thermometer")
     }
 
     pub fn with_rgb(mut self) -> Self {
@@ -55,7 +115,21 @@ impl Quirk {
         self
     }
 
-    #[allow(unused)]
+    pub fn with_platform_temperature_sensor_units(mut self, units: TemperatureUnits) -> Self {
+        self.platform_temperature_sensor_units = Some(units);
+        self
+    }
+
+    pub fn with_platform_humidity_sensor_units(mut self, units: HumidityUnits) -> Self {
+        self.platform_humidity_sensor_units = Some(units);
+        self
+    }
+
+    pub fn with_iot_api_support(mut self, supported: bool) -> Self {
+        self.iot_api_supported = supported;
+        self
+    }
+
     pub fn with_color_temp(mut self) -> Self {
         self.color_temp_range = Some((2000, 9000));
         self
@@ -110,8 +184,20 @@ fn load_quirks() -> HashMap<String, Quirk> {
         // Humidifer with mangled platform API data
         Quirk::humidifier("H7160")
             .with_broken_platform()
+            .with_iot_api_support(true)
             .with_rgb()
             .with_brightness(),
+        Quirk::space_heater("H7131")
+            .with_platform_temperature_sensor_units(TemperatureUnits::Farenheit)
+            .with_rgb()
+            .with_brightness(),
+        Quirk::space_heater("H713A")
+            .with_platform_temperature_sensor_units(TemperatureUnits::Farenheit),
+        Quirk::space_heater("H7135")
+            .with_platform_temperature_sensor_units(TemperatureUnits::Farenheit),
+        Quirk::thermometer("H5103")
+            .with_platform_temperature_sensor_units(TemperatureUnits::CelsiusTimes100)
+            .with_platform_humidity_sensor_units(HumidityUnits::RelativePercentTimes100),
         // Lights from the list of LAN API enabled devices
         // at <https://app-h5.govee.com/user-manual/wlan-guide>
         Quirk::lan_api_capable_light("H6072", FLOOR_LAMP),

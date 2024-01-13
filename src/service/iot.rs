@@ -398,31 +398,37 @@ pub async fn start_iot_client(
                                     }
 
                                     if let Some(op) = &packet.op {
-                                        for cmd in &op.command {
-                                            match cmd {
-                                                GoveeBlePacket::NotifyHumidifierNightlight(nl) => {
-                                                    state.brightness = nl.brightness;
-                                                    state.color = DeviceColor {
-                                                        r: nl.r,
-                                                        g: nl.g,
-                                                        b: nl.b,
-                                                    };
-                                                    device.set_nightlight_state(nl.clone());
+                                        if device.iot_api_supported() {
+                                            for cmd in &op.command {
+                                                match cmd {
+                                                    GoveeBlePacket::NotifyHumidifierNightlight(
+                                                        nl,
+                                                    ) => {
+                                                        state.brightness = nl.brightness;
+                                                        state.color = DeviceColor {
+                                                            r: nl.r,
+                                                            g: nl.g,
+                                                            b: nl.b,
+                                                        };
+                                                        device.set_nightlight_state(nl.clone());
+                                                    }
+                                                    GoveeBlePacket::NotifyHumidifierAutoMode {
+                                                        param,
+                                                    } => {
+                                                        device.set_target_humidity(
+                                                            param.as_percent(),
+                                                        );
+                                                    }
+                                                    GoveeBlePacket::NotifyHumidifierMode {
+                                                        mode,
+                                                        param,
+                                                    } => {
+                                                        device.set_humidifier_work_mode_and_param(
+                                                            *mode, *param,
+                                                        );
+                                                    }
+                                                    _ => {}
                                                 }
-                                                GoveeBlePacket::NotifyHumidifierAutoMode {
-                                                    param,
-                                                } => {
-                                                    device.set_target_humidity(param.as_percent());
-                                                }
-                                                GoveeBlePacket::NotifyHumidifierMode {
-                                                    mode,
-                                                    param,
-                                                } => {
-                                                    device.set_humidifier_work_mode_and_param(
-                                                        *mode, *param,
-                                                    );
-                                                }
-                                                _ => {}
                                             }
                                         }
                                     }
