@@ -94,18 +94,85 @@ impl PacketManager {
     pub fn new() -> Self {
         let mut all_codecs = vec![];
 
-        all_codecs.push(PacketCodec::new(
-            &["H7160"],
-            |mode: &HumidifierMode| Ok(finish(vec![0x33, 0x05, mode.mode, mode.param])),
-            |data| match &data[0..data.len().saturating_sub(1)] {
-                [0x33, 0x05, mode, param, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] => {
-                    Ok(GoveeBlePacket::SetHumidifierMode(HumidifierMode {
-                        mode: *mode,
-                        param: *param,
-                    }))
+        macro_rules! encode_body {
+            // Tail case: nothing to do
+            ($target:expr,$input:expr,) => {};
+
+            // Match a constant byte; emit it
+            ($target:expr,$input:expr, $expected:literal, $($tail:tt)*) => {
+                    $target.push($expected);
+                    encode_body!($target, $input, $($tail)*);
+            };
+
+            // Match a field; emit it from the struct
+            ($target:expr, $input:expr, $field_name:ident: $field_type:ty, $($tail:tt)*) => {
+                    $target.push($input.$field_name);
+                    encode_body!($target, $input, $($tail)*);
+            };
+        }
+
+        macro_rules! decode_body {
+            // Tail case; verify that remaining bytes are zero
+            ($target:expr, $data:expr,) => {
+                while !$data.is_empty() {
+                    anyhow::ensure!($data[0] == 0);
+                    $data = &$data[1..];
                 }
-                _ => anyhow::bail!("Invalid packet"),
-            },
+            };
+
+            // Match a constant byte; check that it is what we expect
+            ($target:expr, $data:expr, $expected:literal, $($tail:tt)*) => {
+                    anyhow::ensure!($data.get(0) == Some(&$expected));
+                    $data = &$data[1..];
+                    decode_body!($target, $data, $($tail)*);
+            };
+
+            // Match a field; parse it into the struct
+            ($target:expr, $data:expr, $field_name:ident: $field_type:ty, $($tail:tt)*) => {
+                    $target.$field_name = *$data.get(0).ok_or_else(||anyhow!("EOF"))?;
+                    $data = &$data[1..];
+                    decode_body!($target, $data, $($tail)*);
+            };
+        }
+
+        /// Helper for defining a PacketCodec.
+        /// The first param is the list of SKUs which are known to support
+        /// this packet.
+        /// The second parameter is the name of the type which will be
+        /// encoded into raw bytes when encoding. It must impl Default.
+        /// The third parameter is the name of the GoveeBlePacket enum
+        /// variant that holds that type.
+        /// The subsequent parameters are rules that match the bytes
+        /// in the packet when decoding, or form the bytes in the packet
+        /// when encoding. They are listed in the same sequence that they
+        /// have in the packet.
+        macro_rules! packet {
+            ($skus:expr, $struct:ident, $variant:ident, $($body:tt)*) => {
+                PacketCodec::new(
+                    $skus,
+                    |input_value: &$struct| {
+                        let mut bytes = vec![];
+                        encode_body!(&mut bytes, input_value, $($body)*);
+                        Ok(finish(bytes))
+                    },
+                    |data| {
+                        let mut data = &data[0..data.len().saturating_sub(1)];
+                        let mut value = $struct::default();
+                        decode_body!(&mut value, data, $($body)*);
+                        Ok(GoveeBlePacket::$variant(value))
+                    }
+                )
+            }
+        }
+
+        all_codecs.push(packet!(
+            &["H7160"],
+            HumidifierMode,
+            SetHumidifierMode,
+            0x33,
+            0x05,
+            mode: u8,
+            param: u8,
         ));
 
         Self {
@@ -143,7 +210,7 @@ impl TargetHumidity {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Default, Debug, PartialEq, Eq)]
 pub struct HumidifierMode {
     pub mode: u8,
     pub param: u8,
