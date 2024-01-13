@@ -177,6 +177,16 @@ impl PacketManager {
             mode: u8,
             param: u8,
         ));
+        all_codecs.push(packet!(
+            &["H7160"],
+            HumidifierMode,
+            NotifyHumidifierMode,
+            0xaa,
+            0x05,
+            0x00,
+            mode: u8,
+            param: u8,
+        ));
 
         Self {
             codec_by_sku: Mutex::new(HashMap::new()),
