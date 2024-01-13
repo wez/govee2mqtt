@@ -644,8 +644,7 @@ impl HttpDeviceInfo {
     }
 
     pub fn supports_dynamic_scenes(&self) -> bool {
-        self
-            .capabilities
+        self.capabilities
             .iter()
             .any(|cap| cap.kind == DeviceCapabilityKind::DynamicScene)
     }
