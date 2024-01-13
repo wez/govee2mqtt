@@ -60,6 +60,7 @@ commit_parsers = [
   { message = "^chore|ci", group = "⚙️ Miscellaneous" },
   { body = ".*security", group = "🔒Security" },
   { message = "Tag 20.*", skip = true },
+  { message = "(rustfmt|cargo update)", skip = true },
   { message = ".*", group = "⚙️ Miscellaneous" },
 ]
 # protect breaking changes from being skipped due to matching a skipping commit_parser
