@@ -579,7 +579,7 @@ pub async fn spawn_hass_integration(
     let mqtt_password = args.mqtt_password()?;
     let mqtt_port = args.mqtt_port()?;
 
-    client.set_last_will(availability_topic(), "offline", QoS::AtMostOnce, true)?;
+    client.set_last_will(availability_topic(), "offline", QoS::AtMostOnce, false)?;
 
     if mqtt_username.is_some() != mqtt_password.is_some() {
         log::error!(
