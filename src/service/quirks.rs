@@ -181,6 +181,11 @@ fn load_quirks() -> HashMap<String, Quirk> {
         // device
         // <https://github.com/wez/govee2mqtt/issues/14#issuecomment-1880050091>
         Quirk::light("H6159", STRIP).with_broken_platform(),
+        // <https://github.com/wez/govee2mqtt/issues/40#issuecomment-1889726710>
+        // indicates that this one doesn't work like the others with IoT
+        Quirk::light("H6121", STRIP).with_iot_api_support(false),
+        // <https://github.com/wez/govee2mqtt/issues/40>
+        Quirk::light("H6154", STRIP).with_iot_api_support(false),
         // Humidifer with mangled platform API data
         Quirk::humidifier("H7160")
             .with_broken_platform()
