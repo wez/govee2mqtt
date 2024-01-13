@@ -1,4 +1,9 @@
+use anyhow::anyhow;
 use serde::{Deserialize, Deserializer};
+use std::any::{Any, TypeId};
+use std::collections::HashMap;
+use std::sync::Arc;
+use tokio::sync::{MappedMutexGuard, Mutex, MutexGuard};
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct HexBytes(Vec<u8>);
@@ -6,6 +11,107 @@ pub struct HexBytes(Vec<u8>);
 impl std::fmt::Debug for HexBytes {
     fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
         fmt.write_fmt(format_args!("{:02X?}", self.0))
+    }
+}
+
+pub struct PacketCodec {
+    encode: Box<dyn Fn(&dyn Any) -> anyhow::Result<Vec<u8>>>,
+    decode: Box<dyn Fn(&[u8]) -> anyhow::Result<GoveeBlePacket>>,
+    supported_skus: &'static [&'static str],
+    type_id: TypeId,
+}
+
+impl PacketCodec {
+    pub fn new<T: 'static>(
+        supported_skus: &'static [&'static str],
+        encode: impl Fn(&T) -> anyhow::Result<Vec<u8>> + 'static,
+        decode: impl Fn(&[u8]) -> anyhow::Result<GoveeBlePacket> + 'static,
+    ) -> Self {
+        Self {
+            encode: Box::new(move |any| {
+                let type_id = TypeId::of::<T>();
+                let value = any.downcast_ref::<T>().ok_or_else(|| {
+                    anyhow!("cannot downcast to {type_id:?} in PacketCodec encoder")
+                })?;
+                (encode)(value)
+            }),
+            decode: Box::new(decode),
+            supported_skus,
+            type_id: TypeId::of::<T>(),
+        }
+    }
+}
+
+pub struct PacketManager {
+    codec_by_sku: Mutex<HashMap<String, HashMap<TypeId, Arc<PacketCodec>>>>,
+    all_codecs: Vec<Arc<PacketCodec>>,
+}
+
+impl PacketManager {
+    fn map_for_sku(&self, sku: &str) -> MappedMutexGuard<HashMap<TypeId, Arc<PacketCodec>>> {
+        MutexGuard::map(self.codec_by_sku.blocking_lock(), |codecs| {
+            codecs.entry(sku.to_string()).or_insert_with(|| {
+                let mut map = HashMap::new();
+
+                for codec in &self.all_codecs {
+                    if codec.supported_skus.iter().any(|s| *s == sku) {
+                        map.insert(codec.type_id.clone(), codec.clone());
+                    }
+                }
+
+                map
+            })
+        })
+    }
+
+    fn resolve_by_sku(&self, sku: &str, type_id: &TypeId) -> anyhow::Result<Arc<PacketCodec>> {
+        let map = self.map_for_sku(sku);
+
+        map.get(type_id)
+            .cloned()
+            .ok_or_else(|| anyhow!("sku {sku} has no codec for type {type_id:?}"))
+    }
+
+    pub fn decode_for_sku(&self, sku: &str, data: &[u8]) -> GoveeBlePacket {
+        let map = self.map_for_sku(sku);
+
+        for codec in map.values() {
+            if let Ok(value) = (codec.decode)(data) {
+                return value;
+            }
+        }
+
+        GoveeBlePacket::Generic(HexBytes(data.to_vec()))
+    }
+
+    pub fn encode_for_sku<T: 'static>(&self, sku: &str, value: &T) -> anyhow::Result<Vec<u8>> {
+        let type_id = TypeId::of::<T>();
+        let codec = self.resolve_by_sku(sku, &type_id)?;
+
+        (codec.encode)(value)
+    }
+
+    pub fn new() -> Self {
+        let mut all_codecs = vec![];
+
+        all_codecs.push(PacketCodec::new(
+            &["H7160"],
+            |mode: &HumidifierMode| Ok(finish(vec![0x33, 0x05, mode.mode, mode.param])),
+            |data| match &data[0..data.len().saturating_sub(1)] {
+                [0x33, 0x05, mode, param, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] => {
+                    Ok(GoveeBlePacket::SetHumidifierMode(HumidifierMode {
+                        mode: *mode,
+                        param: *param,
+                    }))
+                }
+                _ => anyhow::bail!("Invalid packet"),
+            },
+        ));
+
+        Self {
+            codec_by_sku: Mutex::new(HashMap::new()),
+            all_codecs: all_codecs.into_iter().map(Arc::new).collect(),
+        }
     }
 }
 
@@ -38,20 +144,20 @@ impl TargetHumidity {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct HumidifierMode {
+    pub mode: u8,
+    pub param: u8,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum GoveeBlePacket {
     Generic(HexBytes),
     SetSceneCode(u16),
     #[allow(unused)]
     SetPower(bool),
     SetHumidifierNightlight(HumidifierNightlightParams),
-    NotifyHumidifierMode {
-        mode: u8,
-        param: u8,
-    },
-    SetHumidifierMode {
-        mode: u8,
-        param: u8,
-    },
+    NotifyHumidifierMode(HumidifierMode),
+    SetHumidifierMode(HumidifierMode),
     NotifyHumidifierTimer {
         on: bool,
     },
@@ -125,10 +231,12 @@ impl GoveeBlePacket {
                 b,
                 brightness,
             }) => finish(vec![0xaa, 0x1b, btoi(on), brightness, r, g, b]),
-            Self::NotifyHumidifierMode { mode, param } => {
+            Self::NotifyHumidifierMode(HumidifierMode { mode, param }) => {
                 finish(vec![0xaa, 0x05, 0x0, mode, param])
             }
-            Self::SetHumidifierMode { mode, param } => finish(vec![0x33, 0x05, mode, param]),
+            Self::SetHumidifierMode(HumidifierMode { mode, param }) => {
+                finish(vec![0x33, 0x05, mode, param])
+            }
             Self::NotifyHumidifierAutoMode { param } => {
                 finish(vec![0xaa, 0x05, 0x03, param.into_inner()])
             }
@@ -174,16 +282,16 @@ impl GoveeBlePacket {
                 })
             }
             [0x33, 0x05, mode, param, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] => {
-                Self::SetHumidifierMode {
+                Self::SetHumidifierMode(HumidifierMode {
                     mode: *mode,
                     param: *param,
-                }
+                })
             }
             [0xaa, 0x05, 0, mode, param, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] => {
-                Self::NotifyHumidifierMode {
+                Self::NotifyHumidifierMode(HumidifierMode {
                     mode: *mode,
                     param: *param,
-                }
+                })
             }
             [0xaa, 0x11, on, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] => {
                 Self::NotifyHumidifierTimer { on: itob(on) }
@@ -217,6 +325,34 @@ impl GoveeBlePacket {
 #[cfg(test)]
 mod test {
     use super::*;
+
+    #[test]
+    fn packet_manager() {
+        let mgr = PacketManager::new();
+
+        assert_eq!(
+            mgr.decode_for_sku(
+                "H7160",
+                &[0x33, 0x05, 0x01, 0x20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 23]
+            ),
+            GoveeBlePacket::SetHumidifierMode(HumidifierMode {
+                mode: 1,
+                param: 0x20
+            })
+        );
+
+        assert_eq!(
+            mgr.encode_for_sku(
+                "H7160",
+                &HumidifierMode {
+                    mode: 1,
+                    param: 0x20
+                }
+            )
+            .unwrap(),
+            vec![0x33, 0x05, 0x01, 0x20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 23]
+        );
+    }
 
     fn round_trip(value: GoveeBlePacket) {
         let bytes = value.clone().into_vec();

@@ -1,4 +1,4 @@
-use crate::ble::{GoveeBlePacket, HumidifierNightlightParams};
+use crate::ble::{GoveeBlePacket, HumidifierMode, HumidifierNightlightParams};
 use crate::lan_api::{Client as LanClient, DeviceStatus as LanDeviceStatus, LanDevice};
 use crate::platform_api::{DeviceType, GoveeApiClient};
 use crate::service::device::Device;
@@ -400,10 +400,10 @@ impl State {
     ) -> anyhow::Result<()> {
         self.device_was_controlled(device).await;
         if let Some(iot) = self.get_iot_client().await {
-            let command = GoveeBlePacket::SetHumidifierMode {
+            let command = GoveeBlePacket::SetHumidifierMode(HumidifierMode {
                 mode: work_mode as u8,
                 param: value as u8,
-            }
+            })
             .base64();
             if let Some(info) = &device.undoc_device_info {
                 iot.send_real(&info.entry, vec![command]).await?;

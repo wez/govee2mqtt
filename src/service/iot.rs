@@ -1,4 +1,4 @@
-use crate::ble::GoveeBlePacket;
+use crate::ble::{GoveeBlePacket, HumidifierMode};
 use crate::lan_api::{DeviceColor, DeviceStatus};
 use crate::platform_api::from_json;
 use crate::service::state::StateHandle;
@@ -419,10 +419,9 @@ pub async fn start_iot_client(
                                                             param.as_percent(),
                                                         );
                                                     }
-                                                    GoveeBlePacket::NotifyHumidifierMode {
-                                                        mode,
-                                                        param,
-                                                    } => {
+                                                    GoveeBlePacket::NotifyHumidifierMode(
+                                                        HumidifierMode { mode, param },
+                                                    ) => {
                                                         device.set_humidifier_work_mode_and_param(
                                                             *mode, *param,
                                                         );
