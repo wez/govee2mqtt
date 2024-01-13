@@ -231,11 +231,13 @@ impl State {
             return Ok(());
         }
 
-        if let Some(iot) = self.get_iot_client().await {
-            if let Some(info) = &device.undoc_device_info {
-                log::info!("Using IoT API to set {device} power state");
-                iot.set_power_state(&info.entry, on).await?;
-                return Ok(());
+        if device.iot_api_supported() {
+            if let Some(iot) = self.get_iot_client().await {
+                if let Some(info) = &device.undoc_device_info {
+                    log::info!("Using IoT API to set {device} power state");
+                    iot.set_power_state(&info.entry, on).await?;
+                    return Ok(());
+                }
             }
         }
 
@@ -263,11 +265,13 @@ impl State {
             return Ok(());
         }
 
-        if let Some(iot) = self.get_iot_client().await {
-            if let Some(info) = &device.undoc_device_info {
-                log::info!("Using IoT API to set {device} power state");
-                iot.set_power_state(&info.entry, on).await?;
-                return Ok(());
+        if device.iot_api_supported() {
+            if let Some(iot) = self.get_iot_client().await {
+                if let Some(info) = &device.undoc_device_info {
+                    log::info!("Using IoT API to set {device} power state");
+                    iot.set_power_state(&info.entry, on).await?;
+                    return Ok(());
+                }
             }
         }
 
@@ -305,11 +309,13 @@ impl State {
             return Ok(());
         }
 
-        if let Some(iot) = self.get_iot_client().await {
-            if let Some(info) = &device.undoc_device_info {
-                log::info!("Using IoT API to set {device} brightness");
-                iot.set_brightness(&info.entry, percent).await?;
-                return Ok(());
+        if device.iot_api_supported() {
+            if let Some(iot) = self.get_iot_client().await {
+                if let Some(info) = &device.undoc_device_info {
+                    log::info!("Using IoT API to set {device} brightness");
+                    iot.set_brightness(&info.entry, percent).await?;
+                    return Ok(());
+                }
             }
         }
 
@@ -340,11 +346,13 @@ impl State {
             return Ok(());
         }
 
-        if let Some(iot) = self.get_iot_client().await {
-            if let Some(info) = &device.undoc_device_info {
-                log::info!("Using IoT API to set {device} color temperature");
-                iot.set_color_temperature(&info.entry, kelvin).await?;
-                return Ok(());
+        if device.iot_api_supported() {
+            if let Some(iot) = self.get_iot_client().await {
+                if let Some(info) = &device.undoc_device_info {
+                    log::info!("Using IoT API to set {device} color temperature");
+                    iot.set_color_temperature(&info.entry, kelvin).await?;
+                    return Ok(());
+                }
             }
         }
 
@@ -443,11 +451,13 @@ impl State {
             return Ok(());
         }
 
-        if let Some(iot) = self.get_iot_client().await {
-            if let Some(info) = &device.undoc_device_info {
-                log::info!("Using IoT API to set {device} color");
-                iot.set_color_rgb(&info.entry, r, g, b).await?;
-                return Ok(());
+        if device.iot_api_supported() {
+            if let Some(iot) = self.get_iot_client().await {
+                if let Some(info) = &device.undoc_device_info {
+                    log::info!("Using IoT API to set {device} color");
+                    iot.set_color_rgb(&info.entry, r, g, b).await?;
+                    return Ok(());
+                }
             }
         }
 
