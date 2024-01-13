@@ -1,9 +1,12 @@
 use anyhow::anyhow;
+use once_cell::sync::Lazy;
 use serde::{Deserialize, Deserializer};
 use std::any::{Any, TypeId};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::{MappedMutexGuard, Mutex, MutexGuard};
+
+static MGR: Lazy<PacketManager> = Lazy::new(PacketManager::new);
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct HexBytes(Vec<u8>);
@@ -15,8 +18,8 @@ impl std::fmt::Debug for HexBytes {
 }
 
 pub struct PacketCodec {
-    encode: Box<dyn Fn(&dyn Any) -> anyhow::Result<Vec<u8>>>,
-    decode: Box<dyn Fn(&[u8]) -> anyhow::Result<GoveeBlePacket>>,
+    encode: Box<dyn Fn(&dyn Any) -> anyhow::Result<Vec<u8>> + Sync + Send>,
+    decode: Box<dyn Fn(&[u8]) -> anyhow::Result<GoveeBlePacket> + Sync + Send>,
     supported_skus: &'static [&'static str],
     type_id: TypeId,
 }
@@ -24,8 +27,8 @@ pub struct PacketCodec {
 impl PacketCodec {
     pub fn new<T: 'static>(
         supported_skus: &'static [&'static str],
-        encode: impl Fn(&T) -> anyhow::Result<Vec<u8>> + 'static,
-        decode: impl Fn(&[u8]) -> anyhow::Result<GoveeBlePacket> + 'static,
+        encode: impl Fn(&T) -> anyhow::Result<Vec<u8>> + 'static + Sync + Send,
+        decode: impl Fn(&[u8]) -> anyhow::Result<GoveeBlePacket> + 'static + Sync + Send,
     ) -> Self {
         Self {
             encode: Box::new(move |any| {
@@ -395,10 +398,8 @@ mod test {
 
     #[test]
     fn packet_manager() {
-        let mgr = PacketManager::new();
-
         assert_eq!(
-            mgr.decode_for_sku(
+            MGR.decode_for_sku(
                 "H7160",
                 &[0x33, 0x05, 0x01, 0x20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 23]
             ),
@@ -409,7 +410,7 @@ mod test {
         );
 
         assert_eq!(
-            mgr.encode_for_sku(
+            MGR.encode_for_sku(
                 "H7160",
                 &HumidifierMode {
                     mode: 1,
