@@ -161,7 +161,7 @@ impl EntityInstance for CapabilitySensor {
                                 .and_then(|v| v.as_f64())
                                 .map(|v| units.from_reading_to_celsius(v))
                             {
-                                Some(v) => v.to_string(),
+                                Some(v) => format!("{v:.2}"),
                                 None => "".to_string(),
                             }
                         }
@@ -175,7 +175,7 @@ impl EntityInstance for CapabilitySensor {
                                 .and_then(|v| v.as_f64())
                                 .map(|v| units.from_reading_to_relative_percent(v))
                             {
-                                Some(v) => v.to_string(),
+                                Some(v) => format!("{v:.2}"),
                                 None => "".to_string(),
                             }
                         }
