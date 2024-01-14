@@ -87,6 +87,19 @@ pub struct ParsedWorkMode {
 }
 
 impl ParsedWorkMode {
+    pub fn with_device(device: &ServiceDevice) -> anyhow::Result<Self> {
+        let info = device
+            .http_device_info
+            .as_ref()
+            .ok_or_else(|| anyhow!("no platform state, so no known work mode"))?;
+        let cap = info
+            .capability_by_instance("workMode")
+            .ok_or_else(|| anyhow!("device has no workMode capability"))?;
+        let mut parsed = Self::with_capability(cap)?;
+        parsed.adjust_for_device(&device.sku);
+        Ok(parsed)
+    }
+
     pub fn with_capability(cap: &DeviceCapability) -> anyhow::Result<Self> {
         let mut work_modes = Self::default();
 
@@ -133,6 +146,73 @@ impl ParsedWorkMode {
     pub fn get_mut(&mut self, mode: &str) -> Option<&mut WorkMode> {
         self.modes.get_mut(mode)
     }
+
+    pub fn adjust_for_device(&mut self, sku: &str) {
+        match sku {
+            "H7160" | "H7143" => {
+                self.modes
+                    .get_mut("Manual")
+                    .map(|m| m.label = "Manual: Mist Level".to_string());
+            }
+            _ => {
+                for mode in self.modes.values_mut() {
+                    mode.label = format!("{} Parameter", mode.name);
+                }
+            }
+        }
+    }
+
+    pub fn mode_for_value(&self, value: &JsonValue) -> Option<&WorkMode> {
+        for mode in self.modes.values() {
+            if mode.value == *value {
+                return Some(mode);
+            }
+        }
+        None
+    }
+
+    pub fn mode_by_name(&self, name: &str) -> Option<&WorkMode> {
+        self.modes.get(name)
+    }
+
+    pub fn mode_by_label(&self, name: &str) -> Option<&WorkMode> {
+        for mode in self.modes.values() {
+            if mode.label() == name {
+                return Some(mode);
+            }
+        }
+        None
+    }
+
+    pub fn get_mode_names(&self) -> Vec<String> {
+        let mut names: Vec<_> = self
+            .modes
+            .values()
+            .map(|mode| mode.name.to_string())
+            .collect();
+        names.sort();
+        names
+    }
+
+    pub fn get_mode_labels(&self) -> Vec<String> {
+        let mut names: Vec<_> = self
+            .modes
+            .values()
+            .map(|mode| mode.label().to_string())
+            .collect();
+        names.sort();
+        names
+    }
+
+    pub fn modes_with_values(&self) -> impl Iterator<Item = &WorkMode> {
+        self.modes.values().filter_map(|mode| {
+            if mode.values.is_empty() {
+                None
+            } else {
+                Some(mode)
+            }
+        })
+    }
 }
 
 #[derive(Default)]
@@ -164,6 +244,14 @@ impl WorkMode {
                 value: opt.value,
                 label,
             });
+        }
+    }
+
+    pub fn label(&self) -> &str {
+        if self.label.is_empty() {
+            &self.name
+        } else {
+            &self.label
         }
     }
 
@@ -200,26 +288,12 @@ async fn entities_for_work_mode<'a>(
     cap: &DeviceCapability,
     entities: &mut EntityList,
 ) -> anyhow::Result<()> {
-    let work_modes = ParsedWorkMode::with_capability(cap)?;
+    let mut work_modes = ParsedWorkMode::with_capability(cap)?;
+    work_modes.adjust_for_device(&d.sku);
 
-    for work_mode in work_modes.modes.values() {
+    for work_mode in work_modes.modes_with_values() {
         let range = work_mode.contiguous_value_range();
-
-        let label = match (d.sku.as_str(), work_mode.name.as_str()) {
-            ("H7160" | "H7143", "Auto") => {
-                // We'll just skip this one; we'll control it
-                // via the humidity entity which knows how to
-                // offset and apply it
-                continue;
-            }
-            ("H7160" | "H7143", "Manual") => "Manual: Mist Level".to_string(),
-            ("H7160", "Custom") => {
-                // Skip custom mode; we have no idea how to
-                // configure it correctly.
-                continue;
-            }
-            _ => format!("{} Parameter", work_mode.name),
-        };
+        let label = work_mode.label().to_string();
 
         entities.add(WorkModeNumber::new(
             d,

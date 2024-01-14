@@ -1,10 +1,12 @@
 use crate::ble::TargetHumidity;
 use crate::hass_mqtt::base::{Device, EntityConfig, Origin};
+use crate::hass_mqtt::enumerator::ParsedWorkMode;
 use crate::hass_mqtt::instance::{publish_entity_config, EntityInstance};
-use crate::platform_api::{DeviceParameters, DeviceType, EnumOption, IntegerRange};
+use crate::platform_api::{DeviceParameters, DeviceType, IntegerRange};
 use crate::service::device::Device as ServiceDevice;
 use crate::service::hass::{availability_topic, topic_safe_id, HassClient, IdParameter};
 use crate::service::state::StateHandle;
+use anyhow::anyhow;
 use async_trait::async_trait;
 use mosquitto_rs::router::{Params, Payload, State};
 use serde::Serialize;
@@ -48,18 +50,6 @@ pub struct Humidifier {
     device_id: String,
 }
 
-fn resolve_work_mode(device: &ServiceDevice) -> Option<&[EnumOption]> {
-    let info = device.http_device_info.as_ref()?;
-    let wm = info
-        .capability_by_instance("workMode")
-        .and_then(|cap| cap.struct_field_by_name("workMode"))?;
-
-    match &wm.field_type {
-        DeviceParameters::Enum { options } => Some(options),
-        _ => None,
-    }
-}
-
 impl Humidifier {
     pub async fn new(device: &ServiceDevice, state: &StateHandle) -> anyhow::Result<Self> {
         let _quirk = device.resolve_quirk();
@@ -94,21 +84,15 @@ impl Humidifier {
 
         let unique_id = format!("gv2mqtt-{id}-humidifier", id = topic_safe_id(device),);
 
-        let mut modes = vec![];
         let mut min_humidity = None;
         let mut max_humidity = None;
 
-        if let Some(options) = resolve_work_mode(device) {
-            for opt in options {
-                if device.sku == "H7160" && opt.name == "Custom" {
-                    // Skip custom mode: we don't know how
-                    // to configure it correctly
-                    continue;
-                }
+        let work_mode = ParsedWorkMode::with_device(device).ok();
+        let modes = work_mode
+            .as_ref()
+            .map(|wm| wm.get_mode_names())
+            .unwrap_or(vec![]);
 
-                modes.push(opt.name.to_string());
-            }
-        }
         if let Some(info) = &device.http_device_info {
             if let Some(cap) = info.capability_by_instance("humidity") {
                 match &cap.parameters {
@@ -205,16 +189,12 @@ impl EntityInstance for Humidifier {
                 .await?;
         }
         if let Some(mode_value) = device.humidifier_work_mode {
-            if let Some(options) = resolve_work_mode(&device) {
+            if let Ok(work_mode) = ParsedWorkMode::with_device(&device) {
                 let mode_value_json = json!(mode_value);
-                for opt in options {
-                    if opt.value == mode_value_json {
-                        client
-                            .publish(&self.humidifier.mode_state_topic, opt.name.to_string())
-                            .await?;
-
-                        break;
-                    }
+                if let Some(mode) = work_mode.mode_for_value(&mode_value_json) {
+                    client
+                        .publish(&self.humidifier.mode_state_topic, mode.label().to_string())
+                        .await?;
                 }
             }
         }
@@ -234,22 +214,24 @@ pub async fn mqtt_humidifier_set_mode(
         .await
         .ok_or_else(|| anyhow::anyhow!("device '{id}' not found"))?;
 
-    if let Some(options) = resolve_work_mode(&device) {
-        for opt in options {
-            if opt.name == mode {
-                let work_mode = opt
-                    .value
-                    .as_i64()
-                    .ok_or_else(|| anyhow::anyhow!("expected workMode to be a number"))?;
+    let work_modes = ParsedWorkMode::with_device(&device)?;
+    let work_mode = work_modes
+        .mode_by_name(&mode)
+        .ok_or_else(|| anyhow!("mode {mode} not found"))?;
+    let mode_num = work_mode
+        .value
+        .as_i64()
+        .ok_or_else(|| anyhow::anyhow!("expected workMode to be a number"))?;
 
-                state
-                    .humidifier_set_parameter(&device, work_mode, 0)
-                    .await?;
+    let value = work_mode
+        .values
+        .get(0)
+        .and_then(|v| v.value.as_i64())
+        .unwrap_or(0);
 
-                break;
-            }
-        }
-    }
+    state
+        .humidifier_set_parameter(&device, mode_num, value)
+        .await?;
 
     Ok(())
 }
@@ -287,24 +269,20 @@ pub async fn mqtt_humidifier_set_target(
         }
     }
 
-    if let Some(options) = resolve_work_mode(&device) {
-        for opt in options {
-            if opt.name == "Auto" {
-                let work_mode = opt
-                    .value
-                    .as_i64()
-                    .ok_or_else(|| anyhow::anyhow!("expected workMode to be a number"))?;
+    let work_modes = ParsedWorkMode::with_device(&device)?;
+    let work_mode = work_modes
+        .mode_by_name("Auto")
+        .ok_or_else(|| anyhow!("mode Auto not found"))?;
+    let mode_num = work_mode
+        .value
+        .as_i64()
+        .ok_or_else(|| anyhow::anyhow!("expected workMode to be a number"))?;
 
-                let value = TargetHumidity::from_percent(percent as u8);
+    let value = TargetHumidity::from_percent(percent as u8);
 
-                state
-                    .humidifier_set_parameter(&device, work_mode, value.into_inner().into())
-                    .await?;
-
-                break;
-            }
-        }
-    }
+    state
+        .humidifier_set_parameter(&device, mode_num, value.into_inner().into())
+        .await?;
 
     Ok(())
 }
