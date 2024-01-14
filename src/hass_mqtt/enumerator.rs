@@ -14,8 +14,9 @@ use crate::service::device::Device as ServiceDevice;
 use crate::service::hass::{availability_topic, oneclick_topic, purge_cache_topic};
 use crate::service::state::StateHandle;
 use crate::version_info::govee_version;
-use anyhow::Context;
+use anyhow::{anyhow, Context};
 use serde::Deserialize;
+use serde_json::Value as JsonValue;
 use std::collections::HashMap;
 use std::ops::Range;
 use uuid::Uuid;
@@ -80,29 +81,105 @@ async fn enumerate_scenes(state: &StateHandle, entities: &mut EntityList) -> any
     Ok(())
 }
 
-async fn entities_for_work_mode<'a>(
-    d: &ServiceDevice,
-    state: &StateHandle,
-    cap: &DeviceCapability,
-    entities: &mut EntityList,
-) -> anyhow::Result<()> {
-    #[derive(Deserialize, PartialOrd, Ord, PartialEq, Eq)]
-    struct NumericOption {
-        value: i64,
+#[derive(Default)]
+pub struct ParsedWorkMode {
+    pub modes: HashMap<String, WorkMode>,
+}
+
+impl ParsedWorkMode {
+    pub fn with_capability(cap: &DeviceCapability) -> anyhow::Result<Self> {
+        let mut work_modes = Self::default();
+
+        let wm = cap
+            .struct_field_by_name("workMode")
+            .ok_or_else(|| anyhow!("workMode not found in {cap:?}"))?;
+
+        match &wm.field_type {
+            DeviceParameters::Enum { options } => {
+                for opt in options {
+                    work_modes.add(opt.name.to_string(), opt.value.clone());
+                }
+            }
+            _ => {}
+        }
+
+        if let Some(mv) = cap.struct_field_by_name("modeValue") {
+            match &mv.field_type {
+                DeviceParameters::Enum { options } => {
+                    for opt in options {
+                        let mode_name = &opt.name;
+                        if let Some(work_mode) = work_modes.get_mut(mode_name) {
+                            work_mode.add_values(opt);
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
+        Ok(work_modes)
     }
 
-    fn is_contiguous_range(opt_range: &mut Vec<NumericOption>) -> Option<Range<i64>> {
-        if opt_range.is_empty() {
-            return None;
-        }
-        opt_range.sort();
+    pub fn add(&mut self, name: String, value: JsonValue) {
+        self.modes.insert(
+            name.clone(),
+            WorkMode {
+                name,
+                value,
+                ..WorkMode::default()
+            },
+        );
+    }
 
-        let min = opt_range.first().map(|r| r.value).expect("not empty");
-        let max = opt_range.last().map(|r| r.value).expect("not empty");
+    pub fn get_mut(&mut self, mode: &str) -> Option<&mut WorkMode> {
+        self.modes.get_mut(mode)
+    }
+}
+
+#[derive(Default)]
+pub struct WorkMode {
+    pub name: String,
+    pub value: JsonValue,
+    pub label: String,
+    pub values: Vec<WorkModeValue>,
+}
+
+impl WorkMode {
+    pub fn add_values(&mut self, opt: &EnumOption) {
+        #[derive(Deserialize)]
+        struct ModeOption {
+            value: JsonValue,
+        }
+
+        let Some(options) = opt.extras.get("options") else {
+            return;
+        };
+
+        let Ok(options) = serde_json::from_value::<Vec<ModeOption>>(options.clone()) else {
+            return;
+        };
+
+        for opt in options {
+            let label = opt.value.to_string();
+            self.values.push(WorkModeValue {
+                value: opt.value,
+                label,
+            });
+        }
+    }
+
+    pub fn contiguous_value_range(&self) -> Option<Range<i64>> {
+        let mut values = vec![];
+        for v in &self.values {
+            values.push(v.value.as_i64()?);
+        }
+        values.sort();
+
+        let min = *values.iter().min()?;
+        let max = *values.iter().max()?;
 
         let mut expect = min;
-        for item in opt_range {
-            if item.value != expect {
+        for item in values {
+            if item != expect {
                 return None;
             }
             expect = expect + 1;
@@ -110,67 +187,48 @@ async fn entities_for_work_mode<'a>(
 
         Some(min..max + 1)
     }
+}
 
-    fn extract_contiguous_range(opt: &EnumOption) -> Option<Range<i64>> {
-        let extra_opts = opt.extras.get("options")?;
+pub struct WorkModeValue {
+    pub value: JsonValue,
+    pub label: String,
+}
 
-        let mut opt_range =
-            serde_json::from_value::<Vec<NumericOption>>(extra_opts.clone()).ok()?;
+async fn entities_for_work_mode<'a>(
+    d: &ServiceDevice,
+    state: &StateHandle,
+    cap: &DeviceCapability,
+    entities: &mut EntityList,
+) -> anyhow::Result<()> {
+    let work_modes = ParsedWorkMode::with_capability(cap)?;
 
-        is_contiguous_range(&mut opt_range)
-    }
+    for work_mode in work_modes.modes.values() {
+        let range = work_mode.contiguous_value_range();
 
-    let mut name_to_mode = HashMap::new();
-    if let Some(wm) = cap.struct_field_by_name("workMode") {
-        match &wm.field_type {
-            DeviceParameters::Enum { options } => {
-                for opt in options {
-                    name_to_mode.insert(opt.name.to_string(), opt.value.clone());
-                }
+        let label = match (d.sku.as_str(), work_mode.name.as_str()) {
+            ("H7160" | "H7143", "Auto") => {
+                // We'll just skip this one; we'll control it
+                // via the humidity entity which knows how to
+                // offset and apply it
+                continue;
             }
-            _ => {}
-        }
-    }
-
-    if let Some(wm) = cap.struct_field_by_name("modeValue") {
-        match &wm.field_type {
-            DeviceParameters::Enum { options } => {
-                for opt in options {
-                    let mode_name = &opt.name;
-                    if let Some(work_mode) = name_to_mode.get(mode_name) {
-                        let range = extract_contiguous_range(opt);
-
-                        let label = match (d.sku.as_str(), mode_name.as_str()) {
-                            ("H7160" | "H7143", "Auto") => {
-                                // We'll just skip this one; we'll control it
-                                // via the humidity entity which knows how to
-                                // offset and apply it
-                                continue;
-                            }
-                            ("H7160" | "H7143", "Manual") => "Manual: Mist Level".to_string(),
-                            ("H7160", "Custom") => {
-                                // Skip custom mode; we have no idea how to
-                                // configure it correctly.
-                                continue;
-                            }
-                            _ => format!("{mode_name} Parameter"),
-                        };
-
-                        entities.add(WorkModeNumber::new(
-                            d,
-                            state,
-                            label,
-                            mode_name,
-                            work_mode.clone(),
-                            range,
-                        ));
-                    } else {
-                        log::warn!("entities_for_work_mode: {d} mode name {mode_name} not found in name_to_mode map");
-                    }
-                }
+            ("H7160" | "H7143", "Manual") => "Manual: Mist Level".to_string(),
+            ("H7160", "Custom") => {
+                // Skip custom mode; we have no idea how to
+                // configure it correctly.
+                continue;
             }
-            _ => {}
-        }
+            _ => format!("{} Parameter", work_mode.name),
+        };
+
+        entities.add(WorkModeNumber::new(
+            d,
+            state,
+            label,
+            &work_mode.name,
+            work_mode.value.clone(),
+            range,
+        ));
     }
 
     Ok(())
