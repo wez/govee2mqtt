@@ -1,4 +1,4 @@
-use crate::ble::HumidifierNightlightParams;
+use crate::ble::NotifyHumidifierNightlightParams;
 use crate::lan_api::{DeviceColor, DeviceStatus as LanDeviceStatus, LanDevice};
 use crate::platform_api::{DeviceType, HttpDeviceInfo, HttpDeviceState};
 use crate::service::quirks::{resolve_quirk, Quirk, BULB};
@@ -33,7 +33,7 @@ pub struct Device {
     pub iot_device_status: Option<LanDeviceStatus>,
     pub last_iot_device_status_update: Option<DateTime<Utc>>,
 
-    pub nightlight_state: Option<HumidifierNightlightParams>,
+    pub nightlight_state: Option<NotifyHumidifierNightlightParams>,
     pub target_humidity_percent: Option<u8>,
     pub humidifier_work_mode: Option<u8>,
     pub humidifier_param_by_mode: HashMap<u8, u8>,
@@ -158,7 +158,7 @@ impl Device {
         self.last_polled.replace(Utc::now());
     }
 
-    pub fn set_nightlight_state(&mut self, params: HumidifierNightlightParams) {
+    pub fn set_nightlight_state(&mut self, params: NotifyHumidifierNightlightParams) {
         self.nightlight_state.replace(params);
     }
 

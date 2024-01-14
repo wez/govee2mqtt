@@ -1,4 +1,4 @@
-use crate::ble::{GoveeBlePacket, HumidifierMode};
+use crate::ble::{Base64HexBytes, GoveeBlePacket, HumidifierAutoMode, NotifyHumidifierMode};
 use crate::lan_api::{DeviceColor, DeviceStatus};
 use crate::platform_api::from_json;
 use crate::service::state::StateHandle;
@@ -329,18 +329,18 @@ pub async fn start_iot_client(
                     #[allow(unused)]
                     struct OpData {
                         #[serde(default)]
-                        command: Vec<GoveeBlePacket>,
+                        command: Vec<Base64HexBytes>,
 
                         // The next 4 fields are sourced from H6199
                         // <https://github.com/wez/govee2mqtt/issues/36>
                         #[serde(rename = "modeValue", default)]
-                        mode_value: Vec<GoveeBlePacket>,
+                        mode_value: Vec<Base64HexBytes>,
                         #[serde(rename = "sleepValue", default)]
-                        sleep_value: Vec<GoveeBlePacket>,
+                        sleep_value: Vec<Base64HexBytes>,
                         #[serde(rename = "wakeupValue", default)]
-                        wakeup_value: Vec<GoveeBlePacket>,
+                        wakeup_value: Vec<Base64HexBytes>,
                         #[serde(rename = "timerValue", default)]
-                        timer_value: Vec<GoveeBlePacket>,
+                        timer_value: Vec<Base64HexBytes>,
                     }
 
                     impl Packet {
@@ -398,35 +398,45 @@ pub async fn start_iot_client(
                                     }
 
                                     if let Some(op) = &packet.op {
-                                        if device.iot_api_supported() {
-                                            for cmd in &op.command {
-                                                match cmd {
-                                                    GoveeBlePacket::NotifyHumidifierNightlight(
-                                                        nl,
-                                                    ) => {
-                                                        state.brightness = nl.brightness;
-                                                        state.color = DeviceColor {
-                                                            r: nl.r,
-                                                            g: nl.g,
-                                                            b: nl.b,
-                                                        };
-                                                        device.set_nightlight_state(nl.clone());
-                                                    }
-                                                    GoveeBlePacket::NotifyHumidifierAutoMode {
-                                                        param,
-                                                    } => {
-                                                        device.set_target_humidity(
-                                                            param.as_percent(),
-                                                        );
-                                                    }
-                                                    GoveeBlePacket::NotifyHumidifierMode(
-                                                        HumidifierMode { mode, param },
-                                                    ) => {
-                                                        device.set_humidifier_work_mode_and_param(
-                                                            *mode, *param,
-                                                        );
-                                                    }
-                                                    _ => {}
+                                        for cmd in &op.command {
+                                            let decoded = cmd.decode_for_sku(sku);
+                                            log::debug!("Decoded: {decoded:?} for {sku}");
+                                            match decoded {
+                                                GoveeBlePacket::NotifyHumidifierNightlight(nl) => {
+                                                    state.brightness = nl.brightness;
+                                                    state.color = DeviceColor {
+                                                        r: nl.r,
+                                                        g: nl.g,
+                                                        b: nl.b,
+                                                    };
+                                                    device.set_nightlight_state(nl.clone());
+                                                }
+                                                GoveeBlePacket::NotifyHumidifierAutoMode(
+                                                    HumidifierAutoMode { target_humidity },
+                                                ) => {
+                                                    device.set_target_humidity(
+                                                        target_humidity.as_percent(),
+                                                    );
+                                                }
+                                                GoveeBlePacket::NotifyHumidifierMode(
+                                                    NotifyHumidifierMode { mode, param },
+                                                ) => {
+                                                    device.set_humidifier_work_mode_and_param(
+                                                        mode, param,
+                                                    );
+                                                }
+                                                GoveeBlePacket::Generic(_) => {
+                                                    // Ignore packets that we can't decode
+                                                }
+                                                GoveeBlePacket::SetHumidifierMode(_)
+                                                | GoveeBlePacket::SetHumidifierNightlight(_) => {
+                                                    // Ignore packets that are essentially echoing
+                                                    // commands sent to the device
+                                                }
+                                                _ => {
+                                                    // But warn about the ones we could decode and
+                                                    // aren't handling here
+                                                    log::warn!("Taking no action for {decoded:?} for {sku}");
                                                 }
                                             }
                                         }

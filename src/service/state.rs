@@ -1,4 +1,4 @@
-use crate::ble::{GoveeBlePacket, HumidifierMode, HumidifierNightlightParams};
+use crate::ble::{Base64HexBytes, SetHumidifierMode, SetHumidifierNightlightParams};
 use crate::lan_api::{Client as LanClient, DeviceStatus as LanDeviceStatus, LanDevice};
 use crate::platform_api::{DeviceType, GoveeApiClient};
 use crate::service::device::Device;
@@ -370,20 +370,21 @@ impl State {
     }
 
     // FIXME: this function probably shouldn't exist here
-    async fn humidifier_set_nightlight<F: Fn(&mut HumidifierNightlightParams)>(
+    async fn humidifier_set_nightlight<F: Fn(&mut SetHumidifierNightlightParams)>(
         self: &Arc<Self>,
         device: &Device,
         apply: F,
     ) -> anyhow::Result<()> {
         self.device_was_controlled(device).await;
-        let mut params = device.nightlight_state.clone().unwrap_or_default();
+        let mut params: SetHumidifierNightlightParams =
+            device.nightlight_state.clone().unwrap_or_default().into();
         (apply)(&mut params);
 
-        let command = GoveeBlePacket::SetHumidifierNightlight(params).base64();
+        let command = Base64HexBytes::encode_for_sku(&device.sku, &params)?.base64();
 
         if let Some(iot) = self.get_iot_client().await {
             if let Some(info) = &device.undoc_device_info {
-                log::info!("Using Platform API to set {device} color");
+                log::info!("Using IoT API to set {device} color");
                 iot.send_real(&info.entry, vec![command]).await?;
                 return Ok(());
             }
@@ -400,10 +401,13 @@ impl State {
     ) -> anyhow::Result<()> {
         self.device_was_controlled(device).await;
         if let Some(iot) = self.get_iot_client().await {
-            let command = GoveeBlePacket::SetHumidifierMode(HumidifierMode {
-                mode: work_mode as u8,
-                param: value as u8,
-            })
+            let command = Base64HexBytes::encode_for_sku(
+                &device.sku,
+                &SetHumidifierMode {
+                    mode: work_mode as u8,
+                    param: value as u8,
+                },
+            )?
             .base64();
             if let Some(info) = &device.undoc_device_info {
                 iot.send_real(&info.entry, vec![command]).await?;

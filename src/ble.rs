@@ -1,10 +1,10 @@
 use anyhow::anyhow;
 use once_cell::sync::Lazy;
+use parking_lot::{MappedMutexGuard, Mutex, MutexGuard};
 use serde::{Deserialize, Deserializer};
 use std::any::{Any, TypeId};
 use std::collections::HashMap;
 use std::sync::Arc;
-use tokio::sync::{MappedMutexGuard, Mutex, MutexGuard};
 
 static MGR: Lazy<PacketManager> = Lazy::new(PacketManager::new);
 
@@ -52,13 +52,15 @@ pub struct PacketManager {
 
 impl PacketManager {
     fn map_for_sku(&self, sku: &str) -> MappedMutexGuard<HashMap<TypeId, Arc<PacketCodec>>> {
-        MutexGuard::map(self.codec_by_sku.blocking_lock(), |codecs| {
+        MutexGuard::map(self.codec_by_sku.lock(), |codecs| {
             codecs.entry(sku.to_string()).or_insert_with(|| {
                 let mut map = HashMap::new();
 
                 for codec in &self.all_codecs {
                     if codec.supported_skus.iter().any(|s| *s == sku) {
-                        map.insert(codec.type_id.clone(), codec.clone());
+                        if map.insert(codec.type_id.clone(), codec.clone()).is_some() {
+                            eprintln!("Conflicting PacketCodecs for {sku} {:?}", codec.type_id);
+                        }
                     }
                 }
 
@@ -109,7 +111,7 @@ impl PacketManager {
 
             // Match a field; emit it from the struct
             ($target:expr, $input:expr, $field_name:ident: $field_type:ty, $($tail:tt)*) => {
-                    $target.push($input.$field_name);
+                    $input.$field_name.encode_param($target);
                     encode_body!($target, $input, $($tail)*);
             };
         }
@@ -125,15 +127,17 @@ impl PacketManager {
 
             // Match a constant byte; check that it is what we expect
             ($target:expr, $data:expr, $expected:literal, $($tail:tt)*) => {
-                    anyhow::ensure!($data.get(0) == Some(&$expected));
+                    let maybe_byte = $data.get(0);
+                    anyhow::ensure!(maybe_byte == Some(&$expected),"expected {} but got {maybe_byte:?}", $expected);
                     $data = &$data[1..];
                     decode_body!($target, $data, $($tail)*);
             };
 
             // Match a field; parse it into the struct
             ($target:expr, $data:expr, $field_name:ident: $field_type:ty, $($tail:tt)*) => {
-                    $target.$field_name = *$data.get(0).ok_or_else(||anyhow!("EOF"))?;
-                    $data = &$data[1..];
+                    let (value,remain)=<$field_type>::decode_param($data)?;
+                    $target.$field_name = value;
+                    $data = remain;
                     decode_body!($target, $data, $($tail)*);
             };
         }
@@ -170,7 +174,7 @@ impl PacketManager {
 
         all_codecs.push(packet!(
             &["H7160"],
-            HumidifierMode,
+            SetHumidifierMode,
             SetHumidifierMode,
             0x33,
             0x05,
@@ -179,13 +183,46 @@ impl PacketManager {
         ));
         all_codecs.push(packet!(
             &["H7160"],
-            HumidifierMode,
+            NotifyHumidifierMode,
             NotifyHumidifierMode,
             0xaa,
             0x05,
             0x00,
             mode: u8,
             param: u8,
+        ));
+        all_codecs.push(packet!(
+            &["H7160"],
+            HumidifierAutoMode,
+            NotifyHumidifierAutoMode,
+            0xaa,
+            0x05,
+            0x03,
+            target_humidity: TargetHumidity,
+        ));
+        all_codecs.push(packet!(
+            &["H7160"],
+            NotifyHumidifierNightlightParams,
+            NotifyHumidifierNightlight,
+            0xaa,
+            0x1b,
+            on: bool,
+            brightness: u8,
+            r: u8,
+            g: u8,
+            b: u8,
+        ));
+        all_codecs.push(packet!(
+            &["H7160"],
+            SetHumidifierNightlightParams,
+            SetHumidifierNightlight,
+            0x33,
+            0x1b,
+            on: bool,
+            brightness: u8,
+            r: u8,
+            g: u8,
+            b: u8,
         ));
 
         Self {
@@ -195,8 +232,51 @@ impl PacketManager {
     }
 }
 
+pub trait DecodePacketParam {
+    fn decode_param(data: &[u8]) -> anyhow::Result<(Self, &[u8])>
+    where
+        Self: Sized;
+
+    fn encode_param(&self, target: &mut Vec<u8>);
+}
+
+impl DecodePacketParam for u8 {
+    fn decode_param(data: &[u8]) -> anyhow::Result<(Self, &[u8])>
+    where
+        Self: Sized,
+    {
+        let byte = *data.get(0).ok_or_else(|| anyhow!("EOF"))?;
+        Ok((byte, &data[1..]))
+    }
+
+    fn encode_param(&self, target: &mut Vec<u8>) {
+        target.push(*self);
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
-pub struct HumidifierNightlightParams {
+pub struct SetHumidifierNightlightParams {
+    pub on: bool,
+    pub r: u8,
+    pub g: u8,
+    pub b: u8,
+    pub brightness: u8,
+}
+
+impl Into<SetHumidifierNightlightParams> for NotifyHumidifierNightlightParams {
+    fn into(self) -> SetHumidifierNightlightParams {
+        SetHumidifierNightlightParams {
+            on: self.on,
+            r: self.r,
+            g: self.g,
+            b: self.b,
+            brightness: self.brightness,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
+pub struct NotifyHumidifierNightlightParams {
     pub on: bool,
     pub r: u8,
     pub g: u8,
@@ -206,8 +286,27 @@ pub struct HumidifierNightlightParams {
 
 /// Data is offset by 128 with increments of 1%,
 /// so 0% is 128, 100% is 228%
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct TargetHumidity(u8);
+
+impl Into<u8> for TargetHumidity {
+    fn into(self) -> u8 {
+        self.0
+    }
+}
+
+impl DecodePacketParam for TargetHumidity {
+    fn decode_param(data: &[u8]) -> anyhow::Result<(Self, &[u8])>
+    where
+        Self: Sized,
+    {
+        let (byte, remain) = u8::decode_param(data)?;
+        Ok((TargetHumidity(byte), remain))
+    }
+    fn encode_param(&self, target: &mut Vec<u8>) {
+        target.push(self.0);
+    }
+}
 
 impl TargetHumidity {
     pub fn as_percent(&self) -> u8 {
@@ -224,9 +323,20 @@ impl TargetHumidity {
 }
 
 #[derive(Clone, Default, Debug, PartialEq, Eq)]
-pub struct HumidifierMode {
+pub struct SetHumidifierMode {
     pub mode: u8,
     pub param: u8,
+}
+
+#[derive(Clone, Default, Debug, PartialEq, Eq)]
+pub struct NotifyHumidifierMode {
+    pub mode: u8,
+    pub param: u8,
+}
+
+#[derive(Clone, Default, Debug, PartialEq, Eq)]
+pub struct HumidifierAutoMode {
+    pub target_humidity: TargetHumidity,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -235,19 +345,49 @@ pub enum GoveeBlePacket {
     SetSceneCode(u16),
     #[allow(unused)]
     SetPower(bool),
-    SetHumidifierNightlight(HumidifierNightlightParams),
-    NotifyHumidifierMode(HumidifierMode),
-    SetHumidifierMode(HumidifierMode),
+    SetHumidifierNightlight(SetHumidifierNightlightParams),
+    NotifyHumidifierMode(NotifyHumidifierMode),
+    SetHumidifierMode(SetHumidifierMode),
     NotifyHumidifierTimer {
         on: bool,
     },
-    NotifyHumidifierAutoMode {
-        param: TargetHumidity,
-    },
+    NotifyHumidifierAutoMode(HumidifierAutoMode),
     NotifyHumidifierManualMode {
         param: u8,
     },
-    NotifyHumidifierNightlight(HumidifierNightlightParams),
+    NotifyHumidifierNightlight(NotifyHumidifierNightlightParams),
+}
+
+#[derive(Debug)]
+pub struct Base64HexBytes(HexBytes);
+
+impl Base64HexBytes {
+    pub fn decode_for_sku(&self, sku: &str) -> GoveeBlePacket {
+        MGR.decode_for_sku(sku, &self.0 .0)
+    }
+
+    pub fn encode_for_sku<T: 'static>(sku: &str, value: &T) -> anyhow::Result<Self> {
+        MGR.encode_for_sku(sku, value)
+            .map(|bytes| Base64HexBytes(HexBytes(bytes)))
+    }
+
+    pub fn base64(&self) -> String {
+        data_encoding::BASE64.encode(&self.0 .0)
+    }
+}
+
+impl<'de> Deserialize<'de> for Base64HexBytes {
+    fn deserialize<D>(deserializer: D) -> Result<Self, <D as Deserializer<'de>>::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        use serde::de::Error as _;
+        let encoded = String::deserialize(deserializer)?;
+        let decoded = data_encoding::BASE64
+            .decode(encoded.as_ref())
+            .map_err(|e| D::Error::custom(format!("{e:#}")))?;
+        Ok(Self(HexBytes(decoded)))
+    }
 }
 
 impl<'de> Deserialize<'de> for GoveeBlePacket {
@@ -276,6 +416,20 @@ fn finish(mut data: Vec<u8>) -> Vec<u8> {
     data
 }
 
+impl DecodePacketParam for bool {
+    fn decode_param(data: &[u8]) -> anyhow::Result<(Self, &[u8])>
+    where
+        Self: Sized,
+    {
+        let (byte, remain) = u8::decode_param(data)?;
+        Ok((itob(&byte), remain))
+    }
+
+    fn encode_param(&self, target: &mut Vec<u8>) {
+        target.push(btoi(*self));
+    }
+}
+
 fn btoi(on: bool) -> u8 {
     if on {
         1
@@ -297,28 +451,28 @@ impl GoveeBlePacket {
                 finish(vec![0x33, 0x05, 0x04, lo, hi])
             }
             Self::SetPower(on) => finish(vec![0x33, 0x01, btoi(on)]),
-            Self::SetHumidifierNightlight(HumidifierNightlightParams {
+            Self::SetHumidifierNightlight(SetHumidifierNightlightParams {
                 on,
                 r,
                 g,
                 b,
                 brightness,
             }) => finish(vec![0x33, 0x1b, btoi(on), brightness, r, g, b]),
-            Self::NotifyHumidifierNightlight(HumidifierNightlightParams {
+            Self::NotifyHumidifierNightlight(NotifyHumidifierNightlightParams {
                 on,
                 r,
                 g,
                 b,
                 brightness,
             }) => finish(vec![0xaa, 0x1b, btoi(on), brightness, r, g, b]),
-            Self::NotifyHumidifierMode(HumidifierMode { mode, param }) => {
+            Self::NotifyHumidifierMode(NotifyHumidifierMode { mode, param }) => {
                 finish(vec![0xaa, 0x05, 0x0, mode, param])
             }
-            Self::SetHumidifierMode(HumidifierMode { mode, param }) => {
+            Self::SetHumidifierMode(SetHumidifierMode { mode, param }) => {
                 finish(vec![0x33, 0x05, mode, param])
             }
-            Self::NotifyHumidifierAutoMode { param } => {
-                finish(vec![0xaa, 0x05, 0x03, param.into_inner()])
+            Self::NotifyHumidifierAutoMode(HumidifierAutoMode { target_humidity }) => {
+                finish(vec![0xaa, 0x05, 0x03, target_humidity.into_inner()])
             }
             Self::NotifyHumidifierManualMode { param } => finish(vec![0xaa, 0x05, 0x01, param]),
             Self::NotifyHumidifierTimer { on } => finish(vec![0xaa, 0x11, btoi(on)]),
@@ -344,7 +498,7 @@ impl GoveeBlePacket {
                 Self::SetSceneCode(((*hi as u16) << 8) | *lo as u16)
             }
             [0x33, 0x1b, on, brightness, r, g, b, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] => {
-                Self::SetHumidifierNightlight(HumidifierNightlightParams {
+                Self::SetHumidifierNightlight(SetHumidifierNightlightParams {
                     on: itob(on),
                     r: *r,
                     g: *g,
@@ -353,7 +507,7 @@ impl GoveeBlePacket {
                 })
             }
             [0xaa, 0x1b, on, brightness, r, g, b, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] => {
-                Self::NotifyHumidifierNightlight(HumidifierNightlightParams {
+                Self::NotifyHumidifierNightlight(NotifyHumidifierNightlightParams {
                     on: itob(on),
                     r: *r,
                     g: *g,
@@ -362,13 +516,13 @@ impl GoveeBlePacket {
                 })
             }
             [0x33, 0x05, mode, param, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] => {
-                Self::SetHumidifierMode(HumidifierMode {
+                Self::SetHumidifierMode(SetHumidifierMode {
                     mode: *mode,
                     param: *param,
                 })
             }
             [0xaa, 0x05, 0, mode, param, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] => {
-                Self::NotifyHumidifierMode(HumidifierMode {
+                Self::NotifyHumidifierMode(NotifyHumidifierMode {
                     mode: *mode,
                     param: *param,
                 })
@@ -377,9 +531,9 @@ impl GoveeBlePacket {
                 Self::NotifyHumidifierTimer { on: itob(on) }
             }
             [0xaa, 0x05, 0x03, param, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] => {
-                Self::NotifyHumidifierAutoMode {
-                    param: TargetHumidity(*param),
-                }
+                Self::NotifyHumidifierAutoMode(HumidifierAutoMode {
+                    target_humidity: TargetHumidity(*param),
+                })
             }
             [0xaa, 0x05, 0x01, param, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] => {
                 Self::NotifyHumidifierManualMode { param: *param }
@@ -413,7 +567,7 @@ mod test {
                 "H7160",
                 &[0x33, 0x05, 0x01, 0x20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 23]
             ),
-            GoveeBlePacket::SetHumidifierMode(HumidifierMode {
+            GoveeBlePacket::SetHumidifierMode(SetHumidifierMode {
                 mode: 1,
                 param: 0x20
             })
@@ -422,7 +576,7 @@ mod test {
         assert_eq!(
             MGR.encode_for_sku(
                 "H7160",
-                &HumidifierMode {
+                &SetHumidifierMode {
                     mode: 1,
                     param: 0x20
                 }
@@ -447,7 +601,7 @@ mod test {
         round_trip(GoveeBlePacket::SetSceneCode(123));
         round_trip(GoveeBlePacket::SetPower(true));
         round_trip(GoveeBlePacket::SetHumidifierNightlight(
-            HumidifierNightlightParams {
+            SetHumidifierNightlightParams {
                 on: true,
                 r: 255,
                 g: 69,
@@ -508,7 +662,7 @@ mod test {
         [AA, 16, 01, FF, FF, FF, FF, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, BD],
     ),
     NotifyHumidifierNightlight(
-        HumidifierNightlightParams {
+        NotifyHumidifierNightlightParams {
             on: true,
             r: 0,
             g: 0,
