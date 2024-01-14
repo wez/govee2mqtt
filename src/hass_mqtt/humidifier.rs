@@ -261,6 +261,20 @@ pub async fn mqtt_humidifier_set_target(
         .await
         .ok_or_else(|| anyhow::anyhow!("device '{id}' not found"))?;
 
+    let use_iot = device.iot_api_supported() && state.get_iot_client().await.is_some();
+
+    if !use_iot {
+        if let Some(info) = &device.http_device_info {
+            if let Some(cap) = info.capability_by_instance("humidity") {
+                // TODO: we could try to set the humidity here,
+                // but at the time of writing, on my humidifier,
+                // there is never a valid value to read back
+                // from it, making it pointless to associate
+                // it with the humidifier entity in hass.
+            }
+        }
+    }
+
     if let Some(options) = resolve_work_mode(&device) {
         for opt in options {
             if opt.name == "Auto" {
