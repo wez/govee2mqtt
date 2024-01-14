@@ -110,7 +110,7 @@ impl PacketManager {
             };
 
             // Match a field; emit it from the struct
-            ($target:expr, $input:expr, $field_name:ident: $field_type:ty, $($tail:tt)*) => {
+            ($target:expr, $input:expr, $field_name:ident, $($tail:tt)*) => {
                     $input.$field_name.encode_param($target);
                     encode_body!($target, $input, $($tail)*);
             };
@@ -134,9 +134,8 @@ impl PacketManager {
             };
 
             // Match a field; parse it into the struct
-            ($target:expr, $data:expr, $field_name:ident: $field_type:ty, $($tail:tt)*) => {
-                    let (value,remain)=<$field_type>::decode_param($data)?;
-                    $target.$field_name = value;
+            ($target:expr, $data:expr, $field_name:ident, $($tail:tt)*) => {
+                    let remain = $target.$field_name.decode_param($data)?;
                     $data = remain;
                     decode_body!($target, $data, $($tail)*);
             };
@@ -178,8 +177,8 @@ impl PacketManager {
             SetHumidifierMode,
             0x33,
             0x05,
-            mode: u8,
-            param: u8,
+            mode,
+            param,
         ));
         all_codecs.push(packet!(
             &["H7160"],
@@ -188,8 +187,8 @@ impl PacketManager {
             0xaa,
             0x05,
             0x00,
-            mode: u8,
-            param: u8,
+            mode,
+            param,
         ));
         all_codecs.push(packet!(
             &["H7160"],
@@ -198,7 +197,7 @@ impl PacketManager {
             0xaa,
             0x05,
             0x03,
-            target_humidity: TargetHumidity,
+            target_humidity,
         ));
         all_codecs.push(packet!(
             &["H7160"],
@@ -206,11 +205,11 @@ impl PacketManager {
             NotifyHumidifierNightlight,
             0xaa,
             0x1b,
-            on: bool,
-            brightness: u8,
-            r: u8,
-            g: u8,
-            b: u8,
+            on,
+            brightness,
+            r,
+            g,
+            b,
         ));
         all_codecs.push(packet!(
             &["H7160"],
@@ -218,11 +217,11 @@ impl PacketManager {
             SetHumidifierNightlight,
             0x33,
             0x1b,
-            on: bool,
-            brightness: u8,
-            r: u8,
-            g: u8,
-            b: u8,
+            on,
+            brightness,
+            r,
+            g,
+            b,
         ));
 
         Self {
@@ -233,20 +232,14 @@ impl PacketManager {
 }
 
 pub trait DecodePacketParam {
-    fn decode_param(data: &[u8]) -> anyhow::Result<(Self, &[u8])>
-    where
-        Self: Sized;
-
+    fn decode_param<'a>(&mut self, data: &'a [u8]) -> anyhow::Result<&'a [u8]>;
     fn encode_param(&self, target: &mut Vec<u8>);
 }
 
 impl DecodePacketParam for u8 {
-    fn decode_param(data: &[u8]) -> anyhow::Result<(Self, &[u8])>
-    where
-        Self: Sized,
-    {
-        let byte = *data.get(0).ok_or_else(|| anyhow!("EOF"))?;
-        Ok((byte, &data[1..]))
+    fn decode_param<'a>(&mut self, data: &'a [u8]) -> anyhow::Result<&'a [u8]> {
+        *self = *data.get(0).ok_or_else(|| anyhow!("EOF"))?;
+        Ok(&data[1..])
     }
 
     fn encode_param(&self, target: &mut Vec<u8>) {
@@ -296,13 +289,10 @@ impl Into<u8> for TargetHumidity {
 }
 
 impl DecodePacketParam for TargetHumidity {
-    fn decode_param(data: &[u8]) -> anyhow::Result<(Self, &[u8])>
-    where
-        Self: Sized,
-    {
-        let (byte, remain) = u8::decode_param(data)?;
-        Ok((TargetHumidity(byte), remain))
+    fn decode_param<'a>(&mut self, data: &'a [u8]) -> anyhow::Result<&'a [u8]> {
+        self.0.decode_param(data)
     }
+
     fn encode_param(&self, target: &mut Vec<u8>) {
         target.push(self.0);
     }
@@ -417,12 +407,11 @@ fn finish(mut data: Vec<u8>) -> Vec<u8> {
 }
 
 impl DecodePacketParam for bool {
-    fn decode_param(data: &[u8]) -> anyhow::Result<(Self, &[u8])>
-    where
-        Self: Sized,
-    {
-        let (byte, remain) = u8::decode_param(data)?;
-        Ok((itob(&byte), remain))
+    fn decode_param<'a>(&mut self, data: &'a [u8]) -> anyhow::Result<&'a [u8]> {
+        let mut byte = 0u8;
+        let remain = byte.decode_param(data)?;
+        *self = itob(&byte);
+        Ok(remain)
     }
 
     fn encode_param(&self, target: &mut Vec<u8>) {
