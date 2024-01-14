@@ -664,21 +664,25 @@ mod test {
     NotifyHumidifierTimer {
         on: false,
     },
-    NotifyHumidifierAutoMode {
-        param: TargetHumidity(
-            188,
-        ),
-    },
+    NotifyHumidifierAutoMode(
+        HumidifierAutoMode {
+            target_humidity: TargetHumidity(
+                188,
+            ),
+        },
+    ),
     Generic(
         [AA, 05, 02, 00, 09, 00, 3C, 00, 3C, 05, 00, 3C, 00, 3C, 01, FF, FF, FF, FF, A0],
     ),
     NotifyHumidifierManualMode {
         param: 9,
     },
-    NotifyHumidifierMode {
-        mode: 1,
-        param: 9,
-    },
+    NotifyHumidifierMode(
+        NotifyHumidifierMode {
+            mode: 1,
+            param: 9,
+        },
+    ),
     Generic(
         [AA, 16, 01, FF, FF, FF, FF, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, BD],
     ),
