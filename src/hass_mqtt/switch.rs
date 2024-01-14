@@ -9,6 +9,7 @@ use crate::service::hass::{
 use crate::service::state::StateHandle;
 use async_trait::async_trait;
 use serde::Serialize;
+use serde_json::json;
 
 #[derive(Serialize, Clone, Debug)]
 pub struct SwitchConfig {
@@ -126,9 +127,16 @@ impl EntityInstance for CapabilitySwitch {
                                 .await;
                         }
                         None => {
-                            log::warn!(
-                                "CapabilitySwitch::notify_state: Do something with {cap:#?}"
-                            );
+                            if cap.state.pointer("/value") == Some(&json!("")) {
+                                log::trace!(
+                                    "CapabilitySwitch::notify_state ignore useless \
+                                            empty string state for {cap:?}"
+                                );
+                            } else {
+                                log::warn!(
+                                    "CapabilitySwitch::notify_state: Do something with {cap:#?}"
+                                );
+                            }
                             return Ok(());
                         }
                     }
