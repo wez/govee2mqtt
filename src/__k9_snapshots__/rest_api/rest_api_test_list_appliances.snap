@@ -1,0 +1,57 @@
+GetDevicesResponse {
+    code: 200,
+    message: "Success",
+    data: GetDevicesDeviceList {
+        devices: [
+            RestDeviceInfo {
+                sku: "H7160",
+                device: "XX:4E:D8",
+                device_name: "Smart Humidifier",
+                controllable: true,
+                properties: RestDeviceProperties {
+                    color_temperature: None,
+                    mode: Some(
+                        Object {
+                            "options": Array [
+                                Object {
+                                    "name": String("Custom"),
+                                    "value": Number(1),
+                                },
+                                Object {
+                                    "name": String("Auto"),
+                                    "value": Number(2),
+                                },
+                            ],
+                        },
+                    ),
+                    gear: Some(
+                        Object {
+                            "options": Array [
+                                Object {
+                                    "name": String("gear"),
+                                    "value": Array [
+                                        Number(1),
+                                        Number(2),
+                                        Number(3),
+                                        Number(4),
+                                        Number(5),
+                                        Number(6),
+                                        Number(7),
+                                        Number(8),
+                                        Number(9),
+                                    ],
+                                },
+                            ],
+                        },
+                    ),
+                },
+                retrievable: false,
+                supported_commands: [
+                    Turn,
+                    Mode,
+                    Gear,
+                ],
+            },
+        ],
+    },
+}

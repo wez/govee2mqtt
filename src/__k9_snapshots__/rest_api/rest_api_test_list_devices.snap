@@ -17,6 +17,8 @@ GetDevicesResponse {
                             },
                         },
                     ),
+                    mode: None,
+                    gear: None,
                 },
                 retrievable: true,
                 supported_commands: [
