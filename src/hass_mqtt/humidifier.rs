@@ -32,6 +32,8 @@ pub struct HumidifierConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub max_humidity: Option<u8>,
 
+    pub optimistic: bool,
+
     /// The list of supported modes
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub modes: Vec<String>,
@@ -61,6 +63,8 @@ fn resolve_work_mode(device: &ServiceDevice) -> Option<&[EnumOption]> {
 impl Humidifier {
     pub async fn new(device: &ServiceDevice, state: &StateHandle) -> anyhow::Result<Self> {
         let _quirk = device.resolve_quirk();
+        let use_iot = device.iot_api_supported() && state.get_iot_client().await.is_some();
+        let optimistic = !use_iot;
 
         // command_topic controls the power state; just route it to
         // the general power switch handler
@@ -149,6 +153,7 @@ impl Humidifier {
                 mode_state_topic,
                 modes,
                 state_topic,
+                optimistic,
             },
             device_id: device.id.to_string(),
             state: state.clone(),
@@ -261,16 +266,23 @@ pub async fn mqtt_humidifier_set_target(
         .await
         .ok_or_else(|| anyhow::anyhow!("device '{id}' not found"))?;
 
-    let use_iot = device.iot_api_supported() && state.get_iot_client().await.is_some();
+    let use_iot = device.pollable_via_iot() && state.get_iot_client().await.is_some();
 
     if !use_iot {
         if let Some(info) = &device.http_device_info {
             if let Some(cap) = info.capability_by_instance("humidity") {
-                // TODO: we could try to set the humidity here,
-                // but at the time of writing, on my humidifier,
-                // there is never a valid value to read back
-                // from it, making it pointless to associate
-                // it with the humidifier entity in hass.
+                state.device_control(&device, cap, percent).await?;
+
+                // For the H7160 at least, setting the humidity
+                // will put the device into auto mode and turn
+                // it on, however, we don't know that the device
+                // is actually turned on.
+                //
+                // This is handled by the device_was_controlled
+                // stuff; it will cause us to poll the device
+                // after a short delay, and that should fix up
+                // the reported device state.
+                return Ok(());
             }
         }
     }

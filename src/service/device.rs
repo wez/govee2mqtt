@@ -393,6 +393,22 @@ impl Device {
         }
     }
 
+    pub fn pollable_via_lan(&self) -> bool {
+        self.lan_device.is_some()
+    }
+
+    pub fn pollable_via_iot(&self) -> bool {
+        if !self.iot_api_supported() {
+            return false;
+        }
+        let device_type = self.device_type();
+        match (device_type, self.sku.as_str()) {
+            (_, "H7160") => true,
+            (DeviceType::Light, _) => true,
+            _ => false,
+        }
+    }
+
     pub fn avoid_platform_api(&self) -> bool {
         if let Some(quirk) = self.resolve_quirk() {
             if quirk.avoid_platform_api {

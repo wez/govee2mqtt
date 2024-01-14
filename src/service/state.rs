@@ -1,11 +1,12 @@
 use crate::ble::{Base64HexBytes, SetHumidifierMode, SetHumidifierNightlightParams};
 use crate::lan_api::{Client as LanClient, DeviceStatus as LanDeviceStatus, LanDevice};
-use crate::platform_api::{DeviceType, GoveeApiClient};
+use crate::platform_api::{DeviceCapability, DeviceType, GoveeApiClient};
 use crate::service::device::Device;
 use crate::service::hass::{topic_safe_id, HassClient};
 use crate::service::iot::IotClient;
 use crate::undoc_api::GoveeUndocumentedApi;
 use anyhow::Context;
+use serde_json::Value as JsonValue;
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 use std::time::Instant;
@@ -212,6 +213,25 @@ impl State {
             }
             None => anyhow::bail!("no lan client"),
         }
+    }
+
+    pub async fn device_control<V: Into<JsonValue>>(
+        self: &Arc<Self>,
+        device: &Device,
+        capability: &DeviceCapability,
+        value: V,
+    ) -> anyhow::Result<()> {
+        let value: JsonValue = value.into();
+        self.device_was_controlled(device).await;
+        if let Some(client) = self.get_platform_client().await {
+            if let Some(info) = &device.http_device_info {
+                log::info!("Using Platform API to send {value:?} control to {device}");
+                client.control_device(info, capability, value).await?;
+                return Ok(());
+            }
+        }
+
+        anyhow::bail!("Unable to use Platform API to control {device}");
     }
 
     pub async fn device_light_power_on(
@@ -488,13 +508,25 @@ impl State {
     pub async fn poll_after_control(self: &Arc<Self>) {
         let device_ids: Vec<String> = self.devices_to_poll.lock().await.drain().collect();
 
+        let iot_available = self.get_iot_client().await.is_some();
+
         for id in device_ids {
             if let Some(device) = self.device_by_id(&id).await {
-                if device.needs_platform_poll() {
-                    log::info!("Polling {device} to get latest state after control");
-                    if let Err(err) = self.poll_platform_api(&device).await {
-                        log::error!("Polling {device} failed: {err:#}");
-                    }
+                if device.pollable_via_iot() && iot_available {
+                    continue;
+                }
+                if device.pollable_via_lan() {
+                    continue;
+                }
+
+                // Add a slight delay, as the status returned
+                // by the platform API isn't guaranteed to be
+                // coherent with the command we just issued
+                // right away :-/
+                sleep(Duration::from_secs(5)).await;
+                log::info!("Polling {device} to get latest state after control");
+                if let Err(err) = self.poll_platform_api(&device).await {
+                    log::error!("Polling {device} failed: {err:#}");
                 }
             }
         }
