@@ -232,6 +232,14 @@ impl PacketManager {
             0x04,
             code,
         ));
+        all_codecs.push(packet!(
+            &["Generic:Light"],
+            SetDevicePower,
+            SetDevicePower,
+            0x33,
+            0x01,
+            on,
+        ));
 
         Self {
             codec_by_sku: Mutex::new(HashMap::new()),
@@ -359,22 +367,20 @@ pub struct SetSceneCode {
     pub code: u16,
 }
 
+#[derive(Clone, Default, Debug, PartialEq, Eq)]
+pub struct SetDevicePower {
+    pub on: bool,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum GoveeBlePacket {
     Generic(HexBytes),
     SetSceneCode(SetSceneCode),
-    #[allow(unused)]
-    SetPower(bool),
+    SetDevicePower(SetDevicePower),
     SetHumidifierNightlight(SetHumidifierNightlightParams),
     NotifyHumidifierMode(NotifyHumidifierMode),
     SetHumidifierMode(SetHumidifierMode),
-    NotifyHumidifierTimer {
-        on: bool,
-    },
     NotifyHumidifierAutoMode(HumidifierAutoMode),
-    NotifyHumidifierManualMode {
-        param: u8,
-    },
     NotifyHumidifierNightlight(NotifyHumidifierNightlightParams),
 }
 
@@ -394,6 +400,10 @@ impl Base64HexBytes {
     pub fn base64(&self) -> String {
         data_encoding::BASE64.encode(&self.0 .0)
     }
+
+    pub fn with_bytes(bytes: Vec<u8>) -> Self {
+        Self(HexBytes(finish(bytes)))
+    }
 }
 
 impl<'de> Deserialize<'de> for Base64HexBytes {
@@ -407,17 +417,6 @@ impl<'de> Deserialize<'de> for Base64HexBytes {
             .decode(encoded.as_ref())
             .map_err(|e| D::Error::custom(format!("{e:#}")))?;
         Ok(Self(HexBytes(decoded)))
-    }
-}
-
-impl<'de> Deserialize<'de> for GoveeBlePacket {
-    fn deserialize<D>(deserializer: D) -> Result<Self, <D as Deserializer<'de>>::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        use serde::de::Error as _;
-        let text = String::deserialize(deserializer)?;
-        Ok(Self::parse_base64(&text).map_err(|e| D::Error::custom(format!("{e:#}")))?)
     }
 }
 
@@ -461,121 +460,7 @@ fn itob(i: &u8) -> bool {
     *i != 0
 }
 
-impl GoveeBlePacket {
-    pub fn into_vec(self) -> Vec<u8> {
-        match self {
-            Self::Generic(HexBytes(v)) => v,
-            Self::SetSceneCode(SetSceneCode { code }) => {
-                let [lo, hi] = code.to_le_bytes();
-                finish(vec![0x33, 0x05, 0x04, lo, hi])
-            }
-            Self::SetPower(on) => finish(vec![0x33, 0x01, btoi(on)]),
-            Self::SetHumidifierNightlight(SetHumidifierNightlightParams {
-                on,
-                r,
-                g,
-                b,
-                brightness,
-            }) => finish(vec![0x33, 0x1b, btoi(on), brightness, r, g, b]),
-            Self::NotifyHumidifierNightlight(NotifyHumidifierNightlightParams {
-                on,
-                r,
-                g,
-                b,
-                brightness,
-            }) => finish(vec![0xaa, 0x1b, btoi(on), brightness, r, g, b]),
-            Self::NotifyHumidifierMode(NotifyHumidifierMode { mode, param }) => {
-                finish(vec![0xaa, 0x05, 0x0, mode, param])
-            }
-            Self::SetHumidifierMode(SetHumidifierMode { mode, param }) => {
-                finish(vec![0x33, 0x05, mode, param])
-            }
-            Self::NotifyHumidifierAutoMode(HumidifierAutoMode { target_humidity }) => {
-                finish(vec![0xaa, 0x05, 0x03, target_humidity.into_inner()])
-            }
-            Self::NotifyHumidifierManualMode { param } => finish(vec![0xaa, 0x05, 0x01, param]),
-            Self::NotifyHumidifierTimer { on } => finish(vec![0xaa, 0x11, btoi(on)]),
-        }
-    }
-
-    pub fn parse_bytes(data: &[u8]) -> anyhow::Result<Self> {
-        if data.is_empty() {
-            return Ok(Self::Generic(HexBytes(vec![])));
-        }
-        let checksum = calculate_checksum(&data[0..data.len().saturating_sub(1)]);
-        let cs_byte = *data.last().expect("checked empty above");
-        anyhow::ensure!(
-            checksum == cs_byte,
-            "packet checksum is invalid. Expected {cs_byte} but got {checksum}",
-        );
-
-        Ok(match &data[0..data.len().saturating_sub(1)] {
-            [0x33, 0x01, on, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] => {
-                Self::SetPower(itob(on))
-            }
-            [0x33, 0x05, 0x04, lo, hi, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] => {
-                Self::SetSceneCode(SetSceneCode {
-                    code: ((*hi as u16) << 8) | *lo as u16,
-                })
-            }
-            [0x33, 0x1b, on, brightness, r, g, b, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] => {
-                Self::SetHumidifierNightlight(SetHumidifierNightlightParams {
-                    on: itob(on),
-                    r: *r,
-                    g: *g,
-                    b: *b,
-                    brightness: *brightness,
-                })
-            }
-            [0xaa, 0x1b, on, brightness, r, g, b, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] => {
-                Self::NotifyHumidifierNightlight(NotifyHumidifierNightlightParams {
-                    on: itob(on),
-                    r: *r,
-                    g: *g,
-                    b: *b,
-                    brightness: *brightness,
-                })
-            }
-            [0x33, 0x05, mode, param, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] => {
-                Self::SetHumidifierMode(SetHumidifierMode {
-                    mode: *mode,
-                    param: *param,
-                })
-            }
-            [0xaa, 0x05, 0, mode, param, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] => {
-                Self::NotifyHumidifierMode(NotifyHumidifierMode {
-                    mode: *mode,
-                    param: *param,
-                })
-            }
-            [0xaa, 0x11, on, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] => {
-                Self::NotifyHumidifierTimer { on: itob(on) }
-            }
-            [0xaa, 0x05, 0x03, param, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] => {
-                Self::NotifyHumidifierAutoMode(HumidifierAutoMode {
-                    target_humidity: TargetHumidity(*param),
-                })
-            }
-            [0xaa, 0x05, 0x01, param, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] => {
-                Self::NotifyHumidifierManualMode { param: *param }
-            }
-            _ => Self::Generic(HexBytes(data.to_vec())),
-        })
-    }
-
-    pub fn parse_base64<B: AsRef<[u8]>>(encoded: B) -> anyhow::Result<Self> {
-        let decoded = data_encoding::BASE64.decode(encoded.as_ref())?;
-        Self::parse_bytes(&decoded)
-    }
-
-    pub fn base64(self) -> String {
-        data_encoding::BASE64.encode(&self.into_vec())
-    }
-
-    pub fn with_bytes(bytes: Vec<u8>) -> Self {
-        Self::Generic(HexBytes(finish(bytes)))
-    }
-}
+impl GoveeBlePacket {}
 
 #[cfg(test)]
 mod test {
@@ -607,108 +492,40 @@ mod test {
         );
     }
 
-    fn round_trip(value: GoveeBlePacket) {
-        let bytes = value.clone().into_vec();
-        let decoded = GoveeBlePacket::parse_bytes(&bytes).unwrap();
-        assert_eq!(bytes, decoded.into_vec());
-
-        let b64 = value.clone().base64();
-        let decoded = GoveeBlePacket::parse_base64(&b64).unwrap();
-        assert_eq!(value, decoded);
+    fn round_trip<T: 'static + std::fmt::Debug>(sku: &str, value: &T, expect: GoveeBlePacket) {
+        let bytes = Base64HexBytes::encode_for_sku(sku, value).unwrap();
+        let decoded = bytes.decode_for_sku(sku);
+        assert_eq!(decoded, expect);
     }
 
     #[test]
     fn basic_round_trip() {
-        round_trip(GoveeBlePacket::SetSceneCode(SetSceneCode { code: 123 }));
-        round_trip(GoveeBlePacket::SetPower(true));
-        round_trip(GoveeBlePacket::SetHumidifierNightlight(
-            SetHumidifierNightlightParams {
+        round_trip(
+            "Generic:Light",
+            &SetSceneCode { code: 123 },
+            GoveeBlePacket::SetSceneCode(SetSceneCode { code: 123 }),
+        );
+        round_trip(
+            "Generic:Light",
+            &SetDevicePower { on: true },
+            GoveeBlePacket::SetDevicePower(SetDevicePower { on: true }),
+        );
+        round_trip(
+            "H7160",
+            &SetHumidifierNightlightParams {
                 on: true,
                 r: 255,
                 g: 69,
                 b: 42,
                 brightness: 100,
             },
-        ));
-    }
-
-    #[test]
-    fn decode_some_stuff() {
-        let input = [
-            "qhIAAAAAAAAAAAAAAAAAAAAAALg=",
-            "qhEAAAAAAAAAAAAAAAAAAAAAALs=",
-            "qgUDvAAAAAAAAAAAAAAAAAAAABA=",
-            "qgUCAAkAPAA8BQA8ADwB/////6A=",
-            "qgUBCQAAAAAAAAAAAAAAAAAAAKc=",
-            "qgUAAQkAAAAAAAAAAAAAAAAAAKc=",
-            "qhYB/////wAAAAAAAAAAAAAAAL0=",
-            "qhsBZAAAAAAAAAAAAAAAAAAAANQ=",
-            "qggYTTMzNc4AAAAAAAAAAAAAAAw=",
-            "qhABA2RqAAAAAAAAAAAAAAAAALY=",
-            "qhcAAAIAAAAAAAAAAAAAAAAAAL8=",
-            "6gEB6g==",
-        ];
-
-        let decoded: Vec<_> = input
-            .iter()
-            .map(|s| GoveeBlePacket::parse_base64(s).unwrap())
-            .collect();
-
-        k9::snapshot!(
-            decoded,
-            "
-[
-    Generic(
-        [AA, 12, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, B8],
-    ),
-    NotifyHumidifierTimer {
-        on: false,
-    },
-    NotifyHumidifierAutoMode(
-        HumidifierAutoMode {
-            target_humidity: TargetHumidity(
-                188,
-            ),
-        },
-    ),
-    Generic(
-        [AA, 05, 02, 00, 09, 00, 3C, 00, 3C, 05, 00, 3C, 00, 3C, 01, FF, FF, FF, FF, A0],
-    ),
-    NotifyHumidifierManualMode {
-        param: 9,
-    },
-    NotifyHumidifierMode(
-        NotifyHumidifierMode {
-            mode: 1,
-            param: 9,
-        },
-    ),
-    Generic(
-        [AA, 16, 01, FF, FF, FF, FF, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, BD],
-    ),
-    NotifyHumidifierNightlight(
-        NotifyHumidifierNightlightParams {
-            on: true,
-            r: 0,
-            g: 0,
-            b: 0,
-            brightness: 100,
-        },
-    ),
-    Generic(
-        [AA, 08, 18, 4D, 33, 33, 35, CE, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 0C],
-    ),
-    Generic(
-        [AA, 10, 01, 03, 64, 6A, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, B6],
-    ),
-    Generic(
-        [AA, 17, 00, 00, 02, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, BF],
-    ),
-    Generic(
-        [EA, 01, 01, EA],
-    ),
-]
-"
+            GoveeBlePacket::SetHumidifierNightlight(SetHumidifierNightlightParams {
+                on: true,
+                r: 255,
+                g: 69,
+                b: 42,
+                brightness: 100,
+            }),
         );
     }
 }

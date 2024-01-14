@@ -1,4 +1,4 @@
-use crate::ble::{Base64HexBytes, GoveeBlePacket, SetSceneCode};
+use crate::ble::{Base64HexBytes, SetSceneCode};
 use crate::lan_api::{Client, DiscoOptions};
 use crate::undoc_api::GoveeUndocumentedApi;
 use clap_num::maybe_hex;
@@ -105,7 +105,7 @@ impl LanControlCommand {
                 }
             }
             SubCommand::Command { data } => {
-                let encoded = GoveeBlePacket::with_bytes(data.to_vec()).base64();
+                let encoded = Base64HexBytes::with_bytes(data.to_vec()).base64();
                 println!("encoded: {encoded}");
                 device.send_real(vec![encoded]).await?;
             }
