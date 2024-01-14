@@ -141,13 +141,13 @@ async fn entities_for_work_mode<'a>(
                         let range = extract_contiguous_range(opt);
 
                         let label = match (d.sku.as_str(), mode_name.as_str()) {
-                            ("H7160", "Auto") => {
+                            ("H7160" | "H7143", "Auto") => {
                                 // We'll just skip this one; we'll control it
                                 // via the humidity entity which knows how to
                                 // offset and apply it
                                 continue;
                             }
-                            ("H7160", "Manual") => "Manual: Mist Level".to_string(),
+                            ("H7160" | "H7143", "Manual") => "Manual: Mist Level".to_string(),
                             ("H7160", "Custom") => {
                                 // Skip custom mode; we have no idea how to
                                 // configure it correctly.
