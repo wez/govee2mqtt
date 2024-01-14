@@ -4,7 +4,7 @@ use crate::hass_mqtt::instance::{publish_entity_config, EntityInstance};
 use crate::platform_api::DeviceCapability;
 use crate::service::device::Device as ServiceDevice;
 use crate::service::hass::{availability_topic, topic_safe_id, topic_safe_string, HassClient};
-use crate::service::quirks::{HumidityUnits, TemperatureUnits};
+use crate::service::quirks::{ctof, HumidityUnits, TemperatureUnits};
 use crate::service::state::StateHandle;
 use async_trait::async_trait;
 use chrono::Utc;
@@ -76,6 +76,7 @@ impl GlobalFixedDiagnostic {
     }
 }
 
+#[derive(Clone)]
 pub struct CapabilitySensor {
     sensor: SensorConfig,
     device_id: String,
@@ -129,6 +130,21 @@ impl CapabilitySensor {
             instance_name: instance.instance.to_string(),
         })
     }
+
+    pub fn into_temperature_farenheit(mut self) -> Option<Self> {
+        if self.instance_name != "sensorTemperature" {
+            return None;
+        }
+
+        self.sensor.unit_of_measurement.replace("°F".to_string());
+        self.sensor.base.unique_id.push_str("_F");
+        self.sensor.state_topic.push_str("_F");
+        self.sensor
+            .base
+            .name
+            .replace("Temperature (imperial)".to_string());
+        Some(self)
+    }
 }
 
 #[async_trait]
@@ -161,7 +177,10 @@ impl EntityInstance for CapabilitySensor {
                                 .and_then(|v| v.as_f64())
                                 .map(|v| units.from_reading_to_celsius(v))
                             {
-                                Some(v) => format!("{v:.2}"),
+                                Some(v) => match self.sensor.unit_of_measurement.as_deref() {
+                                    Some("°F") => format!("{:.2}", ctof(v)),
+                                    _ => format!("{v:.2}"),
+                                },
                                 None => "".to_string(),
                             }
                         }

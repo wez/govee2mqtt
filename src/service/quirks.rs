@@ -13,8 +13,13 @@ pub enum TemperatureUnits {
 }
 
 /// Convert farenheit to celsius
-fn ftoc(f: f64) -> f64 {
+pub fn ftoc(f: f64) -> f64 {
     (f - 32.) * (5. / 9.)
+}
+
+/// Convert farenheit to celsius
+pub fn ctof(f: f64) -> f64 {
+    (f * 9. / 5.) + 32.
 }
 
 impl TemperatureUnits {
