@@ -223,6 +223,15 @@ impl PacketManager {
             g,
             b,
         ));
+        all_codecs.push(packet!(
+            &["Generic:Light"],
+            SetSceneCode,
+            SetSceneCode,
+            0x33,
+            0x05,
+            0x04,
+            code,
+        ));
 
         Self {
             codec_by_sku: Mutex::new(HashMap::new()),
@@ -244,6 +253,22 @@ impl DecodePacketParam for u8 {
 
     fn encode_param(&self, target: &mut Vec<u8>) {
         target.push(*self);
+    }
+}
+
+impl DecodePacketParam for u16 {
+    fn decode_param<'a>(&mut self, data: &'a [u8]) -> anyhow::Result<&'a [u8]> {
+        let lo = *data.get(0).ok_or_else(|| anyhow!("EOF"))?;
+        let hi = *data.get(1).ok_or_else(|| anyhow!("EOF"))?;
+        *self = ((hi as u16) << 8) | lo as u16;
+        Ok(&data[2..])
+    }
+
+    fn encode_param(&self, target: &mut Vec<u8>) {
+        let hi = (*self >> 8) as u8;
+        let lo = (*self & 0xff) as u8;
+        target.push(lo);
+        target.push(hi);
     }
 }
 
@@ -329,10 +354,15 @@ pub struct HumidifierAutoMode {
     pub target_humidity: TargetHumidity,
 }
 
+#[derive(Clone, Default, Debug, PartialEq, Eq)]
+pub struct SetSceneCode {
+    pub code: u16,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum GoveeBlePacket {
     Generic(HexBytes),
-    SetSceneCode(u16),
+    SetSceneCode(SetSceneCode),
     #[allow(unused)]
     SetPower(bool),
     SetHumidifierNightlight(SetHumidifierNightlightParams),
@@ -435,7 +465,7 @@ impl GoveeBlePacket {
     pub fn into_vec(self) -> Vec<u8> {
         match self {
             Self::Generic(HexBytes(v)) => v,
-            Self::SetSceneCode(code) => {
+            Self::SetSceneCode(SetSceneCode { code }) => {
                 let [lo, hi] = code.to_le_bytes();
                 finish(vec![0x33, 0x05, 0x04, lo, hi])
             }
@@ -484,7 +514,9 @@ impl GoveeBlePacket {
                 Self::SetPower(itob(on))
             }
             [0x33, 0x05, 0x04, lo, hi, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] => {
-                Self::SetSceneCode(((*hi as u16) << 8) | *lo as u16)
+                Self::SetSceneCode(SetSceneCode {
+                    code: ((*hi as u16) << 8) | *lo as u16,
+                })
             }
             [0x33, 0x1b, on, brightness, r, g, b, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] => {
                 Self::SetHumidifierNightlight(SetHumidifierNightlightParams {
@@ -587,7 +619,7 @@ mod test {
 
     #[test]
     fn basic_round_trip() {
-        round_trip(GoveeBlePacket::SetSceneCode(123));
+        round_trip(GoveeBlePacket::SetSceneCode(SetSceneCode { code: 123 }));
         round_trip(GoveeBlePacket::SetPower(true));
         round_trip(GoveeBlePacket::SetHumidifierNightlight(
             SetHumidifierNightlightParams {

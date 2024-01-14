@@ -1,4 +1,4 @@
-use crate::ble::GoveeBlePacket;
+use crate::ble::{Base64HexBytes, SetSceneCode};
 use crate::opt_env_var;
 use crate::platform_api::from_json;
 use crate::undoc_api::GoveeUndocumentedApi;
@@ -242,7 +242,13 @@ impl LanDevice {
             for scene in category.scenes {
                 for effect in scene.light_effects {
                     if scene.scene_name == scene_name && effect.scene_code != 0 {
-                        let encoded = GoveeBlePacket::SetSceneCode(effect.scene_code).base64();
+                        let encoded = Base64HexBytes::encode_for_sku(
+                            "Generic:Light",
+                            &SetSceneCode {
+                                code: effect.scene_code,
+                            },
+                        )?
+                        .base64();
                         log::info!(
                             "sending scene packet {encoded:x?} for {scene_name}, code {}",
                             effect.scene_code

@@ -1,4 +1,4 @@
-use crate::ble::GoveeBlePacket;
+use crate::ble::{Base64HexBytes, GoveeBlePacket, SetSceneCode};
 use crate::lan_api::{Client, DiscoOptions};
 use crate::undoc_api::GoveeUndocumentedApi;
 use clap_num::maybe_hex;
@@ -92,7 +92,11 @@ impl LanControlCommand {
                 } else {
                     let scene = Uncased::new(scene.clone().expect("scene if not list"));
                     if let Some(code) = scene_code_by_name.get(&scene) {
-                        let encoded = GoveeBlePacket::SetSceneCode(*code).base64();
+                        let encoded = Base64HexBytes::encode_for_sku(
+                            "Generic:Light",
+                            &SetSceneCode { code: *code },
+                        )?
+                        .base64();
                         println!("Computed {encoded}");
                         device.send_real(vec![encoded]).await?;
                     } else {
