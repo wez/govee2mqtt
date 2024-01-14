@@ -1273,9 +1273,9 @@ dependencies = [
 
 [[package]]
 name = "mosquitto-rs"
-version = "0.11.0"
+version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bd5bb571c883b88d99f30c1b70ebf591a1edd811d852deb134515b6a0b59d6a8"
+checksum = "58dfb459aac437ebbe41aaab2ab204b7d4d8b01fd232a6056797c992f209f9a1"
 dependencies = [
  "anyhow",
  "async-channel",

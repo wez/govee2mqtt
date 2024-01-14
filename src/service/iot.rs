@@ -5,6 +5,7 @@ use crate::service::state::StateHandle;
 use crate::undoc_api::{ms_timestamp, DeviceEntry, LoginAccountResponse, ParsedOneClick};
 use crate::Args;
 use anyhow::Context;
+use async_channel::Receiver;
 use mosquitto_rs::{Event, QoS};
 use serde::Deserialize;
 use std::time::Duration;
@@ -294,185 +295,217 @@ pub async fn start_iot_client(
         .await;
 
     tokio::spawn(async move {
-        while let Ok(event) = subscriptions.recv().await {
-            match event {
-                Event::Message(msg) => {
-                    let payload = String::from_utf8_lossy(&msg.payload);
-                    log::trace!("{} -> {payload}", msg.topic);
-
-                    #[derive(Deserialize, Debug)]
-                    #[allow(dead_code)]
-                    struct Packet {
-                        sku: Option<String>,
-                        device: Option<String>,
-                        /// may actually be found in msg.cmd
-                        cmd: Option<String>,
-                        /// This is an embedded json string
-                        msg: Option<String>,
-                        state: StateUpdate,
-                        op: Option<OpData>,
-                    }
-
-                    #[derive(Deserialize, Debug)]
-                    struct StateUpdate {
-                        #[serde(rename = "onOff")]
-                        pub on_off: Option<u8>,
-                        pub brightness: Option<u8>,
-                        pub color: Option<DeviceColor>,
-                        #[serde(rename = "colorTemInKelvin")]
-                        pub color_temperature_kelvin: Option<u32>,
-                        pub sku: Option<String>,
-                        pub device: Option<String>,
-                    }
-
-                    #[derive(Deserialize, Debug)]
-                    #[allow(unused)]
-                    struct OpData {
-                        #[serde(default)]
-                        command: Vec<Base64HexBytes>,
-
-                        // The next 4 fields are sourced from H6199
-                        // <https://github.com/wez/govee2mqtt/issues/36>
-                        #[serde(rename = "modeValue", default)]
-                        mode_value: Vec<Base64HexBytes>,
-                        #[serde(rename = "sleepValue", default)]
-                        sleep_value: Vec<Base64HexBytes>,
-                        #[serde(rename = "wakeupValue", default)]
-                        wakeup_value: Vec<Base64HexBytes>,
-                        #[serde(rename = "timerValue", default)]
-                        timer_value: Vec<Base64HexBytes>,
-                    }
-
-                    impl Packet {
-                        /// The sku can be in a couple of different places(!)
-                        fn sku(&self) -> Option<&str> {
-                            if let Some(sku) = self.sku.as_deref() {
-                                return Some(sku);
-                            }
-                            self.state.sku.as_deref()
-                        }
-                        fn device(&self) -> Option<&str> {
-                            if let Some(device) = self.device.as_deref() {
-                                return Some(device);
-                            }
-                            self.state.device.as_deref()
-                        }
-
-                        fn sku_and_device(&self) -> Option<(&str, &str)> {
-                            let sku = self.sku()?;
-                            let device = self.device()?;
-                            Some((sku, device))
-                        }
-                    }
-
-                    match from_json::<Packet, _>(&msg.payload) {
-                        Ok(packet) => {
-                            log::debug!("{packet:?}");
-                            if let Some((sku, device_id)) = packet.sku_and_device() {
-                                {
-                                    let mut device = state.device_mut(sku, device_id).await;
-                                    let mut state = match device.iot_device_status.clone() {
-                                        Some(state) => state,
-                                        None => match device.device_state() {
-                                            Some(state) => DeviceStatus {
-                                                on: state.on,
-                                                brightness: state.brightness,
-                                                color: state.color,
-                                                color_temperature_kelvin: state.kelvin,
-                                            },
-                                            None => DeviceStatus::default(),
-                                        },
-                                    };
-
-                                    if let Some(v) = packet.state.brightness {
-                                        state.brightness = v;
-                                        state.on = v != 0;
-                                    }
-                                    if let Some(v) = packet.state.color {
-                                        state.color = v;
-                                        state.on = true;
-                                    }
-                                    if let Some(v) = packet.state.color_temperature_kelvin {
-                                        state.color_temperature_kelvin = v;
-                                        state.on = true;
-                                    }
-
-                                    if let Some(op) = &packet.op {
-                                        for cmd in &op.command {
-                                            let decoded = cmd.decode_for_sku(sku);
-                                            log::debug!("Decoded: {decoded:?} for {sku}");
-                                            match decoded {
-                                                GoveeBlePacket::NotifyHumidifierNightlight(nl) => {
-                                                    state.brightness = nl.brightness;
-                                                    state.color = DeviceColor {
-                                                        r: nl.r,
-                                                        g: nl.g,
-                                                        b: nl.b,
-                                                    };
-                                                    device.set_nightlight_state(nl.clone());
-                                                }
-                                                GoveeBlePacket::NotifyHumidifierAutoMode(
-                                                    HumidifierAutoMode { target_humidity },
-                                                ) => {
-                                                    device.set_target_humidity(
-                                                        target_humidity.as_percent(),
-                                                    );
-                                                }
-                                                GoveeBlePacket::NotifyHumidifierMode(
-                                                    NotifyHumidifierMode { mode, param },
-                                                ) => {
-                                                    device.set_humidifier_work_mode_and_param(
-                                                        mode, param,
-                                                    );
-                                                }
-                                                GoveeBlePacket::Generic(_) => {
-                                                    // Ignore packets that we can't decode
-                                                }
-                                                GoveeBlePacket::SetHumidifierMode(_)
-                                                | GoveeBlePacket::SetHumidifierNightlight(_) => {
-                                                    // Ignore packets that are essentially echoing
-                                                    // commands sent to the device
-                                                }
-                                                _ => {
-                                                    // But warn about the ones we could decode and
-                                                    // aren't handling here
-                                                    log::warn!("Taking no action for {decoded:?} for {sku}");
-                                                }
-                                            }
-                                        }
-                                    }
-
-                                    // Check on/off last, as we can synthesize "on"
-                                    // if the other fields are present
-                                    if let Some(on_off) = packet.state.on_off {
-                                        state.on = on_off != 0;
-                                    }
-                                    device.set_iot_device_status(state);
-                                }
-                                state.notify_of_state_change(device_id).await?;
-                            }
-                        }
-                        Err(err) => {
-                            log::error!("Decoding IoT Packet: {err:#} {payload}");
-                        }
-                    }
-                }
-                Event::Disconnected(reason) => {
-                    log::warn!("IoT disconnected with reason {reason}");
-                }
-                Event::Connected(status) => {
-                    log::info!("IoT (re)connected with status {status}");
-
-                    client
-                        .subscribe(&acct.topic, mosquitto_rs::QoS::AtMostOnce)
-                        .await?;
-                }
-            }
+        if let Err(err) = run_iot_subscriber(subscriptions, state, client, acct).await {
+            log::error!("IoT loop failed: {err:#}");
         }
-
         log::info!("IoT loop terminated");
         Ok::<(), anyhow::Error>(())
     });
 
+    Ok(())
+}
+
+#[derive(Deserialize, Debug)]
+#[allow(dead_code)]
+struct Packet {
+    sku: Option<String>,
+    device: Option<String>,
+    /// may actually be found in msg.cmd
+    cmd: Option<String>,
+    /// This is an embedded json string
+    msg: Option<String>,
+    state: StateUpdate,
+    op: Option<OpData>,
+}
+
+#[derive(Deserialize, Debug)]
+struct StateUpdate {
+    #[serde(rename = "onOff")]
+    pub on_off: Option<u8>,
+    pub brightness: Option<u8>,
+    pub color: Option<DeviceColor>,
+    #[serde(rename = "colorTemInKelvin")]
+    pub color_temperature_kelvin: Option<u32>,
+    pub sku: Option<String>,
+    pub device: Option<String>,
+}
+
+#[derive(Deserialize, Debug)]
+#[allow(unused)]
+struct OpData {
+    #[serde(default)]
+    command: Vec<Base64HexBytes>,
+
+    // The next 4 fields are sourced from H6199
+    // <https://github.com/wez/govee2mqtt/issues/36>
+    #[serde(rename = "modeValue", default)]
+    mode_value: Vec<Base64HexBytes>,
+    #[serde(rename = "sleepValue", default)]
+    sleep_value: Vec<Base64HexBytes>,
+    #[serde(rename = "wakeupValue", default)]
+    wakeup_value: Vec<Base64HexBytes>,
+    #[serde(rename = "timerValue", default)]
+    timer_value: Vec<Base64HexBytes>,
+}
+
+impl Packet {
+    /// The sku can be in a couple of different places(!)
+    fn sku(&self) -> Option<&str> {
+        if let Some(sku) = self.sku.as_deref() {
+            return Some(sku);
+        }
+        self.state.sku.as_deref()
+    }
+    fn device(&self) -> Option<&str> {
+        if let Some(device) = self.device.as_deref() {
+            return Some(device);
+        }
+        self.state.device.as_deref()
+    }
+
+    fn sku_and_device(&self) -> Option<(&str, &str)> {
+        let sku = self.sku()?;
+        let device = self.device()?;
+        Some((sku, device))
+    }
+}
+
+async fn run_iot_subscriber(
+    subscriptions: Receiver<Event>,
+    state: StateHandle,
+    client: mosquitto_rs::Client,
+    acct: LoginAccountResponse,
+) -> anyhow::Result<()> {
+    while let Ok(event) = subscriptions.recv().await {
+        match event {
+            Event::Message(msg) => {
+                let payload = String::from_utf8_lossy(&msg.payload);
+                log::trace!("{} -> {payload}", msg.topic);
+
+                match from_json::<Packet, _>(&msg.payload) {
+                    Ok(packet) => {
+                        log::debug!("{packet:?}");
+                        if let Some((sku, device_id)) = packet.sku_and_device() {
+                            {
+                                let mut device = state.device_mut(sku, device_id).await;
+                                let mut state = match device.iot_device_status.clone() {
+                                    Some(state) => state,
+                                    None => match device.device_state() {
+                                        Some(state) => DeviceStatus {
+                                            on: state.on,
+                                            brightness: state.brightness,
+                                            color: state.color,
+                                            color_temperature_kelvin: state.kelvin,
+                                        },
+                                        None => DeviceStatus::default(),
+                                    },
+                                };
+
+                                if let Some(v) = packet.state.brightness {
+                                    state.brightness = v;
+                                    state.on = v != 0;
+                                }
+                                if let Some(v) = packet.state.color {
+                                    state.color = v;
+                                    state.on = true;
+                                }
+                                if let Some(v) = packet.state.color_temperature_kelvin {
+                                    state.color_temperature_kelvin = v;
+                                    state.on = true;
+                                }
+
+                                if let Some(op) = &packet.op {
+                                    for cmd in &op.command {
+                                        let decoded = cmd.decode_for_sku(sku);
+                                        log::debug!("Decoded: {decoded:?} for {sku}");
+                                        match decoded {
+                                            GoveeBlePacket::NotifyHumidifierNightlight(nl) => {
+                                                state.brightness = nl.brightness;
+                                                state.color = DeviceColor {
+                                                    r: nl.r,
+                                                    g: nl.g,
+                                                    b: nl.b,
+                                                };
+                                                device.set_nightlight_state(nl.clone());
+                                            }
+                                            GoveeBlePacket::NotifyHumidifierAutoMode(
+                                                HumidifierAutoMode { target_humidity },
+                                            ) => {
+                                                device.set_target_humidity(
+                                                    target_humidity.as_percent(),
+                                                );
+                                            }
+                                            GoveeBlePacket::NotifyHumidifierMode(
+                                                NotifyHumidifierMode { mode, param },
+                                            ) => {
+                                                device.set_humidifier_work_mode_and_param(
+                                                    mode, param,
+                                                );
+                                            }
+                                            GoveeBlePacket::Generic(_) => {
+                                                // Ignore packets that we can't decode
+                                            }
+                                            GoveeBlePacket::SetHumidifierMode(_)
+                                            | GoveeBlePacket::SetHumidifierNightlight(_) => {
+                                                // Ignore packets that are essentially echoing
+                                                // commands sent to the device
+                                            }
+                                            _ => {
+                                                // But warn about the ones we could decode and
+                                                // aren't handling here
+                                                log::warn!(
+                                                    "Taking no action for {decoded:?} for {sku}"
+                                                );
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // Check on/off last, as we can synthesize "on"
+                                // if the other fields are present
+                                if let Some(on_off) = packet.state.on_off {
+                                    state.on = on_off != 0;
+                                }
+                                device.set_iot_device_status(state);
+                            }
+                            state.notify_of_state_change(device_id).await?;
+                        }
+                    }
+                    Err(err) => {
+                        log::error!("Decoding IoT Packet: {err:#} {payload}");
+                    }
+                }
+            }
+            Event::Disconnected(reason) => {
+                log::warn!("IoT disconnected with reason {reason}");
+            }
+            Event::Connected(status) => {
+                log::info!("IoT (re)connected with status {status}");
+
+                client
+                    .subscribe(&acct.topic, mosquitto_rs::QoS::AtMostOnce)
+                    .await
+                    .context("subscribe to account topic")?;
+                // This logic tries to subscribe to the same data that is
+                // being sent to the individual devices, but the server
+                // will close the connection on us when we try this.
+                if false {
+                    let devices = state.devices().await;
+                    for d in devices {
+                        if let Some(undoc) = &d.undoc_device_info {
+                            if let Ok(topic) = undoc.entry.device_topic() {
+                                client
+                                    .subscribe(topic, mosquitto_rs::QoS::AtMostOnce)
+                                    .await
+                                    .with_context(|| {
+                                        format!("subscribe to device topic {topic}")
+                                    })?;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
     Ok(())
 }
