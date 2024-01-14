@@ -168,7 +168,7 @@ pub async fn mqtt_number_command(
     }): Params<IdAndModeName>,
     State(state): State<StateHandle>,
 ) -> anyhow::Result<()> {
-    log::warn!("{mode_name} for {id}: {value}");
+    log::info!("{mode_name} for {id}: {value}");
     let work_mode: i64 = work_mode.parse()?;
     let device = state
         .resolve_device(&id)
