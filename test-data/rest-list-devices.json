@@ -1,0 +1,29 @@
+{
+  "data": {
+    "devices": [
+      {
+        "device": "XX:34:11",
+        "model": "H6072",
+        "deviceName": "Study Floor Lamp 1",
+        "controllable": true,
+        "properties": {
+          "colorTem": {
+            "range": {
+              "min": 2000,
+              "max": 9000
+            }
+          }
+        },
+        "retrievable": true,
+        "supportCmds": [
+          "turn",
+          "brightness",
+          "color",
+          "colorTem"
+        ]
+      }
+    ]
+  },
+  "message": "Success",
+  "code": 200
+}

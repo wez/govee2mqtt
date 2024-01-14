@@ -1,0 +1,31 @@
+GetDevicesResponse {
+    code: 200,
+    message: "Success",
+    data: GetDevicesDeviceList {
+        devices: [
+            RestDeviceInfo {
+                sku: "H6072",
+                device: "XX:34:11",
+                device_name: "Study Floor Lamp 1",
+                controllable: true,
+                properties: RestDeviceProperties {
+                    color_temperature: Some(
+                        ColorTemperatureProperties {
+                            range: RestRange {
+                                min: 2000,
+                                max: 9000,
+                            },
+                        },
+                    ),
+                },
+                retrievable: true,
+                supported_commands: [
+                    Turn,
+                    Brightness,
+                    Color,
+                    ColorTemperature,
+                ],
+            },
+        ],
+    },
+}

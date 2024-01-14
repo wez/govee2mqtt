@@ -10,7 +10,9 @@ mod cache;
 mod commands;
 mod hass_mqtt;
 mod lan_api;
+#[macro_use]
 mod platform_api;
+mod rest_api;
 mod service;
 mod undoc_api;
 mod version_info;
