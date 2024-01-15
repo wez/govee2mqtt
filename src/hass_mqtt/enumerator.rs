@@ -5,6 +5,7 @@ use crate::hass_mqtt::instance::EntityList;
 use crate::hass_mqtt::light::DeviceLight;
 use crate::hass_mqtt::number::WorkModeNumber;
 use crate::hass_mqtt::scene::SceneConfig;
+use crate::hass_mqtt::select::WorkModeSelect;
 use crate::hass_mqtt::sensor::{CapabilitySensor, DeviceStatusDiagnostic, GlobalFixedDiagnostic};
 use crate::hass_mqtt::switch::CapabilitySwitch;
 use crate::platform_api::{
@@ -304,6 +305,8 @@ async fn entities_for_work_mode<'a>(
             range,
         ));
     }
+
+    entities.add(WorkModeSelect::new(d, &work_modes, state));
 
     Ok(())
 }

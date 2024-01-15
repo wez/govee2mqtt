@@ -1,5 +1,5 @@
 use crate::hass_mqtt::enumerator::{enumerate_all_entites, enumerate_entities_for_device};
-use crate::hass_mqtt::humidifier::{mqtt_humidifier_set_mode, mqtt_humidifier_set_target};
+use crate::hass_mqtt::humidifier::{mqtt_device_set_work_mode, mqtt_humidifier_set_target};
 use crate::hass_mqtt::instance::EntityList;
 use crate::hass_mqtt::number::mqtt_number_command;
 use crate::lan_api::DeviceColor;
@@ -514,7 +514,10 @@ async fn run_mqtt_loop(
             )
             .await?;
         router
-            .route("gv2mqtt/humidifier/:id/set-mode", mqtt_humidifier_set_mode)
+            .route("gv2mqtt/humidifier/:id/set-mode", mqtt_device_set_work_mode)
+            .await?;
+        router
+            .route("gv2mqtt/:id/set-work-mode", mqtt_device_set_work_mode)
             .await?;
         router
             .route(

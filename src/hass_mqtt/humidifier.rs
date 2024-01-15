@@ -187,7 +187,24 @@ impl EntityInstance for Humidifier {
                     humidity.to_string(),
                 )
                 .await?;
+        } else if self.humidifier.optimistic {
+            // We need an initial value otherwise hass will not enable
+            // the target humidity control in its UI.
+            // Because we are setting this in the device state,
+            // this latches so we only do this once.
+            let guessed_value = self.humidifier.min_humidity.unwrap_or(0);
+            self.state
+                .device_mut(&device.sku, &device.id)
+                .await
+                .set_target_humidity(guessed_value);
+            client
+                .publish(
+                    &self.humidifier.target_humidity_state_topic,
+                    guessed_value.to_string(),
+                )
+                .await?;
         }
+
         if let Some(mode_value) = device.humidifier_work_mode {
             if let Ok(work_mode) = ParsedWorkMode::with_device(&device) {
                 let mode_value_json = json!(mode_value);
@@ -197,13 +214,31 @@ impl EntityInstance for Humidifier {
                         .await?;
                 }
             }
-        }
+        } else {
+            let work_modes = ParsedWorkMode::with_device(&device)?;
 
+            if let Some(state) = &device.http_device_state {
+                for cap in &state.capabilities {
+                    if cap.instance == "workMode" {
+                        if let Some(mode_num) = cap.state.pointer("/value/workMode") {
+                            if let Some(mode) = work_modes.mode_for_value(mode_num) {
+                                return client
+                                    .publish(
+                                        &self.humidifier.mode_state_topic,
+                                        mode.name.to_string(),
+                                    )
+                                    .await;
+                            }
+                        }
+                    }
+                }
+            }
+        }
         Ok(())
     }
 }
 
-pub async fn mqtt_humidifier_set_mode(
+pub async fn mqtt_device_set_work_mode(
     Payload(mode): Payload<String>,
     Params(IdParameter { id }): Params<IdParameter>,
     State(state): State<StateHandle>,
@@ -254,6 +289,14 @@ pub async fn mqtt_humidifier_set_target(
         if let Some(info) = &device.http_device_info {
             if let Some(cap) = info.capability_by_instance("humidity") {
                 state.device_control(&device, cap, percent).await?;
+
+                // We're running in optimistic mode; stash
+                // the last set value so that we can report it
+                // to hass
+                state
+                    .device_mut(&device.sku, &device.id)
+                    .await
+                    .set_target_humidity(percent as u8);
 
                 // For the H7160 at least, setting the humidity
                 // will put the device into auto mode and turn
