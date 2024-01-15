@@ -333,7 +333,7 @@ impl DecodePacketParam for TargetHumidity {
 
 impl TargetHumidity {
     pub fn as_percent(&self) -> u8 {
-        self.0 - 128
+        self.0 & 0x7f
     }
 
     pub fn into_inner(self) -> u8 {
