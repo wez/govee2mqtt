@@ -176,6 +176,7 @@ impl ParsedWorkMode {
         self.modes.get(name)
     }
 
+    #[allow(unused)]
     pub fn mode_by_label(&self, name: &str) -> Option<&WorkMode> {
         for mode in self.modes.values() {
             if mode.label() == name {
@@ -195,6 +196,7 @@ impl ParsedWorkMode {
         names
     }
 
+    #[allow(unused)]
     pub fn get_mode_labels(&self) -> Vec<String> {
         let mut names: Vec<_> = self
             .modes
