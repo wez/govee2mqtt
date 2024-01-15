@@ -187,7 +187,7 @@ impl EntityInstance for Humidifier {
                     humidity.to_string(),
                 )
                 .await?;
-        } else if self.humidifier.optimistic {
+        } else {
             // We need an initial value otherwise hass will not enable
             // the target humidity control in its UI.
             // Because we are setting this in the device state,

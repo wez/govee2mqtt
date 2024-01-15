@@ -6,6 +6,7 @@ use crate::service::hass::{availability_topic, topic_safe_id, HassClient};
 use crate::service::state::StateHandle;
 use axum::async_trait;
 use serde::Serialize;
+use serde_json::json;
 
 #[derive(Serialize, Clone, Debug)]
 pub struct SelectConfig {
@@ -71,16 +72,27 @@ impl EntityInstance for WorkModeSelect {
             .await
             .expect("device to exist");
 
-        let work_modes = ParsedWorkMode::with_device(&device)?;
+        if let Some(mode_value) = device.humidifier_work_mode {
+            if let Ok(work_mode) = ParsedWorkMode::with_device(&device) {
+                let mode_value_json = json!(mode_value);
+                if let Some(mode) = work_mode.mode_for_value(&mode_value_json) {
+                    client
+                        .publish(&self.select.state_topic, mode.label().to_string())
+                        .await?;
+                }
+            }
+        } else {
+            let work_modes = ParsedWorkMode::with_device(&device)?;
 
-        if let Some(state) = &device.http_device_state {
-            for cap in &state.capabilities {
-                if cap.instance == "workMode" {
-                    if let Some(mode_num) = cap.state.pointer("/value/workMode") {
-                        if let Some(mode) = work_modes.mode_for_value(mode_num) {
-                            return client
-                                .publish(&self.select.state_topic, mode.name.to_string())
-                                .await;
+            if let Some(state) = &device.http_device_state {
+                for cap in &state.capabilities {
+                    if cap.instance == "workMode" {
+                        if let Some(mode_num) = cap.state.pointer("/value/workMode") {
+                            if let Some(mode) = work_modes.mode_for_value(mode_num) {
+                                return client
+                                    .publish(&self.select.state_topic, mode.name.to_string())
+                                    .await;
+                            }
                         }
                     }
                 }
