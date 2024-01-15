@@ -216,7 +216,7 @@ impl ParsedWorkMode {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct WorkMode {
     pub name: String,
     pub value: JsonValue,
@@ -278,6 +278,7 @@ impl WorkMode {
     }
 }
 
+#[derive(Debug)]
 pub struct WorkModeValue {
     pub value: JsonValue,
     pub label: String,

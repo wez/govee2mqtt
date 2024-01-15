@@ -210,7 +210,7 @@ impl EntityInstance for Humidifier {
                 let mode_value_json = json!(mode_value);
                 if let Some(mode) = work_mode.mode_for_value(&mode_value_json) {
                     client
-                        .publish(&self.humidifier.mode_state_topic, mode.label().to_string())
+                        .publish(&self.humidifier.mode_state_topic, mode.name.to_string())
                         .await?;
                 }
             }
