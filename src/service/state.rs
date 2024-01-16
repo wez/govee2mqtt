@@ -400,13 +400,13 @@ impl State {
             device.nightlight_state.clone().unwrap_or_default().into();
         (apply)(&mut params);
 
-        let command = Base64HexBytes::encode_for_sku(&device.sku, &params)?.base64();
-
-        if let Some(iot) = self.get_iot_client().await {
-            if let Some(info) = &device.undoc_device_info {
-                log::info!("Using IoT API to set {device} color");
-                iot.send_real(&info.entry, vec![command]).await?;
-                return Ok(());
+        if let Ok(command) = Base64HexBytes::encode_for_sku(&device.sku, &params) {
+            if let Some(iot) = self.get_iot_client().await {
+                if let Some(info) = &device.undoc_device_info {
+                    log::info!("Using IoT API to set {device} color");
+                    iot.send_real(&info.entry, vec![command.base64()]).await?;
+                    return Ok(());
+                }
             }
         }
 
@@ -420,18 +420,19 @@ impl State {
         value: i64,
     ) -> anyhow::Result<()> {
         self.device_was_controlled(device).await;
-        if let Some(iot) = self.get_iot_client().await {
-            let command = Base64HexBytes::encode_for_sku(
-                &device.sku,
-                &SetHumidifierMode {
-                    mode: work_mode as u8,
-                    param: value as u8,
-                },
-            )?
-            .base64();
-            if let Some(info) = &device.undoc_device_info {
-                iot.send_real(&info.entry, vec![command]).await?;
-                return Ok(());
+
+        if let Ok(command) = Base64HexBytes::encode_for_sku(
+            &device.sku,
+            &SetHumidifierMode {
+                mode: work_mode as u8,
+                param: value as u8,
+            },
+        ) {
+            if let Some(iot) = self.get_iot_client().await {
+                if let Some(info) = &device.undoc_device_info {
+                    iot.send_real(&info.entry, vec![command.base64()]).await?;
+                    return Ok(());
+                }
             }
         }
 
