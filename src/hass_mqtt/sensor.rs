@@ -164,10 +164,10 @@ impl EntityInstance for CapabilitySensor {
                                 .map(|v| TemperatureValue::new(v, units))
                             {
                                 Some(v) => {
-                                    let value =
-                                        v.as_unit(self.state.get_temperature_scale().await.into())
-                                            .value() as i64;
-                                    value.to_string()
+                                    let value = v
+                                        .as_unit(self.state.get_temperature_scale().await.into())
+                                        .value();
+                                    format!("{value:.2}")
                                 }
                                 None => "".to_string(),
                             }

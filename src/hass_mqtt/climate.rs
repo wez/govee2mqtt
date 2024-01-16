@@ -92,8 +92,9 @@ impl TargetTemperatureEntity {
         let name = "Target Temperature".to_string();
         let units = state.get_temperature_scale().await;
         let command_topic = format!(
-            "gv2mqtt/{id}/set-temperature/{units}",
+            "gv2mqtt/{id}/set-temperature/{inst}/{units}",
             id = topic_safe_id(device),
+            inst = topic_safe_string(&instance.instance)
         );
 
         Ok(Self {
@@ -132,14 +133,19 @@ impl EntityInstance for TargetTemperatureEntity {
 }
 
 #[derive(Deserialize)]
-pub struct IdAndUnits {
+pub struct IdInstAndUnits {
     id: String,
+    instance: String,
     units: String,
 }
 
 pub async fn mqtt_set_temperature(
     Payload(value): Payload<String>,
-    Params(IdAndUnits { id, units }): Params<IdAndUnits>,
+    Params(IdInstAndUnits {
+        id,
+        instance,
+        units,
+    }): Params<IdInstAndUnits>,
     State(state): State<StateHandle>,
 ) -> anyhow::Result<()> {
     log::info!("Command: set-temperature for {id}: {value}");
@@ -152,7 +158,7 @@ pub async fn mqtt_set_temperature(
     let target_value = TemperatureValue::parse_with_optional_scale(&value, Some(scale))?;
 
     state
-        .device_set_target_temperature(&device, target_value)
+        .device_set_target_temperature(&device, &instance, target_value)
         .await?;
 
     Ok(())

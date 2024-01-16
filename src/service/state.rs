@@ -559,6 +559,7 @@ impl State {
     pub async fn device_set_target_temperature(
         self: &Arc<Self>,
         device: &Device,
+        instance_name: &str,
         target: TemperatureValue,
     ) -> anyhow::Result<()> {
         self.device_was_controlled(device).await;
@@ -566,7 +567,9 @@ impl State {
         if let Some(client) = self.get_platform_client().await {
             if let Some(info) = &device.http_device_info {
                 log::info!("Using Platform API to set {device} target temperature to {target}");
-                client.set_target_temperature(info, target).await?;
+                client
+                    .set_target_temperature(info, instance_name, target)
+                    .await?;
                 return Ok(());
             }
         }

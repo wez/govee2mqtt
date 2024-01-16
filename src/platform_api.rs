@@ -353,11 +353,12 @@ impl GoveeApiClient {
     pub async fn set_target_temperature(
         &self,
         device: &HttpDeviceInfo,
+        instance_name: &str,
         target: TemperatureValue,
     ) -> anyhow::Result<ControlDeviceResponseCapability> {
         let cap = device
-            .capability_by_instance("targetTemperature")
-            .ok_or_else(|| anyhow::anyhow!("device has no targetTemperature"))?;
+            .capability_by_instance(instance_name)
+            .ok_or_else(|| anyhow::anyhow!("device has no {instance_name}"))?;
 
         let celsius = target.as_celsius();
 

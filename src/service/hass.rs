@@ -545,7 +545,10 @@ async fn run_mqtt_loop(
             )
             .await?;
         router
-            .route("gv2mqtt/:id/set-temperature/:units", mqtt_set_temperature)
+            .route(
+                "gv2mqtt/:id/set-temperature/:instance/:units",
+                mqtt_set_temperature,
+            )
             .await?;
 
         state
