@@ -183,6 +183,8 @@ fn load_quirks() -> HashMap<String, Quirk> {
         Quirk::thermometer("H5103")
             .with_platform_temperature_sensor_units(TemperatureUnits::CelsiusTimes100)
             .with_platform_humidity_sensor_units(HumidityUnits::RelativePercentTimes100),
+        Quirk::device("H7173", DeviceType::Kettle, "mdi:kettle")
+            .with_platform_temperature_sensor_units(TemperatureUnits::Farenheit),
         // Lights from the list of LAN API enabled devices
         // at <https://app-h5.govee.com/user-manual/wlan-guide>
         Quirk::lan_api_capable_light("H6072", FLOOR_LAMP),
