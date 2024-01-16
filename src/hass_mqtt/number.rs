@@ -3,6 +3,7 @@ use crate::hass_mqtt::instance::{publish_entity_config, EntityInstance};
 use crate::service::device::Device as ServiceDevice;
 use crate::service::hass::{availability_topic, topic_safe_id, topic_safe_string, HassClient};
 use crate::service::state::StateHandle;
+use anyhow::anyhow;
 use async_trait::async_trait;
 use mosquitto_rs::router::{Params, Payload, State};
 use serde::{Deserialize, Serialize};
@@ -15,16 +16,18 @@ pub struct NumberConfig {
     pub base: EntityConfig,
 
     pub command_topic: String,
-    pub state_topic: String,
+    pub state_topic: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub min: Option<f32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub max: Option<f32>,
     pub step: f32,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub unit_of_measurement: Option<&'static str>,
 }
 
 impl NumberConfig {
-    async fn publish(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
+    pub async fn publish(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
         publish_entity_config("number", state, client, &self.base, self).await
     }
 }
@@ -79,13 +82,14 @@ impl WorkModeNumber {
                     icon: None,
                 },
                 command_topic,
-                state_topic,
+                state_topic: Some(state_topic),
                 min: range.as_ref().map(|r| r.start as f32).or(Some(0.)),
                 max: range
                     .as_ref()
                     .map(|r| r.end.saturating_sub(1) as f32)
                     .or(Some(255.)),
                 step: 1f32,
+                unit_of_measurement: None,
             },
             device_id: device.id.to_string(),
             state: state.clone(),
@@ -102,6 +106,12 @@ impl EntityInstance for WorkModeNumber {
     }
 
     async fn notify_state(&self, client: &HassClient) -> anyhow::Result<()> {
+        let state_topic = self
+            .number
+            .state_topic
+            .as_ref()
+            .ok_or_else(|| anyhow!("state_topic is None!?"))?;
+
         let device = self
             .state
             .device_by_id(&self.device_id)
@@ -118,9 +128,7 @@ impl EntityInstance for WorkModeNumber {
 
                             if let Some(value) = cap.state.pointer("/value/modeValue") {
                                 if let Some(n) = value.as_i64() {
-                                    client
-                                        .publish(&self.number.state_topic, n.to_string())
-                                        .await?;
+                                    client.publish(state_topic, n.to_string()).await?;
                                     return Ok(());
                                 }
                             }
@@ -134,9 +142,7 @@ impl EntityInstance for WorkModeNumber {
         if let Some(work_mode) = self.work_mode.as_i64() {
             // FIXME: assuming humidifier, rename that field?
             if let Some(n) = device.humidifier_param_by_mode.get(&(work_mode as u8)) {
-                client
-                    .publish(&self.number.state_topic, n.to_string())
-                    .await?;
+                client.publish(state_topic, n.to_string()).await?;
                 return Ok(());
             }
         }

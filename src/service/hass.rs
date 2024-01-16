@@ -1,3 +1,4 @@
+use crate::hass_mqtt::climate::mqtt_set_temperature;
 use crate::hass_mqtt::enumerator::{enumerate_all_entites, enumerate_entities_for_device};
 use crate::hass_mqtt::humidifier::{mqtt_device_set_work_mode, mqtt_humidifier_set_target};
 use crate::hass_mqtt::instance::EntityList;
@@ -524,6 +525,9 @@ async fn run_mqtt_loop(
                 "gv2mqtt/humidifier/:id/set-target",
                 mqtt_humidifier_set_target,
             )
+            .await?;
+        router
+            .route("gv2mqtt/:id/set-temperature/:units", mqtt_set_temperature)
             .await?;
 
         state

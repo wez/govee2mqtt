@@ -14,6 +14,7 @@ mod lan_api;
 mod platform_api;
 mod rest_api;
 mod service;
+mod temperature;
 mod undoc_api;
 mod version_info;
 

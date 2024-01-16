@@ -1,5 +1,6 @@
 use crate::hass_mqtt::base::{Device, EntityConfig, Origin};
 use crate::hass_mqtt::button::ButtonConfig;
+use crate::hass_mqtt::climate::TargetTemperatureEntity;
 use crate::hass_mqtt::humidifier::Humidifier;
 use crate::hass_mqtt::instance::EntityList;
 use crate::hass_mqtt::light::DeviceLight;
@@ -360,6 +361,10 @@ pub async fn enumerate_entities_for_device<'a>(
                     if let Some(f) = sensor.into_temperature_farenheit() {
                         entities.add(f);
                     }
+                }
+
+                DeviceCapabilityKind::TemperatureSetting => {
+                    entities.add(TargetTemperatureEntity::new(&d, cap).await?);
                 }
 
                 kind => {

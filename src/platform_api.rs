@@ -1,6 +1,7 @@
 use crate::cache::{cache_get, CacheComputeResult, CacheGetOptions};
 use crate::opt_env_var;
 use crate::service::state::sort_and_dedup_scenes;
+use crate::temperature::TemperatureValue;
 use crate::undoc_api::GoveeUndocumentedApi;
 use anyhow::Context;
 use reqwest::Method;
@@ -347,6 +348,25 @@ impl GoveeApiClient {
             }
         }
         anyhow::bail!("Scene '{scene}' is not available for this device");
+    }
+
+    pub async fn set_target_temperature(
+        &self,
+        device: &HttpDeviceInfo,
+        target: TemperatureValue,
+    ) -> anyhow::Result<ControlDeviceResponseCapability> {
+        let cap = device
+            .capability_by_instance("targetTemperature")
+            .ok_or_else(|| anyhow::anyhow!("device has no targetTemperature"))?;
+
+        let celsius = target.as_celsius();
+
+        let value = json!({
+            "temperature": celsius,
+            "unit": "Celsius",
+        });
+
+        self.control_device(&device, &cap, value).await
     }
 
     pub async fn set_work_mode(

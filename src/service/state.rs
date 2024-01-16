@@ -4,6 +4,7 @@ use crate::platform_api::{DeviceCapability, DeviceType, GoveeApiClient};
 use crate::service::device::Device;
 use crate::service::hass::{topic_safe_id, HassClient};
 use crate::service::iot::IotClient;
+use crate::temperature::TemperatureValue;
 use crate::undoc_api::GoveeUndocumentedApi;
 use anyhow::Context;
 use serde_json::Value as JsonValue;
@@ -546,11 +547,30 @@ impl State {
         Ok(vec![])
     }
 
+    pub async fn device_set_target_temperature(
+        self: &Arc<Self>,
+        device: &Device,
+        target: TemperatureValue,
+    ) -> anyhow::Result<()> {
+        self.device_was_controlled(device).await;
+
+        if let Some(client) = self.get_platform_client().await {
+            if let Some(info) = &device.http_device_info {
+                log::info!("Using Platform API to set {device} target temperature to {target}");
+                client.set_target_temperature(info, target).await?;
+                return Ok(());
+            }
+        }
+
+        anyhow::bail!("Unable to set temperature for {device}");
+    }
+
     pub async fn device_set_scene(
         self: &Arc<Self>,
         device: &Device,
         scene: &str,
     ) -> anyhow::Result<()> {
+        self.device_was_controlled(device).await;
         // TODO: some plumbing to maintain offline scene controls for preferred-LAN control
         let avoid_platform_api = device.avoid_platform_api();
 

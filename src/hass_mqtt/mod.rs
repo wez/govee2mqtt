@@ -1,5 +1,6 @@
 pub mod base;
 pub mod button;
+pub mod climate;
 pub mod cover;
 pub mod enumerator;
 pub mod humidifier;

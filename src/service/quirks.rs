@@ -1,37 +1,8 @@
 use crate::platform_api::DeviceType;
+use crate::temperature::TemperatureUnits;
 use once_cell::sync::Lazy;
 use std::borrow::Cow;
 use std::collections::HashMap;
-
-#[allow(unused)]
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum TemperatureUnits {
-    Celsius,
-    CelsiusTimes100,
-    Farenheit,
-    FarenheitTimes100,
-}
-
-/// Convert farenheit to celsius
-pub fn ftoc(f: f64) -> f64 {
-    (f - 32.) * (5. / 9.)
-}
-
-/// Convert farenheit to celsius
-pub fn ctof(f: f64) -> f64 {
-    (f * 9. / 5.) + 32.
-}
-
-impl TemperatureUnits {
-    pub fn from_reading_to_celsius(&self, value: f64) -> f64 {
-        match self {
-            Self::Celsius => value,
-            Self::CelsiusTimes100 => value / 100.,
-            Self::Farenheit => ftoc(value),
-            Self::FarenheitTimes100 => ftoc(value / 100.),
-        }
-    }
-}
 
 #[allow(unused)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
