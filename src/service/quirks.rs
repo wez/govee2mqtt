@@ -199,6 +199,8 @@ fn load_quirks() -> HashMap<String, Quirk> {
             .with_iot_api_support(true)
             .with_rgb()
             .with_brightness(),
+        Quirk::space_heater("H7130")
+            .with_platform_temperature_sensor_units(TemperatureUnits::Farenheit),
         Quirk::space_heater("H7131")
             .with_platform_temperature_sensor_units(TemperatureUnits::Farenheit)
             .with_rgb()
