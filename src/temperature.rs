@@ -27,6 +27,7 @@ impl TemperatureUnits {
         }
     }
 
+    #[allow(unused)]
     pub fn unit_of_measurement(&self) -> Option<&'static str> {
         let factor = self.factor();
         let scale = self.scale();
@@ -59,8 +60,9 @@ impl std::fmt::Display for TemperatureUnits {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum TemperatureScale {
+    #[default]
     Celsius,
     Farenheit,
 }
@@ -99,12 +101,6 @@ pub fn ftoc(f: f64) -> f64 {
 /// Convert farenheit to celsius
 pub fn ctof(f: f64) -> f64 {
     (f * 9. / 5.) + 32.
-}
-
-impl TemperatureUnits {
-    pub fn from_reading_to_celsius(&self, value: f64) -> f64 {
-        TemperatureValue::new(value, *self).as_celsius()
-    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]

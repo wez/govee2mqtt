@@ -4,7 +4,7 @@ use crate::platform_api::{DeviceCapability, DeviceType, GoveeApiClient};
 use crate::service::device::Device;
 use crate::service::hass::{topic_safe_id, HassClient};
 use crate::service::iot::IotClient;
-use crate::temperature::TemperatureValue;
+use crate::temperature::{TemperatureScale, TemperatureValue};
 use crate::undoc_api::GoveeUndocumentedApi;
 use anyhow::Context;
 use serde_json::Value as JsonValue;
@@ -24,6 +24,7 @@ pub struct State {
     hass_client: Mutex<Option<HassClient>>,
     hass_discovery_prefix: Mutex<String>,
     devices_to_poll: Mutex<HashSet<String>>,
+    temperature_scale: Mutex<TemperatureScale>,
 }
 
 pub type StateHandle = Arc<State>;
@@ -31,6 +32,14 @@ pub type StateHandle = Arc<State>;
 impl State {
     pub fn new() -> Self {
         Self::default()
+    }
+
+    pub async fn set_temperature_scale(&self, scale: TemperatureScale) {
+        *self.temperature_scale.lock().await = scale;
+    }
+
+    pub async fn get_temperature_scale(&self) -> TemperatureScale {
+        *self.temperature_scale.lock().await
     }
 
     pub async fn set_hass_disco_prefix(&self, prefix: String) {

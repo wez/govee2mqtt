@@ -15,10 +15,16 @@ services:
 
 apparmor: true
 
+webui: http://[HOST]:[PORT:8056]/
+
 # Host network access is required for LAN discovery
 host_network: true
 
+options:
+  temperature_scale: "C"
+
 schema:
+  temperature_scale: "str?"
   govee_email: "str?"
   govee_password: "str?"
   govee_api_key: "str?"

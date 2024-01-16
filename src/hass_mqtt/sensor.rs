@@ -6,7 +6,7 @@ use crate::service::device::Device as ServiceDevice;
 use crate::service::hass::{availability_topic, topic_safe_id, topic_safe_string, HassClient};
 use crate::service::quirks::HumidityUnits;
 use crate::service::state::StateHandle;
-use crate::temperature::{ctof, TemperatureUnits};
+use crate::temperature::{TemperatureUnits, TemperatureValue};
 use async_trait::async_trait;
 use chrono::Utc;
 use serde::Serialize;
@@ -19,7 +19,7 @@ pub struct SensorConfig {
 
     pub state_topic: String,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub unit_of_measurement: Option<String>,
+    pub unit_of_measurement: Option<&'static str>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub json_attributes_topic: Option<String>,
 }
@@ -98,8 +98,8 @@ impl CapabilitySensor {
         );
 
         let unit_of_measurement = match instance.instance.as_str() {
-            "sensorTemperature" => Some("°C".to_string()),
-            "sensorHumidity" => Some("%".to_string()),
+            "sensorTemperature" => Some(state.get_temperature_scale().await.unit_of_measurement()),
+            "sensorHumidity" => Some("%"),
             _ => None,
         };
 
@@ -131,21 +131,6 @@ impl CapabilitySensor {
             instance_name: instance.instance.to_string(),
         })
     }
-
-    pub fn into_temperature_farenheit(mut self) -> Option<Self> {
-        if self.instance_name != "sensorTemperature" {
-            return None;
-        }
-
-        self.sensor.unit_of_measurement.replace("°F".to_string());
-        self.sensor.base.unique_id.push_str("_F");
-        self.sensor.state_topic.push_str("_F");
-        self.sensor
-            .base
-            .name
-            .replace("Temperature (imperial)".to_string());
-        Some(self)
-    }
 }
 
 #[async_trait]
@@ -176,12 +161,14 @@ impl EntityInstance for CapabilitySensor {
                                 .state
                                 .pointer("/value")
                                 .and_then(|v| v.as_f64())
-                                .map(|v| units.from_reading_to_celsius(v))
+                                .map(|v| TemperatureValue::new(v, units))
                             {
-                                Some(v) => match self.sensor.unit_of_measurement.as_deref() {
-                                    Some("°F") => format!("{:.2}", ctof(v)),
-                                    _ => format!("{v:.2}"),
-                                },
+                                Some(v) => {
+                                    let value =
+                                        v.as_unit(self.state.get_temperature_scale().await.into())
+                                            .value() as i64;
+                                    value.to_string()
+                                }
                                 None => "".to_string(),
                             }
                         }

@@ -8,6 +8,7 @@ use crate::opt_env_var;
 use crate::platform_api::from_json;
 use crate::service::device::Device as ServiceDevice;
 use crate::service::state::StateHandle;
+use crate::temperature::TemperatureScale;
 use anyhow::Context;
 use async_channel::Receiver;
 use mosquitto_rs::router::{MqttRouter, Params, Payload, State};
@@ -44,6 +45,14 @@ pub struct HassArguments {
 
     #[arg(long, global = true, default_value = "homeassistant")]
     hass_discovery_prefix: String,
+
+    /// The temperature scale to use when showing temperature values as
+    /// entities in home assistant. Can be either "C" or "F" for Celsius
+    /// or Farenheit respectively.
+    /// You may also set this vai the GOVEE_TEMPERATURE_SCALE environment
+    /// variable.
+    #[arg(long, global = true)]
+    temperature_scale: Option<String>,
 }
 
 impl HassArguments {
@@ -81,6 +90,15 @@ impl HassArguments {
         match self.mqtt_password.clone() {
             Some(u) => Ok(Some(u)),
             None => opt_env_var("GOVEE_MQTT_PASSWORD"),
+        }
+    }
+
+    pub fn temperature_scale(&self) -> anyhow::Result<TemperatureScale> {
+        match &self.temperature_scale {
+            Some(s) => Ok(s.parse()?),
+            None => {
+                Ok(opt_env_var("GOVEE_TEMPERATURE_SCALE")?.unwrap_or(TemperatureScale::Celsius))
+            }
         }
     }
 }
@@ -580,6 +598,8 @@ pub async fn spawn_hass_integration(
     args: &HassArguments,
 ) -> anyhow::Result<()> {
     let client = Client::with_auto_id()?;
+
+    state.set_temperature_scale(args.temperature_scale()?).await;
 
     let mqtt_host = args.mqtt_host()?;
     let mqtt_username = args.mqtt_username()?;

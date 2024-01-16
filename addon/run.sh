@@ -64,6 +64,10 @@ if bashio::config.has_value scan ; then
   export GOVEE_LAN_SCAN="$(bashio::config scan)"
 fi
 
+if bashio::config.has_value temperature_scale ; then
+  export GOVEE_TEMPERATURE_SCALE="$(bashio::config temperature_scale)"
+fi
+
 env | grep GOVEE_ | sed -r 's/_(EMAIL|KEY|PASSWORD)=.*/_\1=REDACTED/'
 set -x
 

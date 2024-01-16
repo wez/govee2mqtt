@@ -76,7 +76,11 @@ fn parse_temperature_constraints(
 }
 
 impl TargetTemperatureEntity {
-    pub async fn new(device: &ServiceDevice, instance: &DeviceCapability) -> anyhow::Result<Self> {
+    pub async fn new(
+        device: &ServiceDevice,
+        state: &StateHandle,
+        instance: &DeviceCapability,
+    ) -> anyhow::Result<Self> {
         let constraints =
             parse_temperature_constraints(instance)?.as_unit(TemperatureUnits::Celsius);
         let unique_id = format!(
@@ -85,8 +89,8 @@ impl TargetTemperatureEntity {
             inst = topic_safe_string(&instance.instance)
         );
 
-        let name = "Target Temperature °C".to_string();
-        let units = TemperatureUnits::Celsius;
+        let name = "Target Temperature".to_string();
+        let units = state.get_temperature_scale().await;
         let command_topic = format!(
             "gv2mqtt/{id}/set-temperature/{units}",
             id = topic_safe_id(device),
@@ -109,7 +113,7 @@ impl TargetTemperatureEntity {
                 min: Some(constraints.min.value() as f32),
                 max: Some(constraints.max.value() as f32),
                 step: constraints.precision.value() as f32,
-                unit_of_measurement: units.unit_of_measurement(),
+                unit_of_measurement: Some(units.unit_of_measurement()),
             },
         })
     }

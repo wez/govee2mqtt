@@ -354,17 +354,11 @@ pub async fn enumerate_entities_for_device<'a>(
                 }
 
                 DeviceCapabilityKind::Property => {
-                    let sensor = CapabilitySensor::new(&d, state, cap).await?;
-
-                    entities.add(sensor.clone());
-                    // Synthesize a variant that reports in F
-                    if let Some(f) = sensor.into_temperature_farenheit() {
-                        entities.add(f);
-                    }
+                    entities.add(CapabilitySensor::new(&d, state, cap).await?);
                 }
 
                 DeviceCapabilityKind::TemperatureSetting => {
-                    entities.add(TargetTemperatureEntity::new(&d, cap).await?);
+                    entities.add(TargetTemperatureEntity::new(&d, state, cap).await?);
                 }
 
                 kind => {
