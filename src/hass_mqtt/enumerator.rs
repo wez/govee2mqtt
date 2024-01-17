@@ -273,7 +273,13 @@ impl WorkMode {
     pub fn contiguous_value_range(&self) -> Option<Range<i64>> {
         let mut values = vec![];
         for v in &self.values {
-            values.push(v.value.as_i64()?);
+            let item_value = v.value.as_i64()?;
+            if item_value.to_string() != v.label.to_string() {
+                // It's a preset mode, so it's not a contiguous
+                // slider value
+                return None;
+            }
+            values.push(item_value);
         }
         values.sort();
 
@@ -314,7 +320,10 @@ async fn entities_for_work_mode<'a>(
             continue;
         };
 
+        let range = work_mode.contiguous_value_range();
+
         let show_as_preset = work_mode.values.is_empty()
+            || range.is_none()
             || quirk
                 .as_ref()
                 .map(|q| q.should_show_mode_as_preset(&work_mode.name))
@@ -343,7 +352,6 @@ async fn entities_for_work_mode<'a>(
                 }
             }
         } else {
-            let range = work_mode.contiguous_value_range();
             let label = work_mode.label().to_string();
 
             entities.add(WorkModeNumber::new(
