@@ -1,7 +1,8 @@
 use crate::cache::{cache_get, CacheComputeResult, CacheGetOptions};
+use crate::hass_mqtt::climate::parse_temperature_constraints;
 use crate::opt_env_var;
 use crate::service::state::sort_and_dedup_scenes;
-use crate::temperature::TemperatureValue;
+use crate::temperature::{TemperatureUnits, TemperatureValue};
 use crate::undoc_api::GoveeUndocumentedApi;
 use anyhow::Context;
 use reqwest::Method;
@@ -362,7 +363,18 @@ impl GoveeApiClient {
             .capability_by_instance(instance_name)
             .ok_or_else(|| anyhow::anyhow!("device has no {instance_name}"))?;
 
-        let celsius = target.as_celsius();
+        let constraints = parse_temperature_constraints(cap)?.as_unit(TemperatureUnits::Celsius);
+
+        let min = constraints.min.as_celsius();
+        let max = constraints.max.as_celsius();
+        let celsius = target.as_celsius().max(min).min(max);
+        let clamped = celsius.max(min).min(max);
+        if clamped != celsius {
+            log::info!(
+                "set_target_temperature: constraining requested {celsius} to \
+                       {clamped} because min={min} and max={max}"
+            );
+        }
 
         let value = json!({
             "temperature": celsius,

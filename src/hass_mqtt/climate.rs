@@ -18,14 +18,14 @@ pub struct TargetTemperatureEntity {
     number: NumberConfig,
 }
 
-struct TemperatureConstraints {
-    min: TemperatureValue,
-    max: TemperatureValue,
-    precision: TemperatureValue,
+pub struct TemperatureConstraints {
+    pub min: TemperatureValue,
+    pub max: TemperatureValue,
+    pub precision: TemperatureValue,
 }
 
 impl TemperatureConstraints {
-    fn as_unit(&self, unit: TemperatureUnits) -> Self {
+    pub fn as_unit(&self, unit: TemperatureUnits) -> Self {
         Self {
             min: self.min.as_unit(unit),
             max: self.max.as_unit(unit),
@@ -34,7 +34,7 @@ impl TemperatureConstraints {
     }
 }
 
-fn parse_temperature_constraints(
+pub fn parse_temperature_constraints(
     instance: &DeviceCapability,
 ) -> anyhow::Result<TemperatureConstraints> {
     let units = instance
