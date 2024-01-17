@@ -507,6 +507,11 @@ impl Device {
             return Some(quirk.ble_only);
         }
 
+        if self.http_device_info.is_some() {
+            // truly BLE-only devices are not returned via the Platform API
+            return Some(false);
+        }
+
         if let Some(info) = &self.undoc_device_info {
             Some(info.entry.device_ext.device_settings.wifi_name.is_none())
         } else {
