@@ -158,7 +158,7 @@ impl ParsedWorkMode {
             }
             _ => {
                 for mode in self.modes.values_mut() {
-                    mode.label = format!("{} Parameter", mode.name);
+                    mode.label = mode.name.clone();
                 }
             }
         }
