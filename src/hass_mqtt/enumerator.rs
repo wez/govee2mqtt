@@ -244,7 +244,7 @@ impl WorkMode {
         };
 
         for opt in options {
-            let label = opt.value.to_string();
+            let label = format!("Activate {} Preset {}", self.name, opt.value);
             self.values.push(WorkModeValue {
                 value: opt.value,
                 label,
@@ -322,15 +322,9 @@ async fn entities_for_work_mode<'a>(
             } else {
                 for value in &work_mode.values {
                     if let Some(mode_value) = value.value.as_i64() {
-                        let name = if value.label.is_empty() {
-                            format!("Activate {} Preset {mode_num}", work_mode.name)
-                        } else {
-                            value.label.to_string()
-                        };
-
                         entities.add(ButtonConfig::activate_work_mode_preset(
                             d,
-                            &name,
+                            &value.label,
                             &work_mode.name,
                             mode_num,
                             mode_value,
