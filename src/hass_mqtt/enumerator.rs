@@ -208,6 +208,7 @@ impl ParsedWorkMode {
         names
     }
 
+    #[allow(unused)]
     pub fn modes_with_values(&self) -> impl Iterator<Item = &WorkMode> {
         self.modes.values().filter_map(|mode| {
             if mode.values.is_empty() {
@@ -296,18 +297,60 @@ async fn entities_for_work_mode<'a>(
     let mut work_modes = ParsedWorkMode::with_capability(cap)?;
     work_modes.adjust_for_device(&d.sku);
 
-    for work_mode in work_modes.modes_with_values() {
-        let range = work_mode.contiguous_value_range();
-        let label = work_mode.label().to_string();
+    let quirk = d.resolve_quirk();
 
-        entities.add(WorkModeNumber::new(
-            d,
-            state,
-            label,
-            &work_mode.name,
-            work_mode.value.clone(),
-            range,
-        ));
+    for work_mode in work_modes.modes.values() {
+        let Some(mode_num) = work_mode.value.as_i64() else {
+            continue;
+        };
+
+        let show_as_preset = work_mode.values.is_empty()
+            || quirk
+                .as_ref()
+                .map(|q| q.should_show_mode_as_preset(&work_mode.name))
+                .unwrap_or(false);
+
+        if show_as_preset {
+            if work_mode.values.is_empty() {
+                entities.add(ButtonConfig::activate_work_mode_preset(
+                    d,
+                    &format!("Activate Mode: {}", work_mode.label()),
+                    &work_mode.name,
+                    mode_num,
+                    0,
+                ));
+            } else {
+                for value in &work_mode.values {
+                    if let Some(mode_value) = value.value.as_i64() {
+                        let name = if value.label.is_empty() {
+                            format!("Activate {} Preset {mode_num}", work_mode.name)
+                        } else {
+                            value.label.to_string()
+                        };
+
+                        entities.add(ButtonConfig::activate_work_mode_preset(
+                            d,
+                            &name,
+                            &work_mode.name,
+                            mode_num,
+                            mode_value,
+                        ));
+                    }
+                }
+            }
+        } else {
+            let range = work_mode.contiguous_value_range();
+            let label = work_mode.label().to_string();
+
+            entities.add(WorkModeNumber::new(
+                d,
+                state,
+                label,
+                &work_mode.name,
+                work_mode.value.clone(),
+                range,
+            ));
+        }
     }
 
     entities.add(WorkModeSelect::new(d, &work_modes, state));

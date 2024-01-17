@@ -37,6 +37,7 @@ pub struct Quirk {
     /// packets from the MQTT subscription and apply
     /// their state.
     pub iot_api_supported: bool,
+    pub show_as_preset_buttons: Option<&'static [&'static str]>,
 }
 
 impl Quirk {
@@ -58,6 +59,7 @@ impl Quirk {
             platform_temperature_sensor_units: None,
             platform_humidity_sensor_units: None,
             iot_api_supported: false,
+            show_as_preset_buttons: None,
         }
     }
 
@@ -116,6 +118,11 @@ impl Quirk {
         self
     }
 
+    pub fn with_show_as_preset_modes(mut self, modes: &'static [&'static str]) -> Self {
+        self.show_as_preset_buttons.replace(modes);
+        self
+    }
+
     pub fn with_broken_platform(mut self) -> Self {
         self.avoid_platform_api = true;
         self
@@ -123,6 +130,13 @@ impl Quirk {
 
     pub fn lan_api_capable_light(sku: &'static str, icon: &'static str) -> Self {
         Self::light(sku, icon).with_lan_api()
+    }
+
+    pub fn should_show_mode_as_preset(&self, mode: &str) -> bool {
+        self.show_as_preset_buttons
+            .as_ref()
+            .map(|modes| modes.contains(&mode))
+            .unwrap_or(false)
     }
 }
 
@@ -184,7 +198,8 @@ fn load_quirks() -> HashMap<String, Quirk> {
             .with_platform_temperature_sensor_units(TemperatureUnits::CelsiusTimes100)
             .with_platform_humidity_sensor_units(HumidityUnits::RelativePercentTimes100),
         Quirk::device("H7173", DeviceType::Kettle, "mdi:kettle")
-            .with_platform_temperature_sensor_units(TemperatureUnits::Farenheit),
+            .with_platform_temperature_sensor_units(TemperatureUnits::Farenheit)
+            .with_show_as_preset_modes(&["Tea", "Coffee", "DIY"]),
         // Lights from the list of LAN API enabled devices
         // at <https://app-h5.govee.com/user-manual/wlan-guide>
         Quirk::lan_api_capable_light("H6072", FLOOR_LAMP),

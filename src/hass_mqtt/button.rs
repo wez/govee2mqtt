@@ -72,6 +72,37 @@ impl ButtonConfig {
         }
     }
 
+    pub fn activate_work_mode_preset(
+        device: &ServiceDevice,
+        name: &str,
+        mode_name: &str,
+        mode_num: i64,
+        value: i64,
+    ) -> Self {
+        let unique_id = format!(
+            "gv2mqtt-{id}-preset-{mode_name}-{mode_num}",
+            id = topic_safe_id(device),
+        );
+        let command_topic = format!(
+            "gv2mqtt/number/{id}/command/{mode_name}/{mode_num}",
+            id = topic_safe_id(device),
+        );
+        Self {
+            base: EntityConfig {
+                availability_topic: availability_topic(),
+                name: Some(name.to_string()),
+                entity_category: None,
+                origin: Origin::default(),
+                device: Device::for_device(device),
+                unique_id: unique_id.clone(),
+                device_class: None,
+                icon: None,
+            },
+            command_topic,
+            payload_press: Some(value.to_string()),
+        }
+    }
+
     pub fn request_platform_data_for_device(device: &ServiceDevice) -> Self {
         let unique_id = format!(
             "gv2mqtt-{id}-request-platform-data",
