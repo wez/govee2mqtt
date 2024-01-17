@@ -195,7 +195,7 @@ impl TemperatureValue {
 fn atoi<F: FromStr>(input: &str) -> Result<(F, &str), <F as FromStr>::Err> {
     let input = input.trim();
     let i = input
-        .find(|c: char| !c.is_numeric())
+        .find(|c: char| !c.is_numeric() && c != '.')
         .unwrap_or_else(|| input.len());
     let number = input[..i].parse::<F>()?;
     Ok((number, input[i..].trim()))
@@ -210,6 +210,10 @@ mod test {
         assert_eq!(
             TemperatureValue::parse_with_optional_scale("23", None).unwrap(),
             TemperatureValue::new(23.0, TemperatureUnits::Celsius)
+        );
+        assert_eq!(
+            TemperatureValue::parse_with_optional_scale("23.3", None).unwrap(),
+            TemperatureValue::new(23.3, TemperatureUnits::Celsius)
         );
         assert_eq!(
             TemperatureValue::parse_with_optional_scale("23C", None).unwrap(),
