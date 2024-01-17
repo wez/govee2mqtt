@@ -156,6 +156,11 @@ impl ParsedWorkMode {
                     .get_mut("Manual")
                     .map(|m| m.label = "Manual: Mist Level".to_string());
             }
+            "H7131" => {
+                self.modes.get_mut("gearMode").map(|m| {
+                    m.label = "Heat".to_string();
+                });
+            }
             _ => {
                 for mode in self.modes.values_mut() {
                     mode.label = mode.name.clone();
@@ -232,6 +237,7 @@ impl WorkMode {
     pub fn add_values(&mut self, opt: &EnumOption) {
         #[derive(Deserialize)]
         struct ModeOption {
+            name: Option<String>,
             value: JsonValue,
         }
 
@@ -244,7 +250,11 @@ impl WorkMode {
         };
 
         for opt in options {
-            let label = format!("Activate {} Preset {}", self.name, opt.value);
+            let option_name = match opt.name {
+                Some(name) => name,
+                None => opt.value.to_string(),
+            };
+            let label = format!("Activate {} Preset {option_name}", self.name);
             self.values.push(WorkModeValue {
                 value: opt.value,
                 label,
