@@ -11,7 +11,7 @@ pub struct EntityConfig {
     pub availability_topic: String,
     pub name: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub device_class: Option<String>,
+    pub device_class: Option<&'static str>,
     pub origin: Origin,
     pub device: Device,
     pub unique_id: String,

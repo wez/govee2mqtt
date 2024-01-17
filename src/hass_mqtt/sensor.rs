@@ -1,12 +1,13 @@
 use crate::commands::serve::POLL_INTERVAL;
 use crate::hass_mqtt::base::{Device, EntityConfig, Origin};
+use crate::hass_mqtt::humidifier::DEVICE_CLASS_HUMIDITY;
 use crate::hass_mqtt::instance::{publish_entity_config, EntityInstance};
 use crate::platform_api::DeviceCapability;
 use crate::service::device::Device as ServiceDevice;
 use crate::service::hass::{availability_topic, topic_safe_id, topic_safe_string, HassClient};
 use crate::service::quirks::HumidityUnits;
 use crate::service::state::StateHandle;
-use crate::temperature::{TemperatureUnits, TemperatureValue};
+use crate::temperature::{TemperatureUnits, TemperatureValue, DEVICE_CLASS_TEMPERATURE};
 use async_trait::async_trait;
 use chrono::Utc;
 use serde::Serialize;
@@ -103,6 +104,12 @@ impl CapabilitySensor {
             _ => None,
         };
 
+        let device_class = match instance.instance.as_str() {
+            "sensorTemperature" => Some(DEVICE_CLASS_TEMPERATURE),
+            "sensorHumidity" => Some(DEVICE_CLASS_HUMIDITY),
+            _ => None,
+        };
+
         let name = match instance.instance.as_str() {
             "sensorTemperature" => "Temperature".to_string(),
             "sensorHumidity" => "Humidity".to_string(),
@@ -119,7 +126,7 @@ impl CapabilitySensor {
                     origin: Origin::default(),
                     device: Device::for_device(device),
                     unique_id: unique_id.clone(),
-                    device_class: None,
+                    device_class,
                     icon: None,
                 },
                 state_topic: format!("gv2mqtt/sensor/{unique_id}/state"),

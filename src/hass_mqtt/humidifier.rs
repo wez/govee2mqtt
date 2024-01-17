@@ -12,6 +12,8 @@ use mosquitto_rs::router::{Params, Payload, State};
 use serde::Serialize;
 use serde_json::json;
 
+pub const DEVICE_CLASS_HUMIDITY: &str = "humidity";
+
 /// <https://www.home-assistant.io/integrations/humidifier.mqtt>
 #[derive(Serialize, Clone, Debug)]
 pub struct HumidifierConfig {

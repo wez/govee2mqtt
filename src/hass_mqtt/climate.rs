@@ -5,7 +5,9 @@ use crate::platform_api::{DeviceCapability, DeviceParameters};
 use crate::service::device::Device as ServiceDevice;
 use crate::service::hass::{availability_topic, topic_safe_id, topic_safe_string, HassClient};
 use crate::service::state::StateHandle;
-use crate::temperature::{TemperatureScale, TemperatureUnits, TemperatureValue};
+use crate::temperature::{
+    TemperatureScale, TemperatureUnits, TemperatureValue, DEVICE_CLASS_TEMPERATURE,
+};
 use anyhow::anyhow;
 use axum::async_trait;
 use mosquitto_rs::router::{Params, Payload, State};
@@ -106,7 +108,7 @@ impl TargetTemperatureEntity {
                     origin: Origin::default(),
                     device: Device::for_device(device),
                     unique_id: unique_id.clone(),
-                    device_class: None,
+                    device_class: Some(DEVICE_CLASS_TEMPERATURE),
                     icon: Some("mdi:thermometer".to_string()),
                 },
                 state_topic: None,

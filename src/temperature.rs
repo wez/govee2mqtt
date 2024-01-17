@@ -2,6 +2,7 @@ use std::str::FromStr;
 
 pub const UNIT_CELSIUS: &str = "°C";
 pub const UNIT_FARENHEIT: &str = "°F";
+pub const DEVICE_CLASS_TEMPERATURE: &str = "temperature";
 
 #[allow(unused)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
