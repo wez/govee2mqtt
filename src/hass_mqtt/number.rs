@@ -16,6 +16,7 @@ pub struct NumberConfig {
     pub base: EntityConfig,
 
     pub command_topic: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub state_topic: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub min: Option<f32>,
