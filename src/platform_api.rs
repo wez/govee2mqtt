@@ -655,7 +655,7 @@ pub struct HttpDeviceInfo {
 
 impl HttpDeviceInfo {
     pub fn capability_by_instance(&self, instance: &str) -> Option<&DeviceCapability> {
-        self.capabilities.iter().find(|c| c.instance == instance)
+        self.capabilities.iter().find(|c| c.instance.eq_ignore_ascii_case(instance))
     }
 
     pub fn supports_rgb(&self) -> bool {
