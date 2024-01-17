@@ -23,7 +23,6 @@ pub struct TargetTemperatureEntity {
 pub struct TemperatureConstraints {
     pub min: TemperatureValue,
     pub max: TemperatureValue,
-    pub precision: TemperatureValue,
 }
 
 impl TemperatureConstraints {
@@ -31,7 +30,6 @@ impl TemperatureConstraints {
         Self {
             min: self.min.as_unit(unit),
             max: self.max.as_unit(unit),
-            precision: self.precision.as_unit(unit),
         }
     }
 }
@@ -63,12 +61,10 @@ pub fn parse_temperature_constraints(
 
             let min = TemperatureValue::new(range.min.into(), range_units);
             let max = TemperatureValue::new(range.max.into(), range_units);
-            let precision = TemperatureValue::new(range.precision.into(), range_units);
 
             Ok(TemperatureConstraints {
                 min: min.as_unit(units),
                 max: max.as_unit(units),
-                precision: precision.as_unit(units),
             })
         }
         _ => {
@@ -115,7 +111,7 @@ impl TargetTemperatureEntity {
                 command_topic,
                 min: Some(constraints.min.value().floor() as f32),
                 max: Some(constraints.max.value().ceil() as f32),
-                step: constraints.precision.value() as f32,
+                step: 1.0,
                 unit_of_measurement: Some(units.unit_of_measurement()),
             },
         })
