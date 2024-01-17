@@ -197,6 +197,8 @@ fn load_quirks() -> HashMap<String, Quirk> {
         Quirk::thermometer("H5103")
             .with_platform_temperature_sensor_units(TemperatureUnits::CelsiusTimes100)
             .with_platform_humidity_sensor_units(HumidityUnits::RelativePercentTimes100),
+        Quirk::device("H7171", DeviceType::Kettle, "mdi:kettle")
+            .with_platform_temperature_sensor_units(TemperatureUnits::Farenheit),
         Quirk::device("H7173", DeviceType::Kettle, "mdi:kettle")
             .with_platform_temperature_sensor_units(TemperatureUnits::Farenheit)
             .with_show_as_preset_modes(&["Tea", "Coffee", "DIY"]),
