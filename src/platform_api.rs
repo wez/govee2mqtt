@@ -121,6 +121,8 @@ impl GoveeApiClient {
             .request_with_json_response(Method::POST, url, &request)
             .await?;
 
+        log::info!("control_device result: {resp:?}");
+
         Ok(resp.capability)
     }
 
