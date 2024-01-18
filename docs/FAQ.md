@@ -55,3 +55,10 @@ the "Purge Caches" button to see how the situation evolves.
 ## Is my device supported?
 
 Check out [this page](SKUS.md) for more details on supported devices.
+
+## The device MAC addresses shown in the logs don't match the MACs on my network!?
+
+Govee device IDs are not network MAC addresses. For some devices the device ID
+is a superset of the BLE MAC for the device, but if you look carefully you'll
+see that the device ID is too large to be a MAC.
+
