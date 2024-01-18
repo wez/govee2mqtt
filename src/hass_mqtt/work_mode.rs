@@ -194,21 +194,26 @@ impl WorkMode {
         };
 
         for opt in options {
-            let option_name = match &opt.name {
-                Some(name) => name.to_string(),
-                None => opt.value.to_string(),
-            };
-            let computed_label = format!("Activate {} Preset {option_name}", self.name);
             self.values.push(WorkModeValue {
                 value: opt.value,
                 name: opt.name,
-                computed_label,
+                computed_label: String::new(),
             });
         }
 
         if let Some(range) = self.contiguous_value_range() {
             self.values.clear();
             self.value_range.replace(range);
+        } else {
+            // Now spend the resources updating the labels
+            for v in &mut self.values {
+                let option_name = match &v.name {
+                    Some(name) => name.to_string(),
+                    None => v.value.to_string(),
+                };
+                let computed_label = format!("Activate {} Preset {option_name}", self.name);
+                v.computed_label = computed_label;
+            }
         }
     }
 
@@ -253,74 +258,76 @@ impl WorkMode {
 }
 
 #[cfg(test)]
-#[test]
-fn test_work_mode_parser() {
-    use crate::platform_api::{DeviceCapabilityKind, StructField};
+mod test {
+    use super::*;
+    use crate::platform_api::{from_json, DeviceCapabilityKind, StructField};
     use serde_json::json;
     use std::collections::HashMap;
 
-    let cap = DeviceCapability {
-        kind: DeviceCapabilityKind::WorkMode,
-        instance: "workMode".to_string(),
-        alarm_type: None,
-        event_state: None,
-        parameters: Some(DeviceParameters::Struct {
-            fields: vec![
-                StructField {
-                    field_name: "workMode".to_string(),
-                    field_type: DeviceParameters::Enum {
-                        options: vec![EnumOption {
-                            name: "Normal".to_string(),
-                            value: 1.into(),
-                            extras: HashMap::new(),
-                        }],
+    #[test]
+    fn test_work_mode_parser() {
+        let cap = DeviceCapability {
+            kind: DeviceCapabilityKind::WorkMode,
+            instance: "workMode".to_string(),
+            alarm_type: None,
+            event_state: None,
+            parameters: Some(DeviceParameters::Struct {
+                fields: vec![
+                    StructField {
+                        field_name: "workMode".to_string(),
+                        field_type: DeviceParameters::Enum {
+                            options: vec![EnumOption {
+                                name: "Normal".to_string(),
+                                value: 1.into(),
+                                extras: HashMap::new(),
+                            }],
+                        },
+                        default_value: None,
+                        required: true,
                     },
-                    default_value: None,
-                    required: true,
-                },
-                StructField {
-                    field_name: "modeValue".to_string(),
-                    field_type: DeviceParameters::Enum {
-                        options: vec![EnumOption {
-                            name: "Normal".to_string(),
-                            value: JsonValue::Null,
-                            extras: [(
-                                "options".to_string(),
-                                json!([
-                                        {"value": 1},
-                                        {"value": 2},
-                                        {"value": 3},
-                                        {"value": 4},
-                                        {"value": 5},
-                                        {"value": 6},
-                                        {"value": 7},
-                                        {"value": 8},
-                                ]),
-                            )]
-                            .into_iter()
-                            .collect(),
-                        }],
+                    StructField {
+                        field_name: "modeValue".to_string(),
+                        field_type: DeviceParameters::Enum {
+                            options: vec![EnumOption {
+                                name: "Normal".to_string(),
+                                value: JsonValue::Null,
+                                extras: [(
+                                    "options".to_string(),
+                                    json!([
+                                            {"value": 1},
+                                            {"value": 2},
+                                            {"value": 3},
+                                            {"value": 4},
+                                            {"value": 5},
+                                            {"value": 6},
+                                            {"value": 7},
+                                            {"value": 8},
+                                    ]),
+                                )]
+                                .into_iter()
+                                .collect(),
+                            }],
+                        },
+                        default_value: None,
+                        required: true,
                     },
-                    default_value: None,
-                    required: true,
-                },
-            ],
-        }),
-    };
+                ],
+            }),
+        };
 
-    let wm = ParsedWorkMode::with_capability(&cap).unwrap();
+        let wm = ParsedWorkMode::with_capability(&cap).unwrap();
 
-    // We shouldn't show this as a set of preset buttons, because
-    // we should get a contiguous range that we can show as a slider
-    assert!(wm
-        .mode_by_name("Normal")
-        .unwrap()
-        .contiguous_value_range()
-        .is_some());
+        // We shouldn't show this as a set of preset buttons, because
+        // we should get a contiguous range that we can show as a slider
+        assert!(wm
+            .mode_by_name("Normal")
+            .unwrap()
+            .contiguous_value_range()
+            .is_some());
 
-    k9::snapshot!(
-        wm,
-        r#"
+        k9::snapshot!(
+            wm,
+            r#"
 ParsedWorkMode {
     modes: {
         "Normal": WorkMode {
@@ -335,25 +342,23 @@ ParsedWorkMode {
     },
 }
 "#
-    );
-}
+        );
+    }
 
-#[cfg(test)]
-#[test]
-fn test_work_mode_parser2() {
-    use crate::platform_api::from_json;
-    let cap: DeviceCapability =
-        from_json(&include_str!("../../test-data/work-mode-issue-81.json")).unwrap();
+    #[test]
+    fn test_work_mode_parser2() {
+        let cap: DeviceCapability =
+            from_json(&include_str!("../../test-data/work-mode-issue-81.json")).unwrap();
 
-    let wm = ParsedWorkMode::with_capability(&cap).unwrap();
+        let wm = ParsedWorkMode::with_capability(&cap).unwrap();
 
-    // We shouldn't show this as a set of preset buttons, because
-    // we should get a contiguous range that we can show as a slider
-    let auto_mode = wm.mode_by_name("Auto").unwrap();
-    assert!(auto_mode.contiguous_value_range().is_some());
-    k9::snapshot!(
-        wm,
-        r#"
+        // We shouldn't show this as a set of preset buttons, because
+        // we should get a contiguous range that we can show as a slider
+        let auto_mode = wm.mode_by_name("Auto").unwrap();
+        assert!(auto_mode.contiguous_value_range().is_some());
+        k9::snapshot!(
+            wm,
+            r#"
 ParsedWorkMode {
     modes: {
         "Auto": WorkMode {
@@ -384,5 +389,95 @@ ParsedWorkMode {
     },
 }
 "#
-    );
+        );
+    }
+
+    #[test]
+    fn test_work_mode_parser3() {
+        let cap = DeviceCapability {
+            kind: DeviceCapabilityKind::WorkMode,
+            instance: "workMode".to_string(),
+            alarm_type: None,
+            event_state: None,
+            parameters: Some(DeviceParameters::Struct {
+                fields: vec![
+                    StructField {
+                        field_name: "workMode".to_string(),
+                        field_type: DeviceParameters::Enum {
+                            options: vec![EnumOption {
+                                name: "Normal".to_string(),
+                                value: 1.into(),
+                                extras: HashMap::new(),
+                            }],
+                        },
+                        default_value: None,
+                        required: true,
+                    },
+                    StructField {
+                        field_name: "modeValue".to_string(),
+                        field_type: DeviceParameters::Enum {
+                            options: vec![EnumOption {
+                                name: "Normal".to_string(),
+                                value: JsonValue::Null,
+                                extras: [(
+                                    "options".to_string(),
+                                    json!([
+                                            {"value": 1},
+                                            {"value": 2},
+                                            // hole here at 3
+                                            {"value": 4},
+                                    ]),
+                                )]
+                                .into_iter()
+                                .collect(),
+                            }],
+                        },
+                        default_value: None,
+                        required: true,
+                    },
+                ],
+            }),
+        };
+
+        let wm = ParsedWorkMode::with_capability(&cap).unwrap();
+
+        assert!(wm
+            .mode_by_name("Normal")
+            .unwrap()
+            .contiguous_value_range()
+            .is_none());
+
+        k9::snapshot!(
+            wm,
+            r#"
+ParsedWorkMode {
+    modes: {
+        "Normal": WorkMode {
+            name: "Normal",
+            value: Number(1),
+            label: "",
+            values: [
+                WorkModeValue {
+                    value: Number(1),
+                    name: None,
+                    computed_label: "Activate Normal Preset 1",
+                },
+                WorkModeValue {
+                    value: Number(2),
+                    name: None,
+                    computed_label: "Activate Normal Preset 2",
+                },
+                WorkModeValue {
+                    value: Number(4),
+                    name: None,
+                    computed_label: "Activate Normal Preset 4",
+                },
+            ],
+            value_range: None,
+        },
+    },
+}
+"#
+        );
+    }
 }
