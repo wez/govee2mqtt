@@ -147,10 +147,7 @@ pub async fn mqtt_set_temperature(
     State(state): State<StateHandle>,
 ) -> anyhow::Result<()> {
     log::info!("Command: set-temperature for {id}: {value}");
-    let device = state
-        .resolve_device(&id)
-        .await
-        .ok_or_else(|| anyhow::anyhow!("device '{id}' not found"))?;
+    let device = state.resolve_device_for_control(&id).await?;
 
     let scale: TemperatureScale = units.parse()?;
     let target_value = TemperatureValue::parse_with_optional_scale(&value, Some(scale))?;

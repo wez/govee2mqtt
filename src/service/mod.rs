@@ -1,3 +1,4 @@
+pub mod coordinator;
 pub mod device;
 pub mod hass;
 pub mod http;

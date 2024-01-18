@@ -238,10 +238,7 @@ async fn mqtt_request_platform_data(
     Params(IdParameter { id }): Params<IdParameter>,
     State(state): State<StateHandle>,
 ) -> anyhow::Result<()> {
-    let device = state
-        .resolve_device(&id)
-        .await
-        .ok_or_else(|| anyhow::anyhow!("device '{id}' not found"))?;
+    let device = state.resolve_device_read_only(&id).await?;
     log::info!("Request Platform API State for {device}");
     if !state.poll_platform_api(&device).await? {
         log::warn!("Unable to poll platform API for {device}");
@@ -264,10 +261,7 @@ async fn mqtt_light_command(
     Params(IdParameter { id }): Params<IdParameter>,
     State(state): State<StateHandle>,
 ) -> anyhow::Result<()> {
-    let device = state
-        .resolve_device(&id)
-        .await
-        .ok_or_else(|| anyhow::anyhow!("device '{id}' not found"))?;
+    let device = state.resolve_device_for_control(&id).await?;
 
     let command: HassLightCommand = serde_json::from_str(&payload)?;
     log::info!("Command for {device}: {payload}");
@@ -336,10 +330,7 @@ async fn mqtt_light_segment_command(
     Params(IdAndSeg { id, segment }): Params<IdAndSeg>,
     State(state): State<StateHandle>,
 ) -> anyhow::Result<()> {
-    let device = state
-        .resolve_device(&id)
-        .await
-        .ok_or_else(|| anyhow::anyhow!("device '{id}' not found"))?;
+    let device = state.resolve_device_for_control(&id).await?;
     let segment: u32 = segment.parse()?;
 
     let command: HassLightCommand = from_json(&payload)?;
@@ -427,10 +418,7 @@ async fn mqtt_switch_command(
     State(state): State<StateHandle>,
 ) -> anyhow::Result<()> {
     log::info!("{instance} for {id}: {command}");
-    let device = state
-        .resolve_device(&id)
-        .await
-        .ok_or_else(|| anyhow::anyhow!("device '{id}' not found"))?;
+    let device = state.resolve_device_for_control(&id).await?;
 
     let on = match command.as_str() {
         "ON" | "on" => true,
@@ -577,8 +565,6 @@ async fn run_mqtt_loop(
                 tokio::spawn(async move {
                     if let Err(err) = router.dispatch(msg.clone(), state.clone()).await {
                         log::error!("While dispatching {msg:?}: {err:#}");
-                    } else {
-                        state.poll_after_control().await;
                     }
                 });
             }

@@ -175,10 +175,7 @@ pub async fn mqtt_set_mode_scene(
     Params(IdParameter { id }): Params<IdParameter>,
     State(state): State<StateHandle>,
 ) -> anyhow::Result<()> {
-    let device = state
-        .resolve_device(&id)
-        .await
-        .ok_or_else(|| anyhow::anyhow!("device '{id}' not found"))?;
+    let device = state.resolve_device_for_control(&id).await?;
 
     state
         .device_set_scene(&device, &scene)

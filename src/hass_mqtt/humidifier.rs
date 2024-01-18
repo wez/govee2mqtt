@@ -246,10 +246,7 @@ pub async fn mqtt_device_set_work_mode(
     State(state): State<StateHandle>,
 ) -> anyhow::Result<()> {
     log::info!("mqtt_humidifier_set_mode: {id}: {mode}");
-    let device = state
-        .resolve_device(&id)
-        .await
-        .ok_or_else(|| anyhow::anyhow!("device '{id}' not found"))?;
+    let device = state.resolve_device_for_control(&id).await?;
 
     let work_modes = ParsedWorkMode::with_device(&device)?;
     let work_mode = work_modes
@@ -280,10 +277,7 @@ pub async fn mqtt_humidifier_set_target(
 ) -> anyhow::Result<()> {
     log::info!("mqtt_humidifier_set_target: {id}: {percent}");
 
-    let device = state
-        .resolve_device(&id)
-        .await
-        .ok_or_else(|| anyhow::anyhow!("device '{id}' not found"))?;
+    let device = state.resolve_device_for_control(&id).await?;
 
     let use_iot = device.pollable_via_iot() && state.get_iot_client().await.is_some();
 

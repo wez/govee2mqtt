@@ -177,10 +177,7 @@ pub async fn mqtt_number_command(
 ) -> anyhow::Result<()> {
     log::info!("{mode_name} for {id}: {value}");
     let work_mode: i64 = work_mode.parse()?;
-    let device = state
-        .resolve_device(&id)
-        .await
-        .ok_or_else(|| anyhow::anyhow!("device '{id}' not found"))?;
+    let device = state.resolve_device_for_control(&id).await?;
 
     state
         .humidifier_set_parameter(&device, work_mode, value)

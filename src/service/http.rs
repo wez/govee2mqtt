@@ -1,3 +1,4 @@
+use crate::service::coordinator::Coordinator;
 use crate::service::device::{Device, DeviceState};
 use crate::service::state::StateHandle;
 use axum::extract::{Path, State};
@@ -35,11 +36,18 @@ fn bad_request<T: ToString + std::fmt::Display>(err: T) -> Response {
     response_with_code(StatusCode::BAD_REQUEST, err)
 }
 
-async fn resolve_device(state: &StateHandle, id: &str) -> Result<Device, Response> {
+async fn resolve_device_for_control(
+    state: &StateHandle,
+    id: &str,
+) -> Result<Coordinator, Response> {
     state
-        .resolve_device(&id)
+        .resolve_device_for_control(&id)
         .await
-        .ok_or_else(|| not_found(format!("device '{id}' not found")))
+        .map_err(not_found)
+}
+
+async fn resolve_device_read_only(state: &StateHandle, id: &str) -> Result<Device, Response> {
+    state.resolve_device_read_only(&id).await.map_err(not_found)
 }
 
 /// Returns a json array of device information
@@ -77,7 +85,7 @@ async fn device_power_on(
     State(state): State<StateHandle>,
     Path(id): Path<String>,
 ) -> Result<Response, Response> {
-    let device = resolve_device(&state, &id).await?;
+    let device = resolve_device_for_control(&state, &id).await?;
 
     state
         .device_power_on(&device, true)
@@ -92,7 +100,7 @@ async fn device_power_off(
     State(state): State<StateHandle>,
     Path(id): Path<String>,
 ) -> Result<Response, Response> {
-    let device = resolve_device(&state, &id).await?;
+    let device = resolve_device_for_control(&state, &id).await?;
 
     state
         .device_power_on(&device, false)
@@ -107,7 +115,7 @@ async fn device_set_brightness(
     State(state): State<StateHandle>,
     Path((id, level)): Path<(String, u8)>,
 ) -> Result<Response, Response> {
-    let device = resolve_device(&state, &id).await?;
+    let device = resolve_device_for_control(&state, &id).await?;
 
     state
         .device_set_brightness(&device, level)
@@ -122,7 +130,7 @@ async fn device_set_color_temperature(
     State(state): State<StateHandle>,
     Path((id, kelvin)): Path<(String, u32)>,
 ) -> Result<Response, Response> {
-    let device = resolve_device(&state, &id).await?;
+    let device = resolve_device_for_control(&state, &id).await?;
 
     state
         .device_set_color_temperature(&device, kelvin)
@@ -141,7 +149,7 @@ async fn device_set_color(
         .map_err(|err| bad_request(format!("error parsing color '{color}': {err}")))?;
     let [r, g, b, _a] = color.to_rgba8();
 
-    let device = resolve_device(&state, &id).await?;
+    let device = resolve_device_for_control(&state, &id).await?;
 
     state
         .device_set_color_rgb(&device, r, g, b)
@@ -156,7 +164,7 @@ async fn device_set_scene(
     State(state): State<StateHandle>,
     Path((id, scene)): Path<(String, String)>,
 ) -> Result<Response, Response> {
-    let device = resolve_device(&state, &id).await?;
+    let device = resolve_device_for_control(&state, &id).await?;
 
     state
         .device_set_scene(&device, &scene)
@@ -171,7 +179,7 @@ async fn device_list_scenes(
     State(state): State<StateHandle>,
     Path(id): Path<String>,
 ) -> Result<Response, Response> {
-    let device = resolve_device(&state, &id).await?;
+    let device = resolve_device_read_only(&state, &id).await?;
 
     let scenes = state.device_list_scenes(&device).await.map_err(generic)?;
 

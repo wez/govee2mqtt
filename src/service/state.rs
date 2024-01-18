@@ -1,6 +1,7 @@
 use crate::ble::{Base64HexBytes, SetHumidifierMode, SetHumidifierNightlightParams};
 use crate::lan_api::{Client as LanClient, DeviceStatus as LanDeviceStatus, LanDevice};
 use crate::platform_api::{DeviceCapability, DeviceType, GoveeApiClient};
+use crate::service::coordinator::Coordinator;
 use crate::service::device::Device;
 use crate::service::hass::{topic_safe_id, HassClient};
 use crate::service::iot::IotClient;
@@ -8,22 +9,22 @@ use crate::temperature::{TemperatureScale, TemperatureValue};
 use crate::undoc_api::GoveeUndocumentedApi;
 use anyhow::Context;
 use serde_json::Value as JsonValue;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Instant;
-use tokio::sync::{MappedMutexGuard, Mutex, MutexGuard};
+use tokio::sync::{MappedMutexGuard, Mutex, MutexGuard, Semaphore};
 use tokio::time::{sleep, Duration};
 
 #[derive(Default)]
 pub struct State {
     devices_by_id: Mutex<HashMap<String, Device>>,
+    semaphore_by_id: Mutex<HashMap<String, Arc<Semaphore>>>,
     lan_client: Mutex<Option<LanClient>>,
     platform_client: Mutex<Option<GoveeApiClient>>,
     undoc_client: Mutex<Option<GoveeUndocumentedApi>>,
     iot_client: Mutex<Option<IotClient>>,
     hass_client: Mutex<Option<HassClient>>,
     hass_discovery_prefix: Mutex<String>,
-    devices_to_poll: Mutex<HashSet<String>>,
     temperature_scale: Mutex<TemperatureScale>,
 }
 
@@ -69,6 +70,52 @@ impl State {
     pub async fn device_by_id(&self, id: &str) -> Option<Device> {
         let devices = self.devices_by_id.lock().await;
         devices.get(id).cloned()
+    }
+
+    async fn semaphore_for_device(&self, device: &Device) -> Arc<Semaphore> {
+        self.semaphore_by_id
+            .lock()
+            .await
+            .entry(device.id.clone())
+            .or_insert_with(|| Arc::new(Semaphore::new(1)))
+            .clone()
+    }
+
+    pub async fn resolve_device_read_only(self: &Arc<Self>, label: &str) -> anyhow::Result<Device> {
+        self.resolve_device(label)
+            .await
+            .ok_or_else(|| anyhow::anyhow!("device '{label}' not found"))
+    }
+
+    /// Resolve a device based on its label.
+    /// Assuming the device is found, returns a Coordinator, which is a
+    /// struct that ensures that only one task at a time can be processing
+    /// control requests for a device.
+    /// This method will not return until the calling task is permitted
+    /// to proceed with its control attempt.
+    pub async fn resolve_device_for_control(
+        self: &Arc<Self>,
+        label: &str,
+    ) -> anyhow::Result<Coordinator> {
+        let device = self
+            .resolve_device(label)
+            .await
+            .ok_or_else(|| anyhow::anyhow!("device '{label}' not found"))?;
+        let semaphore = self.semaphore_for_device(&device).await;
+        let permit = semaphore.acquire_owned().await?;
+        let (tx, rx) = tokio::sync::oneshot::channel();
+
+        // Schedule a task that will poll the device a short
+        // time after the Coordinator is dropped, to reconcile
+        // any changed state
+        let state = self.clone();
+        let device_id = device.id.to_string();
+        tokio::spawn(async move {
+            let _ = rx.await;
+            state.poll_after_control(device_id).await
+        });
+
+        Ok(Coordinator::new(device, permit, tx))
     }
 
     /// Resolve a device using its name, computed name, id or label,
@@ -232,7 +279,6 @@ impl State {
         value: V,
     ) -> anyhow::Result<()> {
         let value: JsonValue = value.into();
-        self.device_was_controlled(device).await;
         if let Some(client) = self.get_platform_client().await {
             if let Some(info) = &device.http_device_info {
                 log::info!("Using Platform API to send {value:?} control to {device}");
@@ -249,7 +295,6 @@ impl State {
         device: &Device,
         on: bool,
     ) -> anyhow::Result<()> {
-        self.device_was_controlled(device).await;
         if device.device_type() == DeviceType::Humidifier {
             return self.humidifier_set_nightlight(device, |p| p.on = on).await;
         }
@@ -287,7 +332,6 @@ impl State {
         device: &Device,
         on: bool,
     ) -> anyhow::Result<()> {
-        self.device_was_controlled(device).await;
         if let Some(lan_dev) = &device.lan_device {
             log::info!("Using LAN API to set {device} power state");
             lan_dev.send_turn(on).await?;
@@ -321,7 +365,6 @@ impl State {
         device: &Device,
         percent: u8,
     ) -> anyhow::Result<()> {
-        self.device_was_controlled(device).await;
         if device.device_type() == DeviceType::Humidifier {
             return self
                 .humidifier_set_nightlight(device, |p| {
@@ -364,7 +407,6 @@ impl State {
         device: &Device,
         kelvin: u32,
     ) -> anyhow::Result<()> {
-        self.device_was_controlled(device).await;
         if let Some(lan_dev) = &device.lan_device {
             log::info!("Using LAN API to set {device} color temperature");
             lan_dev.send_color_temperature_kelvin(kelvin).await?;
@@ -405,7 +447,6 @@ impl State {
         device: &Device,
         apply: F,
     ) -> anyhow::Result<()> {
-        self.device_was_controlled(device).await;
         let mut params: SetHumidifierNightlightParams =
             device.nightlight_state.clone().unwrap_or_default().into();
         (apply)(&mut params);
@@ -429,8 +470,6 @@ impl State {
         work_mode: i64,
         value: i64,
     ) -> anyhow::Result<()> {
-        self.device_was_controlled(device).await;
-
         if let Ok(command) = Base64HexBytes::encode_for_sku(
             &device.sku,
             &SetHumidifierMode {
@@ -462,7 +501,6 @@ impl State {
         g: u8,
         b: u8,
     ) -> anyhow::Result<()> {
-        self.device_was_controlled(device).await;
         if device.device_type() == DeviceType::Humidifier {
             return self
                 .humidifier_set_nightlight(device, |p| {
@@ -509,37 +547,29 @@ impl State {
         anyhow::bail!("Unable to control color for {device}");
     }
 
-    pub async fn device_was_controlled(self: &Arc<Self>, device: &Device) {
-        self.devices_to_poll
-            .lock()
-            .await
-            .insert(device.id.to_string());
-    }
-
-    pub async fn poll_after_control(self: &Arc<Self>) {
-        let device_ids: Vec<String> = self.devices_to_poll.lock().await.drain().collect();
+    pub async fn poll_after_control(self: &Arc<Self>, id: String) {
+        let Some(device) = self.device_by_id(&id).await else {
+            return;
+        };
 
         let iot_available = self.get_iot_client().await.is_some();
 
-        for id in device_ids {
-            if let Some(device) = self.device_by_id(&id).await {
-                if device.pollable_via_iot() && iot_available {
-                    continue;
-                }
-                if device.pollable_via_lan() {
-                    continue;
-                }
+        if device.pollable_via_iot() && iot_available {
+            return;
+        }
+        if device.pollable_via_lan() {
+            return;
+        }
 
-                // Add a slight delay, as the status returned
-                // by the platform API isn't guaranteed to be
-                // coherent with the command we just issued
-                // right away :-/
-                sleep(Duration::from_secs(5)).await;
-                log::info!("Polling {device} to get latest state after control");
-                if let Err(err) = self.poll_platform_api(&device).await {
-                    log::error!("Polling {device} failed: {err:#}");
-                }
-            }
+        // Add a slight delay, as the status returned
+        // by the platform API isn't guaranteed to be
+        // coherent with the command we just issued
+        // right away :-/
+        sleep(Duration::from_secs(5)).await;
+
+        log::info!("Polling {device} to get latest state after control");
+        if let Err(err) = self.poll_platform_api(&device).await {
+            log::error!("Polling {device} failed: {err:#}");
         }
     }
 
@@ -562,8 +592,6 @@ impl State {
         instance_name: &str,
         target: TemperatureValue,
     ) -> anyhow::Result<()> {
-        self.device_was_controlled(device).await;
-
         if let Some(client) = self.get_platform_client().await {
             if let Some(info) = &device.http_device_info {
                 log::info!("Using Platform API to set {device} target temperature to {target}");
@@ -582,7 +610,6 @@ impl State {
         device: &Device,
         scene: &str,
     ) -> anyhow::Result<()> {
-        self.device_was_controlled(device).await;
         // TODO: some plumbing to maintain offline scene controls for preferred-LAN control
         let avoid_platform_api = device.avoid_platform_api();
 
