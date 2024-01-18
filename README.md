@@ -1,7 +1,7 @@
 # Govee to MQTT bridge for Home Assistant
 
 This repo provides a `govee` executable whose primary purpose is to act
-as a bridge between [Govee](https://govee.com) lights and Home Assistant,
+as a bridge between [Govee](https://govee.com) devices and Home Assistant,
 via the [Home Assistant MQTT Integration](https://www.home-assistant.io/integrations/mqtt/).
 
 ## Features
@@ -40,6 +40,7 @@ via the [Home Assistant MQTT Integration](https://www.home-assistant.io/integrat
 
 ## Have a question?
 
+* [Is my device supported?](docs/SKUS.md)
 * [Check out the FAQ](docs/FAQ.md)
 
 ## Want to show your support or gratitude?
