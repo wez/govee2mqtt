@@ -19,5 +19,5 @@ itself.
 |Humidifiers|Not supported by these devices|Most humidifiers are controllable via the Platform API, but the level of control can be patchy; some models cannot have their night lights controlled fully at this time due to bugs on Govee's side.|Only the H7160 at this time. It allows control over the night light|
 |Kettles|Not supported by these devices|Tested with H7171 and H7173|No|
 |Heaters, Fans, Purifiers|Not supported by these devices|Tested with H7102, H7121, H7130, H7131, H713A, H7135|No|
-|Plugs|Not supported by these devices|Yes, but the API is buggy and support may be limited. (#65)|No|
+|Plugs|Not supported by these devices|Yes, but the API is buggy and support may be limited. ([H5082](https://github.com/wez/govee2mqtt/issues/65))|No|
 
