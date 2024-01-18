@@ -6,7 +6,7 @@ use crate::hass_mqtt::instance::EntityList;
 use crate::hass_mqtt::light::DeviceLight;
 use crate::hass_mqtt::number::WorkModeNumber;
 use crate::hass_mqtt::scene::SceneConfig;
-use crate::hass_mqtt::select::WorkModeSelect;
+use crate::hass_mqtt::select::{SceneModeSelect, WorkModeSelect};
 use crate::hass_mqtt::sensor::{CapabilitySensor, DeviceStatusDiagnostic, GlobalFixedDiagnostic};
 use crate::hass_mqtt::switch::CapabilitySwitch;
 use crate::hass_mqtt::work_mode::ParsedWorkMode;
@@ -163,6 +163,12 @@ pub async fn enumerate_entities_for_device<'a>(
 
     if d.device_type() == DeviceType::Humidifier {
         entities.add(Humidifier::new(&d, state).await?);
+    }
+
+    if d.device_type() != DeviceType::Light {
+        if let Some(scenes) = SceneModeSelect::new(d, state).await? {
+            entities.add(scenes);
+        }
     }
 
     if let Some(info) = &d.http_device_info {

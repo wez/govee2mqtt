@@ -249,7 +249,9 @@ impl GoveeApiClient {
             for cap in caps {
                 let is_scene = matches!(
                     cap.kind,
-                    DeviceCapabilityKind::DynamicScene | DeviceCapabilityKind::DynamicSetting
+                    DeviceCapabilityKind::DynamicScene
+                        | DeviceCapabilityKind::DynamicSetting
+                        | DeviceCapabilityKind::Mode
                 );
                 if !is_scene {
                     continue;

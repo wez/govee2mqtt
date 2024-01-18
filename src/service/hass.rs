@@ -3,6 +3,7 @@ use crate::hass_mqtt::enumerator::{enumerate_all_entites, enumerate_entities_for
 use crate::hass_mqtt::humidifier::{mqtt_device_set_work_mode, mqtt_humidifier_set_target};
 use crate::hass_mqtt::instance::EntityList;
 use crate::hass_mqtt::number::mqtt_number_command;
+use crate::hass_mqtt::select::mqtt_set_mode_scene;
 use crate::lan_api::DeviceColor;
 use crate::opt_env_var;
 use crate::platform_api::from_json;
@@ -549,6 +550,9 @@ async fn run_mqtt_loop(
                 "gv2mqtt/:id/set-temperature/:instance/:units",
                 mqtt_set_temperature,
             )
+            .await?;
+        router
+            .route("gv2mqtt/:id/set-mode-scene", mqtt_set_mode_scene)
             .await?;
 
         state
