@@ -62,3 +62,6 @@ Govee device IDs are not network MAC addresses. For some devices the device ID
 is a superset of the BLE MAC for the device, but if you look carefully you'll
 see that the device ID is too large to be a MAC.
 
+## This device should be available via the LAN API, but didn't respond to probing yet
+
+Look at[this page](LAN.md) for more details on the LAN API and things you can try.
