@@ -83,7 +83,7 @@ async fn enumerate_scenes(state: &StateHandle, entities: &mut EntityList) -> any
     Ok(())
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct ParsedWorkMode {
     pub modes: HashMap<String, WorkMode>,
 }
@@ -233,6 +233,13 @@ pub struct WorkMode {
     pub values: Vec<WorkModeValue>,
 }
 
+#[derive(Debug)]
+pub struct WorkModeValue {
+    pub value: JsonValue,
+    pub name: Option<String>,
+    pub computed_label: String,
+}
+
 impl WorkMode {
     pub fn add_values(&mut self, opt: &EnumOption) {
         #[derive(Deserialize)]
@@ -250,14 +257,15 @@ impl WorkMode {
         };
 
         for opt in options {
-            let option_name = match opt.name {
-                Some(name) => name,
+            let option_name = match &opt.name {
+                Some(name) => name.to_string(),
                 None => opt.value.to_string(),
             };
-            let label = format!("Activate {} Preset {option_name}", self.name);
+            let computed_label = format!("Activate {} Preset {option_name}", self.name);
             self.values.push(WorkModeValue {
                 value: opt.value,
-                label,
+                name: opt.name,
+                computed_label,
             });
         }
     }
@@ -274,7 +282,7 @@ impl WorkMode {
         let mut values = vec![];
         for v in &self.values {
             let item_value = v.value.as_i64()?;
-            if item_value.to_string() != v.label.to_string() {
+            if v.name.is_some() {
                 // It's a preset mode, so it's not a contiguous
                 // slider value
                 return None;
@@ -298,10 +306,127 @@ impl WorkMode {
     }
 }
 
-#[derive(Debug)]
-pub struct WorkModeValue {
-    pub value: JsonValue,
-    pub label: String,
+#[cfg(test)]
+#[test]
+fn test_work_mode_parser() {
+    use crate::platform_api::StructField;
+    use serde_json::json;
+
+    let cap = DeviceCapability {
+        kind: DeviceCapabilityKind::WorkMode,
+        instance: "workMode".to_string(),
+        alarm_type: None,
+        event_state: None,
+        parameters: Some(DeviceParameters::Struct {
+            fields: vec![
+                StructField {
+                    field_name: "workMode".to_string(),
+                    field_type: DeviceParameters::Enum {
+                        options: vec![EnumOption {
+                            name: "Normal".to_string(),
+                            value: 1.into(),
+                            extras: HashMap::new(),
+                        }],
+                    },
+                    default_value: None,
+                    required: true,
+                },
+                StructField {
+                    field_name: "modeValue".to_string(),
+                    field_type: DeviceParameters::Enum {
+                        options: vec![EnumOption {
+                            name: "Normal".to_string(),
+                            value: JsonValue::Null,
+                            extras: [(
+                                "options".to_string(),
+                                json!([
+                                        {"value": 1},
+                                        {"value": 2},
+                                        {"value": 3},
+                                        {"value": 4},
+                                        {"value": 5},
+                                        {"value": 6},
+                                        {"value": 7},
+                                        {"value": 8},
+                                ]),
+                            )]
+                            .into_iter()
+                            .collect(),
+                        }],
+                    },
+                    default_value: None,
+                    required: true,
+                },
+            ],
+        }),
+    };
+
+    let wm = ParsedWorkMode::with_capability(&cap).unwrap();
+
+    // We shouldn't show this as a set of preset buttons, because
+    // we should get a contiguous range that we can show as a slider
+    assert!(wm
+        .mode_by_name("Normal")
+        .unwrap()
+        .contiguous_value_range()
+        .is_some());
+
+    k9::snapshot!(
+        wm,
+        r#"
+ParsedWorkMode {
+    modes: {
+        "Normal": WorkMode {
+            name: "Normal",
+            value: Number(1),
+            label: "",
+            values: [
+                WorkModeValue {
+                    value: Number(1),
+                    name: None,
+                    computed_label: "Activate Normal Preset 1",
+                },
+                WorkModeValue {
+                    value: Number(2),
+                    name: None,
+                    computed_label: "Activate Normal Preset 2",
+                },
+                WorkModeValue {
+                    value: Number(3),
+                    name: None,
+                    computed_label: "Activate Normal Preset 3",
+                },
+                WorkModeValue {
+                    value: Number(4),
+                    name: None,
+                    computed_label: "Activate Normal Preset 4",
+                },
+                WorkModeValue {
+                    value: Number(5),
+                    name: None,
+                    computed_label: "Activate Normal Preset 5",
+                },
+                WorkModeValue {
+                    value: Number(6),
+                    name: None,
+                    computed_label: "Activate Normal Preset 6",
+                },
+                WorkModeValue {
+                    value: Number(7),
+                    name: None,
+                    computed_label: "Activate Normal Preset 7",
+                },
+                WorkModeValue {
+                    value: Number(8),
+                    name: None,
+                    computed_label: "Activate Normal Preset 8",
+                },
+            ],
+        },
+    },
+}
+"#
+    );
 }
 
 async fn entities_for_work_mode<'a>(
@@ -343,7 +468,7 @@ async fn entities_for_work_mode<'a>(
                     if let Some(mode_value) = value.value.as_i64() {
                         entities.add(ButtonConfig::activate_work_mode_preset(
                             d,
-                            &value.label,
+                            &value.computed_label,
                             &work_mode.name,
                             mode_num,
                             mode_value,
