@@ -1,0 +1,83 @@
+{
+  "instance": "workMode",
+  "parameters": {
+    "dataType": "STRUCT",
+    "fields": [
+      {
+        "dataType": "ENUM",
+        "fieldName": "workMode",
+        "options": [
+          {
+            "name": "Manual",
+            "value": 1
+          },
+          {
+            "name": "Custom",
+            "value": 2
+          },
+          {
+            "name": "Auto",
+            "value": 3
+          }
+        ],
+        "required": true
+      },
+      {
+        "dataType": "ENUM",
+        "fieldName": "modeValue",
+        "options": [
+          {
+            "name": "Manual",
+            "options": [
+              {
+                "value": 1
+              },
+              {
+                "value": 2
+              },
+              {
+                "value": 3
+              },
+              {
+                "value": 4
+              },
+              {
+                "value": 5
+              },
+              {
+                "value": 6
+              },
+              {
+                "value": 7
+              },
+              {
+                "value": 8
+              },
+              {
+                "value": 9
+              }
+            ],
+            "required": true,
+            "value": null
+          },
+          {
+            "defaultValue": 0,
+            "name": "Custom",
+            "required": false,
+            "value": null
+          },
+          {
+            "name": "Auto",
+            "range": {
+              "max": 80,
+              "min": 40
+            },
+            "required": true
+          }
+        ],
+        "required": false
+      }
+    ]
+  },
+  "type": "devices.capabilities.work_mode"
+}

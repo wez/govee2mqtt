@@ -3,12 +3,12 @@ use crate::service::device::Device as ServiceDevice;
 use anyhow::anyhow;
 use serde::Deserialize;
 use serde_json::Value as JsonValue;
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::ops::Range;
 
 #[derive(Default, Debug)]
 pub struct ParsedWorkMode {
-    pub modes: HashMap<String, WorkMode>,
+    pub modes: BTreeMap<String, WorkMode>,
 }
 
 impl ParsedWorkMode {
@@ -154,6 +154,7 @@ pub struct WorkMode {
     pub value: JsonValue,
     pub label: String,
     pub values: Vec<WorkModeValue>,
+    pub value_range: Option<Range<i64>>,
 }
 
 #[derive(Debug)]
@@ -165,6 +166,19 @@ pub struct WorkModeValue {
 
 impl WorkMode {
     pub fn add_values(&mut self, opt: &EnumOption) {
+        #[derive(Deserialize)]
+        struct ModeRange {
+            min: i64,
+            max: i64,
+        }
+
+        if let Some(range) = opt.extras.get("range") {
+            if let Ok(range) = serde_json::from_value::<ModeRange>(range.clone()) {
+                self.value_range = Some(range.min..range.max + 1);
+                return;
+            }
+        }
+
         #[derive(Deserialize)]
         struct ModeOption {
             name: Option<String>,
@@ -191,6 +205,11 @@ impl WorkMode {
                 computed_label,
             });
         }
+
+        if let Some(range) = self.contiguous_value_range() {
+            self.values.clear();
+            self.value_range.replace(range);
+        }
     }
 
     pub fn label(&self) -> &str {
@@ -202,6 +221,10 @@ impl WorkMode {
     }
 
     pub fn contiguous_value_range(&self) -> Option<Range<i64>> {
+        if let Some(range) = &self.value_range {
+            return Some(range.clone());
+        }
+
         let mut values = vec![];
         for v in &self.values {
             let item_value = v.value.as_i64()?;
@@ -234,6 +257,7 @@ impl WorkMode {
 fn test_work_mode_parser() {
     use crate::platform_api::{DeviceCapabilityKind, StructField};
     use serde_json::json;
+    use std::collections::HashMap;
 
     let cap = DeviceCapability {
         kind: DeviceCapabilityKind::WorkMode,
@@ -303,48 +327,59 @@ ParsedWorkMode {
             name: "Normal",
             value: Number(1),
             label: "",
-            values: [
-                WorkModeValue {
-                    value: Number(1),
-                    name: None,
-                    computed_label: "Activate Normal Preset 1",
-                },
-                WorkModeValue {
-                    value: Number(2),
-                    name: None,
-                    computed_label: "Activate Normal Preset 2",
-                },
-                WorkModeValue {
-                    value: Number(3),
-                    name: None,
-                    computed_label: "Activate Normal Preset 3",
-                },
-                WorkModeValue {
-                    value: Number(4),
-                    name: None,
-                    computed_label: "Activate Normal Preset 4",
-                },
-                WorkModeValue {
-                    value: Number(5),
-                    name: None,
-                    computed_label: "Activate Normal Preset 5",
-                },
-                WorkModeValue {
-                    value: Number(6),
-                    name: None,
-                    computed_label: "Activate Normal Preset 6",
-                },
-                WorkModeValue {
-                    value: Number(7),
-                    name: None,
-                    computed_label: "Activate Normal Preset 7",
-                },
-                WorkModeValue {
-                    value: Number(8),
-                    name: None,
-                    computed_label: "Activate Normal Preset 8",
-                },
-            ],
+            values: [],
+            value_range: Some(
+                1..9,
+            ),
+        },
+    },
+}
+"#
+    );
+}
+
+#[cfg(test)]
+#[test]
+fn test_work_mode_parser2() {
+    use crate::platform_api::from_json;
+    let cap: DeviceCapability =
+        from_json(&include_str!("../../test-data/work-mode-issue-81.json")).unwrap();
+
+    let wm = ParsedWorkMode::with_capability(&cap).unwrap();
+
+    // We shouldn't show this as a set of preset buttons, because
+    // we should get a contiguous range that we can show as a slider
+    let auto_mode = wm.mode_by_name("Auto").unwrap();
+    assert!(auto_mode.contiguous_value_range().is_some());
+    k9::snapshot!(
+        wm,
+        r#"
+ParsedWorkMode {
+    modes: {
+        "Auto": WorkMode {
+            name: "Auto",
+            value: Number(3),
+            label: "",
+            values: [],
+            value_range: Some(
+                40..81,
+            ),
+        },
+        "Custom": WorkMode {
+            name: "Custom",
+            value: Number(2),
+            label: "",
+            values: [],
+            value_range: None,
+        },
+        "Manual": WorkMode {
+            name: "Manual",
+            value: Number(1),
+            label: "",
+            values: [],
+            value_range: Some(
+                1..10,
+            ),
         },
     },
 }
