@@ -31,6 +31,17 @@ impl NumberConfig {
     pub async fn publish(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
         publish_entity_config("number", state, client, &self.base, self).await
     }
+
+    pub async fn notify_state(&self, client: &HassClient, value: &str) -> anyhow::Result<()> {
+        client
+            .publish(
+                self.state_topic
+                    .as_deref()
+                    .ok_or_else(|| anyhow!("number has no state_topic"))?,
+                value,
+            )
+            .await
+    }
 }
 
 pub struct WorkModeNumber {

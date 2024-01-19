@@ -87,8 +87,8 @@ impl FromStr for TemperatureScale {
     type Err = anyhow::Error;
     fn from_str(s: &str) -> anyhow::Result<TemperatureScale> {
         match s {
-            "c" | "C" | "°c" | "°C" => Ok(Self::Celsius),
-            "f" | "F" | "°f" | "°F" => Ok(Self::Farenheit),
+            "c" | "C" | "°c" | "°C" | "Celsius" | "celsius" => Ok(Self::Celsius),
+            "f" | "F" | "°f" | "°F" | "Farenheit" | "farenheit" => Ok(Self::Farenheit),
             _ => anyhow::bail!("Unknown temperature scale {s}"),
         }
     }

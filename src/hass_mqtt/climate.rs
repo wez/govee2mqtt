@@ -12,12 +12,16 @@ use anyhow::anyhow;
 use axum::async_trait;
 use mosquitto_rs::router::{Params, Payload, State};
 use serde::Deserialize;
+use std::str::FromStr;
 
 // TODO: register an actual climate entity.
 // I don't have one of these devices, so it is currently guesswork!
 
 pub struct TargetTemperatureEntity {
     number: NumberConfig,
+    device_id: String,
+    state: StateHandle,
+    instance_name: String,
 }
 
 pub struct TemperatureConstraints {
@@ -39,13 +43,12 @@ pub fn parse_temperature_constraints(
 ) -> anyhow::Result<TemperatureConstraints> {
     let units = instance
         .struct_field_by_name("unit")
-        .map(
-            |field| match field.default_value.as_ref().and_then(|v| v.as_str()) {
-                Some("Celsius") => TemperatureUnits::Celsius,
-                Some("Farenheit") => TemperatureUnits::Farenheit,
-                _ => TemperatureUnits::Farenheit,
-            },
-        )
+        .and_then(|field| {
+            field.default_value.as_ref().and_then(|v| {
+                v.as_str()
+                    .and_then(|s| TemperatureScale::from_str(s).map(Into::into).ok())
+            })
+        })
         .unwrap_or(TemperatureUnits::Farenheit);
 
     let temperature = instance
@@ -53,11 +56,10 @@ pub fn parse_temperature_constraints(
         .ok_or_else(|| anyhow!("no temperature field in {instance:?}"))?;
     match &temperature.field_type {
         DeviceParameters::Integer { unit, range } => {
-            let range_units = match unit.as_deref() {
-                Some("Celsius") => TemperatureUnits::Celsius,
-                Some("Farenheit") => TemperatureUnits::Farenheit,
-                _ => units,
-            };
+            let range_units = unit
+                .as_deref()
+                .and_then(|s| TemperatureScale::from_str(s).map(Into::into).ok())
+                .unwrap_or(units);
 
             let min = TemperatureValue::new(range.min.into(), range_units);
             let max = TemperatureValue::new(range.max.into(), range_units);
@@ -94,6 +96,10 @@ impl TargetTemperatureEntity {
             id = topic_safe_id(device),
             inst = topic_safe_string(&instance.instance)
         );
+        let state_topic = format!(
+            "gv2mqtt/{id}/advise-set-temperature",
+            id = topic_safe_id(device),
+        );
 
         Ok(Self {
             number: NumberConfig {
@@ -107,13 +113,16 @@ impl TargetTemperatureEntity {
                     device_class: Some(DEVICE_CLASS_TEMPERATURE),
                     icon: Some("mdi:thermometer".to_string()),
                 },
-                state_topic: None,
+                state_topic: Some(state_topic),
                 command_topic,
                 min: Some(constraints.min.value().floor() as f32),
                 max: Some(constraints.max.value().ceil() as f32),
                 step: 1.0,
                 unit_of_measurement: Some(units.unit_of_measurement()),
             },
+            device_id: device.id.to_string(),
+            state: state.clone(),
+            instance_name: instance.instance.to_string(),
         })
     }
 }
@@ -124,8 +133,56 @@ impl EntityInstance for TargetTemperatureEntity {
         self.number.publish(&state, &client).await
     }
 
-    async fn notify_state(&self, _client: &HassClient) -> anyhow::Result<()> {
-        // No state to publish
+    async fn notify_state(&self, client: &HassClient) -> anyhow::Result<()> {
+        let device = self
+            .state
+            .device_by_id(&self.device_id)
+            .await
+            .expect("device to exist");
+
+        let quirk = device.resolve_quirk();
+
+        log::debug!("notify_state for {device} {}", self.instance_name);
+
+        if let Some(state) = &device.http_device_state {
+            for cap in &state.capabilities {
+                if cap.instance == self.instance_name {
+                    log::debug!("have: {cap:?}");
+
+                    let units = cap
+                        .state
+                        .pointer("/value/unit")
+                        .and_then(|unit| {
+                            unit.as_str()
+                                .and_then(|s| TemperatureScale::from_str(s).map(Into::into).ok())
+                        })
+                        .or_else(|| quirk.and_then(|q| q.platform_temperature_sensor_units))
+                        .unwrap_or(TemperatureUnits::Celsius);
+
+                    log::debug!("units are reported as {units:?}");
+
+                    let value = match cap
+                        .state
+                        .pointer("/value/targetTemperature")
+                        .and_then(|v| v.as_f64())
+                        .map(|v| TemperatureValue::new(v, units))
+                    {
+                        Some(v) => {
+                            let pref_units = self.state.get_temperature_scale().await;
+                            log::debug!("reported temp is {v}, pref_units: {pref_units}");
+                            let value = v.as_unit(pref_units.into()).value();
+                            format!("{value:.2}")
+                        }
+                        None => "".to_string(),
+                    };
+
+                    log::debug!("setting value to {value}");
+
+                    return self.number.notify_state(&client, &value).await;
+                }
+            }
+        }
+
         Ok(())
     }
 }
