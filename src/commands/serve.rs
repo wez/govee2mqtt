@@ -28,9 +28,11 @@ async fn poll_single_device(state: &StateHandle, device: &Device) -> anyhow::Res
         return Ok(());
     }
 
+    let poll_interval = device.preferred_poll_interval();
+
     let can_update = match &device.last_polled {
         None => true,
-        Some(last) => now - last > *POLL_INTERVAL,
+        Some(last) => now - last > poll_interval,
     };
 
     if !can_update {
@@ -40,7 +42,7 @@ async fn poll_single_device(state: &StateHandle, device: &Device) -> anyhow::Res
     let device_state = device.device_state();
     let needs_update = match &device_state {
         None => true,
-        Some(state) => now - state.updated > *POLL_INTERVAL,
+        Some(state) => now - state.updated > poll_interval,
     };
 
     if !needs_update {
