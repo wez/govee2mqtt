@@ -295,8 +295,18 @@ impl State {
         device: &Device,
         on: bool,
     ) -> anyhow::Result<()> {
-        if device.device_type() == DeviceType::Humidifier {
-            return self.humidifier_set_nightlight(device, |p| p.on = on).await;
+        if self
+            .try_humidifier_set_nightlight(device, |p| p.on = on)
+            .await?
+        {
+            return Ok(());
+        }
+
+        if device.device_type() != DeviceType::Light {
+            // If the device's primary function is not a light,
+            // then we need to avoid powering on its other function
+            // here.
+            anyhow::bail!("Cannot power on just the light portion of {device}");
         }
 
         if let Some(lan_dev) = &device.lan_device {
@@ -365,13 +375,14 @@ impl State {
         device: &Device,
         percent: u8,
     ) -> anyhow::Result<()> {
-        if device.device_type() == DeviceType::Humidifier {
-            return self
-                .humidifier_set_nightlight(device, |p| {
-                    p.brightness = percent;
-                    p.on = true;
-                })
-                .await;
+        if self
+            .try_humidifier_set_nightlight(device, |p| {
+                p.brightness = percent;
+                p.on = true;
+            })
+            .await?
+        {
+            return Ok(());
         }
 
         if let Some(lan_dev) = &device.lan_device {
@@ -442,11 +453,11 @@ impl State {
     }
 
     // FIXME: this function probably shouldn't exist here
-    async fn humidifier_set_nightlight<F: Fn(&mut SetHumidifierNightlightParams)>(
+    async fn try_humidifier_set_nightlight<F: Fn(&mut SetHumidifierNightlightParams)>(
         self: &Arc<Self>,
         device: &Device,
         apply: F,
-    ) -> anyhow::Result<()> {
+    ) -> anyhow::Result<bool> {
         let mut params: SetHumidifierNightlightParams =
             device.nightlight_state.clone().unwrap_or_default().into();
         (apply)(&mut params);
@@ -456,12 +467,12 @@ impl State {
                 if let Some(info) = &device.undoc_device_info {
                     log::info!("Using IoT API to set {device} color");
                     iot.send_real(&info.entry, vec![command.base64()]).await?;
-                    return Ok(());
+                    return Ok(true);
                 }
             }
         }
 
-        anyhow::bail!("don't know how to talk to humidifier {device}");
+        Ok(false)
     }
 
     pub async fn humidifier_set_parameter(
@@ -501,15 +512,16 @@ impl State {
         g: u8,
         b: u8,
     ) -> anyhow::Result<()> {
-        if device.device_type() == DeviceType::Humidifier {
-            return self
-                .humidifier_set_nightlight(device, |p| {
-                    p.r = r;
-                    p.g = g;
-                    p.b = b;
-                    p.on = true;
-                })
-                .await;
+        if self
+            .try_humidifier_set_nightlight(device, |p| {
+                p.r = r;
+                p.g = g;
+                p.b = b;
+                p.on = true;
+            })
+            .await?
+        {
+            return Ok(());
         }
 
         if let Some(lan_dev) = &device.lan_device {

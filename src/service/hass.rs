@@ -6,7 +6,7 @@ use crate::hass_mqtt::number::mqtt_number_command;
 use crate::hass_mqtt::select::mqtt_set_mode_scene;
 use crate::lan_api::DeviceColor;
 use crate::opt_env_var;
-use crate::platform_api::from_json;
+use crate::platform_api::{from_json, DeviceType};
 use crate::service::device::Device as ServiceDevice;
 use crate::service::state::StateHandle;
 use crate::temperature::TemperatureScale;
@@ -266,11 +266,20 @@ async fn mqtt_light_command(
     let command: HassLightCommand = serde_json::from_str(&payload)?;
     log::info!("Command for {device}: {payload}");
 
+    let is_light = device.device_type() == DeviceType::Light;
+
     if command.state == "OFF" {
-        state
-            .device_light_power_on(&device, false)
-            .await
-            .context("mqtt_light_command: state.device_power_on")?;
+        if is_light {
+            state
+                .device_light_power_on(&device, false)
+                .await
+                .context("mqtt_light_command: state.device_power_on")?;
+        } else {
+            state
+                .device_set_brightness(&device, 0)
+                .await
+                .context("mqtt_light_command: state.device_set_brightness")?;
+        }
     } else {
         let mut power_on = true;
 
@@ -308,11 +317,23 @@ async fn mqtt_light_command(
                 .context("mqtt_light_command: state.device_set_color_temperature")?;
             power_on = false;
         }
+
         if power_on {
-            state
-                .device_light_power_on(&device, true)
-                .await
-                .context("mqtt_light_command: state.device_power_on")?;
+            if is_light {
+                state
+                    .device_light_power_on(&device, true)
+                    .await
+                    .context("mqtt_light_command: state.device_power_on")?;
+            } else if command.brightness.is_none() {
+                // The device is not primarily a light and we don't have
+                // a guaranteed way to power it on without setting the
+                // brightness to something, and we know we didn't set
+                // the brightness just now, so let's turn it on 100%
+                state
+                    .device_set_brightness(&device, 100)
+                    .await
+                    .context("mqtt_light_command: state.device_set_brightness")?;
+            }
         }
     }
 
