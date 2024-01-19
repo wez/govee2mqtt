@@ -161,7 +161,10 @@ pub async fn enumerate_entities_for_device<'a>(
         entities.add(DeviceLight::for_device(&d, state, None).await?);
     }
 
-    if d.device_type() == DeviceType::Humidifier {
+    if matches!(
+        d.device_type(),
+        DeviceType::Humidifier | DeviceType::Dehumidifier
+    ) {
         entities.add(Humidifier::new(&d, state).await?);
     }
 

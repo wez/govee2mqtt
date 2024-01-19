@@ -58,6 +58,12 @@ impl Humidifier {
         let use_iot = device.iot_api_supported() && state.get_iot_client().await.is_some();
         let optimistic = !use_iot;
 
+        let device_class = if device.device_type() == DeviceType::Humidifier {
+            Some("humidifier")
+        } else {
+            Some("dehumidifier")
+        };
+
         // command_topic controls the power state; just route it to
         // the general power switch handler
         let command_topic = format!(
@@ -116,12 +122,15 @@ impl Humidifier {
             humidifier: HumidifierConfig {
                 base: EntityConfig {
                     availability_topic: availability_topic(),
-                    name: if device.device_type() == DeviceType::Humidifier {
+                    name: if matches!(
+                        device.device_type(),
+                        DeviceType::Humidifier | DeviceType::Dehumidifier
+                    ) {
                         None
                     } else {
                         Some("Humidifier".to_string())
                     },
-                    device_class: None,
+                    device_class,
                     origin: Origin::default(),
                     device: Device::for_device(device),
                     unique_id,
