@@ -82,15 +82,7 @@ impl EntityInstance for DeviceLight {
             Some(device_state) => {
                 log::trace!("LightConfig::notify_state: state is {device_state:?}");
 
-                let is_on = match device.device_type() {
-                    DeviceType::Light => device_state.on,
-                    DeviceType::Humidifier => device
-                        .nightlight_state
-                        .as_ref()
-                        .map(|s| s.on)
-                        .unwrap_or(false),
-                    _ => device_state.on,
-                };
+                let is_on = device_state.light_on.unwrap_or(false);
 
                 let light_state = if is_on {
                     if device_state.kelvin == 0 {

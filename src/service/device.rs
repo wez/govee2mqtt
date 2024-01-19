@@ -66,6 +66,8 @@ struct ActiveSceneInfo {
 pub struct DeviceState {
     /// Whether the device is powered on
     pub on: bool,
+    /// Whether the light function of the device is powered on
+    pub light_on: Option<bool>,
 
     /// Whether the device is connected to the Govee cloud
     pub online: Option<bool>,
@@ -241,6 +243,11 @@ impl Device {
 
         Some(DeviceState {
             on: status.on,
+            light_on: if self.device_type() == DeviceType::Light {
+                Some(status.on)
+            } else {
+                self.nightlight_state.as_ref().map(|s| s.on)
+            },
             online: None,
             brightness: status.brightness,
             color: status.color,
@@ -257,6 +264,7 @@ impl Device {
 
         Some(DeviceState {
             on: status.on,
+            light_on: Some(status.on), // assumption: LAN API == light
             online: None,
             brightness: status.brightness,
             color: status.color,
@@ -273,6 +281,7 @@ impl Device {
 
         let mut online = None;
         let mut on = false;
+        let mut light_on = None;
         let mut brightness = 0;
         let mut color = DeviceColor::default();
         let mut kelvin = 0;
@@ -286,8 +295,18 @@ impl Device {
             value: bool,
         }
 
+        let light_instance = self.get_light_power_toggle_instance_name();
+
         for cap in &state.capabilities {
             if let Ok(value) = serde_json::from_value::<IntegerValueState>(cap.state.clone()) {
+                if light_instance
+                    .as_deref()
+                    .map(|inst| inst == cap.instance.as_str())
+                    .unwrap_or(false)
+                {
+                    light_on.replace(value.value != 0);
+                }
+
                 match cap.instance.as_str() {
                     "powerSwitch" => {
                         on = value.value != 0;
@@ -316,6 +335,7 @@ impl Device {
 
         Some(DeviceState {
             on,
+            light_on,
             online,
             brightness,
             color,
@@ -455,6 +475,30 @@ impl Device {
                 // we can assume that it is a light
                 if self.lan_device.is_some() {
                     Some(Quirk::light(Cow::Owned(self.sku.to_string()), BULB).with_lan_api())
+                } else {
+                    None
+                }
+            }
+        }
+    }
+
+    pub fn get_light_power_toggle_instance_name(&self) -> Option<&'static str> {
+        match self.device_type() {
+            DeviceType::Light => Some("powerSwitch"),
+            _ => {
+                // If the device's primary function is not a light,
+                // then we need to avoid powering on its other function
+                // here.  If it has a nightlight capability, that is
+                // probably what we are controlling.
+                // We may need to expand this to other power toggles
+                // in the future.
+                if self
+                    .http_device_info
+                    .as_ref()
+                    .and_then(|info| info.capability_by_instance("nightlightToggle"))
+                    .is_some()
+                {
+                    Some("nightlightToggle")
                 } else {
                     None
                 }

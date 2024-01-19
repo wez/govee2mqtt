@@ -1,6 +1,6 @@
 use crate::ble::{Base64HexBytes, SetHumidifierMode, SetHumidifierNightlightParams};
 use crate::lan_api::{Client as LanClient, DeviceStatus as LanDeviceStatus, LanDevice};
-use crate::platform_api::{DeviceCapability, DeviceType, GoveeApiClient};
+use crate::platform_api::{DeviceCapability, GoveeApiClient};
 use crate::service::coordinator::Coordinator;
 use crate::service::device::Device;
 use crate::service::hass::{topic_safe_id, HassClient};
@@ -302,15 +302,17 @@ impl State {
             return Ok(());
         }
 
-        if device.device_type() != DeviceType::Light {
-            // If the device's primary function is not a light,
-            // then we need to avoid powering on its other function
-            // here.
-            anyhow::bail!("Cannot power on just the light portion of {device}");
-        }
+        let instance_name = device
+            .get_light_power_toggle_instance_name()
+            .ok_or_else(|| {
+                anyhow::anyhow!(
+                    "Don't know how to toggle just the light portion of {device}. \
+                     Please share the device metadata and state if you report this issue"
+                )
+            })?;
 
         if let Some(lan_dev) = &device.lan_device {
-            log::info!("Using LAN API to set {device} power state");
+            log::info!("Using LAN API to set {device} light power state");
             lan_dev.send_turn(on).await?;
             self.poll_lan_api(lan_dev, |status| status.on == on).await?;
             return Ok(());
@@ -319,7 +321,7 @@ impl State {
         if device.iot_api_supported() {
             if let Some(iot) = self.get_iot_client().await {
                 if let Some(info) = &device.undoc_device_info {
-                    log::info!("Using IoT API to set {device} power state");
+                    log::info!("Using IoT API to set {device} light power state");
                     iot.set_power_state(&info.entry, on).await?;
                     return Ok(());
                 }
@@ -328,13 +330,13 @@ impl State {
 
         if let Some(client) = self.get_platform_client().await {
             if let Some(info) = &device.http_device_info {
-                log::info!("Using Platform API to set {device} power state");
-                client.set_power_state(info, on).await?;
+                log::info!("Using Platform API to set {device} light {instance_name} state");
+                client.set_toggle_state(info, instance_name, on).await?;
                 return Ok(());
             }
         }
 
-        anyhow::bail!("Unable to control power state for {device}");
+        anyhow::bail!("Unable to control light power state for {device}");
     }
 
     pub async fn device_power_on(
