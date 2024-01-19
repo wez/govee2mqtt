@@ -86,16 +86,12 @@ impl EntityInstance for WorkModeSelect {
         } else {
             let work_modes = ParsedWorkMode::with_device(&device)?;
 
-            if let Some(state) = &device.http_device_state {
-                for cap in &state.capabilities {
-                    if cap.instance == "workMode" {
-                        if let Some(mode_num) = cap.state.pointer("/value/workMode") {
-                            if let Some(mode) = work_modes.mode_for_value(mode_num) {
-                                return client
-                                    .publish(&self.select.state_topic, mode.name.to_string())
-                                    .await;
-                            }
-                        }
+            if let Some(cap) = device.get_state_capability_by_instance("workMode") {
+                if let Some(mode_num) = cap.state.pointer("/value/workMode") {
+                    if let Some(mode) = work_modes.mode_for_value(mode_num) {
+                        return client
+                            .publish(&self.select.state_topic, mode.name.to_string())
+                            .await;
                     }
                 }
             }

@@ -155,50 +155,46 @@ impl EntityInstance for CapabilitySensor {
 
         let quirk = device.resolve_quirk();
 
-        if let Some(state) = &device.http_device_state {
-            for cap in &state.capabilities {
-                if cap.instance == self.instance_name {
-                    let value = match self.instance_name.as_str() {
-                        "sensorTemperature" => {
-                            let units = quirk
-                                .and_then(|q| q.platform_temperature_sensor_units)
-                                .unwrap_or(TemperatureUnits::Celsius);
+        if let Some(cap) = device.get_state_capability_by_instance(&self.instance_name) {
+            let value = match self.instance_name.as_str() {
+                "sensorTemperature" => {
+                    let units = quirk
+                        .and_then(|q| q.platform_temperature_sensor_units)
+                        .unwrap_or(TemperatureUnits::Celsius);
 
-                            match cap
-                                .state
-                                .pointer("/value")
-                                .and_then(|v| v.as_f64())
-                                .map(|v| TemperatureValue::new(v, units))
-                            {
-                                Some(v) => {
-                                    let value = v
-                                        .as_unit(self.state.get_temperature_scale().await.into())
-                                        .value();
-                                    format!("{value:.2}")
-                                }
-                                None => "".to_string(),
-                            }
+                    match cap
+                        .state
+                        .pointer("/value")
+                        .and_then(|v| v.as_f64())
+                        .map(|v| TemperatureValue::new(v, units))
+                    {
+                        Some(v) => {
+                            let value = v
+                                .as_unit(self.state.get_temperature_scale().await.into())
+                                .value();
+                            format!("{value:.2}")
                         }
-                        "sensorHumidity" => {
-                            let units = quirk
-                                .and_then(|q| q.platform_humidity_sensor_units)
-                                .unwrap_or(HumidityUnits::RelativePercent);
-                            match cap
-                                .state
-                                .pointer("/value/currentHumidity")
-                                .and_then(|v| v.as_f64())
-                                .map(|v| units.from_reading_to_relative_percent(v))
-                            {
-                                Some(v) => format!("{v:.2}"),
-                                None => "".to_string(),
-                            }
-                        }
-                        _ => cap.state.to_string(),
-                    };
-
-                    return self.sensor.notify_state(&client, &value).await;
+                        None => "".to_string(),
+                    }
                 }
-            }
+                "sensorHumidity" => {
+                    let units = quirk
+                        .and_then(|q| q.platform_humidity_sensor_units)
+                        .unwrap_or(HumidityUnits::RelativePercent);
+                    match cap
+                        .state
+                        .pointer("/value/currentHumidity")
+                        .and_then(|v| v.as_f64())
+                        .map(|v| units.from_reading_to_relative_percent(v))
+                    {
+                        Some(v) => format!("{v:.2}"),
+                        None => "".to_string(),
+                    }
+                }
+                _ => cap.state.to_string(),
+            };
+
+            return self.sensor.notify_state(&client, &value).await;
         }
         log::trace!(
             "CapabilitySensor::notify_state: didn't find state for {device} {instance}",

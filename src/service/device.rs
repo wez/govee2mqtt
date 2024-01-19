@@ -1,7 +1,9 @@
 use crate::ble::NotifyHumidifierNightlightParams;
 use crate::commands::serve::POLL_INTERVAL;
 use crate::lan_api::{DeviceColor, DeviceStatus as LanDeviceStatus, LanDevice};
-use crate::platform_api::{DeviceType, HttpDeviceInfo, HttpDeviceState};
+use crate::platform_api::{
+    DeviceCapability, DeviceCapabilityState, DeviceType, HttpDeviceInfo, HttpDeviceState,
+};
 use crate::service::quirks::{resolve_quirk, Quirk, BULB};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -482,6 +484,21 @@ impl Device {
         }
     }
 
+    pub fn get_capability_by_instance(&self, instance: &str) -> Option<&DeviceCapability> {
+        self.http_device_info
+            .as_ref()
+            .and_then(|info| info.capability_by_instance(instance))
+    }
+
+    pub fn get_state_capability_by_instance(
+        &self,
+        instance: &str,
+    ) -> Option<&DeviceCapabilityState> {
+        self.http_device_state
+            .as_ref()
+            .and_then(|info| info.capability_by_instance(instance))
+    }
+
     pub fn get_light_power_toggle_instance_name(&self) -> Option<&'static str> {
         match self.device_type() {
             DeviceType::Light => Some("powerSwitch"),
@@ -493,9 +510,7 @@ impl Device {
                 // We may need to expand this to other power toggles
                 // in the future.
                 if self
-                    .http_device_info
-                    .as_ref()
-                    .and_then(|info| info.capability_by_instance("nightlightToggle"))
+                    .get_capability_by_instance("nightlightToggle")
                     .is_some()
                 {
                     Some("nightlightToggle")

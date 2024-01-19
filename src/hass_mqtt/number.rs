@@ -130,23 +130,18 @@ impl EntityInstance for WorkModeNumber {
             .await
             .expect("device to exist");
 
-        if let Some(state) = &device.http_device_state {
-            for cap in &state.capabilities {
-                if cap.instance == "workMode" {
-                    if let Some(work_mode) = cap.state.pointer("/value/workMode") {
-                        if *work_mode == self.work_mode {
-                            // The current mode matches us, so it is valid to
-                            // read the current parameter for that mode
+        if let Some(cap) = device.get_state_capability_by_instance("workMode") {
+            if let Some(work_mode) = cap.state.pointer("/value/workMode") {
+                if *work_mode == self.work_mode {
+                    // The current mode matches us, so it is valid to
+                    // read the current parameter for that mode
 
-                            if let Some(value) = cap.state.pointer("/value/modeValue") {
-                                if let Some(n) = value.as_i64() {
-                                    client.publish(state_topic, n.to_string()).await?;
-                                    return Ok(());
-                                }
-                            }
+                    if let Some(value) = cap.state.pointer("/value/modeValue") {
+                        if let Some(n) = value.as_i64() {
+                            client.publish(state_topic, n.to_string()).await?;
+                            return Ok(());
                         }
                     }
-                    break;
                 }
             }
         }

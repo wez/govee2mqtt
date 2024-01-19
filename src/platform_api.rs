@@ -637,6 +637,14 @@ pub struct HttpDeviceState {
     pub capabilities: Vec<DeviceCapabilityState>,
 }
 
+impl HttpDeviceState {
+    pub fn capability_by_instance(&self, instance: &str) -> Option<&DeviceCapabilityState> {
+        self.capabilities
+            .iter()
+            .find(|c| c.instance.eq_ignore_ascii_case(instance))
+    }
+}
+
 #[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(tag = "type")]
 #[cfg_attr(debug_assertions, serde(deny_unknown_fields))]

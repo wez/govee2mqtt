@@ -114,32 +114,24 @@ impl EntityInstance for CapabilitySwitch {
         // unknown state but provide you with separate on and off push
         // buttons so that you can at least send the commands to the device.
         // <https://developer.govee.com/discuss/6596e84c901fb900312d5968>
-        if let Some(state) = &device.http_device_state {
-            for cap in &state.capabilities {
-                if cap.instance == self.instance_name {
-                    match cap.state.pointer("/value").and_then(|v| v.as_i64()) {
-                        Some(n) => {
-                            return client
-                                .publish(
-                                    &self.switch.state_topic,
-                                    if n != 0 { "ON" } else { "OFF" },
-                                )
-                                .await;
-                        }
-                        None => {
-                            if cap.state.pointer("/value") == Some(&json!("")) {
-                                log::trace!(
-                                    "CapabilitySwitch::notify_state ignore useless \
+
+        if let Some(cap) = device.get_state_capability_by_instance(&self.instance_name) {
+            match cap.state.pointer("/value").and_then(|v| v.as_i64()) {
+                Some(n) => {
+                    return client
+                        .publish(&self.switch.state_topic, if n != 0 { "ON" } else { "OFF" })
+                        .await;
+                }
+                None => {
+                    if cap.state.pointer("/value") == Some(&json!("")) {
+                        log::trace!(
+                            "CapabilitySwitch::notify_state ignore useless \
                                             empty string state for {cap:?}"
-                                );
-                            } else {
-                                log::warn!(
-                                    "CapabilitySwitch::notify_state: Do something with {cap:#?}"
-                                );
-                            }
-                            return Ok(());
-                        }
+                        );
+                    } else {
+                        log::warn!("CapabilitySwitch::notify_state: Do something with {cap:#?}");
                     }
+                    return Ok(());
                 }
             }
         }

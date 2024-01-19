@@ -144,43 +144,39 @@ impl EntityInstance for TargetTemperatureEntity {
 
         log::debug!("notify_state for {device} {}", self.instance_name);
 
-        if let Some(state) = &device.http_device_state {
-            for cap in &state.capabilities {
-                if cap.instance == self.instance_name {
-                    log::debug!("have: {cap:?}");
+        if let Some(cap) = device.get_state_capability_by_instance(&self.instance_name) {
+            log::debug!("have: {cap:?}");
 
-                    let units = cap
-                        .state
-                        .pointer("/value/unit")
-                        .and_then(|unit| {
-                            unit.as_str()
-                                .and_then(|s| TemperatureScale::from_str(s).map(Into::into).ok())
-                        })
-                        .or_else(|| quirk.and_then(|q| q.platform_temperature_sensor_units))
-                        .unwrap_or(TemperatureUnits::Celsius);
+            let units = cap
+                .state
+                .pointer("/value/unit")
+                .and_then(|unit| {
+                    unit.as_str()
+                        .and_then(|s| TemperatureScale::from_str(s).map(Into::into).ok())
+                })
+                .or_else(|| quirk.and_then(|q| q.platform_temperature_sensor_units))
+                .unwrap_or(TemperatureUnits::Celsius);
 
-                    log::debug!("units are reported as {units:?}");
+            log::debug!("units are reported as {units:?}");
 
-                    let value = match cap
-                        .state
-                        .pointer("/value/targetTemperature")
-                        .and_then(|v| v.as_f64())
-                        .map(|v| TemperatureValue::new(v, units))
-                    {
-                        Some(v) => {
-                            let pref_units = self.state.get_temperature_scale().await;
-                            log::debug!("reported temp is {v}, pref_units: {pref_units}");
-                            let value = v.as_unit(pref_units.into()).value();
-                            format!("{value:.2}")
-                        }
-                        None => "".to_string(),
-                    };
-
-                    log::debug!("setting value to {value}");
-
-                    return self.number.notify_state(&client, &value).await;
+            let value = match cap
+                .state
+                .pointer("/value/targetTemperature")
+                .and_then(|v| v.as_f64())
+                .map(|v| TemperatureValue::new(v, units))
+            {
+                Some(v) => {
+                    let pref_units = self.state.get_temperature_scale().await;
+                    log::debug!("reported temp is {v}, pref_units: {pref_units}");
+                    let value = v.as_unit(pref_units.into()).value();
+                    format!("{value:.2}")
                 }
-            }
+                None => "".to_string(),
+            };
+
+            log::debug!("setting value to {value}");
+
+            return self.number.notify_state(&client, &value).await;
         }
 
         Ok(())
