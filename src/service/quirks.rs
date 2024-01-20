@@ -128,6 +128,11 @@ impl Quirk {
         self
     }
 
+    pub fn with_ble_only(mut self, ble_only: bool) -> Self {
+        self.ble_only = ble_only;
+        self
+    }
+
     pub fn lan_api_capable_light(sku: &'static str, icon: &'static str) -> Self {
         Self::light(sku, icon).with_lan_api()
     }
@@ -178,6 +183,13 @@ fn load_quirks() -> HashMap<String, Quirk> {
         Quirk::light("H6154", STRIP).with_iot_api_support(false),
         // <https://github.com/wez/govee2mqtt/issues/49>
         Quirk::light("H6176", STRIP).with_iot_api_support(false),
+        // Platform API probably shouldn't return this device (I suppose,
+        // aside from letting us find out its name), and we need to know
+        // that it is definitely BLE-only
+        // <https://github.com/wez/govee2mqtt/issues/92>
+        Quirk::light("H6102", STRIP)
+            .with_broken_platform()
+            .with_ble_only(true),
         // Humidifer with mangled platform API data
         Quirk::humidifier("H7160")
             .with_broken_platform()

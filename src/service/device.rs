@@ -582,7 +582,8 @@ impl Device {
         }
 
         if self.http_device_info.is_some() {
-            // truly BLE-only devices are not returned via the Platform API
+            // truly BLE-only devices are not returned via the Platform API,
+            // unless we have a quirk to say otherwise
             return Some(false);
         }
 
