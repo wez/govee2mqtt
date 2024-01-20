@@ -255,6 +255,10 @@ impl WorkMode {
 
         Some(min..max + 1)
     }
+
+    pub fn should_show_as_preset(&self) -> bool {
+        self.contiguous_value_range().is_none() && self.values.is_empty()
+    }
 }
 
 #[cfg(test)]
@@ -324,6 +328,7 @@ mod test {
             .unwrap()
             .contiguous_value_range()
             .is_some());
+        assert!(!wm.mode_by_name("Normal").unwrap().should_show_as_preset());
 
         k9::snapshot!(
             wm,
@@ -473,6 +478,70 @@ ParsedWorkMode {
                     computed_label: "Activate Normal Preset 4",
                 },
             ],
+            value_range: None,
+        },
+    },
+}
+"#
+        );
+    }
+
+    #[test]
+    fn test_work_mode_parser4() {
+        let cap: DeviceCapability =
+            from_json(&include_str!("../../test-data/work-mode-issue-93.json")).unwrap();
+
+        let wm = ParsedWorkMode::with_capability(&cap).unwrap();
+
+        assert!(!wm.mode_by_name("FanSpeed").unwrap().should_show_as_preset());
+        assert!(wm.mode_by_name("Auto").unwrap().should_show_as_preset());
+        k9::snapshot!(
+            wm,
+            r#"
+ParsedWorkMode {
+    modes: {
+        "Auto": WorkMode {
+            name: "Auto",
+            value: Number(3),
+            label: "",
+            values: [],
+            value_range: None,
+        },
+        "Custom": WorkMode {
+            name: "Custom",
+            value: Number(2),
+            label: "",
+            values: [],
+            value_range: None,
+        },
+        "FanSpeed": WorkMode {
+            name: "FanSpeed",
+            value: Number(1),
+            label: "",
+            values: [],
+            value_range: Some(
+                1..9,
+            ),
+        },
+        "Nature": WorkMode {
+            name: "Nature",
+            value: Number(6),
+            label: "",
+            values: [],
+            value_range: None,
+        },
+        "Sleep": WorkMode {
+            name: "Sleep",
+            value: Number(5),
+            label: "",
+            values: [],
+            value_range: None,
+        },
+        "Storm": WorkMode {
+            name: "Storm",
+            value: Number(7),
+            label: "",
+            values: [],
             value_range: None,
         },
     },

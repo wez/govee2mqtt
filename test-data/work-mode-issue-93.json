@@ -1,0 +1,106 @@
+{
+  "alarmType": null,
+  "eventState": null,
+  "instance": "workMode",
+  "parameters": {
+    "dataType": "STRUCT",
+    "fields": [
+      {
+        "dataType": "ENUM",
+        "defaultValue": null,
+        "fieldName": "workMode",
+        "options": [
+          {
+            "name": "FanSpeed",
+            "value": 1
+          },
+          {
+            "name": "Custom",
+            "value": 2
+          },
+          {
+            "name": "Auto",
+            "value": 3
+          },
+          {
+            "name": "Sleep",
+            "value": 5
+          },
+          {
+            "name": "Nature",
+            "value": 6
+          },
+          {
+            "name": "Storm",
+            "value": 7
+          }
+        ],
+        "required": true
+      },
+      {
+        "dataType": "ENUM",
+        "defaultValue": null,
+        "fieldName": "modeValue",
+        "options": [
+          {
+            "name": "FanSpeed",
+            "options": [
+              {
+                "value": 1
+              },
+              {
+                "value": 2
+              },
+              {
+                "value": 3
+              },
+              {
+                "value": 4
+              },
+              {
+                "value": 5
+              },
+              {
+                "value": 6
+              },
+              {
+                "value": 7
+              },
+              {
+                "value": 8
+              }
+            ],
+            "value": null
+          },
+          {
+            "defaultValue": 0,
+            "name": "Custom",
+            "value": null
+          },
+          {
+            "defaultValue": 0,
+            "name": "Auto",
+            "value": null
+          },
+          {
+            "defaultValue": 0,
+            "name": "Sleep",
+            "value": null
+          },
+          {
+            "defaultValue": 0,
+            "name": "Nature",
+            "value": null
+          },
+          {
+            "defaultValue": 0,
+            "name": "Storm",
+            "value": null
+          }
+        ],
+        "required": true
+      }
+    ]
+  },
+  "type": "devices.capabilities.work_mode"
+}

@@ -97,8 +97,7 @@ async fn entities_for_work_mode<'a>(
 
         let range = work_mode.contiguous_value_range();
 
-        let show_as_preset = work_mode.values.is_empty()
-            || range.is_none()
+        let show_as_preset = work_mode.should_show_as_preset()
             || quirk
                 .as_ref()
                 .map(|q| q.should_show_mode_as_preset(&work_mode.name))
