@@ -183,6 +183,7 @@ pub async fn enumerate_entities_for_device<'a>(
                 | DeviceCapabilityKind::SegmentColorSetting
                 | DeviceCapabilityKind::MusicSetting
                 | DeviceCapabilityKind::Event
+                | DeviceCapabilityKind::Mode
                 | DeviceCapabilityKind::DynamicScene => {}
 
                 DeviceCapabilityKind::Range if cap.instance == "brightness" => {}
