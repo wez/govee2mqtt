@@ -65,3 +65,10 @@ see that the device ID is too large to be a MAC.
 ## This device should be available via the LAN API, but didn't respond to probing yet
 
 Look at [this page](LAN.md) for more details on the LAN API and things you can try.
+
+## "devices not belong you" error in logs
+
+This error appears to be returned from Govee when trying to use the Platform
+API with devices that are BLE-only and have no WiFi support.  Please file an
+issue about this so that we can add an entry to the quirks database.
+

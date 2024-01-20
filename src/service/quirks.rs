@@ -190,6 +190,19 @@ fn load_quirks() -> HashMap<String, Quirk> {
         Quirk::light("H6102", STRIP)
             .with_broken_platform()
             .with_ble_only(true),
+        // Another BLE-only device <https://github.com/wez/govee2mqtt/issues/77>
+        Quirk::light("H6053", STRIP)
+            .with_broken_platform()
+            .with_ble_only(true),
+        Quirk::light("H617C", STRIP)
+            .with_broken_platform()
+            .with_ble_only(true),
+        Quirk::light("H617E", STRIP)
+            .with_broken_platform()
+            .with_ble_only(true),
+        Quirk::light("H617F", STRIP)
+            .with_broken_platform()
+            .with_ble_only(true),
         // Humidifer with mangled platform API data
         Quirk::humidifier("H7160")
             .with_broken_platform()
