@@ -316,6 +316,8 @@ impl GoveeApiClient {
             }
         }
 
+        result.insert(0, "".to_string());
+
         Ok(sort_and_dedup_scenes(result))
     }
 
@@ -324,6 +326,11 @@ impl GoveeApiClient {
         device: &HttpDeviceInfo,
         scene: &str,
     ) -> anyhow::Result<ControlDeviceResponseCapability> {
+        if scene == "" {
+            // Can't set no scene
+            anyhow::bail!("Cannot set scene to no-scene");
+        }
+
         if let Some(music_mode) = scene.strip_prefix("Music: ") {
             if let Some(cap) = device.capability_by_instance("musicMode") {
                 if let Some(field) = cap.struct_field_by_name("musicMode") {
