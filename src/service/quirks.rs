@@ -203,6 +203,9 @@ fn load_quirks() -> HashMap<String, Quirk> {
         Quirk::light("H617F", STRIP)
             .with_broken_platform()
             .with_ble_only(true),
+        Quirk::light("H6119", STRIP)
+            .with_broken_platform()
+            .with_ble_only(true),
         // Humidifer with mangled platform API data
         Quirk::humidifier("H7160")
             .with_broken_platform()
