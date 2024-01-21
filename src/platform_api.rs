@@ -316,7 +316,9 @@ impl GoveeApiClient {
             }
         }
 
-        result.insert(0, "".to_string());
+        if !result.is_empty() {
+            result.insert(0, "".to_string());
+        }
 
         Ok(sort_and_dedup_scenes(result))
     }
