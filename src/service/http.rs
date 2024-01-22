@@ -1,6 +1,7 @@
 use crate::service::coordinator::Coordinator;
 use crate::service::device::{Device, DeviceState};
 use crate::service::state::StateHandle;
+use anyhow::Context;
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
@@ -250,7 +251,9 @@ pub async fn run_http_server(state: StateHandle, port: u16) -> anyhow::Result<()
         .nest_service("/assets", ServeDir::new("assets"))
         .with_state(state);
 
-    let listener = tokio::net::TcpListener::bind(("0.0.0.0", port)).await?;
+    let listener = tokio::net::TcpListener::bind(("0.0.0.0", port))
+        .await
+        .with_context(|| format!("run_http_server: binding to port {port}"))?;
     let addr = listener.local_addr()?;
     log::info!("http server addr is {addr:?}");
     if let Err(err) = axum::serve(listener, app).await {
