@@ -259,11 +259,7 @@ pub async fn mqtt_device_set_work_mode(
         .as_i64()
         .ok_or_else(|| anyhow::anyhow!("expected workMode to be a number"))?;
 
-    let value = work_mode
-        .values
-        .get(0)
-        .and_then(|v| v.value.as_i64())
-        .unwrap_or(0);
+    let value = work_mode.default_value();
 
     state
         .humidifier_set_parameter(&device, mode_num, value)

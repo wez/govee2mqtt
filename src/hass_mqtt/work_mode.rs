@@ -157,6 +157,7 @@ impl ParsedWorkMode {
 pub struct WorkMode {
     pub name: String,
     pub value: JsonValue,
+    pub default_value: Option<JsonValue>,
     pub label: String,
     pub values: Vec<WorkModeValue>,
     pub value_range: Option<Range<i64>>,
@@ -171,6 +172,8 @@ pub struct WorkModeValue {
 
 impl WorkMode {
     pub fn add_values(&mut self, opt: &EnumOption) {
+        self.default_value = opt.extras.get("defaultValue").cloned();
+
         #[derive(Deserialize)]
         struct ModeRange {
             min: i64,
@@ -228,6 +231,15 @@ impl WorkMode {
         } else {
             &self.label
         }
+    }
+
+    pub fn default_value(&self) -> i64 {
+        self.default_value
+            .as_ref()
+            .and_then(|v| v.as_i64())
+            .or_else(|| self.values.get(0).and_then(|wmv| wmv.value.as_i64()))
+            .or_else(|| self.value_range.as_ref().map(|r| r.start))
+            .unwrap_or(0)
     }
 
     pub fn contiguous_value_range(&self) -> Option<Range<i64>> {
@@ -465,6 +477,7 @@ ParsedWorkMode {
         "Normal": WorkMode {
             name: "Normal",
             value: Number(1),
+            default_value: None,
             label: "",
             values: [
                 WorkModeValue {
@@ -508,6 +521,9 @@ ParsedWorkMode {
         "Auto": WorkMode {
             name: "Auto",
             value: Number(3),
+            default_value: Some(
+                Number(0),
+            ),
             label: "",
             values: [],
             value_range: None,
@@ -515,6 +531,9 @@ ParsedWorkMode {
         "Custom": WorkMode {
             name: "Custom",
             value: Number(2),
+            default_value: Some(
+                Number(0),
+            ),
             label: "",
             values: [],
             value_range: None,
@@ -522,6 +541,7 @@ ParsedWorkMode {
         "FanSpeed": WorkMode {
             name: "FanSpeed",
             value: Number(1),
+            default_value: None,
             label: "",
             values: [],
             value_range: Some(
@@ -531,6 +551,9 @@ ParsedWorkMode {
         "Nature": WorkMode {
             name: "Nature",
             value: Number(6),
+            default_value: Some(
+                Number(0),
+            ),
             label: "",
             values: [],
             value_range: None,
@@ -538,6 +561,9 @@ ParsedWorkMode {
         "Sleep": WorkMode {
             name: "Sleep",
             value: Number(5),
+            default_value: Some(
+                Number(0),
+            ),
             label: "",
             values: [],
             value_range: None,
@@ -545,6 +571,9 @@ ParsedWorkMode {
         "Storm": WorkMode {
             name: "Storm",
             value: Number(7),
+            default_value: Some(
+                Number(0),
+            ),
             label: "",
             values: [],
             value_range: None,
@@ -564,13 +593,16 @@ ParsedWorkMode {
         wm.adjust_for_device("H7173");
 
         k9::snapshot!(
-            wm,
+            &wm,
             r#"
 ParsedWorkMode {
     modes: {
         "Boiling": WorkMode {
             name: "Boiling",
             value: Number(2),
+            default_value: Some(
+                Number(0),
+            ),
             label: "",
             values: [],
             value_range: None,
@@ -578,6 +610,7 @@ ParsedWorkMode {
         "Coffee": WorkMode {
             name: "Coffee",
             value: Number(4),
+            default_value: None,
             label: "",
             values: [],
             value_range: Some(
@@ -587,6 +620,7 @@ ParsedWorkMode {
         "DIY": WorkMode {
             name: "DIY",
             value: Number(1),
+            default_value: None,
             label: "",
             values: [],
             value_range: Some(
@@ -596,6 +630,7 @@ ParsedWorkMode {
         "Tea": WorkMode {
             name: "Tea",
             value: Number(3),
+            default_value: None,
             label: "",
             values: [],
             value_range: Some(
@@ -606,5 +641,8 @@ ParsedWorkMode {
 }
 "#
         );
+
+        assert_eq!(wm.mode_by_name("Boiling").unwrap().default_value(), 0);
+        assert_eq!(wm.mode_by_name("DIY").unwrap().default_value(), 1);
     }
 }

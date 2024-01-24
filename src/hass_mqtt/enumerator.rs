@@ -110,7 +110,7 @@ async fn entities_for_work_mode<'a>(
                     &format!("Activate Mode: {}", work_mode.label()),
                     &work_mode.name,
                     mode_num,
-                    0,
+                    work_mode.default_value(),
                 ));
             } else {
                 for value in &work_mode.values {
