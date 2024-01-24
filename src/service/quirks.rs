@@ -221,6 +221,8 @@ fn load_quirks() -> HashMap<String, Quirk> {
             .with_brightness(),
         Quirk::space_heater("H713A")
             .with_platform_temperature_sensor_units(TemperatureUnits::Farenheit),
+        Quirk::space_heater("H713B")
+            .with_platform_temperature_sensor_units(TemperatureUnits::Farenheit),
         Quirk::space_heater("H7132")
             .with_platform_temperature_sensor_units(TemperatureUnits::Farenheit),
         Quirk::space_heater("H7135")
