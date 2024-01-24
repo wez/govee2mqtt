@@ -611,7 +611,10 @@ pub async fn spawn_hass_integration(
     state: StateHandle,
     args: &HassArguments,
 ) -> anyhow::Result<()> {
-    let client = Client::with_auto_id()?;
+    let client = Client::with_id(
+        &format!("govee2mqtt/{}", uuid::Uuid::new_v4().simple()),
+        true,
+    )?;
 
     state.set_temperature_scale(args.temperature_scale()?).await;
 
