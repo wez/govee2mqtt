@@ -1,0 +1,105 @@
+{
+  "alarmType": null,
+  "eventState": null,
+  "instance": "workMode",
+  "parameters": {
+    "dataType": "STRUCT",
+    "fields": [
+      {
+        "dataType": "ENUM",
+        "defaultValue": null,
+        "fieldName": "workMode",
+        "options": [
+          {
+            "name": "DIY",
+            "value": 1
+          },
+          {
+            "name": "Boiling",
+            "value": 2
+          },
+          {
+            "name": "Tea",
+            "value": 3
+          },
+          {
+            "name": "Coffee",
+            "value": 4
+          }
+        ],
+        "required": true
+      },
+      {
+        "dataType": "ENUM",
+        "defaultValue": null,
+        "fieldName": "modeValue",
+        "options": [
+          {
+            "defaultValue": 0,
+            "name": "Boiling",
+            "value": null
+          },
+          {
+            "dataType": "ENUM",
+            "name": "Tea",
+            "options": [
+              {
+                "value": 1
+              },
+              {
+                "value": 2
+              },
+              {
+                "value": 3
+              },
+              {
+                "value": 4
+              }
+            ],
+            "value": null
+          },
+          {
+            "dataType": "ENUM",
+            "name": "Coffee",
+            "options": [
+              {
+                "value": 1
+              },
+              {
+                "value": 2
+              },
+              {
+                "value": 3
+              },
+              {
+                "value": 4
+              }
+            ],
+            "value": null
+          },
+          {
+            "dataType": "ENUM",
+            "name": "DIY",
+            "options": [
+              {
+                "value": 1
+              },
+              {
+                "value": 2
+              },
+              {
+                "value": 3
+              },
+              {
+                "value": 4
+              }
+            ],
+            "value": null
+          }
+        ],
+        "required": false
+      }
+    ]
+  },
+  "type": "devices.capabilities.work_mode"
+}

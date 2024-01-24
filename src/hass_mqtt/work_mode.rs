@@ -84,6 +84,11 @@ impl ParsedWorkMode {
                     m.label = "Heat".to_string();
                 });
             }
+            "H7173" => {
+                self.modes.get_mut("gearMode").map(|m| {
+                    m.label = "Heat".to_string();
+                });
+            }
             _ => {
                 for mode in self.modes.values_mut() {
                     mode.label = mode.name.clone();
@@ -543,6 +548,59 @@ ParsedWorkMode {
             label: "",
             values: [],
             value_range: None,
+        },
+    },
+}
+"#
+        );
+    }
+
+    #[test]
+    fn test_issue100() {
+        let cap: DeviceCapability =
+            from_json(&include_str!("../../test-data/work-mode-issue-100.json")).unwrap();
+
+        let mut wm = ParsedWorkMode::with_capability(&cap).unwrap();
+        wm.adjust_for_device("H7173");
+
+        k9::snapshot!(
+            wm,
+            r#"
+ParsedWorkMode {
+    modes: {
+        "Boiling": WorkMode {
+            name: "Boiling",
+            value: Number(2),
+            label: "",
+            values: [],
+            value_range: None,
+        },
+        "Coffee": WorkMode {
+            name: "Coffee",
+            value: Number(4),
+            label: "",
+            values: [],
+            value_range: Some(
+                1..5,
+            ),
+        },
+        "DIY": WorkMode {
+            name: "DIY",
+            value: Number(1),
+            label: "",
+            values: [],
+            value_range: Some(
+                1..5,
+            ),
+        },
+        "Tea": WorkMode {
+            name: "Tea",
+            value: Number(3),
+            label: "",
+            values: [],
+            value_range: Some(
+                1..5,
+            ),
         },
     },
 }
