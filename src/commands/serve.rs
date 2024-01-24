@@ -1,3 +1,4 @@
+use anyhow::Context;
 use crate::lan_api::Client as LanClient;
 use crate::service::device::Device;
 use crate::service::hass::spawn_hass_integration;
@@ -230,6 +231,8 @@ impl ServeCommand {
         // start advertising on local mqtt
         spawn_hass_integration(state.clone(), &args.hass_args).await?;
 
-        run_http_server(state.clone(), self.http_port).await
+        run_http_server(state.clone(), self.http_port)
+            .await
+            .with_context(|| format!("Starting HTTP service on port {}", self.http_port))
     }
 }
