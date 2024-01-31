@@ -355,6 +355,7 @@ ParsedWorkMode {
         "Normal": WorkMode {
             name: "Normal",
             value: Number(1),
+            default_value: None,
             label: "",
             values: [],
             value_range: Some(
@@ -386,6 +387,7 @@ ParsedWorkMode {
         "Auto": WorkMode {
             name: "Auto",
             value: Number(3),
+            default_value: None,
             label: "",
             values: [],
             value_range: Some(
@@ -395,6 +397,9 @@ ParsedWorkMode {
         "Custom": WorkMode {
             name: "Custom",
             value: Number(2),
+            default_value: Some(
+                Number(0),
+            ),
             label: "",
             values: [],
             value_range: None,
@@ -402,6 +407,7 @@ ParsedWorkMode {
         "Manual": WorkMode {
             name: "Manual",
             value: Number(1),
+            default_value: None,
             label: "",
             values: [],
             value_range: Some(
