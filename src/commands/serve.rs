@@ -1,4 +1,3 @@
-use anyhow::Context;
 use crate::lan_api::Client as LanClient;
 use crate::service::device::Device;
 use crate::service::hass::spawn_hass_integration;
@@ -6,6 +5,7 @@ use crate::service::http::run_http_server;
 use crate::service::iot::start_iot_client;
 use crate::service::state::StateHandle;
 use crate::version_info::govee_version;
+use anyhow::Context;
 use chrono::Utc;
 use once_cell::sync::Lazy;
 use std::collections::HashMap;
