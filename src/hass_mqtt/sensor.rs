@@ -20,9 +20,22 @@ pub struct SensorConfig {
 
     pub state_topic: String,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub state_class: Option<StateClass>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub unit_of_measurement: Option<&'static str>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub json_attributes_topic: Option<String>,
+}
+
+#[allow(unused)]
+#[derive(Serialize, Clone, Copy, Debug, PartialEq, Eq)]
+pub enum StateClass {
+    #[serde(rename="measurement")]
+    Measurement,
+    #[serde(rename="total")]
+    Total,
+    #[serde(rename="total_increasing")]
+    TotalIncreasing
 }
 
 impl SensorConfig {
@@ -70,6 +83,7 @@ impl GlobalFixedDiagnostic {
                     icon: None,
                 },
                 state_topic: format!("gv2mqtt/sensor/{unique_id}/state"),
+                state_class: None,
                 unit_of_measurement: None,
                 json_attributes_topic: None,
             },
@@ -110,6 +124,12 @@ impl CapabilitySensor {
             _ => None,
         };
 
+        let state_class = match instance.instance.as_str() {
+            "sensorTemperature" => Some(StateClass::Measurement),
+            "sensorHumidity" => Some(StateClass::Measurement),
+            _ => None,
+        };
+
         let name = match instance.instance.as_str() {
             "sensorTemperature" => "Temperature".to_string(),
             "sensorHumidity" => "Humidity".to_string(),
@@ -130,6 +150,7 @@ impl CapabilitySensor {
                     icon: None,
                 },
                 state_topic: format!("gv2mqtt/sensor/{unique_id}/state"),
+                state_class: state_class,
                 unit_of_measurement,
                 json_attributes_topic: None,
             },
@@ -227,6 +248,7 @@ impl DeviceStatusDiagnostic {
                     icon: None,
                 },
                 state_topic: format!("gv2mqtt/sensor/{unique_id}/state"),
+                state_class: None,
                 json_attributes_topic: Some(format!("gv2mqtt/sensor/{unique_id}/attributes")),
                 unit_of_measurement: None,
             },
