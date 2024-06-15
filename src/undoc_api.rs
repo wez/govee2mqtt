@@ -763,6 +763,7 @@ pub struct DeviceEntry {
     pub support_scene: bool,
     pub version_hard: String,
     pub version_soft: String,
+    pub gid_confirmed: Option<bool>,
 }
 
 impl DeviceEntry {
@@ -862,6 +863,7 @@ pub struct DeviceSettings {
 
     /// eg: Glide Hexa. Value is base64 encoded data
     pub shapes: Option<String>,
+    pub support_ble_broad_v3: Option<bool>,
 }
 
 #[derive(Deserialize, Debug, Clone)]
