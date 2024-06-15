@@ -87,6 +87,7 @@ DevicesResponse {
                     bd_type: None,
                     filter_expire_on_off: false,
                     shapes: None,
+                    support_ble_broad_v3: None,
                 },
                 ext_resources: ExtResources {
                     sku_url: Some(
@@ -136,6 +137,7 @@ DevicesResponse {
             support_scene: false,
             version_hard: "3.02.00",
             version_soft: "2.04.05",
+            gid_confirmed: None,
         },
         DeviceEntry {
             attributes_id: 4,
@@ -224,6 +226,7 @@ DevicesResponse {
                     bd_type: None,
                     filter_expire_on_off: false,
                     shapes: None,
+                    support_ble_broad_v3: None,
                 },
                 ext_resources: ExtResources {
                     sku_url: Some(
@@ -273,6 +276,7 @@ DevicesResponse {
             support_scene: false,
             version_hard: "3.02.00",
             version_soft: "2.04.05",
+            gid_confirmed: None,
         },
         DeviceEntry {
             attributes_id: 4,
@@ -361,6 +365,7 @@ DevicesResponse {
                     bd_type: None,
                     filter_expire_on_off: false,
                     shapes: None,
+                    support_ble_broad_v3: None,
                 },
                 ext_resources: ExtResources {
                     sku_url: Some(
@@ -410,6 +415,7 @@ DevicesResponse {
             support_scene: false,
             version_hard: "3.02.00",
             version_soft: "2.04.05",
+            gid_confirmed: None,
         },
         DeviceEntry {
             attributes_id: 10,
@@ -500,6 +506,7 @@ DevicesResponse {
                     bd_type: None,
                     filter_expire_on_off: false,
                     shapes: None,
+                    support_ble_broad_v3: None,
                 },
                 ext_resources: ExtResources {
                     sku_url: Some(
@@ -549,6 +556,7 @@ DevicesResponse {
             support_scene: false,
             version_hard: "3.02.02",
             version_soft: "1.01.13",
+            gid_confirmed: None,
         },
         DeviceEntry {
             attributes_id: 25,
@@ -643,6 +651,7 @@ DevicesResponse {
                     bd_type: None,
                     filter_expire_on_off: false,
                     shapes: None,
+                    support_ble_broad_v3: None,
                 },
                 ext_resources: ExtResources {
                     sku_url: Some(
@@ -692,6 +701,7 @@ DevicesResponse {
             support_scene: true,
             version_hard: "3.01.01",
             version_soft: "1.01.08",
+            gid_confirmed: None,
         },
         DeviceEntry {
             attributes_id: 1,
@@ -782,6 +792,7 @@ DevicesResponse {
                     bd_type: None,
                     filter_expire_on_off: false,
                     shapes: None,
+                    support_ble_broad_v3: None,
                 },
                 ext_resources: ExtResources {
                     sku_url: Some(
@@ -831,6 +842,7 @@ DevicesResponse {
             support_scene: true,
             version_hard: "2.01.02",
             version_soft: "2.07.01",
+            gid_confirmed: None,
         },
         DeviceEntry {
             attributes_id: 1,
@@ -921,6 +933,7 @@ DevicesResponse {
                     bd_type: None,
                     filter_expire_on_off: false,
                     shapes: None,
+                    support_ble_broad_v3: None,
                 },
                 ext_resources: ExtResources {
                     sku_url: Some(
@@ -970,6 +983,7 @@ DevicesResponse {
             support_scene: true,
             version_hard: "2.01.02",
             version_soft: "2.07.01",
+            gid_confirmed: None,
         },
         DeviceEntry {
             attributes_id: 1,
@@ -1060,6 +1074,7 @@ DevicesResponse {
                     bd_type: None,
                     filter_expire_on_off: false,
                     shapes: None,
+                    support_ble_broad_v3: None,
                 },
                 ext_resources: ExtResources {
                     sku_url: Some(
@@ -1109,6 +1124,7 @@ DevicesResponse {
             support_scene: true,
             version_hard: "2.01.02",
             version_soft: "2.06.06",
+            gid_confirmed: None,
         },
         DeviceEntry {
             attributes_id: 4,
@@ -1197,6 +1213,7 @@ DevicesResponse {
                     bd_type: None,
                     filter_expire_on_off: false,
                     shapes: None,
+                    support_ble_broad_v3: None,
                 },
                 ext_resources: ExtResources {
                     sku_url: Some(
@@ -1246,6 +1263,7 @@ DevicesResponse {
             support_scene: false,
             version_hard: "3.02.00",
             version_soft: "2.04.05",
+            gid_confirmed: None,
         },
         DeviceEntry {
             attributes_id: 4,
@@ -1334,6 +1352,7 @@ DevicesResponse {
                     bd_type: None,
                     filter_expire_on_off: false,
                     shapes: None,
+                    support_ble_broad_v3: None,
                 },
                 ext_resources: ExtResources {
                     sku_url: Some(
@@ -1383,6 +1402,7 @@ DevicesResponse {
             support_scene: false,
             version_hard: "3.02.00",
             version_soft: "2.04.05",
+            gid_confirmed: None,
         },
     ],
     groups: [
