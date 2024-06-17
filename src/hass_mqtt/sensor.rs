@@ -30,12 +30,12 @@ pub struct SensorConfig {
 #[allow(unused)]
 #[derive(Serialize, Clone, Copy, Debug, PartialEq, Eq)]
 pub enum StateClass {
-    #[serde(rename="measurement")]
+    #[serde(rename = "measurement")]
     Measurement,
-    #[serde(rename="total")]
+    #[serde(rename = "total")]
     Total,
-    #[serde(rename="total_increasing")]
-    TotalIncreasing
+    #[serde(rename = "total_increasing")]
+    TotalIncreasing,
 }
 
 impl SensorConfig {
