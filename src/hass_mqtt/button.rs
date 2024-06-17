@@ -80,12 +80,14 @@ impl ButtonConfig {
         value: i64,
     ) -> Self {
         let unique_id = format!(
-            "gv2mqtt-{id}-preset-{mode_name}-{mode_num}-{value}",
+            "gv2mqtt-{id}-preset-{mode}-{mode_num}-{value}",
             id = topic_safe_id(device),
+            mode = topic_safe_string(mode_name),
         );
         let command_topic = format!(
-            "gv2mqtt/number/{id}/command/{mode_name}/{mode_num}",
+            "gv2mqtt/number/{id}/command/{mode}/{mode_num}",
             id = topic_safe_id(device),
+            mode = topic_safe_string(mode_name),
         );
         Self {
             base: EntityConfig {

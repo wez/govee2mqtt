@@ -62,8 +62,9 @@ impl WorkModeNumber {
         range: Option<Range<i64>>,
     ) -> Self {
         let command_topic = format!(
-            "gv2mqtt/number/{id}/command/{mode_name}/{mode_num}",
+            "gv2mqtt/number/{id}/command/{mode}/{mode_num}",
             id = topic_safe_id(device),
+            mode = topic_safe_string(mode_name),
             mode_num = work_mode
                 .as_i64()
                 .map(|n| n.to_string())
@@ -77,8 +78,9 @@ impl WorkModeNumber {
 
         let availability_topic = availability_topic();
         let unique_id = format!(
-            "gv2mqtt-{id}-{mode_name}-number",
+            "gv2mqtt-{id}-{mode}-number",
             id = topic_safe_id(device),
+            mode = topic_safe_string(mode_name),
         );
 
         Self {
