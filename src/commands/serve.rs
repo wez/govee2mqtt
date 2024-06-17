@@ -204,6 +204,12 @@ impl ServeCommand {
                     log::warn!("  1) LAN API needs to be enabled in the Govee Home App.");
                     log::warn!("  2) The device is offline.");
                     log::warn!("  3) A network configuration issue is preventing communication.");
+                    log::warn!(
+                        "  4) The device needs a firmware update before it can enable LAN API."
+                    );
+                    log::warn!(
+                        "  5) The hardware version of the device is too old to enable the LAN API."
+                    );
                 }
             } else if device.http_device_info.is_none() {
                 log::warn!("  Unknown device type. Cannot map to Home Assistant.");
