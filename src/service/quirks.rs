@@ -227,12 +227,15 @@ fn load_quirks() -> HashMap<String, Quirk> {
             .with_platform_temperature_sensor_units(TemperatureUnits::Farenheit),
         Quirk::space_heater("H7135")
             .with_platform_temperature_sensor_units(TemperatureUnits::Farenheit),
+        Quirk::thermometer("H5051")
+            .with_platform_temperature_sensor_units(TemperatureUnits::Farenheit)
+            .with_platform_humidity_sensor_units(HumidityUnits::RelativePercent),
         Quirk::thermometer("H5103")
-            .with_platform_temperature_sensor_units(TemperatureUnits::CelsiusTimes100)
-            .with_platform_humidity_sensor_units(HumidityUnits::RelativePercentTimes100),
+            .with_platform_temperature_sensor_units(TemperatureUnits::Farenheit)
+            .with_platform_humidity_sensor_units(HumidityUnits::RelativePercent),
         Quirk::thermometer("H5179")
-            .with_platform_temperature_sensor_units(TemperatureUnits::CelsiusTimes100)
-            .with_platform_humidity_sensor_units(HumidityUnits::RelativePercentTimes100),
+            .with_platform_temperature_sensor_units(TemperatureUnits::Farenheit)
+            .with_platform_humidity_sensor_units(HumidityUnits::RelativePercent),
         Quirk::device("H7170", DeviceType::Kettle, "mdi:kettle")
             .with_platform_temperature_sensor_units(TemperatureUnits::Farenheit),
         Quirk::device("H7171", DeviceType::Kettle, "mdi:kettle")
