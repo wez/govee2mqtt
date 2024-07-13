@@ -1,3 +1,4 @@
+#![allow(unused)]
 use crate::cache::{cache_get, CacheComputeResult, CacheGetOptions};
 use crate::lan_api::{boolean_int, truthy};
 use crate::opt_env_var;

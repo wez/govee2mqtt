@@ -315,9 +315,6 @@ pub enum AccountTopic {
     Reserve,
 }
 
-#[derive(Serialize, Debug)]
-struct RequestScan {}
-
 struct ClientListener {
     addr: IpAddr,
     tx: Sender<Response>,

@@ -606,6 +606,7 @@ struct ControlDeviceResponse {
 }
 
 #[derive(Deserialize, Debug)]
+#[allow(unused)]
 pub struct ControlDeviceResponseCapability {
     #[serde(rename = "type")]
     pub kind: DeviceCapabilityKind,
