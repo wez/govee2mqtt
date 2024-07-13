@@ -18,6 +18,8 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use std::time::Duration;
 
+const HASS_REGISTER_DELAY: tokio::time::Duration = tokio::time::Duration::from_secs(15);
+
 #[derive(clap::Parser, Debug)]
 pub struct HassArguments {
     /// The mqtt broker hostname or address.
@@ -117,8 +119,9 @@ impl HassClient {
         log::trace!("register_with_hass: register entities");
         entities.publish_config(state, self).await?;
 
-        // Allow hass time to register the entities
-        let delay = tokio::time::Duration::from_millis((50 * entities.len()) as u64);
+        // Allow hass extra time to register the entities before
+        // we mark them as available
+        let delay = tokio::time::Duration::from_millis((10 * entities.len()) as u64);
         log::info!(
             "Wait {delay:?} for hass to settle on {} entity configs",
             entities.len()
@@ -484,12 +487,13 @@ async fn mqtt_homeassitant_status(
     Payload(status): Payload<String>,
     State(state): State<StateHandle>,
 ) -> anyhow::Result<()> {
-    log::info!("Home Assistant status changed: {status}");
-
     let client = state
         .get_hass_client()
         .await
         .expect("hass client to be present");
+
+    log::info!("Home Assistant status changed: {status}, waiting {HASS_REGISTER_DELAY:?} before re-registering entities");
+    tokio::time::sleep(HASS_REGISTER_DELAY).await;
 
     client.register_with_hass(&state).await?;
 
@@ -565,6 +569,7 @@ async fn run_mqtt_loop(
             .route("gv2mqtt/:id/set-mode-scene", mqtt_set_mode_scene)
             .await?;
 
+        tokio::time::sleep(HASS_REGISTER_DELAY).await;
         state
             .get_hass_client()
             .await

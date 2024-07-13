@@ -53,10 +53,13 @@ impl EntityList {
         state: &StateHandle,
         client: &HassClient,
     ) -> anyhow::Result<()> {
+        // Allow HASS time to process each entity before registering the next
+        let delay = tokio::time::Duration::from_millis(100);
         for e in &self.entities {
             e.publish_config(state, client)
                 .await
                 .context("EntityList::publish_config")?;
+            tokio::time::sleep(delay).await;
         }
         Ok(())
     }
