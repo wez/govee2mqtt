@@ -12,6 +12,7 @@ addon:
 	docker run \
 		--rm \
 		--privileged \
+		-v /var/run/docker.sock:/var/run/docker.sock \
 		-v ./addon:/data \
 			ghcr.io/home-assistant/amd64-builder:latest \
 			--all \
