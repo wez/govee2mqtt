@@ -56,7 +56,7 @@ impl IotClient {
         }
 
         let power_state = match device.sku.as_str() {
-            "H5080" | "H5083" => pwr(on, 17, 16),
+            "H5080" | "H5083" | "H5086" => pwr(on, 17, 16),
             _ => pwr(on, 1, 0),
         };
 
