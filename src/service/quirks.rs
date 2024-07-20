@@ -230,6 +230,9 @@ fn load_quirks() -> HashMap<String, Quirk> {
         Quirk::thermometer("H5051")
             .with_platform_temperature_sensor_units(TemperatureUnits::Farenheit)
             .with_platform_humidity_sensor_units(HumidityUnits::RelativePercent),
+        Quirk::thermometer("H5100")
+            .with_platform_temperature_sensor_units(TemperatureUnits::Farenheit)
+            .with_platform_humidity_sensor_units(HumidityUnits::RelativePercent),
         Quirk::thermometer("H5103")
             .with_platform_temperature_sensor_units(TemperatureUnits::Farenheit)
             .with_platform_humidity_sensor_units(HumidityUnits::RelativePercent),
