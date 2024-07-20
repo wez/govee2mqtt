@@ -84,7 +84,7 @@ impl LanDiscoArguments {
         };
 
         if let Some(v) = opt_env_var::<String>("GOVEE_LAN_NO_MULTICAST")? {
-            options.enable_multicast = truthy(&v)?;
+            options.enable_multicast = !truthy(&v)?;
         }
 
         if let Some(v) = opt_env_var::<String>("GOVEE_LAN_BROADCAST_ALL")? {
