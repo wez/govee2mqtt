@@ -24,7 +24,7 @@ GOVEE_MQTT_PORT=1883
 #GOVEE_MQTT_PASSWORD=password
 
 # Specify the temperature scale to use, either C for Celsius
-# or F for Farenheit
+# or F for Fahrenheit
 GOVEE_TEMPERATURE_SCALE=C
 
 # Always use colorized output

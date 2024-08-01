@@ -4,7 +4,7 @@ configuration:
     name: Temperature Scale
     description: >-
       Specify which temperature scale to use when mapping entities
-      into Home Assistant. Can be either "C" for Celsius or "F" for Farenheit.
+      into Home Assistant. Can be either "C" for Celsius or "F" for Fahrenheit.
   govee_email:
     name: Govee Account Email
     description: >-

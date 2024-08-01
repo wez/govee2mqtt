@@ -49,7 +49,7 @@ pub fn parse_temperature_constraints(
                     .and_then(|s| TemperatureScale::from_str(s).map(Into::into).ok())
             })
         })
-        .unwrap_or(TemperatureUnits::Farenheit);
+        .unwrap_or(TemperatureUnits::Fahrenheit);
 
     let temperature = instance
         .struct_field_by_name("temperature")
