@@ -568,7 +568,7 @@ refs: https://github.com/wez/govee2mqtt/issues/75
 
 This commit introduces a configuration option to specify your
 preferred temperature scale as either "C" or "F" for Celsius
-or Farenheit, respectively.
+or Fahrenheit, respectively.
 
 Entities created in home assistant will be set to use those units,
 and convert to the underlying device units.

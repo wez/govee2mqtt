@@ -213,39 +213,39 @@ fn load_quirks() -> HashMap<String, Quirk> {
             .with_rgb()
             .with_brightness(),
         Quirk::space_heater("H7130")
-            .with_platform_temperature_sensor_units(TemperatureUnits::Farenheit),
+            .with_platform_temperature_sensor_units(TemperatureUnits::Fahrenheit),
         Quirk::space_heater("H7131")
-            .with_platform_temperature_sensor_units(TemperatureUnits::Farenheit)
+            .with_platform_temperature_sensor_units(TemperatureUnits::Fahrenheit)
             .with_show_as_preset_modes(&["gearMode"])
             .with_rgb()
             .with_brightness(),
         Quirk::space_heater("H713A")
-            .with_platform_temperature_sensor_units(TemperatureUnits::Farenheit),
+            .with_platform_temperature_sensor_units(TemperatureUnits::Fahrenheit),
         Quirk::space_heater("H713B")
-            .with_platform_temperature_sensor_units(TemperatureUnits::Farenheit),
+            .with_platform_temperature_sensor_units(TemperatureUnits::Fahrenheit),
         Quirk::space_heater("H7132")
-            .with_platform_temperature_sensor_units(TemperatureUnits::Farenheit),
+            .with_platform_temperature_sensor_units(TemperatureUnits::Fahrenheit),
         Quirk::space_heater("H7135")
-            .with_platform_temperature_sensor_units(TemperatureUnits::Farenheit),
+            .with_platform_temperature_sensor_units(TemperatureUnits::Fahrenheit),
         Quirk::thermometer("H5051")
-            .with_platform_temperature_sensor_units(TemperatureUnits::Farenheit)
+            .with_platform_temperature_sensor_units(TemperatureUnits::Fahrenheit)
             .with_platform_humidity_sensor_units(HumidityUnits::RelativePercent),
         Quirk::thermometer("H5100")
-            .with_platform_temperature_sensor_units(TemperatureUnits::Farenheit)
+            .with_platform_temperature_sensor_units(TemperatureUnits::Fahrenheit)
             .with_platform_humidity_sensor_units(HumidityUnits::RelativePercent),
         Quirk::thermometer("H5103")
-            .with_platform_temperature_sensor_units(TemperatureUnits::Farenheit)
+            .with_platform_temperature_sensor_units(TemperatureUnits::Fahrenheit)
             .with_platform_humidity_sensor_units(HumidityUnits::RelativePercent),
         Quirk::thermometer("H5179")
-            .with_platform_temperature_sensor_units(TemperatureUnits::Farenheit)
+            .with_platform_temperature_sensor_units(TemperatureUnits::Fahrenheit)
             .with_platform_humidity_sensor_units(HumidityUnits::RelativePercent),
         Quirk::device("H7170", DeviceType::Kettle, "mdi:kettle")
-            .with_platform_temperature_sensor_units(TemperatureUnits::Farenheit),
+            .with_platform_temperature_sensor_units(TemperatureUnits::Fahrenheit),
         Quirk::device("H7171", DeviceType::Kettle, "mdi:kettle")
-            .with_platform_temperature_sensor_units(TemperatureUnits::Farenheit)
+            .with_platform_temperature_sensor_units(TemperatureUnits::Fahrenheit)
             .with_show_as_preset_modes(&["M1", "M2", "M3", "M4"]),
         Quirk::device("H7173", DeviceType::Kettle, "mdi:kettle")
-            .with_platform_temperature_sensor_units(TemperatureUnits::Farenheit)
+            .with_platform_temperature_sensor_units(TemperatureUnits::Fahrenheit)
             .with_show_as_preset_modes(&["Tea", "Coffee", "DIY"]),
         // Lights from the list of LAN API enabled devices
         // at <https://app-h5.govee.com/user-manual/wlan-guide>
