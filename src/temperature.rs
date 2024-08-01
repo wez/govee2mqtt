@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 pub const UNIT_CELSIUS: &str = "°C";
-pub const UNIT_FARENHEIT: &str = "°F";
+pub const UNIT_FAHRENHEIT: &str = "°F";
 pub const DEVICE_CLASS_TEMPERATURE: &str = "temperature";
 
 #[allow(unused)]
@@ -9,22 +9,22 @@ pub const DEVICE_CLASS_TEMPERATURE: &str = "temperature";
 pub enum TemperatureUnits {
     Celsius,
     CelsiusTimes100,
-    Farenheit,
-    FarenheitTimes100,
+    Fahrenheit,
+    FahrenheitTimes100,
 }
 
 impl TemperatureUnits {
     fn factor(&self) -> f64 {
         match self {
-            Self::CelsiusTimes100 | Self::FarenheitTimes100 => 100.,
-            Self::Celsius | Self::Farenheit => 1.,
+            Self::CelsiusTimes100 | Self::FahrenheitTimes100 => 100.,
+            Self::Celsius | Self::Fahrenheit => 1.,
         }
     }
 
     fn scale(&self) -> TemperatureScale {
         match self {
             Self::Celsius | Self::CelsiusTimes100 => TemperatureScale::Celsius,
-            Self::Farenheit | Self::FarenheitTimes100 => TemperatureScale::Farenheit,
+            Self::Fahrenheit | Self::FahrenheitTimes100 => TemperatureScale::Fahrenheit,
         }
     }
 
@@ -44,7 +44,7 @@ impl From<TemperatureScale> for TemperatureUnits {
     fn from(scale: TemperatureScale) -> TemperatureUnits {
         match scale {
             TemperatureScale::Celsius => Self::Celsius,
-            TemperatureScale::Farenheit => Self::Farenheit,
+            TemperatureScale::Fahrenheit => Self::Fahrenheit,
         }
     }
 }
@@ -65,7 +65,7 @@ impl std::fmt::Display for TemperatureUnits {
 pub enum TemperatureScale {
     #[default]
     Celsius,
-    Farenheit,
+    Fahrenheit,
 }
 
 impl std::fmt::Display for TemperatureScale {
@@ -78,7 +78,7 @@ impl TemperatureScale {
     pub fn unit_of_measurement(&self) -> &'static str {
         match self {
             Self::Celsius => UNIT_CELSIUS,
-            Self::Farenheit => UNIT_FARENHEIT,
+            Self::Fahrenheit => UNIT_FAHRENHEIT,
         }
     }
 }
@@ -88,18 +88,18 @@ impl FromStr for TemperatureScale {
     fn from_str(s: &str) -> anyhow::Result<TemperatureScale> {
         match s {
             "c" | "C" | "°c" | "°C" | "Celsius" | "celsius" => Ok(Self::Celsius),
-            "f" | "F" | "°f" | "°F" | "Farenheit" | "farenheit" => Ok(Self::Farenheit),
+            "f" | "F" | "°f" | "°F" | "Fahrenheit" | "fahrenheit" => Ok(Self::Fahrenheit),
             _ => anyhow::bail!("Unknown temperature scale {s}"),
         }
     }
 }
 
-/// Convert farenheit to celsius
+/// Convert fahrenheit to celsius
 pub fn ftoc(f: f64) -> f64 {
     (f - 32.) * (5. / 9.)
 }
 
-/// Convert farenheit to celsius
+/// Convert fahrenheit to celsius
 pub fn ctof(f: f64) -> f64 {
     (f * 9. / 5.) + 32.
 }
@@ -130,9 +130,9 @@ impl TemperatureValue {
         }
     }
 
-    pub fn with_farenheit(value: f64) -> Self {
+    pub fn with_fahrenheit(value: f64) -> Self {
         Self {
-            unit: TemperatureUnits::Farenheit,
+            unit: TemperatureUnits::Fahrenheit,
             value,
         }
     }
@@ -155,10 +155,10 @@ impl TemperatureValue {
         let normalized = self.value / self.unit.factor();
 
         let converted = match (self.unit.scale(), unit.scale()) {
-            (TemperatureScale::Celsius, TemperatureScale::Farenheit) => ctof(normalized),
-            (TemperatureScale::Farenheit, TemperatureScale::Celsius) => ftoc(normalized),
+            (TemperatureScale::Celsius, TemperatureScale::Fahrenheit) => ctof(normalized),
+            (TemperatureScale::Fahrenheit, TemperatureScale::Celsius) => ftoc(normalized),
             (TemperatureScale::Celsius, TemperatureScale::Celsius) => normalized,
-            (TemperatureScale::Farenheit, TemperatureScale::Farenheit) => normalized,
+            (TemperatureScale::Fahrenheit, TemperatureScale::Fahrenheit) => normalized,
         };
 
         Self {
@@ -171,8 +171,8 @@ impl TemperatureValue {
         self.as_unit(TemperatureUnits::Celsius).value
     }
 
-    pub fn as_farenheit(&self) -> f64 {
-        self.as_unit(TemperatureUnits::Farenheit).value
+    pub fn as_fahrenheit(&self) -> f64 {
+        self.as_unit(TemperatureUnits::Fahrenheit).value
     }
 
     pub fn parse_with_optional_scale(
@@ -224,14 +224,14 @@ mod test {
             TemperatureValue::new(23.0, TemperatureUnits::Celsius)
         );
         assert_eq!(
-            TemperatureValue::parse_with_optional_scale("23C", Some(TemperatureScale::Farenheit))
+            TemperatureValue::parse_with_optional_scale("23C", Some(TemperatureScale::Fahrenheit))
                 .unwrap(),
             TemperatureValue::new(23.0, TemperatureUnits::Celsius)
         );
         assert_eq!(
-            TemperatureValue::parse_with_optional_scale("23", Some(TemperatureScale::Farenheit))
+            TemperatureValue::parse_with_optional_scale("23", Some(TemperatureScale::Fahrenheit))
                 .unwrap(),
-            TemperatureValue::new(23.0, TemperatureUnits::Farenheit)
+            TemperatureValue::new(23.0, TemperatureUnits::Fahrenheit)
         );
         assert_eq!(
             TemperatureValue::parse_with_optional_scale("23frogs", None)
@@ -256,20 +256,20 @@ mod test {
     #[test]
     fn value_conversion() {
         assert_eq!(
-            TemperatureValue::new(76., TemperatureUnits::Farenheit)
+            TemperatureValue::new(76., TemperatureUnits::Fahrenheit)
                 .as_celsius()
                 .floor(),
             24.
         );
         assert_eq!(
             TemperatureValue::new(24.444, TemperatureUnits::Celsius)
-                .as_farenheit()
+                .as_fahrenheit()
                 .ceil(),
             76.
         );
         assert_eq!(
-            TemperatureValue::new(76., TemperatureUnits::Farenheit)
-                .as_unit(TemperatureUnits::FarenheitTimes100)
+            TemperatureValue::new(76., TemperatureUnits::Fahrenheit)
+                .as_unit(TemperatureUnits::FahrenheitTimes100)
                 .value,
             7600.
         );
