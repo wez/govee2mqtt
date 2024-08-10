@@ -314,8 +314,14 @@ pub struct NotifyHumidifierNightlightParams {
 /// so 0% is 128, 100% is 228%
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct TargetHumidity(u8);
+pub struct TargetSpeed(u8);
 
 impl Into<u8> for TargetHumidity {
+    fn into(self) -> u8 {
+        self.0
+    }
+}
+impl Into<u8> for TargetSpeed {
     fn into(self) -> u8 {
         self.0
     }
@@ -330,8 +336,31 @@ impl DecodePacketParam for TargetHumidity {
         target.push(self.0);
     }
 }
+impl DecodePacketParam for TargetSpeed {
+    fn decode_param<'a>(&mut self, data: &'a [u8]) -> anyhow::Result<&'a [u8]> {
+        self.0.decode_param(data)
+    }
+
+    fn encode_param(&self, target: &mut Vec<u8>) {
+        target.push(self.0);
+    }
+}
 
 impl TargetHumidity {
+    pub fn as_percent(&self) -> u8 {
+        self.0 & 0x7f
+    }
+
+    pub fn into_inner(self) -> u8 {
+        self.0
+    }
+
+    pub fn from_percent(percent: u8) -> Self {
+        Self(percent + 128)
+    }
+}
+
+impl TargetSpeed {
     pub fn as_percent(&self) -> u8 {
         self.0 & 0x7f
     }
