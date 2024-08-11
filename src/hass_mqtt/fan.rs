@@ -33,16 +33,16 @@ pub struct FanConfig {
 
     /// HASS will publsh here to change the current speed
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub percentage_command_topic: Option<u8>
+    pub percentage_command_topic: String,
     /// we will publsh here the current speed
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub percentage_state_topic: Option<u8>
+    pub percentage_state_topic: String,
     /// we will publish the max speed here
     #[serde(skip_serializing_if = "Option::is_none")]
     pub speed_range_max: Option<u8>,
     /// we will publish the min speed here
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub speed_range_min: Option<u8>
+    pub speed_range_min: Option<u8>,
 
     pub optimistic: bool,
 
@@ -66,7 +66,7 @@ impl Fan {
         let use_iot = device.iot_api_supported() && state.get_iot_client().await.is_some();
         let optimistic = !use_iot;
 
-        let device_class = Some("fan")
+        let device_class = Some("fan");
 
         // command_topic controls the power state; just route it to
         // the general power switch handler
@@ -85,15 +85,19 @@ impl Fan {
         );
         let state_topic = format!("gv2mqtt/fan/{id}/state", id = topic_safe_id(device));
 
-        let mode_command_topic = format!(
+        let preset_mode_command_topic = format!(
             "gv2mqtt/fan/{id}/set-mode",
             id = topic_safe_id(device)
         );
-        let mode_state_topic = format!(
+        let preset_mode_state_topic = format!(
             "gv2mqtt/fan/{id}/notify-mode",
             id = topic_safe_id(device)
         );
 
+        let preset_mode_command_topic = format!(
+            "gv2mqtt/fan/{id}/set-mode",
+            id = topic_safe_id(device)
+        );
         let percentage_command_topic = format!(
             "gv2mqtt/fan/{id}/set-speed",
             id = topic_safe_id(device)
@@ -105,11 +109,11 @@ impl Fan {
 
         let unique_id = format!("gv2mqtt-{id}-fan", id = topic_safe_id(device),);
 
-        let mut min_speed = None;
-        let mut max_speed = None;
+        let mut speed_range_min = None;
+        let mut speed_range_max = None;
 
         let work_mode = ParsedWorkMode::with_device(device).ok();
-        let modes = work_mode
+        let preset_modes = work_mode
             .as_ref()
             .map(|wm| wm.get_mode_names())
             .unwrap_or(vec![]);
@@ -122,8 +126,8 @@ impl Fan {
                         unit,
                     }) => {
                         if unit.as_deref() == Some("unit.percent") {
-                            min_speed.replace(*min as u8);
-                            max_speed.replace(*max as u8);
+                            speed_range_min.replace(*min as u8);
+                            speed_range_max.replace(*max as u8);
                         }
                     }
                     _ => {}
@@ -158,7 +162,7 @@ impl Fan {
                 speed_range_max,
 
                 percentage_command_topic,
-                percentage_state_topic
+                percentage_state_topic,
 
                 preset_mode_command_topic,
                 preset_mode_state_topic,
