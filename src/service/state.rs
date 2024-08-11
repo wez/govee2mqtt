@@ -506,6 +506,66 @@ impl State {
         }
         anyhow::bail!("Unable to control humidifier parameter work_mode={work_mode} for {device}");
     }
+    
+    pub async fn fan_set_preset_mode(
+        self: &Arc<Self>,
+        device: &Device,
+        work_mode: i64,
+        value: i64,
+    ) -> anyhow::Result<()> {
+        if let Ok(command) = Base64HexBytes::encode_for_sku(
+            &device.sku,
+            &SetHumidifierMode {
+                mode: work_mode as u8,
+                param: value as u8,
+            },
+        ) {
+            if let Some(iot) = self.get_iot_client().await {
+                if let Some(info) = &device.undoc_device_info {
+                    iot.send_real(&info.entry, vec![command.base64()]).await?;
+                    return Ok(());
+                }
+            }
+        }
+
+        if let Some(client) = self.get_platform_client().await {
+            if let Some(info) = &device.http_device_info {
+                client.set_work_mode(info, work_mode, value).await?;
+                return Ok(());
+            }
+        }
+        anyhow::bail!("Unable to control humidifier parameter work_mode={work_mode} for {device}");
+    }
+    
+    pub async fn fan_set_oscillate(
+        self: &Arc<Self>,
+        device: &Device,
+        oscillate: bool,
+        value: bool,
+    ) -> anyhow::Result<()> {
+        if let Ok(command) = Base64HexBytes::encode_for_sku(
+            &device.sku,
+            &SetHumidifierMode {
+                mode: oscillate as u8,
+                param: value as u8,
+            },
+        ) {
+            if let Some(iot) = self.get_iot_client().await {
+                if let Some(info) = &device.undoc_device_info {
+                    iot.send_real(&info.entry, vec![command.base64()]).await?;
+                    return Ok(());
+                }
+            }
+        }
+
+        if let Some(client) = self.get_platform_client().await {
+            if let Some(info) = &device.http_device_info {
+                client.set_toggle_state(info, "oscillate", value).await?;
+                return Ok(());
+            }
+        }
+        anyhow::bail!("Unable to control fan parameter oscillate={oscillate} for {device}");
+    }
 
     pub async fn device_set_color_rgb(
         self: &Arc<Self>,

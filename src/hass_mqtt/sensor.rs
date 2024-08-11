@@ -1,5 +1,6 @@
 use crate::commands::serve::POLL_INTERVAL;
 use crate::hass_mqtt::base::{Device, EntityConfig, Origin};
+use crate::hass_mqtt::fan::DEVICE_CLASS_FAN;
 use crate::hass_mqtt::humidifier::DEVICE_CLASS_HUMIDITY;
 use crate::hass_mqtt::instance::{publish_entity_config, EntityInstance};
 use crate::platform_api::DeviceCapability;
@@ -121,6 +122,8 @@ impl CapabilitySensor {
         let device_class = match instance.instance.as_str() {
             "sensorTemperature" => Some(DEVICE_CLASS_TEMPERATURE),
             "sensorHumidity" => Some(DEVICE_CLASS_HUMIDITY),
+            // TODO Configure Device Class Detection for Fans
+            "sensorFan" => Some(DEVICE_CLASS_FAN),
             _ => None,
         };
 

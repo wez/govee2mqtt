@@ -32,10 +32,8 @@ pub struct FanConfig {
     pub preset_mode_state_topic: String,
 
     /// HASS will publsh here to change the current speed
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub percentage_command_topic: String,
     /// we will publsh here the current speed
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub percentage_state_topic: String,
     /// we will publish the max speed here
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -85,10 +83,6 @@ impl Fan {
         );
         let state_topic = format!("gv2mqtt/fan/{id}/state", id = topic_safe_id(device));
 
-        let preset_mode_command_topic = format!(
-            "gv2mqtt/fan/{id}/set-mode",
-            id = topic_safe_id(device)
-        );
         let preset_mode_state_topic = format!(
             "gv2mqtt/fan/{id}/notify-mode",
             id = topic_safe_id(device)
@@ -211,7 +205,7 @@ impl EntityInstance for Fan {
             }
         }
 
-        if let Some(speed) = device.percentage_state_topic {
+        if let Some(speed) = device.target_fan_speed {
             client
                 .publish(
                     &self.fan.percentage_state_topic,
@@ -227,7 +221,7 @@ impl EntityInstance for Fan {
             self.state
                 .device_mut(&device.sku, &device.id)
                 .await
-                .set_target_speed(guessed_value);
+                .set_fan_target_speed(guessed_value);
             client
                 .publish(
                     &self.fan.percentage_state_topic,
@@ -236,7 +230,7 @@ impl EntityInstance for Fan {
                 .await?;
         }
 
-        if let Some(mode_value) = device.fan_work_mode {
+        if let Some(mode_value) = device.fan_preset_mode {
             if let Ok(work_mode) = ParsedWorkMode::with_device(&device) {
                 let mode_value_json = json!(mode_value);
                 if let Some(mode) = work_mode.mode_for_value(&mode_value_json) {
@@ -282,7 +276,7 @@ pub async fn mqtt_fan_set_work_mode(
     let value = work_mode.default_value();
 
     state
-        .fan_set_parameter(&device, mode_num, value)
+        .fan_set_preset_mode(&device, mode_num, value)
         .await?;
 
     Ok(())
@@ -310,7 +304,7 @@ pub async fn mqtt_fan_set_speed(
                 state
                     .device_mut(&device.sku, &device.id)
                     .await
-                    .set_target_speed(percent as u8);
+                    .set_fan_target_speed(percent as u8);
 
                 // For the H7160 at least, setting the fan
                 // will put the device into auto mode and turn
@@ -338,22 +332,22 @@ pub async fn mqtt_fan_set_speed(
     let value = TargetSpeed::from_percent(percent as u8);
 
     state
-        .fan_set_parameter(&device, mode_num, value.into_inner().into())
+        .fan_set_preset_mode(&device, mode_num, value.into_inner().into())
         .await?;
 
     Ok(())
 }
 
-async fn mqtt_fan_set_oscillation(
+pub async fn mqtt_fan_set_oscillation(
     Payload(oscillate): Payload<bool>,
     Params(IdParameter { id }): Params<IdParameter>,
     State(state): State<StateHandle>,
-) -> Result<Response, Response> {
-    log::info!("mqtt_fan_set_oscillation: {id}: {mode}");
+) -> anyhow::Result<()> {
+    log::info!("mqtt_fan_set_oscillation: {id}: {oscillate}");
     let device = state.resolve_device_for_control(&id).await?;
 
     state
-        .fan_set_parameter(&device, oscillate, value)
+        .fan_set_oscillate(&device, oscillate, oscillate)
         .await?;
 
     Ok(())
