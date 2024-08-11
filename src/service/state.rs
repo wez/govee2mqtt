@@ -507,7 +507,7 @@ impl State {
         anyhow::bail!("Unable to control humidifier parameter work_mode={work_mode} for {device}");
     }
     
-    pub async fn fan_set_preset_mode(
+    pub async fn fan_set_speed(
         self: &Arc<Self>,
         device: &Device,
         work_mode: i64,
@@ -534,7 +534,7 @@ impl State {
                 return Ok(());
             }
         }
-        anyhow::bail!("Unable to control humidifier parameter work_mode={work_mode} for {device}");
+        anyhow::bail!("Unable to control fan parameter work_mode={work_mode} for {device}");
     }
     
     pub async fn fan_set_oscillate(

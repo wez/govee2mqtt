@@ -1,4 +1,4 @@
-use crate::ble::TargetSpeed;
+use crate::ble::TargetHumidity;
 use crate::hass_mqtt::base::{Device, EntityConfig, Origin};
 use crate::hass_mqtt::instance::{publish_entity_config, EntityInstance};
 use crate::hass_mqtt::work_mode::ParsedWorkMode;
@@ -14,6 +14,22 @@ use serde_json::json;
 
 pub const DEVICE_CLASS_FAN: &str = "fan";
 
+/**
+ * TODO
+ * We need to setup 3 properties to handle MQTT Fan
+ * 1. Fan Mode
+ *   a. set-mode
+ *   b. notify-mode
+ * 2. Speed
+ *   a. min
+ *   b. max
+ *   c. set-speed
+ *   d. notify-speed
+ * 3. Oscillation
+ *   a. set-oscillation
+ *   b. notify-oscillation
+ */
+
 /// <https://www.home-assistant.io/integrations/fan.mqtt>
 #[derive(Serialize, Clone, Debug)]
 pub struct FanConfig {
@@ -21,26 +37,27 @@ pub struct FanConfig {
     pub base: EntityConfig,
 
     pub command_topic: String,
-    /// HASS will publish here to change the fan oscillation state
-    pub oscillation_command_topic: String,
-    /// HASS will subscribe here to receive the oscillation state
-    pub oscillation_state_topic: String,
 
     /// HASS will publish here to change the current mode
-    pub preset_mode_command_topic: String,
+    pub mode_command_topic: String,
     /// we will publish the current mode here
-    pub preset_mode_state_topic: String,
+    pub mode_state_topic: String,
 
+    /// we will publish the min speed here
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub speed_range_min: Option<u8>,
+    /// we will publish the max speed here
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub speed_range_max: Option<u8>,
     /// HASS will publsh here to change the current speed
     pub percentage_command_topic: String,
     /// we will publsh here the current speed
     pub percentage_state_topic: String,
-    /// we will publish the max speed here
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub speed_range_max: Option<u8>,
-    /// we will publish the min speed here
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub speed_range_min: Option<u8>,
+    
+    /// HASS will publish here to change the fan oscillation state
+    pub oscillation_command_topic: String,
+    /// HASS will subscribe here to receive the oscillation state
+    pub oscillation_state_topic: String,
 
     pub optimistic: bool,
 
@@ -83,12 +100,12 @@ impl Fan {
         );
         let state_topic = format!("gv2mqtt/fan/{id}/state", id = topic_safe_id(device));
 
-        let preset_mode_state_topic = format!(
+        let mode_state_topic = format!(
             "gv2mqtt/fan/{id}/notify-mode",
             id = topic_safe_id(device)
         );
 
-        let preset_mode_command_topic = format!(
+        let mode_command_topic = format!(
             "gv2mqtt/fan/{id}/set-mode",
             id = topic_safe_id(device)
         );
@@ -158,8 +175,8 @@ impl Fan {
                 percentage_command_topic,
                 percentage_state_topic,
 
-                preset_mode_command_topic,
-                preset_mode_state_topic,
+                mode_command_topic,
+                mode_state_topic,
                 preset_modes,
                 state_topic,
                 optimistic,
@@ -190,6 +207,7 @@ impl EntityInstance for Fan {
             .await
             .expect("device to exist");
 
+        // Broadcast powerState value
         match device.device_state() {
             Some(device_state) => {
                 let is_on = device_state.on;
@@ -205,6 +223,8 @@ impl EntityInstance for Fan {
             }
         }
 
+        // Broadcast Speed Setting if present
+        // TODO ensure target_fan_speed is set correctly
         if let Some(speed) = device.target_fan_speed {
             client
                 .publish(
@@ -214,14 +234,15 @@ impl EntityInstance for Fan {
                 .await?;
         } else {
             // We need an initial value otherwise hass will not enable
-            // the target speed control in its UI.
+            // the target humidity control in its UI.
             // Because we are setting this in the device state,
             // this latches so we only do this once.
+            // TODO ensure speed_range_min is set correctly
             let guessed_value = self.fan.speed_range_min.unwrap_or(0);
             self.state
                 .device_mut(&device.sku, &device.id)
                 .await
-                .set_fan_target_speed(guessed_value);
+                .set_fan_speed(guessed_value);
             client
                 .publish(
                     &self.fan.percentage_state_topic,
@@ -230,12 +251,13 @@ impl EntityInstance for Fan {
                 .await?;
         }
 
-        if let Some(mode_value) = device.fan_preset_mode {
+        // Broadcast Mode if present
+        if let Some(mode_value) = device.humidifier_work_mode {
             if let Ok(work_mode) = ParsedWorkMode::with_device(&device) {
                 let mode_value_json = json!(mode_value);
                 if let Some(mode) = work_mode.mode_for_value(&mode_value_json) {
                     client
-                        .publish(&self.fan.preset_mode_state_topic, mode.name.to_string())
+                        .publish(&self.fan.mode_state_topic, mode.name.to_string())
                         .await?;
                 }
             }
@@ -246,16 +268,24 @@ impl EntityInstance for Fan {
                 if let Some(mode_num) = cap.state.pointer("/value/workMode") {
                     if let Some(mode) = work_modes.mode_for_value(mode_num) {
                         return client
-                            .publish(&self.fan.preset_mode_state_topic, mode.name.to_string())
+                            .publish(&self.fan.mode_state_topic, mode.name.to_string())
                             .await;
                     }
                 }
             }
         }
+
+        // Broadcast oscillation if not supported
+        if let Some(oscillate) = device.fan_oscillate {
+            client
+                .publish(&self.fan.oscillation_state_topic, if oscillate { "ON" } else { "OFF" })
+                .await?;
+        }
         Ok(())
     }
 }
 
+// TODO Review Set Logic
 pub async fn mqtt_fan_set_work_mode(
     Payload(mode): Payload<String>,
     Params(IdParameter { id }): Params<IdParameter>,
@@ -276,18 +306,19 @@ pub async fn mqtt_fan_set_work_mode(
     let value = work_mode.default_value();
 
     state
-        .fan_set_preset_mode(&device, mode_num, value)
+        .humidifier_set_parameter(&device, mode_num, value)
         .await?;
 
     Ok(())
 }
 
+// TODO Review Set Logic
 pub async fn mqtt_fan_set_speed(
     Payload(percent): Payload<i64>,
     Params(IdParameter { id }): Params<IdParameter>,
     State(state): State<StateHandle>,
 ) -> anyhow::Result<()> {
-    log::info!("mqtt_fan_set_speed: {id}: {percent}");
+    log::info!("mqtt_humidifier_set_target: {id}: {percent}");
 
     let device = state.resolve_device_for_control(&id).await?;
 
@@ -295,7 +326,7 @@ pub async fn mqtt_fan_set_speed(
 
     if !use_iot {
         if let Some(info) = &device.http_device_info {
-            if let Some(cap) = info.capability_by_instance("fan") {
+            if let Some(cap) = info.capability_by_instance("humidity") {
                 state.device_control(&device, cap, percent).await?;
 
                 // We're running in optimistic mode; stash
@@ -304,9 +335,9 @@ pub async fn mqtt_fan_set_speed(
                 state
                     .device_mut(&device.sku, &device.id)
                     .await
-                    .set_fan_target_speed(percent as u8);
+                    .set_fan_speed(percent as u8);
 
-                // For the H7160 at least, setting the fan
+                // For the H7160 at least, setting the humidity
                 // will put the device into auto mode and turn
                 // it on, however, we don't know that the device
                 // is actually turned on.
@@ -329,15 +360,16 @@ pub async fn mqtt_fan_set_speed(
         .as_i64()
         .ok_or_else(|| anyhow::anyhow!("expected workMode to be a number"))?;
 
-    let value = TargetSpeed::from_percent(percent as u8);
+    let value = TargetHumidity::from_percent(percent as u8);
 
     state
-        .fan_set_preset_mode(&device, mode_num, value.into_inner().into())
+        .fan_set_speed(&device, mode_num, value.into_inner().into())
         .await?;
 
     Ok(())
 }
 
+// TODO Set Oscillation Logic
 pub async fn mqtt_fan_set_oscillation(
     Payload(oscillate): Payload<bool>,
     Params(IdParameter { id }): Params<IdParameter>,

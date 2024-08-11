@@ -176,6 +176,7 @@ impl EntityInstance for Humidifier {
             .await
             .expect("device to exist");
 
+        // Broadcast powerState value
         match device.device_state() {
             Some(device_state) => {
                 let is_on = device_state.on;
@@ -191,6 +192,7 @@ impl EntityInstance for Humidifier {
             }
         }
 
+        // Broadcast Humidity Target if present
         if let Some(humidity) = device.target_humidity_percent {
             client
                 .publish(
@@ -216,6 +218,7 @@ impl EntityInstance for Humidifier {
                 .await?;
         }
 
+        // Broadcast Mode if present
         if let Some(mode_value) = device.humidifier_work_mode {
             if let Ok(work_mode) = ParsedWorkMode::with_device(&device) {
                 let mode_value_json = json!(mode_value);
