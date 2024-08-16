@@ -175,6 +175,7 @@ fn load_quirks() -> HashMap<String, Quirk> {
         // returned by Govee is completely bogus for this
         // device
         // <https://github.com/wez/govee2mqtt/issues/14#issuecomment-1880050091>
+        Quirk::light("H6003", BULB).with_broken_platform(),
         Quirk::light("H6159", STRIP).with_broken_platform(),
         // <https://github.com/wez/govee2mqtt/issues/40#issuecomment-1889726710>
         // indicates that this one doesn't work like the others with IoT
