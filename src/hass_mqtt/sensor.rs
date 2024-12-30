@@ -181,7 +181,7 @@ impl EntityInstance for CapabilitySensor {
                 "sensorTemperature" => {
                     let units = quirk
                         .and_then(|q| q.platform_temperature_sensor_units)
-                        .unwrap_or(TemperatureUnits::Celsius);
+                        .unwrap_or(TemperatureUnits::Fahrenheit);
 
                     match cap
                         .state
