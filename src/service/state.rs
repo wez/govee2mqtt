@@ -468,7 +468,7 @@ impl State {
             if let Some(iot) = self.get_iot_client().await {
                 if let Some(info) = &device.undoc_device_info {
                     log::info!("Using IoT API to set {device} color");
-                    iot.send_real(&info.entry, vec![command.base64()]).await?;
+                    iot.send_real(&info.entry, command.base64()).await?;
                     return Ok(true);
                 }
             }
@@ -492,7 +492,7 @@ impl State {
         ) {
             if let Some(iot) = self.get_iot_client().await {
                 if let Some(info) = &device.undoc_device_info {
-                    iot.send_real(&info.entry, vec![command.base64()]).await?;
+                    iot.send_real(&info.entry, command.base64()).await?;
                     return Ok(());
                 }
             }

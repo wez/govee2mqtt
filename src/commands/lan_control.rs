@@ -78,8 +78,10 @@ impl LanControlCommand {
                     for scene in category.scenes {
                         for effect in scene.light_effects {
                             if effect.scene_code != 0 {
-                                scene_code_by_name
-                                    .insert(Uncased::new(scene.scene_name), effect.scene_code);
+                                scene_code_by_name.insert(
+                                    Uncased::new(scene.scene_name),
+                                    SetSceneCode::new(effect.scene_code, effect.scence_param),
+                                );
                                 break;
                             }
                         }
@@ -92,13 +94,10 @@ impl LanControlCommand {
                 } else {
                     let scene = Uncased::new(scene.clone().expect("scene if not list"));
                     if let Some(code) = scene_code_by_name.get(&scene) {
-                        let encoded = Base64HexBytes::encode_for_sku(
-                            "Generic:Light",
-                            &SetSceneCode { code: *code },
-                        )?
-                        .base64();
-                        println!("Computed {encoded}");
-                        device.send_real(vec![encoded]).await?;
+                        let encoded =
+                            Base64HexBytes::encode_for_sku("Generic:Light", code)?.base64();
+                        println!("Computed {encoded:?}");
+                        device.send_real(encoded).await?;
                     } else {
                         anyhow::bail!("scene {scene} not found");
                     }
@@ -106,8 +105,8 @@ impl LanControlCommand {
             }
             SubCommand::Command { data } => {
                 let encoded = Base64HexBytes::with_bytes(data.to_vec()).base64();
-                println!("encoded: {encoded}");
-                device.send_real(vec![encoded]).await?;
+                println!("encoded: {encoded:?}");
+                device.send_real(encoded).await?;
             }
         }
 

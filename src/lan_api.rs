@@ -244,16 +244,14 @@ impl LanDevice {
                     if scene.scene_name == scene_name && effect.scene_code != 0 {
                         let encoded = Base64HexBytes::encode_for_sku(
                             "Generic:Light",
-                            &SetSceneCode {
-                                code: effect.scene_code,
-                            },
+                            &SetSceneCode::new(effect.scene_code, effect.scence_param),
                         )?
                         .base64();
                         log::info!(
                             "sending scene packet {encoded:x?} for {scene_name}, code {}",
                             effect.scene_code
                         );
-                        return self.send_real(vec![encoded]).await;
+                        return self.send_real(encoded).await;
                     }
                 }
             }
