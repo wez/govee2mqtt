@@ -71,6 +71,10 @@ impl Quirk {
             .with_iot_api_support(true)
     }
 
+    pub fn ice_maker<SKU: Into<Cow<'static, str>>>(sku: SKU) -> Self {
+        Self::device(sku, DeviceType::IceMaker, "mdi:snowflake")
+    }
+
     pub fn space_heater<SKU: Into<Cow<'static, str>>>(sku: SKU) -> Self {
         Self::device(sku, DeviceType::Heater, "mdi:heat-wave")
     }
@@ -229,6 +233,8 @@ fn load_quirks() -> HashMap<String, Quirk> {
             .with_platform_temperature_sensor_units(TemperatureUnits::Fahrenheit),
         Quirk::space_heater("H7135")
             .with_platform_temperature_sensor_units(TemperatureUnits::Fahrenheit),
+        // <https://github.com/wez/govee2mqtt/issues/343>
+        Quirk::ice_maker("H7172").with_iot_api_support(false),
         Quirk::thermometer("H5051")
             .with_platform_temperature_sensor_units(TemperatureUnits::Fahrenheit)
             .with_platform_humidity_sensor_units(HumidityUnits::RelativePercent),
