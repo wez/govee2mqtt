@@ -282,9 +282,9 @@ pub async fn start_iot_client(
         client.connect(&res.endpoint, 8883, Duration::from_secs(120), None),
     )
     .await
-    .context("timeout connecting to IoT in AWS")?
-    .context("failed to connect to IoT in AWS")?;
-    log::info!("Connected to IoT: {status}");
+    .with_context(|| format!("timeout connecting to IoT {}:8883 in AWS", res.endpoint))?
+    .with_context(|| format!("failed to connect to IoT {}:8883 in AWS", res.endpoint))?;
+    log::info!("Connected to IoT: {}:8883 {status}", res.endpoint);
 
     let subscriptions = client.subscriber().expect("first and only");
 
