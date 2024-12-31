@@ -86,7 +86,7 @@ impl EntityInstance for DeviceLight {
                     if device_state.kelvin == 0 {
                         json!({
                             "state": "ON",
-                            "supported_color_modes": ["rgb"],
+                            "color_mode": "rgb",
                             "color": {
                                 "r": device_state.color.r,
                                 "g": device_state.color.g,
@@ -98,7 +98,7 @@ impl EntityInstance for DeviceLight {
                     } else {
                         json!({
                             "state": "ON",
-                            "supported_color_modes": ["color_temp"],
+                            "color_mode": "color_temp",
                             "brightness": device_state.brightness,
                             "color_temp": kelvin_to_mired(device_state.kelvin),
                             "effect": device_state.scene,
