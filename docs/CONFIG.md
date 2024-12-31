@@ -9,8 +9,9 @@ It is recommended that you configure at least your Govee username and password
 prior to your first run, as that is the only way for `govee2mqtt` to determine
 room names to pre-assign your lights into the appropriate Home Assistant areas.
 
-For scene control, at the time of writing, you need a Govee API Key.
-If you don't already have one, [you can find instructions on obtaining one
+For scene control, for devices that don't support the LAN API, a Govee API Key
+is required.  If you don't already have one, [you can find instructions on
+obtaining one
 here](https://developer.govee.com/reference/apply-you-govee-api-key).
 
 |CLI|ENV|AddOn|Purpose|
