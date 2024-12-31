@@ -624,6 +624,21 @@ impl State {
         device: &Device,
         scene: &str,
     ) -> anyhow::Result<()> {
+        if let Some(lan_dev) = &device.lan_device {
+            log::info!("Using LAN API to set {device} to scene {scene}");
+            match lan_dev.set_scene_by_name(scene).await {
+                Ok(_) => {
+                    self.device_mut(&device.sku, &device.id)
+                        .await
+                        .set_active_scene(Some(scene));
+                    return Ok(());
+                }
+                Err(err) => {
+                    log::error!("Error using LAN API to set {device} to scene {scene}: {err:#}. Maybe fallback to platform API");
+                }
+            }
+        }
+
         // TODO: some plumbing to maintain offline scene controls for preferred-LAN control
         let avoid_platform_api = device.avoid_platform_api();
 
@@ -638,16 +653,6 @@ impl State {
                     return Ok(());
                 }
             }
-        }
-
-        if let Some(lan_dev) = &device.lan_device {
-            log::info!("Using LAN API to set {device} to scene {scene}");
-            lan_dev.set_scene_by_name(scene).await?;
-
-            self.device_mut(&device.sku, &device.id)
-                .await
-                .set_active_scene(Some(scene));
-            return Ok(());
         }
 
         anyhow::bail!("Unable to set scene for {device}");
