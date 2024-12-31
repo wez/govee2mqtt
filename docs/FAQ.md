@@ -56,6 +56,13 @@ the "Purge Caches" button to see how the situation evolves.
 
 Check out [this page](SKUS.md) for more details on supported devices.
 
+## Please add support for HXXXX
+
+As is explained in [this page](SKUS.md), there is little direct knowledge of
+specific devices in this software, which acts as a bridge into Govee's
+documented and undocumented APIs. There isn't anything practical that can be
+done here to directly control a device that isn't supported by Govee's APIs.
+
 ## The device MAC addresses shown in the logs don't match the MACs on my network!?
 
 Govee device IDs are not network MAC addresses. For some devices the device ID
@@ -71,4 +78,6 @@ Look at [this page](LAN.md) for more details on the LAN API and things you can t
 This error appears to be returned from Govee when trying to use the Platform
 API with devices that are BLE-only and have no WiFi support.  Please file an
 issue about this so that we can add an entry to the quirks database.
+
+
 
