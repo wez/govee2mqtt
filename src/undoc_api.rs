@@ -558,7 +558,7 @@ pub struct LightEffectEntry {
     pub scence_param: String,
     pub scene_code: u16,
     pub special_effect: Vec<JsonValue>,
-    pub cmd_version: u32,
+    pub cmd_version: Option<u32>,
     pub scene_type: u32,
     pub diy_effect_code: Vec<JsonValue>,
     pub diy_effect_str: String,
