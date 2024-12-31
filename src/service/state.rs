@@ -595,6 +595,21 @@ impl State {
             }
         }
 
+        if let Ok(categories) = GoveeUndocumentedApi::get_scenes_for_device(&device.sku).await {
+            let mut names = vec![];
+            for cat in categories {
+                for scene in cat.scenes {
+                    for effect in scene.light_effects {
+                        if effect.scene_code != 0 {
+                            names.push(scene.scene_name);
+                            break;
+                        }
+                    }
+                }
+            }
+            return Ok(sort_and_dedup_scenes(names));
+        }
+
         log::trace!("Platform API unavailable: Don't know how to list scenes for {device}");
 
         Ok(vec![])
