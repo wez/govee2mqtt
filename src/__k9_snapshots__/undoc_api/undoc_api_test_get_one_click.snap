@@ -50,17 +50,29 @@ OneClickResponse {
                         iot_rules: [
                             OneClickIotRule {
                                 device_obj: OneClickIotRuleDevice {
-                                    name: "Study Floor Lamp 1",
-                                    device: "xx:34:11",
-                                    sku: "H6072",
+                                    name: Some(
+                                        "Study Floor Lamp 1",
+                                    ),
+                                    device: Some(
+                                        "xx:34:11",
+                                    ),
+                                    sku: Some(
+                                        "H6072",
+                                    ),
                                     topic: REDACTED,
-                                    ble_address: "",
-                                    ble_name: "Govee_H6072_3411",
+                                    ble_address: Some(
+                                        "",
+                                    ),
+                                    ble_name: Some(
+                                        "Govee_H6072_3411",
+                                    ),
                                     device_splicing_status: 0,
                                     feast_id: 0,
                                     feast_name: "",
                                     feast_type: 0,
-                                    goods_type: 30,
+                                    goods_type: Some(
+                                        30,
+                                    ),
                                     ic: Some(
                                         66,
                                     ),
@@ -71,19 +83,33 @@ OneClickResponse {
                                         0,
                                     ),
                                     is_feast: false,
-                                    pact_type: 2,
-                                    pact_code: 1,
+                                    pact_type: Some(
+                                        2,
+                                    ),
+                                    pact_code: Some(
+                                        1,
+                                    ),
                                     settings: None,
-                                    spec: "",
+                                    spec: Some(
+                                        "",
+                                    ),
                                     sub_device: "",
                                     sub_device_num: 0,
                                     sub_devices: Some(
                                         Object {},
                                     ),
-                                    version_hard: "3.02.00",
-                                    version_soft: "2.04.05",
-                                    wifi_soft_version: "1.02.11",
-                                    wifi_hard_version: "1.00.10",
+                                    version_hard: Some(
+                                        "3.02.00",
+                                    ),
+                                    version_soft: Some(
+                                        "2.04.05",
+                                    ),
+                                    wifi_soft_version: Some(
+                                        "1.02.11",
+                                    ),
+                                    wifi_hard_version: Some(
+                                        "1.00.10",
+                                    ),
                                 },
                                 rule: [
                                     OneClickIotRuleEntry {

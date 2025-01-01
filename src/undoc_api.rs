@@ -467,7 +467,6 @@ impl GoveeUndocumentedApi {
                     let msgs = rule.rule.into_iter().map(|r| r.iot_msg).collect();
                     entries.push(ParsedOneClickEntry {
                         topic: rule.device_obj.topic,
-                        device: rule.device_obj.device,
                         msgs,
                     });
                 }
@@ -488,7 +487,6 @@ pub struct ParsedOneClick {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ParsedOneClickEntry {
     pub topic: Redacted<String>,
-    pub device: String,
     pub msgs: Vec<JsonValue>,
 }
 
@@ -671,19 +669,19 @@ pub struct OneClickIotRuleEntryCmd {
 #[serde(rename_all = "camelCase")]
 #[cfg_attr(debug_assertions, serde(deny_unknown_fields))]
 pub struct OneClickIotRuleDevice {
-    pub name: String,
-    pub device: String,
-    pub sku: String,
+    pub name: Option<String>,
+    pub device: Option<String>,
+    pub sku: Option<String>,
 
     pub topic: Redacted<String>,
 
-    pub ble_address: String,
-    pub ble_name: String,
+    pub ble_address: Option<String>,
+    pub ble_name: Option<String>,
     pub device_splicing_status: u32,
     pub feast_id: u64,
     pub feast_name: String,
     pub feast_type: u64,
-    pub goods_type: u64,
+    pub goods_type: Option<u64>,
     pub ic: Option<u32>,
     #[serde(rename = "ic_sub_1")]
     pub ic_sub_1: Option<u32>,
@@ -691,19 +689,19 @@ pub struct OneClickIotRuleDevice {
     pub ic_sub_2: Option<u32>,
     #[serde(deserialize_with = "boolean_int")]
     pub is_feast: bool,
-    pub pact_type: u32,
-    pub pact_code: u32,
+    pub pact_type: Option<u32>,
+    pub pact_code: Option<u32>,
 
     pub settings: Option<JsonValue>,
-    pub spec: String,
+    pub spec: Option<String>,
     pub sub_device: String,
     pub sub_device_num: u64,
     pub sub_devices: Option<JsonValue>,
 
-    pub version_hard: String,
-    pub version_soft: String,
-    pub wifi_soft_version: String,
-    pub wifi_hard_version: String,
+    pub version_hard: Option<String>,
+    pub version_soft: Option<String>,
+    pub wifi_soft_version: Option<String>,
+    pub wifi_hard_version: Option<String>,
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
