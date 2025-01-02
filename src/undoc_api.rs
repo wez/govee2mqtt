@@ -464,11 +464,10 @@ impl GoveeUndocumentedApi {
 
                 let mut entries = vec![];
                 for rule in oc.iot_rules {
-                    let msgs = rule.rule.into_iter().map(|r| r.iot_msg).collect();
-                    entries.push(ParsedOneClickEntry {
-                        topic: rule.device_obj.topic,
-                        msgs,
-                    });
+                    if let Some(topic) = rule.device_obj.topic {
+                        let msgs = rule.rule.into_iter().map(|r| r.iot_msg).collect();
+                        entries.push(ParsedOneClickEntry { topic, msgs });
+                    }
                 }
 
                 result.push(ParsedOneClick { name, entries });
@@ -673,7 +672,7 @@ pub struct OneClickIotRuleDevice {
     pub device: Option<String>,
     pub sku: Option<String>,
 
-    pub topic: Redacted<String>,
+    pub topic: Option<Redacted<String>>,
 
     pub ble_address: Option<String>,
     pub ble_name: Option<String>,

@@ -59,7 +59,9 @@ OneClickResponse {
                                     sku: Some(
                                         "H6072",
                                     ),
-                                    topic: REDACTED,
+                                    topic: Some(
+                                        REDACTED,
+                                    ),
                                     ble_address: Some(
                                         "",
                                     ),
