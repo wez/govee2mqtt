@@ -16,8 +16,8 @@ services:
 apparmor: true
 
 webui: http://[HOST]:[PORT:8056]/assets/index.html
-ingress: true
-ingress_port: 8056
+#ingress: true
+#ingress_port: 8056
 
 # Host network access is required for LAN discovery
 host_network: true
