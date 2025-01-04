@@ -22,6 +22,11 @@ ingress_port: 8056
 # Host network access is required for LAN discovery
 host_network: true
 
+map:
+  - type: addon_config
+    read_only: false
+    path: /app/config
+
 options:
   temperature_scale: "C"
 
