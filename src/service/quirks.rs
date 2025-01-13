@@ -231,6 +231,16 @@ fn load_quirks() -> HashMap<String, Quirk> {
             .with_platform_temperature_sensor_units(TemperatureUnits::Fahrenheit),
         Quirk::space_heater("H7132")
             .with_platform_temperature_sensor_units(TemperatureUnits::Fahrenheit),
+        Quirk::space_heater("H7133")
+            .with_platform_temperature_sensor_units(TemperatureUnits::Fahrenheit)
+            .with_show_as_preset_modes(&["gearMode"])
+            .with_rgb()
+            .with_brightness(),
+        Quirk::space_heater("H7134")
+            .with_platform_temperature_sensor_units(TemperatureUnits::Fahrenheit)
+            .with_show_as_preset_modes(&["gearMode"])
+            .with_color_temp()
+            .with_brightness(),
         Quirk::space_heater("H7135")
             .with_platform_temperature_sensor_units(TemperatureUnits::Fahrenheit),
         // <https://github.com/wez/govee2mqtt/issues/343>
