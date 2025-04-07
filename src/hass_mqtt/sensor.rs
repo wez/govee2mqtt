@@ -204,7 +204,7 @@ impl EntityInstance for CapabilitySensor {
                         .unwrap_or(HumidityUnits::RelativePercent);
                     match cap
                         .state
-                        .pointer("/value/currentHumidity")
+                        .pointer("/value")
                         .and_then(|v| v.as_f64())
                         .map(|v| units.from_reading_to_relative_percent(v))
                     {
