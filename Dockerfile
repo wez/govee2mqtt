@@ -5,7 +5,7 @@ FROM --platform=$BUILDPLATFORM alpine:latest AS builder
 ARG TARGETPLATFORM
 
 # Rust und benötigte Tools installieren
-RUN apk add --no-cache build-base openssl-dev curl
+RUN apk add --no-cache build-base openssl-dev curl perl
 RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
 ENV PATH="/root/.cargo/bin:${PATH}"
 
