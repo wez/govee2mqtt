@@ -31,7 +31,7 @@ pub fn load_published_entities() -> anyhow::Result<HashSet<PublishedEntity>> {
     Ok(entities)
 }
 
-pub fn save_published_entities(entities: &HashSet<PublishedEntity>) -> anyhow::Result<()> {.
+pub fn save_published_entities(entities: &HashSet<PublishedEntity>) -> anyhow::Result<()> {
     let path = persistence_path()?;
     let data = serde_json::to_string_pretty(entities)?;
     std::fs::write(path, data)?;
