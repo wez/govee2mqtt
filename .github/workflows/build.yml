@@ -20,9 +20,6 @@ on:
       - "Dockerfile"
       - ".dockerignore"
 
-env:
-  IMAGE: ghcr.io/${{ toLower(github.repository) }}
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -38,16 +35,22 @@ jobs:
       packages: write
     steps:
       - uses: actions/checkout@v4
+      - name: Prepare image name
+        id: prep
+        run: |
+          IMAGE_NAME="ghcr.io/${{ github.repository }}"
+          echo "IMAGE_LOWER=${IMAGE_NAME,,}" >> $GITHUB_ENV
       - name: Docker meta
         if: ${{ github.event_name != 'pull_request' }}
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.IMAGE }}
+          images: ${{ env.IMAGE_LOWER }} 
           tags: |
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
             type=ref,event=branch,enable=${{ github.ref != 'refs/heads/main' }}
             type=ref,event=pr
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
