@@ -40,6 +40,7 @@ jobs:
         run: |
           IMAGE_NAME="ghcr.io/${{ github.repository }}"
           echo "IMAGE_LOWER=${IMAGE_NAME,,}" >> $GITHUB_ENV
+          echo "IMAGE=${IMAGE_NAME,,}" >> $GITHUB_ENV 
       - name: Docker meta
         if: ${{ github.event_name != 'pull_request' }}
         id: meta
