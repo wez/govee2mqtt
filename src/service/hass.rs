@@ -2,7 +2,9 @@ use crate::hass_mqtt::climate::mqtt_set_temperature;
 use crate::hass_mqtt::enumerator::{enumerate_all_entites, enumerate_entities_for_device};
 use crate::hass_mqtt::humidifier::{mqtt_device_set_work_mode, mqtt_humidifier_set_target};
 use crate::hass_mqtt::instance::EntityList;
+use crate::service::hass_gc::PublishedEntity;
 use crate::hass_mqtt::number::mqtt_number_command;
+use crate::service::hass_gc;
 use crate::hass_mqtt::select::mqtt_set_mode_scene;
 use crate::lan_api::DeviceColor;
 use crate::opt_env_var;
@@ -15,6 +17,7 @@ use async_channel::Receiver;
 use mosquitto_rs::router::{MqttRouter, Params, Payload, State};
 use mosquitto_rs::{Client, Event, QoS};
 use serde::{Deserialize, Serialize};
+use std::collections::HashSet;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -112,12 +115,38 @@ pub struct HassClient {
 }
 
 impl HassClient {
+    async fn garbage_collect_stale_entities(
+        &self,
+        state: &StateHandle,
+        current_entities: &HashSet<PublishedEntity>,
+    ) -> anyhow::Result<()> {
+        let prior_entities = hass_gc::load_published_entities()?;
+
+        let stale_entities = prior_entities.difference(current_entities);
+        let disco_prefix = state.get_hass_disco_prefix().await;
+
+        for entity in stale_entities {
+            let topic = format!(
+                "{disco_prefix}/{integration}/{unique_id}/config",
+                integration = entity.integration,
+                unique_id = entity.unique_id
+            );
+            log::debug!("Removing stale entity by publishing to {topic}");
+            self.publish(topic, "", true).await?;
+        }
+
+        Ok(())
+    }
+
     async fn register_with_hass(&self, state: &StateHandle) -> anyhow::Result<()> {
         let entities = enumerate_all_entites(state).await?;
 
         // Register the configs
         log::trace!("register_with_hass: register entities");
-        entities.publish_config(state, self).await?;
+        let published = entities.publish_config(state, self).await?;
+        self.garbage_collect_stale_entities(state, &published)
+            .await?;
+        hass_gc::save_published_entities(&published)?;
 
         // Allow hass extra time to register the entities before
         // we mark them as available
@@ -130,7 +159,7 @@ impl HassClient {
 
         // Mark as available
         log::trace!("register_with_hass: mark as online");
-        self.publish(availability_topic(), "online")
+        self.publish(availability_topic(), "online", true)
             .await
             .context("online -> availability_topic")?;
 
@@ -147,10 +176,11 @@ impl HassClient {
         &self,
         topic: T,
         payload: P,
+        retain: bool,
     ) -> anyhow::Result<()> {
         log::trace!("{topic} -> {payload}");
         self.client
-            .publish(topic, payload, QoS::AtMostOnce, false)
+            .publish(topic, payload, QoS::AtMostOnce, retain)
             .await?;
         Ok(())
     }
@@ -159,13 +189,10 @@ impl HassClient {
         &self,
         topic: T,
         payload: P,
+        retain: bool,
     ) -> anyhow::Result<()> {
         let payload = serde_json::to_string(&payload)?;
-        log::trace!("{topic} -> {payload}");
-        self.client
-            .publish(topic, payload, QoS::AtMostOnce, false)
-            .await?;
-        Ok(())
+        self.publish(topic, payload, retain).await
     }
 
     pub async fn advise_hass_of_light_state(
@@ -629,7 +656,7 @@ pub async fn spawn_hass_integration(
     let mqtt_password = args.mqtt_password()?;
     let mqtt_port = args.mqtt_port()?;
 
-    client.set_last_will(availability_topic(), "offline", QoS::AtMostOnce, false)?;
+    client.set_last_will(availability_topic(), "offline", QoS::AtMostOnce, true)?;
 
     if mqtt_username.is_some() != mqtt_password.is_some() {
         log::error!(

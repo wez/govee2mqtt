@@ -1,5 +1,6 @@
 use crate::hass_mqtt::base::{Device, EntityConfig, Origin};
 use crate::hass_mqtt::instance::{publish_entity_config, EntityInstance};
+use crate::service::hass_gc::PublishedEntity;
 use crate::platform_api::DeviceCapability;
 use crate::service::device::Device as ServiceDevice;
 use crate::service::hass::{
@@ -133,7 +134,11 @@ impl ButtonConfig {
 
 #[async_trait]
 impl EntityInstance for ButtonConfig {
-    async fn publish_config(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
+    async fn publish_config(
+        &self,
+        state: &StateHandle,
+        client: &HassClient,
+    ) -> anyhow::Result<PublishedEntity> {
         publish_entity_config("button", state, client, &self.base, self).await
     }
 
