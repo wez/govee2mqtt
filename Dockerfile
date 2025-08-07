@@ -4,21 +4,6 @@
 FROM --platform=$BUILDPLATFORM alpine:latest AS builder
 ARG TARGETPLATFORM
 
-# Rust und benötigte Tools installieren
-RUN apk add --no-cache build-base openssl-dev curl perl
-RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
-ENV PATH="/root/.cargo/bin:${PATH}"
-
-# musl Target hinzufügen
-RUN rustup target add x86_64-unknown-linux-musl
-
-WORKDIR /work
-COPY . .
-
-# Für musl kompilieren
-RUN cargo build --release --target x86_64-unknown-linux-musl
-
-# User wie gehabt anlegen
 RUN adduser \
     --disabled-password \
     --gecos "" \
@@ -28,6 +13,10 @@ RUN adduser \
     --uid "1000" \
     "govee"
 
+WORKDIR /work
+COPY docker-target/$TARGETPLATFORM/govee /work
+
+# Creates an empty /data dir that we can use to copy and chown in the next stage
 WORKDIR /data
 
 ####################################################################################################
@@ -35,13 +24,14 @@ WORKDIR /data
 ####################################################################################################
 FROM gcr.io/distroless/cc-debian12
 
+# Import from builder.
 COPY --from=builder /etc/passwd /etc/passwd
 COPY --from=builder /etc/group /etc/group
+#COPY --from=builder /etc/ssl/certs /etc/ssl/certs
 
 WORKDIR /app
 
-# Das statisch gelinkte musl-Binary kopieren!
-COPY --from=builder /work/target/x86_64-unknown-linux-musl/release/govee /app/govee
+COPY --from=builder /work/govee /app/govee
 COPY AmazonRootCA1.pem /app
 COPY --from=builder --chown=govee:govee /data /data
 COPY assets /app/assets
@@ -60,3 +50,4 @@ CMD ["/app/govee", \
   "--govee-iot-key=/data/iot.key", \
   "--govee-iot-cert=/data/iot.cert", \
   "--amazon-root-ca=/app/AmazonRootCA1.pem"]
+
