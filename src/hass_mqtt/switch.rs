@@ -1,12 +1,12 @@
 use crate::hass_mqtt::base::{Device, EntityConfig, Origin};
 use crate::hass_mqtt::instance::{publish_entity_config, EntityInstance};
-use crate::service::hass_gc::PublishedEntity;
 use crate::platform_api::DeviceCapability;
 use crate::service::device::Device as ServiceDevice;
 use crate::service::hass::{
     availability_topic, camel_case_to_space_separated, switch_instance_state_topic, topic_safe_id,
     HassClient,
 };
+use crate::service::hass_gc::PublishedEntity;
 use crate::service::state::StateHandle;
 use async_trait::async_trait;
 use serde::Serialize;

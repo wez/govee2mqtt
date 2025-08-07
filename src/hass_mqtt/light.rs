@@ -1,12 +1,12 @@
 use crate::hass_mqtt::base::{Device, EntityConfig, Origin};
 use crate::hass_mqtt::instance::{publish_entity_config, EntityInstance};
-use crate::service::hass_gc::PublishedEntity;
 use crate::platform_api::DeviceType;
 use crate::service::device::Device as ServiceDevice;
 use crate::service::hass::{
     availability_topic, kelvin_to_mired, light_segment_state_topic, light_state_topic,
     topic_safe_id, HassClient,
 };
+use crate::service::hass_gc::PublishedEntity;
 use crate::service::state::StateHandle;
 use async_trait::async_trait;
 use serde::Serialize;
@@ -126,11 +126,7 @@ impl EntityInstance for DeviceLight {
                 // want to prevent attempting to control it though,
                 // as that could cause it to wake up.
                 client
-                .publish_obj(
-                    &self.light.state_topic,
-                    &json!({ "state": "OFF" }),
-                    false,
-                )
+                    .publish_obj(&self.light.state_topic, &json!({ "state": "OFF" }), false)
                     .await
             }
         }

@@ -1,8 +1,8 @@
 use crate::hass_mqtt::base::{Device, EntityConfig, Origin};
 use crate::hass_mqtt::instance::{publish_entity_config, EntityInstance};
-use crate::service::hass_gc::PublishedEntity;
 use crate::service::device::Device as ServiceDevice;
 use crate::service::hass::{availability_topic, topic_safe_id, topic_safe_string, HassClient};
+use crate::service::hass_gc::PublishedEntity;
 use crate::service::state::StateHandle;
 use anyhow::anyhow;
 use async_trait::async_trait;

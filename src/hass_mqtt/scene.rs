@@ -1,7 +1,7 @@
 use crate::hass_mqtt::base::EntityConfig;
 use crate::hass_mqtt::instance::{publish_entity_config, EntityInstance};
-use crate::service::hass_gc::PublishedEntity;
 use crate::service::hass::HassClient;
+use crate::service::hass_gc::PublishedEntity;
 use crate::service::state::StateHandle;
 use async_trait::async_trait;
 use serde::Serialize;

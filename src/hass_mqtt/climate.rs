@@ -1,10 +1,10 @@
 use crate::hass_mqtt::base::{Device, EntityConfig, Origin};
 use crate::hass_mqtt::instance::EntityInstance;
-use crate::service::hass_gc::PublishedEntity;
 use crate::hass_mqtt::number::NumberConfig;
 use crate::platform_api::{DeviceCapability, DeviceParameters};
 use crate::service::device::Device as ServiceDevice;
 use crate::service::hass::{availability_topic, topic_safe_id, topic_safe_string, HassClient};
+use crate::service::hass_gc::PublishedEntity;
 use crate::service::state::StateHandle;
 use crate::temperature::{
     TemperatureScale, TemperatureUnits, TemperatureValue, DEVICE_CLASS_TEMPERATURE,

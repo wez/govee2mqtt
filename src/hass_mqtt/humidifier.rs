@@ -1,11 +1,11 @@
 use crate::ble::TargetHumidity;
 use crate::hass_mqtt::base::{Device, EntityConfig, Origin};
 use crate::hass_mqtt::instance::{publish_entity_config, EntityInstance};
-use crate::service::hass_gc::PublishedEntity;
 use crate::hass_mqtt::work_mode::ParsedWorkMode;
 use crate::platform_api::{DeviceParameters, DeviceType, IntegerRange};
 use crate::service::device::Device as ServiceDevice;
 use crate::service::hass::{availability_topic, topic_safe_id, HassClient, IdParameter};
+use crate::service::hass_gc::PublishedEntity;
 use crate::service::state::StateHandle;
 use anyhow::anyhow;
 use async_trait::async_trait;
@@ -231,7 +231,11 @@ impl EntityInstance for Humidifier {
                 let mode_value_json = json!(mode_value);
                 if let Some(mode) = work_mode.mode_for_value(&mode_value_json) {
                     client
-                        .publish(&self.humidifier.mode_state_topic, mode.name.to_string(), false)
+                        .publish(
+                            &self.humidifier.mode_state_topic,
+                            mode.name.to_string(),
+                            false,
+                        )
                         .await?;
                 }
             }
