@@ -51,4 +51,3 @@ CMD ["/app/govee", \
   "--govee-iot-cert=/data/iot.cert", \
   "--amazon-root-ca=/app/AmazonRootCA1.pem"]
 
-

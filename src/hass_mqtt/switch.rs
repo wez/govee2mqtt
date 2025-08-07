@@ -6,6 +6,7 @@ use crate::service::hass::{
     availability_topic, camel_case_to_space_separated, switch_instance_state_topic, topic_safe_id,
     HassClient,
 };
+use crate::service::hass_gc::PublishedEntity;
 use crate::service::state::StateHandle;
 use async_trait::async_trait;
 use serde::Serialize;
@@ -53,7 +54,11 @@ impl SwitchConfig {
         })
     }
 
-    pub async fn publish(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
+    pub async fn publish(
+        &self,
+        state: &StateHandle,
+        client: &HassClient,
+    ) -> anyhow::Result<PublishedEntity> {
         publish_entity_config("switch", state, client, &self.base, self).await
     }
 }
@@ -83,7 +88,11 @@ impl CapabilitySwitch {
 
 #[async_trait]
 impl EntityInstance for CapabilitySwitch {
-    async fn publish_config(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
+    async fn publish_config(
+        &self,
+        state: &StateHandle,
+        client: &HassClient,
+    ) -> anyhow::Result<PublishedEntity> {
         self.switch.publish(&state, &client).await
     }
 
@@ -100,6 +109,7 @@ impl EntityInstance for CapabilitySwitch {
                     .publish(
                         &self.switch.state_topic,
                         if state.on { "ON" } else { "OFF" },
+                        false,
                     )
                     .await?;
             }
@@ -119,7 +129,11 @@ impl EntityInstance for CapabilitySwitch {
             match cap.state.pointer("/value").and_then(|v| v.as_i64()) {
                 Some(n) => {
                     return client
-                        .publish(&self.switch.state_topic, if n != 0 { "ON" } else { "OFF" })
+                        .publish(
+                            &self.switch.state_topic,
+                            if n != 0 { "ON" } else { "OFF" },
+                            false,
+                        )
                         .await;
                 }
                 None => {

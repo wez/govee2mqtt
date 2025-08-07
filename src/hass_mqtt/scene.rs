@@ -1,6 +1,7 @@
 use crate::hass_mqtt::base::EntityConfig;
 use crate::hass_mqtt::instance::{publish_entity_config, EntityInstance};
 use crate::service::hass::HassClient;
+use crate::service::hass_gc::PublishedEntity;
 use crate::service::state::StateHandle;
 use async_trait::async_trait;
 use serde::Serialize;
@@ -15,14 +16,22 @@ pub struct SceneConfig {
 }
 
 impl SceneConfig {
-    pub async fn publish(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
+    pub async fn publish(
+        &self,
+        state: &StateHandle,
+        client: &HassClient,
+    ) -> anyhow::Result<PublishedEntity> {
         publish_entity_config("scene", state, client, &self.base, self).await
     }
 }
 
 #[async_trait]
 impl EntityInstance for SceneConfig {
-    async fn publish_config(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
+    async fn publish_config(
+        &self,
+        state: &StateHandle,
+        client: &HassClient,
+    ) -> anyhow::Result<PublishedEntity> {
         self.publish(&state, &client).await
     }
 

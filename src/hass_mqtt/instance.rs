@@ -1,14 +1,20 @@
 use crate::hass_mqtt::base::EntityConfig;
 use crate::service::hass::HassClient;
+use crate::service::hass_gc::PublishedEntity;
 use crate::service::state::StateHandle;
 use anyhow::Context;
 use async_trait::async_trait;
 use serde::Serialize;
+use std::collections::HashSet;
 use std::sync::Arc;
 
 #[async_trait]
 pub trait EntityInstance: Send + Sync {
-    async fn publish_config(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()>;
+    async fn publish_config(
+        &self,
+        state: &StateHandle,
+        client: &HassClient,
+    ) -> anyhow::Result<PublishedEntity>;
     async fn notify_state(&self, client: &HassClient) -> anyhow::Result<()>;
 }
 
@@ -18,16 +24,19 @@ pub async fn publish_entity_config<T: Serialize>(
     client: &HassClient,
     base: &EntityConfig,
     config: &T,
-) -> anyhow::Result<()> {
-    // TODO: remember all published topics for future GC
-
+) -> anyhow::Result<PublishedEntity> {
     let disco = state.get_hass_disco_prefix().await;
     let topic = format!(
         "{disco}/{integration}/{unique_id}/config",
         unique_id = base.unique_id
     );
 
-    client.publish_obj(topic, config).await
+    client.publish_obj(topic, config, true).await?;
+
+    Ok(PublishedEntity {
+        unique_id: base.unique_id.clone(),
+        integration: integration.to_string(),
+    })
 }
 
 #[derive(Default, Clone)]
@@ -52,16 +61,19 @@ impl EntityList {
         &self,
         state: &StateHandle,
         client: &HassClient,
-    ) -> anyhow::Result<()> {
+    ) -> anyhow::Result<HashSet<PublishedEntity>> {
+        let mut published = HashSet::new();
         // Allow HASS time to process each entity before registering the next
         let delay = tokio::time::Duration::from_millis(100);
         for e in &self.entities {
-            e.publish_config(state, client)
+            let entity = e
+                .publish_config(state, client)
                 .await
                 .context("EntityList::publish_config")?;
+            published.insert(entity);
             tokio::time::sleep(delay).await;
         }
-        Ok(())
+        Ok(published)
     }
 
     pub async fn notify_state(&self, client: &HassClient) -> anyhow::Result<()> {

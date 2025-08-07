@@ -6,6 +6,7 @@ use crate::service::hass::{
     availability_topic, kelvin_to_mired, light_segment_state_topic, light_state_topic,
     topic_safe_id, HassClient,
 };
+use crate::service::hass_gc::PublishedEntity;
 use crate::service::state::StateHandle;
 use async_trait::async_trait;
 use serde::Serialize;
@@ -47,7 +48,11 @@ pub struct LightConfig {
 }
 
 impl LightConfig {
-    pub async fn publish(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
+    pub async fn publish(
+        &self,
+        state: &StateHandle,
+        client: &HassClient,
+    ) -> anyhow::Result<PublishedEntity> {
         publish_entity_config("light", state, client, &self.base, self).await
     }
 }
@@ -61,7 +66,11 @@ pub struct DeviceLight {
 
 #[async_trait]
 impl EntityInstance for DeviceLight {
-    async fn publish_config(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
+    async fn publish_config(
+        &self,
+        state: &StateHandle,
+        client: &HassClient,
+    ) -> anyhow::Result<PublishedEntity> {
         self.light.publish(&state, &client).await
     }
 
@@ -109,7 +118,7 @@ impl EntityInstance for DeviceLight {
                 };
 
                 client
-                    .publish_obj(&self.light.state_topic, &light_state)
+                    .publish_obj(&self.light.state_topic, &light_state, false)
                     .await
             }
             None => {
@@ -117,7 +126,7 @@ impl EntityInstance for DeviceLight {
                 // want to prevent attempting to control it though,
                 // as that could cause it to wake up.
                 client
-                    .publish_obj(&self.light.state_topic, &json!({"state":"OFF"}))
+                    .publish_obj(&self.light.state_topic, &json!({ "state": "OFF" }), false)
                     .await
             }
         }

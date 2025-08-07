@@ -2,6 +2,7 @@ use crate::hass_mqtt::base::{Device, EntityConfig, Origin};
 use crate::hass_mqtt::instance::{publish_entity_config, EntityInstance};
 use crate::service::device::Device as ServiceDevice;
 use crate::service::hass::{availability_topic, topic_safe_id, topic_safe_string, HassClient};
+use crate::service::hass_gc::PublishedEntity;
 use crate::service::state::StateHandle;
 use anyhow::anyhow;
 use async_trait::async_trait;
@@ -28,7 +29,11 @@ pub struct NumberConfig {
 }
 
 impl NumberConfig {
-    pub async fn publish(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
+    pub async fn publish(
+        &self,
+        state: &StateHandle,
+        client: &HassClient,
+    ) -> anyhow::Result<PublishedEntity> {
         publish_entity_config("number", state, client, &self.base, self).await
     }
 
@@ -39,6 +44,7 @@ impl NumberConfig {
                     .as_deref()
                     .ok_or_else(|| anyhow!("number has no state_topic"))?,
                 value,
+                false,
             )
             .await
     }
@@ -115,7 +121,11 @@ impl WorkModeNumber {
 
 #[async_trait]
 impl EntityInstance for WorkModeNumber {
-    async fn publish_config(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
+    async fn publish_config(
+        &self,
+        state: &StateHandle,
+        client: &HassClient,
+    ) -> anyhow::Result<PublishedEntity> {
         self.number.publish(&state, &client).await
     }
 
@@ -140,7 +150,7 @@ impl EntityInstance for WorkModeNumber {
 
                     if let Some(value) = cap.state.pointer("/value/modeValue") {
                         if let Some(n) = value.as_i64() {
-                            client.publish(state_topic, n.to_string()).await?;
+                            client.publish(state_topic, n.to_string(), false).await?;
                             return Ok(());
                         }
                     }
@@ -151,7 +161,7 @@ impl EntityInstance for WorkModeNumber {
         if let Some(work_mode) = self.work_mode.as_i64() {
             // FIXME: assuming humidifier, rename that field?
             if let Some(n) = device.humidifier_param_by_mode.get(&(work_mode as u8)) {
-                client.publish(state_topic, n.to_string()).await?;
+                client.publish(state_topic, n.to_string(), false).await?;
                 return Ok(());
             }
         }
