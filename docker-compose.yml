@@ -1,7 +1,7 @@
 version: '3.8'
 services:
   govee2mqtt:
-    image: ghcr.io/jmerifjKriwe/govee2mqtt:latest
+    image: ghcr.io/wez/govee2mqtt:latest
     container_name: govee2mqtt
     restart: unless-stopped
     env_file:
