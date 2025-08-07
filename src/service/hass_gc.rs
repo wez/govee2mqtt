@@ -10,8 +10,8 @@ pub struct PublishedEntity {
 }
 
 fn persistence_path() -> anyhow::Result<PathBuf> {
-    let mut path = dirs_next::config_dir()
-        .ok_or_else(|| anyhow!("No config dir found"))?
+    let mut path = dirs_next::cache_dir()
+        .ok_or_else(|| anyhow!("No cache dir found"))?
         .join("govee2mqtt");
     std::fs::create_dir_all(&path)?;
     path.push("hass-entities.json");
