@@ -5,6 +5,7 @@ use crate::service::device::Device as ServiceDevice;
 use crate::service::hass::{
     availability_topic, camel_case_to_space_separated, topic_safe_id, topic_safe_string, HassClient,
 };
+use crate::service::hass_gc::PublishedEntity;
 use crate::service::state::StateHandle;
 use async_trait::async_trait;
 use serde::Serialize;
@@ -133,7 +134,11 @@ impl ButtonConfig {
 
 #[async_trait]
 impl EntityInstance for ButtonConfig {
-    async fn publish_config(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
+    async fn publish_config(
+        &self,
+        state: &StateHandle,
+        client: &HassClient,
+    ) -> anyhow::Result<PublishedEntity> {
         publish_entity_config("button", state, client, &self.base, self).await
     }
 

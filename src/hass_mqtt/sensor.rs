@@ -5,6 +5,7 @@ use crate::hass_mqtt::instance::{publish_entity_config, EntityInstance};
 use crate::platform_api::DeviceCapability;
 use crate::service::device::Device as ServiceDevice;
 use crate::service::hass::{availability_topic, topic_safe_id, topic_safe_string, HassClient};
+use crate::service::hass_gc::PublishedEntity;
 use crate::service::quirks::HumidityUnits;
 use crate::service::state::StateHandle;
 use crate::temperature::{TemperatureUnits, TemperatureValue, DEVICE_CLASS_TEMPERATURE};
@@ -39,12 +40,16 @@ pub enum StateClass {
 }
 
 impl SensorConfig {
-    pub async fn publish(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
+    pub async fn publish(
+        &self,
+        state: &StateHandle,
+        client: &HassClient,
+    ) -> anyhow::Result<PublishedEntity> {
         publish_entity_config("sensor", state, client, &self.base, self).await
     }
 
     pub async fn notify_state(&self, client: &HassClient, value: &str) -> anyhow::Result<()> {
-        client.publish(&self.state_topic, value).await
+        client.publish(&self.state_topic, value, false).await
     }
 }
 
@@ -56,7 +61,11 @@ pub struct GlobalFixedDiagnostic {
 
 #[async_trait]
 impl EntityInstance for GlobalFixedDiagnostic {
-    async fn publish_config(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
+    async fn publish_config(
+        &self,
+        state: &StateHandle,
+        client: &HassClient,
+    ) -> anyhow::Result<PublishedEntity> {
         self.sensor.publish(&state, &client).await
     }
 
@@ -163,7 +172,11 @@ impl CapabilitySensor {
 
 #[async_trait]
 impl EntityInstance for CapabilitySensor {
-    async fn publish_config(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
+    async fn publish_config(
+        &self,
+        state: &StateHandle,
+        client: &HassClient,
+    ) -> anyhow::Result<PublishedEntity> {
         self.sensor.publish(&state, &client).await
     }
 
@@ -260,7 +273,11 @@ impl DeviceStatusDiagnostic {
 
 #[async_trait]
 impl EntityInstance for DeviceStatusDiagnostic {
-    async fn publish_config(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
+    async fn publish_config(
+        &self,
+        state: &StateHandle,
+        client: &HassClient,
+    ) -> anyhow::Result<PublishedEntity> {
         self.sensor.publish(&state, &client).await
     }
 
@@ -304,7 +321,7 @@ impl EntityInstance for DeviceStatusDiagnostic {
 
         self.sensor.notify_state(&client, &summary).await?;
         if let Some(topic) = &self.sensor.json_attributes_topic {
-            client.publish_obj(topic, attributes).await?;
+            client.publish_obj(topic, attributes, false).await?;
         }
         Ok(())
     }

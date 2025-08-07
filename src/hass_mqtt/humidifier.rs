@@ -5,6 +5,7 @@ use crate::hass_mqtt::work_mode::ParsedWorkMode;
 use crate::platform_api::{DeviceParameters, DeviceType, IntegerRange};
 use crate::service::device::Device as ServiceDevice;
 use crate::service::hass::{availability_topic, topic_safe_id, HassClient, IdParameter};
+use crate::service::hass_gc::PublishedEntity;
 use crate::service::state::StateHandle;
 use anyhow::anyhow;
 use async_trait::async_trait;
@@ -158,7 +159,11 @@ impl Humidifier {
 
 #[async_trait]
 impl EntityInstance for Humidifier {
-    async fn publish_config(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
+    async fn publish_config(
+        &self,
+        state: &StateHandle,
+        client: &HassClient,
+    ) -> anyhow::Result<PublishedEntity> {
         publish_entity_config(
             "humidifier",
             state,
@@ -183,11 +188,14 @@ impl EntityInstance for Humidifier {
                     .publish(
                         &self.humidifier.state_topic,
                         if is_on { "ON" } else { "OFF" },
+                        false,
                     )
                     .await?;
             }
             None => {
-                client.publish(&self.humidifier.state_topic, "OFF").await?;
+                client
+                    .publish(&self.humidifier.state_topic, "OFF", false)
+                    .await?;
             }
         }
 
@@ -196,6 +204,7 @@ impl EntityInstance for Humidifier {
                 .publish(
                     &self.humidifier.target_humidity_state_topic,
                     humidity.to_string(),
+                    false,
                 )
                 .await?;
         } else {
@@ -212,6 +221,7 @@ impl EntityInstance for Humidifier {
                 .publish(
                     &self.humidifier.target_humidity_state_topic,
                     guessed_value.to_string(),
+                    false,
                 )
                 .await?;
         }
@@ -221,7 +231,11 @@ impl EntityInstance for Humidifier {
                 let mode_value_json = json!(mode_value);
                 if let Some(mode) = work_mode.mode_for_value(&mode_value_json) {
                     client
-                        .publish(&self.humidifier.mode_state_topic, mode.name.to_string())
+                        .publish(
+                            &self.humidifier.mode_state_topic,
+                            mode.name.to_string(),
+                            false,
+                        )
                         .await?;
                 }
             }
@@ -232,7 +246,11 @@ impl EntityInstance for Humidifier {
                 if let Some(mode_num) = cap.state.pointer("/value/workMode") {
                     if let Some(mode) = work_modes.mode_for_value(mode_num) {
                         return client
-                            .publish(&self.humidifier.mode_state_topic, mode.name.to_string())
+                            .publish(
+                                &self.humidifier.mode_state_topic,
+                                mode.name.to_string(),
+                                false,
+                            )
                             .await;
                     }
                 }

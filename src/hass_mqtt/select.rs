@@ -3,6 +3,7 @@ use crate::hass_mqtt::instance::{publish_entity_config, EntityInstance};
 use crate::hass_mqtt::work_mode::ParsedWorkMode;
 use crate::service::device::Device as ServiceDevice;
 use crate::service::hass::{availability_topic, topic_safe_id, HassClient, IdParameter};
+use crate::service::hass_gc::PublishedEntity;
 use crate::service::state::StateHandle;
 use anyhow::Context;
 use axum::async_trait;
@@ -21,7 +22,11 @@ pub struct SelectConfig {
 }
 
 impl SelectConfig {
-    pub async fn publish(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
+    pub async fn publish(
+        &self,
+        state: &StateHandle,
+        client: &HassClient,
+    ) -> anyhow::Result<PublishedEntity> {
         publish_entity_config("select", state, client, &self.base, self).await
     }
 }
@@ -63,7 +68,11 @@ impl WorkModeSelect {
 
 #[async_trait]
 impl EntityInstance for WorkModeSelect {
-    async fn publish_config(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
+    async fn publish_config(
+        &self,
+        state: &StateHandle,
+        client: &HassClient,
+    ) -> anyhow::Result<PublishedEntity> {
         self.select.publish(&state, &client).await
     }
 
@@ -79,7 +88,7 @@ impl EntityInstance for WorkModeSelect {
                 let mode_value_json = json!(mode_value);
                 if let Some(mode) = work_mode.mode_for_value(&mode_value_json) {
                     client
-                        .publish(&self.select.state_topic, mode.name.to_string())
+                        .publish(&self.select.state_topic, mode.name.to_string(), false)
                         .await?;
                 }
             }
@@ -90,7 +99,7 @@ impl EntityInstance for WorkModeSelect {
                 if let Some(mode_num) = cap.state.pointer("/value/workMode") {
                     if let Some(mode) = work_modes.mode_for_value(mode_num) {
                         return client
-                            .publish(&self.select.state_topic, mode.name.to_string())
+                            .publish(&self.select.state_topic, mode.name.to_string(), false)
                             .await;
                     }
                 }
@@ -142,7 +151,11 @@ impl SceneModeSelect {
 
 #[async_trait]
 impl EntityInstance for SceneModeSelect {
-    async fn publish_config(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
+    async fn publish_config(
+        &self,
+        state: &StateHandle,
+        client: &HassClient,
+    ) -> anyhow::Result<PublishedEntity> {
         self.select.publish(&state, &client).await
     }
 
@@ -158,6 +171,7 @@ impl EntityInstance for SceneModeSelect {
                 .publish(
                     &self.select.state_topic,
                     device_state.scene.as_deref().unwrap_or(""),
+                    false,
                 )
                 .await?;
         }
