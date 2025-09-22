@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  mosquitto:
+    image: eclipse-mosquitto:2.0
+    ports:
+      - "1883:1883"   # MQTT
+      - "8883:8883"   # MQTTS
+      - "9001:9001"   # WebSocket
+    volumes:
+      - ./test/mosquitto/config:/mosquitto/config:ro
+      - ./test/mosquitto/data:/mosquitto/data
+      - ./test/mosquitto/log:/mosquitto/log
+      - ./test/certs:/mosquitto/certs:ro
+    restart: unless-stopped
+    command: mosquitto -c /mosquitto/config/mosquitto.conf
+
+  govee2mqtt:
+    build: .
+    depends_on:
+      - mosquitto
+    environment:
+      # Basic MQTT settings
+      - GOVEE_MQTT_HOST=mosquitto
+      - GOVEE_MQTT_PORT=8883
+
+      # TLS settings
+      - GOVEE_MQTT_USE_TLS=true
+      - GOVEE_MQTT_CA_FILE=/app/certs/ca.crt
+      - GOVEE_MQTT_CERT_FILE=/app/certs/client.crt
+      - GOVEE_MQTT_KEY_FILE=/app/certs/client.key
+
+      # Optional: Skip cert verification for testing
+      # - GOVEE_MQTT_INSECURE=true
+
+      # Add your Govee credentials here for testing
+      # - GOVEE_EMAIL=your-email@example.com
+      # - GOVEE_PASSWORD=your-password
+      # - GOVEE_API_KEY=your-api-key
+    volumes:
+      - ./test/certs:/app/certs:ro
+    restart: unless-stopped
+    command: serve

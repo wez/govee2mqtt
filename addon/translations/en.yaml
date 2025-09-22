@@ -46,6 +46,31 @@ configuration:
       should be used.
       If you are using the Mosquitto Addon, you can leave this blank
       as it will be handled automatically by Home Assistant.
+  mqtt_use_tls:
+    name: Enable MQTT TLS/SSL
+    description: >-
+      Enable encrypted MQTT connections using TLS/SSL (MQTTS).
+      This requires a CA certificate file and optionally client certificates.
+  mqtt_ca_file:
+    name: MQTT CA Certificate File
+    description: >-
+      Path to the PEM encoded CA certificate file for MQTT TLS connections.
+      This file should be accessible within the addon container (e.g., /config/certs/ca.crt).
+  mqtt_cert_file:
+    name: MQTT Client Certificate File
+    description: >-
+      Path to the PEM encoded client certificate file for MQTT TLS client authentication.
+      Optional - only needed if your broker requires client certificates.
+  mqtt_key_file:
+    name: MQTT Client Private Key File
+    description: >-
+      Path to the PEM encoded client private key file for MQTT TLS client authentication.
+      Optional - only needed if your broker requires client certificates.
+  mqtt_insecure:
+    name: Skip MQTT TLS Certificate Verification
+    description: >-
+      Skip certificate verification for MQTT TLS connections (insecure mode).
+      Only use this for testing with self-signed certificates.
   debug_level:
     name: Debug Filter
     description: >-

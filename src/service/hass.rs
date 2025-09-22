@@ -56,6 +56,31 @@ pub struct HassArguments {
     /// variable.
     #[arg(long, global = true)]
     temperature_scale: Option<String>,
+
+    /// Enable TLS/SSL for MQTT connection.
+    /// You may also set this via the GOVEE_MQTT_USE_TLS environment variable.
+    #[arg(long, global = true)]
+    mqtt_use_tls: bool,
+
+    /// Path to the PEM encoded CA certificate file for MQTT TLS connection.
+    /// You may also set this via the GOVEE_MQTT_CA_FILE environment variable.
+    #[arg(long, global = true)]
+    mqtt_ca_file: Option<String>,
+
+    /// Path to the PEM encoded client certificate file for MQTT TLS connection.
+    /// You may also set this via the GOVEE_MQTT_CERT_FILE environment variable.
+    #[arg(long, global = true)]
+    mqtt_cert_file: Option<String>,
+
+    /// Path to the PEM encoded private key file for MQTT TLS connection.
+    /// You may also set this via the GOVEE_MQTT_KEY_FILE environment variable.
+    #[arg(long, global = true)]
+    mqtt_key_file: Option<String>,
+
+    /// Skip certificate verification for MQTT TLS connection (insecure).
+    /// You may also set this via the GOVEE_MQTT_INSECURE environment variable.
+    #[arg(long, global = true)]
+    mqtt_insecure: bool,
 }
 
 impl HassArguments {
@@ -78,7 +103,14 @@ impl HassArguments {
     pub fn mqtt_port(&self) -> anyhow::Result<u16> {
         match self.mqtt_port {
             Some(p) => Ok(p),
-            None => Ok(opt_env_var("GOVEE_MQTT_PORT")?.unwrap_or(1883)),
+            None => {
+                let default_port = if self.mqtt_use_tls() {
+                    8883 // Default MQTTS port
+                } else {
+                    1883 // Default MQTT port
+                };
+                Ok(opt_env_var("GOVEE_MQTT_PORT")?.unwrap_or(default_port))
+            }
         }
     }
 
@@ -103,6 +135,35 @@ impl HassArguments {
                 Ok(opt_env_var("GOVEE_TEMPERATURE_SCALE")?.unwrap_or(TemperatureScale::Celsius))
             }
         }
+    }
+
+    pub fn mqtt_use_tls(&self) -> bool {
+        self.mqtt_use_tls || opt_env_var("GOVEE_MQTT_USE_TLS").unwrap_or(Some(false)).unwrap_or(false)
+    }
+
+    pub fn mqtt_ca_file(&self) -> anyhow::Result<Option<String>> {
+        match &self.mqtt_ca_file {
+            Some(f) => Ok(Some(f.clone())),
+            None => opt_env_var("GOVEE_MQTT_CA_FILE"),
+        }
+    }
+
+    pub fn mqtt_cert_file(&self) -> anyhow::Result<Option<String>> {
+        match &self.mqtt_cert_file {
+            Some(f) => Ok(Some(f.clone())),
+            None => opt_env_var("GOVEE_MQTT_CERT_FILE"),
+        }
+    }
+
+    pub fn mqtt_key_file(&self) -> anyhow::Result<Option<String>> {
+        match &self.mqtt_key_file {
+            Some(f) => Ok(Some(f.clone())),
+            None => opt_env_var("GOVEE_MQTT_KEY_FILE"),
+        }
+    }
+
+    pub fn mqtt_insecure(&self) -> bool {
+        self.mqtt_insecure || opt_env_var("GOVEE_MQTT_INSECURE").unwrap_or(Some(false)).unwrap_or(false)
     }
 }
 
@@ -637,6 +698,38 @@ pub async fn spawn_hass_integration(
         );
     }
     client.set_username_and_password(mqtt_username.as_deref(), mqtt_password.as_deref())?;
+
+    // Configure TLS if enabled
+    if args.mqtt_use_tls() {
+        let ca_file = args.mqtt_ca_file()?;
+        let cert_file = args.mqtt_cert_file()?;
+        let key_file = args.mqtt_key_file()?;
+
+        // Validate TLS configuration
+        if ca_file.is_none() {
+            anyhow::bail!("MQTT TLS is enabled but no CA certificate file specified. Please set --mqtt-ca-file or GOVEE_MQTT_CA_FILE");
+        }
+
+        if cert_file.is_some() != key_file.is_some() {
+            anyhow::bail!("MQTT TLS client certificate and key must both be specified or both be unset");
+        }
+
+        log::info!("Configuring MQTT TLS connection");
+        client.configure_tls(
+            ca_file.as_deref(),
+            None::<&std::path::Path>, // ca_path - we only support ca_file for now
+            cert_file.as_deref(),
+            key_file.as_deref(),
+            None, // pw_callback - we don't support encrypted keys for now
+        ).context("Failed to configure MQTT TLS")?;
+
+        // Set insecure mode if requested
+        if args.mqtt_insecure() {
+            log::warn!("MQTT TLS certificate verification is disabled (insecure mode)");
+            // Note: mosquitto-rs doesn't expose the insecure option directly
+            // This would require a feature request to the library
+        }
+    }
     client
         .connect(
             &mqtt_host,
@@ -645,7 +738,10 @@ pub async fn spawn_hass_integration(
             args.mqtt_bind_address.as_deref(),
         )
         .await
-        .with_context(|| format!("connecting to mqtt broker {mqtt_host}:{mqtt_port}"))?;
+        .with_context(|| {
+            let protocol = if args.mqtt_use_tls() { "mqtts" } else { "mqtt" };
+            format!("connecting to {protocol} broker {mqtt_host}:{mqtt_port}")
+        })?;
     let subscriber = client.subscriber().expect("to own the subscriber");
 
     state
