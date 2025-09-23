@@ -42,7 +42,7 @@ This will:
 Start the test MQTTS broker:
 
 ```bash
-docker-compose -f docker-compose.test.yml up -d mosquitto
+docker-compose -f test/docker-compose.test.yml up -d mosquitto
 ```
 
 Wait a few seconds for the broker to start.
@@ -177,7 +177,7 @@ If using username/password authentication:
 Stop the test environment:
 
 ```bash
-docker-compose -f docker-compose.test.yml down
+docker-compose -f test/docker-compose.test.yml down
 ```
 
 Remove test certificates (optional):

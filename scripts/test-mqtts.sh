@@ -28,7 +28,7 @@ cargo build --release
 # Start the test environment
 echo ""
 echo "Starting test MQTTS broker..."
-docker-compose -f docker-compose.test.yml up -d mosquitto
+docker-compose -f test/docker-compose.test.yml up -d mosquitto
 
 # Wait for mosquitto to start
 echo "Waiting for mosquitto to start..."
@@ -73,13 +73,13 @@ fi
 # Stop the test environment
 echo ""
 echo "Stopping test environment..."
-docker-compose -f docker-compose.test.yml down
+docker-compose -f test/docker-compose.test.yml down
 
 echo ""
 echo "All tests completed successfully! ✓"
 echo ""
 echo "To run manual tests, restart the environment with:"
-echo "  docker-compose -f docker-compose.test.yml up -d mosquitto"
+echo "  docker-compose -f test/docker-compose.test.yml up -d mosquitto"
 echo ""
 echo "Then use these commands for manual testing:"
 echo "  1. Start govee2mqtt with MQTTS configuration:"
@@ -89,4 +89,4 @@ echo "  2. Subscribe to messages:"
 echo "     mosquitto_sub -h localhost -p 8883 --cafile test/certs/ca.crt --insecure -t 'gv2mqtt/#' -v"
 echo ""
 echo "  3. Stop the test environment when done:"
-echo "     docker-compose -f docker-compose.test.yml down"
+echo "     docker-compose -f test/docker-compose.test.yml down"
