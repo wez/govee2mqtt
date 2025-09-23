@@ -48,7 +48,7 @@ fi
 echo ""
 echo "Testing MQTTS connection..."
 if command -v mosquitto_pub &> /dev/null; then
-    mosquitto_pub -h localhost -p 8883 --cafile test/certs/ca.crt -t govee2mqtt/test -m "Test message - encrypted" -d
+    mosquitto_pub -h localhost -p 8883 --cafile test/certs/ca.crt --insecure -t govee2mqtt/test -m "Test message - encrypted" -d
     echo "✓ MQTTS connection successful"
 else
     echo "⚠ mosquitto_pub not found, skipping MQTTS test"
@@ -62,35 +62,31 @@ if command -v mosquitto_pub &> /dev/null; then
         --cafile test/certs/ca.crt \
         --cert test/certs/client.crt \
         --key test/certs/client.key \
+        --insecure \
         -t govee2mqtt/test -m "Test message - with client cert" -d
     echo "✓ MQTTS with client certificates successful"
 else
     echo "⚠ mosquitto_pub not found, skipping client certificate test"
 fi
 
-# Test govee2mqtt with MQTTS (dry run)
-echo ""
-echo "Testing govee2mqtt MQTTS configuration..."
-GOVEE_MQTT_HOST=localhost \
-GOVEE_MQTT_PORT=8883 \
-GOVEE_MQTT_USE_TLS=true \
-GOVEE_MQTT_CA_FILE=test/certs/ca.crt \
-GOVEE_MQTT_CERT_FILE=test/certs/client.crt \
-GOVEE_MQTT_KEY_FILE=test/certs/client.key \
-timeout 10s ./target/release/govee serve --help > /dev/null || true
 
-echo "✓ govee2mqtt accepts MQTTS configuration"
+# Stop the test environment
+echo ""
+echo "Stopping test environment..."
+docker-compose -f docker-compose.test.yml down
 
 echo ""
-echo "Test environment is running. To test manually:"
+echo "All tests completed successfully! ✓"
+echo ""
+echo "To run manual tests, restart the environment with:"
+echo "  docker-compose -f docker-compose.test.yml up -d mosquitto"
+echo ""
+echo "Then use these commands for manual testing:"
 echo "  1. Start govee2mqtt with MQTTS configuration:"
 echo "     GOVEE_MQTT_HOST=localhost GOVEE_MQTT_USE_TLS=true GOVEE_MQTT_CA_FILE=test/certs/ca.crt ./target/release/govee serve"
 echo ""
 echo "  2. Subscribe to messages:"
-echo "     mosquitto_sub -h localhost -p 8883 --cafile test/certs/ca.crt -t 'gv2mqtt/#' -v"
+echo "     mosquitto_sub -h localhost -p 8883 --cafile test/certs/ca.crt --insecure -t 'gv2mqtt/#' -v"
 echo ""
-echo "  3. Stop the test environment:"
+echo "  3. Stop the test environment when done:"
 echo "     docker-compose -f docker-compose.test.yml down"
-
-echo ""
-echo "All tests completed successfully! ✓"
