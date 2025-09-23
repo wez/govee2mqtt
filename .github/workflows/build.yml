@@ -22,7 +22,7 @@ on:
       - ".dockerignore"
 
 env:
-  IMAGE: ghcr.io/vfilby/govee2mqtt
+  IMAGE: ghcr.io/wez/govee2mqtt
 
 jobs:
   build:
