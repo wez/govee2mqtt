@@ -9,6 +9,7 @@ on:
       - "20*"
     branches:
       - main
+      - feature/mqtts-support
     paths:
       - "**/*.rs"
       - "addon/**"
@@ -21,7 +22,7 @@ on:
       - ".dockerignore"
 
 env:
-  IMAGE: ghcr.io/wez/govee2mqtt
+  IMAGE: ghcr.io/${{ github.repository_owner }}/govee2mqtt
 
 jobs:
   build:
