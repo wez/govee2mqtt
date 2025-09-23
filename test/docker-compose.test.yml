@@ -8,10 +8,10 @@ services:
       - "8883:8883"   # MQTTS
       - "9001:9001"   # WebSocket
     volumes:
-      - ./test/mosquitto/config:/mosquitto/config:ro
-      - ./test/mosquitto/data:/mosquitto/data
-      - ./test/mosquitto/log:/mosquitto/log
-      - ./test/certs:/mosquitto/certs:ro
+      - ./mosquitto/config:/mosquitto/config:ro
+      - ./mosquitto/data:/mosquitto/data
+      - ./mosquitto/log:/mosquitto/log
+      - ./certs:/mosquitto/certs:ro
     restart: unless-stopped
     command: mosquitto -c /mosquitto/config/mosquitto.conf
 
@@ -38,6 +38,6 @@ services:
       # - GOVEE_PASSWORD=your-password
       # - GOVEE_API_KEY=your-api-key
     volumes:
-      - ./test/certs:/app/certs:ro
+      - ./certs:/app/certs:ro
     restart: unless-stopped
     command: serve

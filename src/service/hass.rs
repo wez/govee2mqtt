@@ -138,7 +138,7 @@ impl HassArguments {
     }
 
     pub fn mqtt_use_tls(&self) -> bool {
-        self.mqtt_use_tls || opt_env_var("GOVEE_MQTT_USE_TLS").unwrap_or(Some(false)).unwrap_or(false)
+        self.mqtt_use_tls || opt_env_var("GOVEE_MQTT_USE_TLS").unwrap_or(None).unwrap_or(false)
     }
 
     pub fn mqtt_ca_file(&self) -> anyhow::Result<Option<String>> {
@@ -163,7 +163,7 @@ impl HassArguments {
     }
 
     pub fn mqtt_insecure(&self) -> bool {
-        self.mqtt_insecure || opt_env_var("GOVEE_MQTT_INSECURE").unwrap_or(Some(false)).unwrap_or(false)
+        self.mqtt_insecure || opt_env_var("GOVEE_MQTT_INSECURE").unwrap_or(None).unwrap_or(false)
     }
 }
 
