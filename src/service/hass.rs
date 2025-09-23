@@ -20,7 +20,7 @@ use std::time::Duration;
 
 const HASS_REGISTER_DELAY: tokio::time::Duration = tokio::time::Duration::from_secs(15);
 
-#[derive(clap::Parser, Debug)]
+#[derive(clap::Parser, Debug, Default)]
 pub struct HassArguments {
     /// The mqtt broker hostname or address.
     /// You may also set this via the GOVEE_MQTT_HOST environment variable.
@@ -782,11 +782,123 @@ pub fn camel_case_to_space_separated(camel: &str) -> String {
 }
 
 #[cfg(test)]
-#[test]
-fn test_camel_case_to_space_separated() {
-    assert_eq!(camel_case_to_space_separated("powerSwitch"), "Power Switch");
-    assert_eq!(
-        camel_case_to_space_separated("oscillationToggle"),
-        "Oscillation Toggle"
-    );
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_camel_case_to_space_separated() {
+        assert_eq!(camel_case_to_space_separated("powerSwitch"), "Power Switch");
+        assert_eq!(
+            camel_case_to_space_separated("oscillationToggle"),
+            "Oscillation Toggle"
+        );
+    }
+
+    #[test]
+    fn test_mqtt_port_defaulting() {
+        // Test TLS port defaulting
+        let args_tls = HassArguments {
+            mqtt_use_tls: true,
+            mqtt_port: None,
+            ..Default::default()
+        };
+        assert_eq!(args_tls.mqtt_port().unwrap(), 8883);
+
+        // Test non-TLS port defaulting
+        let args_plain = HassArguments {
+            mqtt_use_tls: false,
+            mqtt_port: None,
+            ..Default::default()
+        };
+        assert_eq!(args_plain.mqtt_port().unwrap(), 1883);
+
+        // Test explicit port override
+        let args_custom = HassArguments {
+            mqtt_use_tls: true,
+            mqtt_port: Some(9999),
+            ..Default::default()
+        };
+        assert_eq!(args_custom.mqtt_port().unwrap(), 9999);
+    }
+
+    #[test]
+    fn test_mqtt_tls_configuration() {
+        // Test TLS enabled
+        let args_tls = HassArguments {
+            mqtt_use_tls: true,
+            ..Default::default()
+        };
+        assert!(args_tls.mqtt_use_tls());
+
+        // Test TLS disabled
+        let args_plain = HassArguments {
+            mqtt_use_tls: false,
+            ..Default::default()
+        };
+        assert!(!args_plain.mqtt_use_tls());
+    }
+
+    #[test]
+    fn test_mqtt_insecure_configuration() {
+        // Test insecure mode enabled
+        let args_insecure = HassArguments {
+            mqtt_insecure: true,
+            ..Default::default()
+        };
+        assert!(args_insecure.mqtt_insecure());
+
+        // Test insecure mode disabled
+        let args_secure = HassArguments {
+            mqtt_insecure: false,
+            ..Default::default()
+        };
+        assert!(!args_secure.mqtt_insecure());
+    }
+
+    #[test]
+    fn test_mqtt_ca_file_configuration() {
+        // Test with CA file specified
+        let args_with_ca = HassArguments {
+            mqtt_ca_file: Some("/path/to/ca.crt".to_string()),
+            ..Default::default()
+        };
+        assert_eq!(
+            args_with_ca.mqtt_ca_file().unwrap(),
+            Some("/path/to/ca.crt".to_string())
+        );
+
+        // Test without CA file
+        let args_no_ca = HassArguments {
+            mqtt_ca_file: None,
+            ..Default::default()
+        };
+        assert_eq!(args_no_ca.mqtt_ca_file().unwrap(), None);
+    }
+
+    #[test]
+    fn test_mqtt_client_cert_configuration() {
+        // Test with both cert and key
+        let args_with_certs = HassArguments {
+            mqtt_cert_file: Some("/path/to/client.crt".to_string()),
+            mqtt_key_file: Some("/path/to/client.key".to_string()),
+            ..Default::default()
+        };
+        assert_eq!(
+            args_with_certs.mqtt_cert_file().unwrap(),
+            Some("/path/to/client.crt".to_string())
+        );
+        assert_eq!(
+            args_with_certs.mqtt_key_file().unwrap(),
+            Some("/path/to/client.key".to_string())
+        );
+
+        // Test without certs
+        let args_no_certs = HassArguments {
+            mqtt_cert_file: None,
+            mqtt_key_file: None,
+            ..Default::default()
+        };
+        assert_eq!(args_no_certs.mqtt_cert_file().unwrap(), None);
+        assert_eq!(args_no_certs.mqtt_key_file().unwrap(), None);
+    }
 }
