@@ -108,47 +108,14 @@ environment:
   - GOVEE_MQTT_KEY_FILE=/app/certs/client.key   # Optional
 ```
 
-### Setting up MQTTS with Mosquitto
+### Using MQTTS with your configured broker
 
-If you're using Eclipse Mosquitto as your MQTT broker, here's how to configure it for TLS:
+Once your MQTT broker is configured for TLS/SSL, configure govee2mqtt to connect securely:
 
-1. **Generate certificates** (for testing):
-   ```bash
-   # Generate CA private key
-   openssl genrsa -out ca.key 2048
-
-   # Generate CA certificate
-   openssl req -new -x509 -days 365 -key ca.key -out ca.crt \
-     -subj "/C=US/ST=Test/L=Test/O=Test/CN=Test CA"
-
-   # Generate server private key
-   openssl genrsa -out server.key 2048
-
-   # Generate server certificate
-   openssl req -new -key server.key -out server.csr \
-     -subj "/C=US/ST=Test/L=Test/O=Test/CN=your-broker-hostname"
-   openssl x509 -req -in server.csr -CA ca.crt -CAkey ca.key \
-     -CAcreateserial -out server.crt -days 365
-   ```
-
-2. **Configure Mosquitto** (`mosquitto.conf`):
-   ```
-   # Standard MQTT
-   listener 1883
-
-   # MQTTS
-   listener 8883
-   cafile /path/to/ca.crt
-   certfile /path/to/server.crt
-   keyfile /path/to/server.key
-   require_certificate false  # Set to true for client cert auth
-   ```
-
-3. **Configure govee2mqtt**:
-   ```bash
-   export GOVEE_MQTT_HOST=your-broker-hostname
-   export GOVEE_MQTT_USE_TLS=true
-   export GOVEE_MQTT_CA_FILE=/path/to/ca.crt
-   govee serve
-   ```
+```bash
+export GOVEE_MQTT_HOST=your-broker-hostname
+export GOVEE_MQTT_USE_TLS=true
+export GOVEE_MQTT_CA_FILE=/path/to/ca.crt
+govee serve
+```
 
