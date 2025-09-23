@@ -8,3 +8,24 @@ services:
       - .env
     # Host networking is required
     network_mode: host
+    # Uncomment and configure if using MQTTS with certificate files
+    # volumes:
+    #   - ./certs:/app/certs:ro  # Mount certificate directory
+    environment:
+      # MQTT Configuration
+      - GOVEE_MQTT_HOST=your-mqtt-broker-ip
+      - GOVEE_MQTT_PORT=1883  # Use 8883 for MQTTS
+      - GOVEE_MQTT_USER=your-mqtt-username
+      - GOVEE_MQTT_PASSWORD=your-mqtt-password
+
+      # MQTTS Configuration (uncomment to enable)
+      # - GOVEE_MQTT_USE_TLS=true
+      # - GOVEE_MQTT_CA_FILE=/app/certs/ca.crt
+      # - GOVEE_MQTT_CERT_FILE=/app/certs/client.crt  # Optional: client certificate
+      # - GOVEE_MQTT_KEY_FILE=/app/certs/client.key   # Optional: client key
+      # - GOVEE_MQTT_INSECURE=false  # Set to true to skip certificate verification
+
+      # Govee API Configuration
+      - GOVEE_EMAIL=your-govee-email
+      - GOVEE_PASSWORD=your-govee-password
+      - GOVEE_API_KEY=your-govee-api-key

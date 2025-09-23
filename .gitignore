@@ -5,3 +5,8 @@ docker-target
 node_modules
 package.json
 package-lock.json
+
+# MQTTS testing
+test-mqtts/.env
+test/certs/
+test/mosquitto/

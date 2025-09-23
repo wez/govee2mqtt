@@ -23,6 +23,13 @@ GOVEE_MQTT_PORT=1883
 #GOVEE_MQTT_USER=user
 #GOVEE_MQTT_PASSWORD=password
 
+# MQTTS (TLS/SSL) Configuration - uncomment to enable
+#GOVEE_MQTT_USE_TLS=true
+#GOVEE_MQTT_CA_FILE=/app/certs/ca.crt
+#GOVEE_MQTT_CERT_FILE=/app/certs/client.crt  # Optional: client certificate
+#GOVEE_MQTT_KEY_FILE=/app/certs/client.key   # Optional: client key
+#GOVEE_MQTT_INSECURE=false  # Set to true to skip certificate verification
+
 # Specify the temperature scale to use, either C for Celsius
 # or F for Fahrenheit
 GOVEE_TEMPERATURE_SCALE=C
@@ -42,7 +49,7 @@ TZ=America/Phoenix
 ```yaml
 version: '3.8'
 services:
-  pv2mqtt:
+  govee2mqtt:
     image: ghcr.io/wez/govee2mqtt:latest
     container_name: govee2mqtt
     restart: unless-stopped
@@ -50,7 +57,44 @@ services:
       - .env
     # Host networking is required
     network_mode: host
+    # Uncomment if using MQTTS with certificate files
+    # volumes:
+    #   - ./certs:/app/certs:ro  # Mount certificate directory
 ```
+
+### MQTTS Certificate Setup
+
+If you're using MQTTS (TLS/SSL), you'll need to provide certificate files:
+
+1. **Create a certificates directory**:
+   ```bash
+   mkdir certs
+   ```
+
+2. **Copy your certificates**:
+   ```bash
+   # Copy your CA certificate
+   cp /path/to/your/ca.crt certs/
+
+   # Optional: Copy client certificates if using client authentication
+   cp /path/to/your/client.crt certs/
+   cp /path/to/your/client.key certs/
+   ```
+
+3. **Update your `.env` file** with MQTTS settings:
+   ```bash
+   GOVEE_MQTT_USE_TLS=true
+   GOVEE_MQTT_CA_FILE=/app/certs/ca.crt
+   # Optional client certificates:
+   GOVEE_MQTT_CERT_FILE=/app/certs/client.crt
+   GOVEE_MQTT_KEY_FILE=/app/certs/client.key
+   ```
+
+4. **Uncomment the volume mount** in your `docker-compose.yml`:
+   ```yaml
+   volumes:
+     - ./certs:/app/certs:ro
+   ```
 
 4. Launch it:
 
