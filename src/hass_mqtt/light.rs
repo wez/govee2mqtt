@@ -80,6 +80,14 @@ impl EntityInstance for DeviceLight {
             Some(device_state) => {
                 log::trace!("LightConfig::notify_state: state is {device_state:?}");
 
+                if !device_state.online {
+                    client
+                        .publish_obj(&self.light.state_topic, &json!({"state":JsonValue::Null}))
+                        .await;
+                    
+                    return Ok(());
+                }
+
                 let is_on = device_state.light_on.unwrap_or(false);
 
                 let light_state = if is_on {
