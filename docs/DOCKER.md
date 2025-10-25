@@ -42,7 +42,7 @@ TZ=America/Phoenix
 ```yaml
 name: govee2mqtt
 services:
-  pv2mqtt:
+  govee2mqtt:
     image: ghcr.io/wez/govee2mqtt:latest
     container_name: govee2mqtt
     restart: unless-stopped
