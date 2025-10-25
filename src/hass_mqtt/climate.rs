@@ -9,7 +9,6 @@ use crate::temperature::{
     TemperatureScale, TemperatureUnits, TemperatureValue, DEVICE_CLASS_TEMPERATURE,
 };
 use anyhow::anyhow;
-use axum::async_trait;
 use mosquitto_rs::router::{Params, Payload, State};
 use serde::Deserialize;
 use std::str::FromStr;
@@ -127,7 +126,7 @@ impl TargetTemperatureEntity {
     }
 }
 
-#[async_trait]
+#[async_trait::async_trait]
 impl EntityInstance for TargetTemperatureEntity {
     async fn publish_config(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
         self.number.publish(&state, &client).await

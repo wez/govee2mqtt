@@ -5,7 +5,6 @@ use crate::service::device::Device as ServiceDevice;
 use crate::service::hass::{availability_topic, topic_safe_id, HassClient, IdParameter};
 use crate::service::state::StateHandle;
 use anyhow::Context;
-use axum::async_trait;
 use mosquitto_rs::router::{Params, Payload, State};
 use serde::Serialize;
 use serde_json::json;
@@ -61,7 +60,7 @@ impl WorkModeSelect {
     }
 }
 
-#[async_trait]
+#[async_trait::async_trait]
 impl EntityInstance for WorkModeSelect {
     async fn publish_config(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
         self.select.publish(&state, &client).await
@@ -140,7 +139,7 @@ impl SceneModeSelect {
     }
 }
 
-#[async_trait]
+#[async_trait::async_trait]
 impl EntityInstance for SceneModeSelect {
     async fn publish_config(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
         self.select.publish(&state, &client).await
