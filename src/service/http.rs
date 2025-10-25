@@ -229,28 +229,43 @@ async fn redirect_to_index() -> Response {
     axum::response::Redirect::to("/assets/index.html").into_response()
 }
 
-pub async fn run_http_server(state: StateHandle, port: u16) -> anyhow::Result<()> {
-    let app = Router::new()
+fn build_router(state: StateHandle) -> Router {
+    Router::new()
         .route("/api/devices", get(list_devices))
-        .route("/api/device/:id/power/on", get(device_power_on))
-        .route("/api/device/:id/power/off", get(device_power_off))
+        .route("/api/device/{id}/power/on", get(device_power_on))
+        .route("/api/device/{id}/power/off", get(device_power_off))
         .route(
-            "/api/device/:id/brightness/:level",
+            "/api/device/{id}/brightness/{level}",
             get(device_set_brightness),
         )
         .route(
-            "/api/device/:id/colortemp/:kelvin",
+            "/api/device/{id}/colortemp/{kelvin}",
             get(device_set_color_temperature),
         )
-        .route("/api/device/:id/color/:color", get(device_set_color))
-        .route("/api/device/:id/scene/:scene", get(device_set_scene))
-        .route("/api/device/:id/scenes", get(device_list_scenes))
+        .route("/api/device/{id}/color/{color}", get(device_set_color))
+        .route("/api/device/{id}/scene/{scene}", get(device_set_scene))
+        .route("/api/device/{id}/scenes", get(device_list_scenes))
         .route("/api/oneclicks", get(list_one_clicks))
-        .route("/api/oneclick/activate/:scene", get(activate_one_click))
+        .route("/api/oneclick/activate/{scene}", get(activate_one_click))
         .route("/", get(redirect_to_index))
         .nest_service("/assets", ServeDir::new("assets"))
-        .with_state(state);
+        .with_state(state)
+}
 
+#[cfg(test)]
+#[test]
+fn test_build_router() {
+    // axum has a history of chaning the URL syntax across
+    // semver bumps; while that is OK, the syntax changes
+    // are not caught at compile time, so we need a runtime
+    // check to verify that the syntax is still good.
+    // This next line will panic if axum decides that
+    // the syntax is bad.
+    let _ = build_router(StateHandle::default());
+}
+
+pub async fn run_http_server(state: StateHandle, port: u16) -> anyhow::Result<()> {
+    let app = build_router(state);
     let listener = tokio::net::TcpListener::bind(("0.0.0.0", port))
         .await
         .with_context(|| format!("run_http_server: binding to port {port}"))?;
