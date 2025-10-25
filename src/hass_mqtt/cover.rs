@@ -1,6 +1,7 @@
 use crate::hass_mqtt::base::EntityConfig;
 use serde::Serialize;
 
+#[allow(unused)]
 #[derive(Serialize, Clone, Debug)]
 pub struct CoverConfig {
     #[serde(flatten)]

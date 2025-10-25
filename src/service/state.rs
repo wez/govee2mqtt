@@ -53,7 +53,7 @@ impl State {
 
     /// Returns a mutable version of the specified device, creating
     /// an entry for it if necessary.
-    pub async fn device_mut(&self, sku: &str, id: &str) -> MappedMutexGuard<Device> {
+    pub async fn device_mut(&self, sku: &str, id: &str) -> MappedMutexGuard<'_, Device> {
         let devices = self.devices_by_id.lock().await;
         MutexGuard::map(devices, |devices| {
             devices

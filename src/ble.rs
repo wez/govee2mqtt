@@ -51,7 +51,7 @@ pub struct PacketManager {
 }
 
 impl PacketManager {
-    fn map_for_sku(&self, sku: &str) -> MappedMutexGuard<HashMap<TypeId, Arc<PacketCodec>>> {
+    fn map_for_sku(&self, sku: &str) -> MappedMutexGuard<'_, HashMap<TypeId, Arc<PacketCodec>>> {
         MutexGuard::map(self.codec_by_sku.lock(), |codecs| {
             codecs.entry(sku.to_string()).or_insert_with(|| {
                 let mut map = HashMap::new();
