@@ -6,7 +6,7 @@ use anyhow::Context;
 use if_addrs::IfAddr;
 use serde::{Deserialize, Serialize};
 use serde_json::Value as JsonValue;
-use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr};
+use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, ToSocketAddrs};
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::net::UdpSocket;
@@ -48,7 +48,7 @@ pub struct LanDiscoArguments {
     /// IP addresses. Can be specified multiple times.
     /// You may also set GOVEE_LAN_SCAN=10.0.0.1,10.0.0.2 via the environment.
     #[arg(long, global = true)]
-    pub scan: Vec<IpAddr>,
+    pub scan: Vec<String>,
 
     /// How long to wait for discovery to complete, in seconds
     /// You may also set GOVEE_LAN_DISCO_TIMEOUT via the environment.
@@ -76,9 +76,10 @@ pub fn truthy(s: &str) -> anyhow::Result<bool> {
 
 impl LanDiscoArguments {
     pub fn to_disco_options(&self) -> anyhow::Result<DiscoOptions> {
+        let mut scan_names = self.scan.clone();
         let mut options = DiscoOptions {
             enable_multicast: !self.no_multicast,
-            additional_addresses: self.scan.clone(),
+            additional_addresses: vec![],
             broadcast_all_interfaces: self.broadcast_all,
             global_broadcast: self.global_broadcast,
         };
@@ -97,11 +98,28 @@ impl LanDiscoArguments {
 
         if let Some(v) = opt_env_var::<String>("GOVEE_LAN_SCAN")? {
             for addr in v.split(',') {
-                let ip = addr
-                    .trim()
-                    .parse()
-                    .with_context(|| format!("parsing {v} as IpAddr"))?;
-                options.additional_addresses.push(ip);
+                scan_names.push(addr.trim().to_string());
+            }
+        }
+
+        for name in scan_names {
+            match name.parse::<IpAddr>() {
+                Ok(addr) => {
+                    options.additional_addresses.push(addr);
+                }
+                Err(err1) => match (name.as_str(), SCAN_PORT).to_socket_addrs() {
+                    Ok(addrs) => {
+                        for a in addrs {
+                            options.additional_addresses.push(a.ip());
+                        }
+                    }
+                    Err(err2) => {
+                        anyhow::bail!(
+                            "{name} could not be parsed as either an \
+                            IpAddr ({err1:#}) or a DNS name ({err2:#}"
+                        );
+                    }
+                },
             }
         }
 
