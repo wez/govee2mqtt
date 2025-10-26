@@ -11,14 +11,9 @@ if bashio::services.available mqtt ; then
   export GOVEE_MQTT_PASSWORD="$(bashio::services mqtt 'password')"
 fi
 
-if bashio::config.has_value hub_ip ; then
-  export GOVEE_HUB_IP="$(bashio::config hub_ip)"
-fi
-
 if bashio::config.has_value mqtt_host ; then
   export GOVEE_MQTT_HOST="$(bashio::config mqtt_host)"
 fi
-
 
 if bashio::config.has_value mqtt_port ; then
   export GOVEE_MQTT_PORT="$(bashio::config mqtt_port)"
