@@ -4,6 +4,7 @@ pub mod climate;
 pub mod cover;
 pub mod enumerator;
 pub mod humidifier;
+pub mod fan;
 pub mod instance;
 pub mod light;
 pub mod number;
