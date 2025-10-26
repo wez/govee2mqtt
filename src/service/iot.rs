@@ -3,7 +3,7 @@ use crate::lan_api::{DeviceColor, DeviceStatus};
 use crate::platform_api::from_json;
 use crate::service::state::StateHandle;
 use crate::undoc_api::{ms_timestamp, DeviceEntry, LoginAccountResponse, ParsedOneClick};
-use crate::Args;
+use crate::UndocApiArguments;
 use anyhow::Context;
 use async_channel::Receiver;
 use mosquitto_rs::{Event, QoS};
@@ -228,11 +228,11 @@ impl IotClient {
 }
 
 pub async fn start_iot_client(
-    args: &Args,
+    args: &UndocApiArguments,
     state: StateHandle,
     acct: Option<LoginAccountResponse>,
 ) -> anyhow::Result<()> {
-    let client = args.undoc_args.api_client()?;
+    let client = args.api_client()?;
     let acct = match acct {
         Some(a) => a,
         None => client.login_account_cached().await?,
@@ -250,12 +250,12 @@ pub async fn start_iot_client(
         let pem = priv_key
             .private_key_to_pem_pkcs8()
             .context("to_pem_pkcs8")?;
-        std::fs::write(&args.undoc_args.govee_iot_key, &pem)?;
+        std::fs::write(&args.govee_iot_key, &pem)?;
     }
     for cert in container.cert_bags(&res.p12_pass).context("cert_bags")? {
         let cert = openssl::x509::X509::from_der(&cert).context("x509 from der")?;
         let pem = cert.to_pem().context("cert.to_pem")?;
-        std::fs::write(&args.undoc_args.govee_iot_cert, &pem)?;
+        std::fs::write(&args.govee_iot_cert, &pem)?;
     }
 
     let client = mosquitto_rs::Client::with_id(
@@ -269,10 +269,10 @@ pub async fn start_iot_client(
     .context("new client")?;
     client
         .configure_tls(
-            Some(&args.undoc_args.amazon_root_ca),
+            Some(&args.amazon_root_ca),
             None::<&std::path::Path>,
-            Some(&args.undoc_args.govee_iot_cert),
-            Some(&args.undoc_args.govee_iot_key),
+            Some(&args.govee_iot_cert),
+            Some(&args.govee_iot_key),
             None,
         )
         .context("configure_tls")?;

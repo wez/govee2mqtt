@@ -66,7 +66,7 @@ pub fn ms_timestamp() -> String {
         .to_string()
 }
 
-#[derive(clap::Parser, Debug)]
+#[derive(Clone, clap::Parser, Debug)]
 pub struct UndocApiArguments {
     /// The email address you registered with Govee.
     /// If not passed here, it will be read from

@@ -38,7 +38,7 @@ impl UndocCommand {
                     .ok_or_else(|| anyhow::anyhow!("didn't find item {name}"))?;
 
                 let state = Arc::new(crate::service::state::State::new());
-                start_iot_client(args, state.clone(), None).await?;
+                start_iot_client(&args.undoc_args, state.clone(), None).await?;
                 let iot = state.get_iot_client().await.expect("just started iot");
 
                 iot.activate_one_click(&item).await?;
