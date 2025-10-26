@@ -140,8 +140,7 @@ async fn enumerate_devices_via_undo_api(
     Ok(())
 }
 
-const ISSUE_76_EXPLANATION: &str =
-    "Startup cannot automatically continue because entity names\n\
+const ISSUE_76_EXPLANATION: &str = "Startup cannot automatically continue because entity names\n\
     could become inconsistent especially across frequent similar\n\
     intermittent issues if/as they occur on an ongoing basis.\n\
     Please see https://github.com/wez/govee2mqtt/issues/76\n\
