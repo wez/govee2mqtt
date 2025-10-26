@@ -8,7 +8,9 @@ configuration:
   govee_email:
     name: Govee Account Email
     description: >-
-      The email address you registered with your Govee Account
+      The email address you registered with your Govee Account.
+      Configuring this will cause govee2mqtt to require working
+      internet connectivity on startup.
   govee_password:
     name: Govee Account Password
     description: >-
@@ -19,6 +21,8 @@ configuration:
       Functions that use the official Govee APIs require an API Key.
       If you don't already have one, you can find instructions on obtaining one
       at https://developer.govee.com/reference/apply-you-govee-api-key
+      Configuring this will cause govee2mqtt to require working
+      internet connectivity on startup.
 
   mqtt_host:
     name: MQTT Broker Host Name
