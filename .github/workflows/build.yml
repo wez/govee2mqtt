@@ -113,7 +113,7 @@ jobs:
       packages: write
     steps:
       - name: Download digests
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           pattern: digest-*
           merge-multiple: true
