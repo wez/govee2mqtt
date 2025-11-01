@@ -194,8 +194,13 @@ struct RequestMessage {
     msg: Request,
 }
 
+fn unspec_ip() -> IpAddr {
+    Ipv4Addr::UNSPECIFIED.into()
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]
 pub struct LanDevice {
+    #[serde(default = "unspec_ip")]
     pub ip: IpAddr,
     pub device: String,
     pub sku: String,
@@ -471,8 +476,24 @@ async fn lan_disco(
             String::from_utf8_lossy(data)
         );
 
-        let response: ResponseWrapper = from_json(data)
+        let mut response: ResponseWrapper = from_json(data)
             .with_context(|| format!("Parsing: {}", String::from_utf8_lossy(data)))?;
+
+        // This is frustrating; some newer devices don't emit the ip field
+        // as defined in the spec.  What we do to deal with this is default
+        // the ip to the v4 unspecified address during deserialization and
+        // check for it here. We'll assume that the ip to use is the ip
+        // from which we got the scan response.
+        // <https://github.com/wez/govee2mqtt/issues/437>
+        if let Response::Scan(dev) = &mut response.msg {
+            if dev.ip.is_unspecified() {
+                dev.ip = addr.ip();
+            } else if dev.ip != addr.ip() {
+                log::warn!(
+                    "Got scan packet from {addr:?} which has ip set to a different device {dev:?}"
+                );
+            }
+        }
 
         let mut mux = inner.mux.lock().await;
         mux.retain(|l| !l.tx.is_closed());
