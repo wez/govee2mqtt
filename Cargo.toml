@@ -13,11 +13,11 @@ anyhow = "1"
 log = "0.4"
 env_logger = "0.11"
 dotenvy = "0.15.7"
-color-backtrace = "0.7.1"
+color-backtrace = "0.7.2"
 chrono = { version = "0.4.31", features = ["serde"] }
 chrono-tz = "0.10"
 iana-time-zone = "0.1.58"
-clap = { version = "4.4.12", features = ["derive"] }
+clap = { version = "4.5.51", features = ["derive"] }
 reqwest = { version = "0.12", features = ["json"] }
 sqlite-cache = "0.1.4"
 dirs-next = "2.0.0"
