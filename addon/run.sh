@@ -1,4 +1,4 @@
-#!/usr/bin/env bashio
+#!/usr/bin/with-contenv bashio
 
 export RUST_BACKTRACE=full
 export RUST_LOG_STYLE=always
