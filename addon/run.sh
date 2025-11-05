@@ -10,7 +10,7 @@ if bashio::services.available mqtt ; then
   export GOVEE_MQTT_USER="$(bashio::services mqtt 'username')"
   export GOVEE_MQTT_PASSWORD="$(bashio::services mqtt 'password')"
 else
-  bashio::config.require mqtt_host "mqtt addon is not currently available and the mqtt_host option was not specified in govee2mqtt's options. We need an mqtt broker in order to run."
+  bashio::config.require mqtt_host "The Mosquitto Add-on is not currently available and the MQTT Broker Host Name option was not specified in govee2mqtt's options. We need an mqtt broker in order to run.  If you're seeing this message and you do have the Mosquitto broker available, and haven't changed any of govee2mqtt's configuration, try just hitting save on govee2mqtt's configuration and restarting the addon."
 fi
 
 if bashio::config.has_value mqtt_host ; then
