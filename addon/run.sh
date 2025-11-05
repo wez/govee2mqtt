@@ -1,4 +1,4 @@
-#!/usr/bin/with-contenv bashio
+#!/usr/bin/env bashio
 
 export RUST_BACKTRACE=full
 export RUST_LOG_STYLE=always
@@ -9,6 +9,8 @@ if bashio::services.available mqtt ; then
   export GOVEE_MQTT_PORT="$(bashio::services mqtt 'port')"
   export GOVEE_MQTT_USER="$(bashio::services mqtt 'username')"
   export GOVEE_MQTT_PASSWORD="$(bashio::services mqtt 'password')"
+else
+  bashio::config.require mqtt_host "mqtt addon is not currently available and the mqtt_host option was not specified in govee2mqtt's options. We need an mqtt broker in order to run."
 fi
 
 if bashio::config.has_value mqtt_host ; then

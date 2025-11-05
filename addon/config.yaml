@@ -10,6 +10,7 @@ arch:
   - armv7
 init: false
 startup: services
+hassio_api: true # unsure if strictly needed for bashio::services
 services:
   - mqtt:need
 
