@@ -637,15 +637,36 @@ pub async fn spawn_hass_integration(
         );
     }
     client.set_username_and_password(mqtt_username.as_deref(), mqtt_password.as_deref())?;
-    client
-        .connect(
-            &mqtt_host,
-            mqtt_port.into(),
-            Duration::from_secs(120),
-            args.mqtt_bind_address.as_deref(),
-        )
-        .await
-        .with_context(|| format!("connecting to mqtt broker {mqtt_host}:{mqtt_port}"))?;
+
+    let mut connected = false;
+    for _ in 0..30 {
+        log::info!("Attempting connection to mqtt broker {mqtt_host}:{mqtt_port}...");
+        match client
+            .connect(
+                &mqtt_host,
+                mqtt_port.into(),
+                Duration::from_secs(120),
+                args.mqtt_bind_address.as_deref(),
+            )
+            .await
+        {
+            Ok(status) => {
+                log::info!("Connected to mqtt broker {mqtt_host}:{mqtt_port}, status={status}");
+                connected = true;
+                break;
+            }
+            Err(err) => {
+                log::error!("Failed to connect to mqtt broker {mqtt_host}:{mqtt_port}: {err:#}");
+                tokio::time::sleep(Duration::from_secs(2)).await;
+            }
+        }
+    }
+
+    anyhow::ensure!(
+        connected,
+        "Failed to connect to mqtt broker after several attempts"
+    );
+
     let subscriber = client.subscriber().expect("to own the subscriber");
 
     state
