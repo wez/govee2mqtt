@@ -32,6 +32,26 @@ async fn poll_single_device(state: &StateHandle, device: &Device) -> anyhow::Res
         return Ok(());
     }
 
+    // Collect the device status via the LAN API, if possible.
+    // This is partially redundant with the LAN discovery task,
+    // but the timing of that is not as regular and predictable
+    // because it employs exponential backoff.
+    // Some Govee devices have bad firmware that will cause the
+    // lights to flicker about a minute after polling, so it
+    // is desirable to keep polling on a regular basis.
+    // <https://github.com/wez/govee2mqtt/issues/250>
+    if let Some(lan_device) = &device.lan_device {
+        if let Some(client) = state.get_lan_client().await {
+            if let Ok(status) = client.query_status(lan_device).await {
+                state
+                    .device_mut(&lan_device.sku, &lan_device.device)
+                    .await
+                    .set_lan_device_status(status);
+                state.notify_of_state_change(&lan_device.device).await.ok();
+            }
+        }
+    }
+
     let poll_interval = device.preferred_poll_interval();
 
     let can_update = match &device.last_polled {
@@ -84,7 +104,7 @@ async fn periodic_state_poll(state: StateHandle) -> anyhow::Result<()> {
             }
         }
 
-        sleep(Duration::from_secs(60)).await;
+        sleep(Duration::from_secs(30)).await;
     }
 }
 
