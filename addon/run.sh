@@ -4,6 +4,30 @@ export RUST_BACKTRACE=full
 export RUST_LOG_STYLE=always
 export XDG_CACHE_HOME=/data
 
+# Function to wait for MQTT broker to be available
+wait_for_mqtt() {
+  local host="$1"
+  local port="$2"
+  local max_attempts=30
+  local attempt=1
+
+  bashio::log.info "Waiting for MQTT broker at ${host}:${port} to be ready..."
+
+  while [ $attempt -le $max_attempts ]; do
+    if timeout 2 bash -c "cat < /dev/null > /dev/tcp/${host}/${port}" 2>/dev/null; then
+      bashio::log.info "MQTT broker is ready!"
+      return 0
+    fi
+
+    bashio::log.info "MQTT broker not ready yet (attempt ${attempt}/${max_attempts}), waiting 2 seconds..."
+    sleep 2
+    attempt=$((attempt + 1))
+  done
+
+  bashio::log.error "MQTT broker at ${host}:${port} did not become available after ${max_attempts} attempts"
+  return 1
+}
+
 if bashio::services.available mqtt ; then
   export GOVEE_MQTT_HOST="$(bashio::services mqtt 'host')"
   export GOVEE_MQTT_PORT="$(bashio::services mqtt 'port')"
@@ -63,6 +87,18 @@ fi
 
 if bashio::config.has_value temperature_scale ; then
   export GOVEE_TEMPERATURE_SCALE="$(bashio::config temperature_scale)"
+fi
+
+# Ensure MQTT broker is reachable before starting
+if [ -n "${GOVEE_MQTT_HOST}" ]; then
+  MQTT_PORT="${GOVEE_MQTT_PORT:-1883}"
+  if ! wait_for_mqtt "${GOVEE_MQTT_HOST}" "${MQTT_PORT}"; then
+    bashio::log.error "Failed to connect to MQTT broker. Exiting."
+    exit 1
+  fi
+else
+  bashio::log.error "GOVEE_MQTT_HOST is not set. Cannot proceed."
+  exit 1
 fi
 
 env | grep GOVEE_ | sed -r 's/_(EMAIL|KEY|PASSWORD)=.*/_\1=REDACTED/'
