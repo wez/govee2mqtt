@@ -176,8 +176,8 @@ fn load_quirks() -> HashMap<String, Quirk> {
     let mut map = HashMap::new();
     for quirk in [
         // H60A1 Govee Ceiling Light has a color temperature range of 2200K - 6500K
-        // The platform API reports a wider range, which causes issues in Home Assistant
-        Quirk::light("H60A1", CEILING).with_color_temp_range(2200, 6500),
+        // Without this quirk, the LAN API fallback reports (2000, 9000) which causes issues
+        Quirk::lan_api_capable_light("H60A1", CEILING).with_color_temp_range(2200, 6500),
         Quirk::lan_api_capable_light("H610A", STRIP),
         // At the time of writing, the metadata
         // returned by Govee is completely bogus for this
@@ -368,5 +368,6 @@ mod test {
         // Verify standard light capabilities
         assert!(quirk.supports_rgb, "H60A1 should support RGB");
         assert!(quirk.supports_brightness, "H60A1 should support brightness");
+        assert!(quirk.lan_api_capable, "H60A1 should be LAN API capable");
     }
 }
