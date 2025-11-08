@@ -117,6 +117,11 @@ impl Quirk {
         self
     }
 
+    pub fn with_color_temp_range(mut self, min: u32, max: u32) -> Self {
+        self.color_temp_range = Some((min, max));
+        self
+    }
+
     pub fn with_lan_api(mut self) -> Self {
         self.lan_api_capable = true;
         self
@@ -161,6 +166,7 @@ const TV_BACK: &str = "mdi:television-ambient-light";
 const DESK: &str = "mdi:desk-lamp";
 const HEX: &str = "mdi:hexagon-multiple";
 const TRIANGLE: &str = "mdi:triangle";
+const CEILING: &str = "mdi:ceiling-light";
 const NIGHTLIGHT: &str = "mdi:lightbulb-night";
 const WALL_SCONCE: &str = "mdi:wall-sconce";
 const OUTDOOR_LAMP: &str = "mdi:outdoor-lamp";
@@ -169,6 +175,9 @@ const SPOTLIGHT: &str = "mdi:lightbulb-spot";
 fn load_quirks() -> HashMap<String, Quirk> {
     let mut map = HashMap::new();
     for quirk in [
+        // H60A1 Govee Ceiling Light has a color temperature range of 2200K - 6500K
+        // Without this quirk, the LAN API fallback reports (2000, 9000) which causes issues
+        Quirk::lan_api_capable_light("H60A1", CEILING).with_color_temp_range(2200, 6500),
         Quirk::lan_api_capable_light("H610A", STRIP),
         // At the time of writing, the metadata
         // returned by Govee is completely bogus for this
@@ -334,4 +343,31 @@ fn load_quirks() -> HashMap<String, Quirk> {
 
 pub fn resolve_quirk(sku: &str) -> Option<&'static Quirk> {
     QUIRKS.get(sku)
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_h60a1_quirk() {
+        let quirk = resolve_quirk("H60A1").expect("H60A1 quirk should exist");
+
+        // Verify the basic properties
+        assert_eq!(quirk.sku, "H60A1");
+        assert_eq!(quirk.icon, CEILING);
+        assert_eq!(quirk.device_type, DeviceType::Light);
+
+        // Verify the color temperature range
+        let (min, max) = quirk
+            .color_temp_range
+            .expect("H60A1 should have color_temp_range");
+        assert_eq!(min, 2200, "Min color temp should be 2200K");
+        assert_eq!(max, 6500, "Max color temp should be 6500K");
+
+        // Verify standard light capabilities
+        assert!(quirk.supports_rgb, "H60A1 should support RGB");
+        assert!(quirk.supports_brightness, "H60A1 should support brightness");
+        assert!(quirk.lan_api_capable, "H60A1 should be LAN API capable");
+    }
 }
