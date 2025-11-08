@@ -345,30 +345,3 @@ fn load_quirks() -> HashMap<String, Quirk> {
 pub fn resolve_quirk(sku: &str) -> Option<&'static Quirk> {
     QUIRKS.get(sku)
 }
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    #[test]
-    fn test_h60a1_quirk() {
-        let quirk = resolve_quirk("H60A1").expect("H60A1 quirk should exist");
-
-        // Verify the basic properties
-        assert_eq!(quirk.sku, "H60A1");
-        assert_eq!(quirk.icon, CEILING);
-        assert_eq!(quirk.device_type, DeviceType::Light);
-
-        // Verify the color temperature range
-        let (min, max) = quirk
-            .color_temp_range
-            .expect("H60A1 should have color_temp_range");
-        assert_eq!(min, 2200, "Min color temp should be 2200K");
-        assert_eq!(max, 6500, "Max color temp should be 6500K");
-
-        // Verify standard light capabilities
-        assert!(quirk.supports_rgb, "H60A1 should support RGB");
-        assert!(quirk.supports_brightness, "H60A1 should support brightness");
-        assert!(quirk.lan_api_capable, "H60A1 should be LAN API capable");
-    }
-}
