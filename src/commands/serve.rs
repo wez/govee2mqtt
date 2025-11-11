@@ -32,6 +32,12 @@ async fn poll_single_device(state: &StateHandle, device: &Device) -> anyhow::Res
         return Ok(());
     }
 
+    if device.is_virtual_device() {
+        // Virtual devices (groups/scenes) can be controlled but not polled.
+        // The Platform API returns 400 "devices not exist" for state queries.
+        return Ok(());
+    }
+
     // Collect the device status via the LAN API, if possible.
     // This is partially redundant with the LAN discovery task,
     // but the timing of that is not as regular and predictable

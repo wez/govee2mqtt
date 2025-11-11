@@ -595,6 +595,42 @@ impl Device {
         }
     }
 
+    /// Detects if this is a virtual device (group or scene) rather than a physical device.
+    /// Virtual devices can be controlled via Platform API but cannot be polled for state.
+    /// The Platform API returns 400 "devices not exist" when attempting to query state
+    /// for these devices, even though they appear in the device list and can be controlled.
+    ///
+    /// Detection criteria:
+    /// 1. Known virtual SKUs: BaseGroup, DreamViewScenic, SameModeGroup
+    /// 2. Devices with no type (null) AND numeric-only device IDs (not MAC address format)
+    ///
+    /// To add new virtual device types:
+    /// - Add the SKU to the match statement below if you know the specific SKU
+    /// - Or rely on the heuristic: no type + numeric ID pattern
+    pub fn is_virtual_device(&self) -> bool {
+        // Known virtual device SKUs
+        if matches!(self.sku.as_str(), "BaseGroup" | "DreamViewScenic" | "SameModeGroup") {
+            return true;
+        }
+
+        // Heuristic: Virtual devices have no device type and numeric device IDs
+        // Physical devices have proper types (devices.types.*) and MAC address IDs
+        if let Some(info) = &self.http_device_info {
+            let has_no_type = matches!(info.device_type, DeviceType::Other);
+            let is_numeric_id = self.id.chars().all(|c| c.is_ascii_digit());
+
+            if has_no_type && is_numeric_id {
+                log::debug!(
+                    "Device {} ({} {}) detected as virtual via heuristic (no type + numeric ID)",
+                    self.name(), self.id, self.sku
+                );
+                return true;
+            }
+        }
+
+        false
+    }
+
     pub fn is_controllable(&self) -> bool {
         match self.is_ble_only_device() {
             Some(true) => false,
