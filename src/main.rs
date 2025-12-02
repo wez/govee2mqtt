@@ -4,7 +4,6 @@ use crate::service::hass::HassArguments;
 use crate::undoc_api::UndocApiArguments;
 use clap::Parser;
 use std::str::FromStr;
-use std::str::FromStr;
 use anyhow::Context;
 
 mod ble;
