@@ -2,9 +2,9 @@ use crate::lan_api::LanDiscoArguments;
 use crate::platform_api::GoveeApiArguments;
 use crate::service::hass::HassArguments;
 use crate::undoc_api::UndocApiArguments;
+use anyhow::Context;
 use clap::Parser;
 use std::str::FromStr;
-use anyhow::Context;
 
 mod ble;
 mod cache;
@@ -65,9 +65,11 @@ where
     <T as FromStr>::Err: std::fmt::Display,
 {
     match std::env::var(name) {
-        Ok(p) => Ok(Some(p.parse().map_err(|err| {
-            anyhow::anyhow!("parsing ${name}: {err:#}")
-        })?)),
+        Ok(p) => {
+            Ok(Some(p.parse().map_err(|err| {
+                anyhow::anyhow!("parsing ${name}: {err:#}")
+            })?))
+        }
         Err(std::env::VarError::NotPresent) => {
             let secret_env_name = format!("{}_FILE", name);
 
