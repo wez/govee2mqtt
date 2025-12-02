@@ -65,24 +65,26 @@ where
     <T as FromStr>::Err: std::fmt::Display,
 {
     match std::env::var(name) {
-        Ok(p) => {
-            Ok(Some(p.parse().map_err(|err| {
-                anyhow::anyhow!("parsing ${name}: {err:#}")
-            })?))
-        }
+        Ok(p) => Ok(Some(p.parse().map_err(|err| {
+            anyhow::anyhow!("parsing ${name}: {err:#}")
+        })?)),
         Err(std::env::VarError::NotPresent) => {
             let secret_env_name = format!("{}_FILE", name);
-            
+
             match std::env::var(&secret_env_name) {
                 Ok(path) => {
-                    let content = std::fs::read_to_string(&path)
-                        .with_context(|| format!("Reading secret for {name} from path defined in {secret_env_name}: {path}"))?;
-                    let content_trimmed = content.trim(); 
+                    let content = std::fs::read_to_string(&path).with_context(|| {
+                        format!(
+                            "Reading secret for {name} from path defined in {secret_env_name}: {path}"
+                        )
+                    })?;
 
-                    Ok(Some(content_trimmed.parse().map_err(|err| {
+                    let trimmed_content = content.trim();
+
+                    Ok(Some(trimmed_content.parse().map_err(|err| {
                         anyhow::anyhow!("parsing secret content for {name}: {err:#}")
                     })?))
-                },
+                }
                 Err(std::env::VarError::NotPresent) => Ok(None),
                 Err(err) => anyhow::bail!("${secret_env_name} is invalid: {err:#}"),
             }
