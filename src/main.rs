@@ -81,7 +81,7 @@ where
                         )
                     })?;
 
-                    let trimmed_content = content.trim();
+                    let trimmed_content = content.trim_end();
 
                     Ok(Some(trimmed_content.parse().map_err(|err| {
                         anyhow::anyhow!("parsing secret content for {name}: {err:#}")
