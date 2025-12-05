@@ -84,7 +84,11 @@ where
                     let trimmed_content = content.trim_end();
 
                     Ok(Some(trimmed_content.parse().map_err(|err| {
-                        anyhow::anyhow!("parsing secret content for {name}: {err:#}")
+                        let mut message = format!("{err:#}");
+                        if !should_log_sensitive_data() {
+                           message = message.replace(trimmed_content, "REDACTED");
+                        }
+                        anyhow::anyhow!("parsing secret content for {name}: {message}")
                     })?))
                 }
                 Err(std::env::VarError::NotPresent) => Ok(None),
