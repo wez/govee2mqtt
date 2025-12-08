@@ -5,6 +5,7 @@ use crate::undoc_api::UndocApiArguments;
 use clap::Parser;
 use std::str::FromStr;
 
+mod api_lockout;
 mod ble;
 mod cache;
 mod commands;
