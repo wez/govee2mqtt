@@ -6,6 +6,7 @@ use crate::temperature::{TemperatureUnits, TemperatureValue};
 use crate::undoc_api::GoveeUndocumentedApi;
 use anyhow::Context;
 use reqwest::Method;
+use serde::de::Error;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde_json::{json, Value as JsonValue};
 use std::collections::HashMap;
@@ -790,6 +791,9 @@ impl<'de> Deserialize<'de> for $name {
     where
         D: Deserializer<'de>,
     {
+        // Govee's API has some inconsistencies in its representation
+        // of this struct.
+        // We implement a custom deserializer to accommodate this.
         let s = String::deserialize(d)?;
 
         if let Ok(t) = s.parse::<Self>() {
@@ -918,20 +922,58 @@ impl DeviceParameters {
     }
 }
 
-#[derive(Deserialize, Serialize, Debug, Clone)]
+#[derive(Serialize, Debug, Clone)]
 // No deny_unknown_fields here, because we embed via flatten
 pub struct StructField {
     #[serde(rename = "fieldName")]
     pub field_name: String,
 
-    #[serde(flatten)]
     pub field_type: DeviceParameters,
 
     #[serde(rename = "defaultValue")]
     pub default_value: Option<JsonValue>,
 
-    #[serde(default)]
     pub required: bool,
+}
+
+impl<'de> Deserialize<'de> for StructField {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let mut map: serde_json::Map<String, JsonValue> =
+            serde_json::Map::deserialize(deserializer)?;
+
+        let field_name = map
+            .remove("fieldName")
+            .ok_or_else(|| Error::missing_field("fieldName"))
+            .and_then(|v| String::deserialize(v).map_err(Error::custom))?;
+
+        let default_value = map.remove("defaultValue");
+
+        let required = map
+            .remove("required")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false);
+
+        if let Some(data_type_val) = map.get_mut("dataType") {
+            if data_type_val.is_object() {
+                if let Some(type_name) = data_type_val.get("type").and_then(|t| t.as_str()) {
+                    *data_type_val = JsonValue::String(type_name.to_string());
+                }
+            }
+        }
+
+        let field_type_value = JsonValue::Object(map);
+        let field_type = DeviceParameters::deserialize(field_type_value).map_err(Error::custom)?;
+
+        Ok(StructField {
+            field_name,
+            default_value,
+            required,
+            field_type,
+        })
+    }
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
@@ -956,54 +998,13 @@ pub struct IntegerRange {
     pub precision: u32,
 }
 
-use serde::de::Error;
-
-#[derive(Serialize, Debug, Clone)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct EnumOption {
     pub name: String,
     #[serde(default)]
     pub value: JsonValue,
     #[serde(flatten)]
     pub extras: HashMap<String, JsonValue>,
-}
-
-impl<'de> Deserialize<'de> for EnumOption {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let mut map: serde_json::Map<String, JsonValue> =
-            serde_json::Map::deserialize(deserializer)?;
-
-        let name = map
-            .remove("name")
-            .ok_or_else(|| Error::missing_field("name"))
-            .and_then(|v| {
-                if let Some(s) = v.as_str() {
-                    return Ok(s.to_string());
-                }
-                if v.is_object() {
-                    let name_map: HashMap<String, String> =
-                        serde_json::from_value(v).map_err(Error::custom)?;
-                    if let Some(s) = name_map.get("en").or(name_map.get("key")) {
-                        return Ok(s.clone());
-                    }
-                }
-                Err(Error::custom(
-                    "expected name to be a string or a map with 'en' or 'key'",
-                ))
-            })?;
-
-        let value = map.remove("value").unwrap_or(JsonValue::Null);
-
-        Ok(Self {
-            name,
-            value,
-            extras: map
-                .into_iter()
-                .collect::<HashMap<String, serde_json::Value>>(),
-        })
-    }
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
