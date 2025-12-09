@@ -1,7 +1,7 @@
 labels:
   org.opencontainers.image.title: "Home Assistant Add-on: Govee to MQTT Bridge"
   org.opencontainers.image.description: "Acts as a bridge between Govee devices and Home Assistant, via the Home Assistant MQTT Integration."
-  org.opencontainers.image.source: "https://github.com/wez/govee2mqtt"
+  org.opencontainers.image.source: "https://github.com/lukas-clarke/govee2mqtt"
   org.opencontainers.image.licenses: "MIT"
 
 # We need to specify these explicitly otherwise :latest will be
@@ -17,7 +17,7 @@ build_from:
 cosign:
   # The identity is *our* identity that we use to sign this image.
   # It is used to verify the safety of reusing the cache
-  identity: https://github.com/wez/govee2mqtt/.*
+  identity: https://github.com/lukas-clarke/govee2mqtt/.*
   # The base_identity is the identity of the base images specified
   # by the build_from section above
   base_identity: https://github.com/home-assistant/docker-base/.*
