@@ -1,6 +1,6 @@
 name: Govee to MQTT Bridge
 image: ghcr.io/lukas-clarke/govee2mqtt-{arch}
-version: "2025.11.25-60a39bcc"
+version: "v1"
 slug: govee2mqtt
 description: Control Govee Devices
 url: https://github.com/lukas-clarke/govee2mqtt
@@ -28,7 +28,7 @@ map:
     path: /app/config
 
 options:
-  temperature_scale: "C"
+  temperature_scale: "F"
 
 schema:
   temperature_scale: "str?"
