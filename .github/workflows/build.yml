@@ -166,7 +166,7 @@ jobs:
       - name: Apply tag to version
         run: ./scripts/apply-tag.sh
       - name: Build and Publish Home Assistant Add On
-        uses: home-assistant/builder@2025.09.0
+        uses: home-assistant/builder@2025.11.0
         with:
           args: |
             --all \
