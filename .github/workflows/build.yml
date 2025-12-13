@@ -1,4 +1,4 @@
-name: Build
+name: Container Build
 
 on:
   pull_request:
@@ -166,9 +166,37 @@ jobs:
       - name: Apply tag to version
         run: ./scripts/apply-tag.sh
       - name: Build and Publish Home Assistant Add On
-        uses: home-assistant/builder@2025.09.0
+        uses: home-assistant/builder@2025.11.0
         with:
           args: |
-            --all \
+            --amd64 \
+            --aarch64 \
+            --cosign \
+            --target /data/addon
+
+  test-addon:
+    if: ${{ ! ( github.event_name == 'push' && github.ref_type == 'tag' ) }}
+    runs-on: ubuntu-latest
+    needs:
+      - build
+    permissions:
+      contents: read
+      id-token: write
+      packages: read
+    steps:
+      - uses: actions/checkout@v5
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: https://ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Test Build Home Assistant Add On
+        uses: home-assistant/builder@2025.11.0
+        with:
+          args: |
+            --test \
+            --amd64 \
+            --aarch64 \
             --cosign \
             --target /data/addon
