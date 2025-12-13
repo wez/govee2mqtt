@@ -1,4 +1,4 @@
-name: Build
+name: Container Build
 
 on:
   pull_request:
@@ -166,9 +166,49 @@ jobs:
       - name: Apply tag to version
         run: ./scripts/apply-tag.sh
       - name: Build and Publish Home Assistant Add On
-        uses: home-assistant/builder@2025.09.0
+        uses: home-assistant/builder@2025.11.0
         with:
           args: |
-            --all \
+            --amd64 \
+            --aarch64 \
+            --cosign \
+            --target /data/addon
+
+  test-addon:
+    if: ${{ ! ( github.event_name == 'push' && github.ref_type == 'tag' ) }}
+    runs-on: ubuntu-latest
+    needs:
+      # Note! Despite the dependency edge here to the build steps above,
+      # this test-addon build flow will build the addon from the latest
+      # images that were published to ghcr.io, which is NOT the ones we
+      # build here because we don't push those when we trigger the conditions
+      # for this to build.
+      # Thats "OK" because the addon build doesn't actually run anything
+      # from that container image.
+      # The test-addon flow is validating that the addon build configuration
+      # looks plausible, so the prior image should be sufficient for that.
+      # If you are reading this and know how to get the bits above funnelled
+      # into the hass build below, and it isn't eye-bleedingly-gnarly, then
+      # please submit a PR!
+      - build
+    permissions:
+      contents: read
+      id-token: write
+      packages: read
+    steps:
+      - uses: actions/checkout@v5
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: https://ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Test Build Home Assistant Add On
+        uses: home-assistant/builder@2025.11.0
+        with:
+          args: |
+            --test \
+            --amd64 \
+            --aarch64 \
             --cosign \
             --target /data/addon
