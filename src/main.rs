@@ -9,6 +9,7 @@ use std::str::FromStr;
 mod ble;
 mod cache;
 mod commands;
+mod device_database;
 mod hass_mqtt;
 mod lan_api;
 #[macro_use]

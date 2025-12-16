@@ -44,6 +44,14 @@ pub struct Device {
     pub last_polled: Option<DateTime<Utc>>,
 
     active_scene: Option<ActiveSceneInfo>,
+
+    /// Cached device name from persistent database.
+    /// Used as fallback when API metadata is unavailable (degraded mode).
+    pub cached_name: Option<String>,
+
+    /// Cached room name from persistent database.
+    /// Used as fallback when API metadata is unavailable (degraded mode).
+    pub cached_room: Option<String>,
 }
 
 impl std::fmt::Display for Device {
@@ -110,6 +118,7 @@ impl Device {
     }
 
     /// Returns the device name; either the name defined in the Govee App,
+    /// or a cached name from the persistent database (for degraded mode),
     /// or, if we don't have the information for some reason, then we compute
     /// a name from the SKU and the last couple of bytes from the device id,
     /// similar to the device name that would show up in a BLE scan, or
@@ -118,6 +127,10 @@ impl Device {
     pub fn name(&self) -> String {
         if let Some(name) = self.govee_name() {
             return name.to_string();
+        }
+        // Fallback to cached name from persistent database (degraded mode)
+        if let Some(name) = &self.cached_name {
+            return name.clone();
         }
         self.computed_name()
     }
@@ -134,7 +147,8 @@ impl Device {
         if let Some(info) = &self.undoc_device_info {
             return info.room_name.as_deref();
         }
-        None
+        // Fallback to cached room from persistent database (degraded mode)
+        self.cached_room.as_deref()
     }
 
     /// compute a name from the SKU and the last couple of bytes from the
@@ -617,5 +631,23 @@ mod test {
 
         let device = Device::new("H6127", "ce");
         assert_eq!(device.name(), "H6127_CE");
+    }
+
+    #[test]
+    fn cached_name_fallback() {
+        // Test that cached_name is used when http_device_info is None (degraded mode)
+        let mut device = Device::new("H6072", "AA:BB:CC:DD:EE:FF:11:22");
+
+        // Initially, name() returns computed name
+        assert_eq!(device.name(), "H6072_1122");
+        assert_eq!(device.room_name(), None);
+
+        // Set cached name and room (simulating degraded mode startup)
+        device.cached_name = Some("Kitchen Lights".to_string());
+        device.cached_room = Some("Kitchen".to_string());
+
+        // Now name() should return the cached name
+        assert_eq!(device.name(), "Kitchen Lights");
+        assert_eq!(device.room_name(), Some("Kitchen").as_deref());
     }
 }

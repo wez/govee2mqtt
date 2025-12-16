@@ -1,4 +1,5 @@
 use crate::ble::{Base64HexBytes, SetHumidifierMode, SetHumidifierNightlightParams};
+use crate::device_database::DeviceDatabaseHandle;
 use crate::lan_api::{Client as LanClient, DeviceStatus as LanDeviceStatus, LanDevice};
 use crate::platform_api::{DeviceCapability, DeviceType, GoveeApiClient};
 use crate::service::coordinator::Coordinator;
@@ -26,6 +27,7 @@ pub struct State {
     hass_client: Mutex<Option<HassClient>>,
     hass_discovery_prefix: Mutex<String>,
     temperature_scale: Mutex<TemperatureScale>,
+    device_database: Mutex<Option<DeviceDatabaseHandle>>,
 }
 
 pub type StateHandle = Arc<State>;
@@ -183,6 +185,41 @@ impl State {
     #[allow(dead_code)]
     pub async fn get_undoc_client(&self) -> Option<GoveeUndocumentedApi> {
         self.undoc_client.lock().await.clone()
+    }
+
+    /// Set the device database handle
+    pub async fn set_device_database(&self, db: DeviceDatabaseHandle) {
+        self.device_database.lock().await.replace(db);
+    }
+
+    /// Get a clone of the device database handle
+    pub async fn get_device_database(&self) -> Option<DeviceDatabaseHandle> {
+        self.device_database.lock().await.clone()
+    }
+
+    /// Get the display name for a device from the persistent database.
+    /// Falls back to the device's computed name if not in database.
+    pub async fn get_persisted_name(&self, device_id: &str) -> Option<String> {
+        if let Some(db) = self.device_database.lock().await.as_ref() {
+            return db.get_display_name(device_id);
+        }
+        None
+    }
+
+    /// Get the room name for a device from the persistent database.
+    pub async fn get_persisted_room(&self, device_id: &str) -> Option<String> {
+        if let Some(db) = self.device_database.lock().await.as_ref() {
+            return db.get_room(device_id);
+        }
+        None
+    }
+
+    /// Save the device database to disk
+    pub async fn save_device_database(&self) -> anyhow::Result<()> {
+        if let Some(db) = self.device_database.lock().await.as_ref() {
+            db.save()?;
+        }
+        Ok(())
     }
 
     pub async fn poll_iot_api(self: &Arc<Self>, device: &Device) -> anyhow::Result<bool> {

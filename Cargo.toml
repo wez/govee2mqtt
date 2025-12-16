@@ -6,9 +6,16 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-tokio = {version="1.22", features=["macros", "rt-multi-thread", "rt", "net", "sync", "time"]}
+tokio = { version = "1.22", features = [
+    "macros",
+    "rt-multi-thread",
+    "rt",
+    "net",
+    "sync",
+    "time",
+] }
 serde_json = "1.0.89"
-serde = {version="1.0.147", features=["derive"]}
+serde = { version = "1.0.147", features = ["derive"] }
 anyhow = "1"
 log = "0.4"
 env_logger = "0.11"
@@ -21,7 +28,7 @@ clap = { version = "4.4.12", features = ["derive"] }
 reqwest = { version = "0.12", features = ["json"] }
 sqlite-cache = "0.1.4"
 dirs-next = "2.0.0"
-rusqlite = {version="0.32.0", features=["bundled"]}
+rusqlite = { version = "0.32.0", features = ["bundled"] }
 if-addrs = "0.14"
 once_cell = "1.19.0"
 csscolorparser = "0.8.1"
@@ -43,10 +50,11 @@ async-trait = "0.1.77"
 parking_lot = "0.12.1"
 
 [dependencies.mosquitto-rs]
-version="0.11.1"
+version = "0.11.1"
 features = ["vendored-openssl"]
 #path = "../mosquitto-rs/mosquitto-rs"
 
 [dev-dependencies]
 anyhow = "1"
 k9 = "0.12.0"
+tempfile = "3.14"
