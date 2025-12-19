@@ -89,12 +89,3 @@ configuration:
       global broadcast address 255.255.255.255. To be honest, if
       multicast-UDP doesn't work, this isn't likely to work any
       better.
-
-
-
-
-
-
-
-
-

@@ -2,6 +2,9 @@
 set -e
 set -x
 
+echo "Rust build disabled; Python v2 is the primary implementation."
+exit 0
+
 TARGETPLATFORM=$1
 
 case "$TARGETPLATFORM" in
@@ -21,4 +24,3 @@ cross build --target $TARGET --release --bin govee
 
 mkdir -p docker-target/$TARGETPLATFORM
 cp target/$TARGET/release/govee docker-target/$TARGETPLATFORM
-

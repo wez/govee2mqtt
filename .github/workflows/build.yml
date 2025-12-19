@@ -25,6 +25,8 @@ env:
 
 jobs:
   build:
+    # Rust build pipeline disabled while Python v2 is the primary implementation.
+    if: ${{ false }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -103,7 +105,8 @@ jobs:
           retention-days: 1
 
   merge:
-    if: ${{ github.event_name != 'pull_request' }}
+    # Rust build pipeline disabled while Python v2 is the primary implementation.
+    if: ${{ false }}
     runs-on: ubuntu-latest
     needs:
       - build
@@ -147,7 +150,8 @@ jobs:
         run: |
           docker buildx imagetools inspect ${{ env.IMAGE }}:${{ steps.meta.outputs.version }}
   addon:
-    if: ${{ github.event_name == 'push' && github.ref_type == 'tag' }}
+    # Rust build pipeline disabled while Python v2 is the primary implementation.
+    if: ${{ false }}
     runs-on: ubuntu-latest
     needs:
       - merge
@@ -175,7 +179,8 @@ jobs:
             --target /data/addon
 
   test-addon:
-    if: ${{ ! ( github.event_name == 'push' && github.ref_type == 'tag' ) }}
+    # Rust build pipeline disabled while Python v2 is the primary implementation.
+    if: ${{ false }}
     runs-on: ubuntu-latest
     needs:
       # Note! Despite the dependency edge here to the build steps above,

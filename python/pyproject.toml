@@ -1,0 +1,40 @@
+[tool.poetry]
+name = "govee2mqtt-v2"
+version = "0.1.0"
+description = "Govee Platform API v2 to MQTT bridge for Home Assistant"
+authors = ["Diego Sainz <dsainz3@gmail.com>"]
+readme = "README.md"
+packages = [{ include = "govee2mqtt_v2", from = "src" }]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+httpx = "^0.27.0"
+paho-mqtt = "^1.6.1"
+
+[tool.poetry.group.dev.dependencies]
+black = "^24.4.0"
+pre-commit = "^3.7.1"
+pytest = "^8.0.0"
+ruff = "^0.5.0"
+
+[tool.black]
+line-length = 100
+target-version = ["py311"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+fix = true
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B"]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.poetry.scripts]
+govee2mqtt-v2 = "govee2mqtt_v2.cli:main"
+
+[build-system]
+requires = ["poetry-core>=1.6.0"]
+build-backend = "poetry.core.masonry.api"

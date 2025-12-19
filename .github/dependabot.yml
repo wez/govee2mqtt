@@ -3,16 +3,17 @@
 
 version: 2
 updates:
-  - package-ecosystem: "cargo"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-    cooldown:
-      default-days: 7
-    groups:
-      all:
-        patterns:
-          - "*"
+  # Rust dependency updates disabled while Python v2 is the primary implementation.
+  # - package-ecosystem: "cargo"
+  #   directory: "/"
+  #   schedule:
+  #     interval: "weekly"
+  #   cooldown:
+  #     default-days: 7
+  #   groups:
+  #     all:
+  #       patterns:
+  #         - "*"
 
   - package-ecosystem: "github-actions"
     directory: "/"

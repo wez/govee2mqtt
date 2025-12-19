@@ -10,6 +10,8 @@ env:
 
 jobs:
   build:
+    # Rust CI disabled while Python v2 is the primary implementation.
+    if: ${{ false }}
     strategy:
       fail-fast: false
     runs-on: ubuntu-latest
@@ -21,4 +23,3 @@ jobs:
       run: cargo test --all -- --show-output
     - name: Check formatting
       run: cargo fmt --all -- --check
-

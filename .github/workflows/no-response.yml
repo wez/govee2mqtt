@@ -19,4 +19,3 @@ jobs:
         with:
           token: ${{ github.token }}
           responseRequiredLabel: waiting-on-op
-

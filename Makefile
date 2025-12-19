@@ -1,12 +1,12 @@
 
 check:
-	cargo check
+	@echo "Rust checks disabled; use Python tooling in python/"
 
 test:
-	cargo nextest run
+	@echo "Rust tests disabled; use pytest in python/"
 
 fmt:
-	cargo +nightly fmt
+	@echo "Rust formatting disabled; use ruff/black in python/"
 
 docker:
 	docker build .

@@ -1,0 +1,11 @@
+version: '3.8'
+services:
+  govee2mqtt_v2:
+    build:
+      context: .
+      dockerfile: python/Dockerfile
+    container_name: govee2mqtt-v2
+    restart: unless-stopped
+    env_file:
+      - .env
+    network_mode: host

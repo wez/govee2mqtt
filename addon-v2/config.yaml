@@ -1,0 +1,30 @@
+name: Govee2MQTT v2 (Python)
+version: "0.1.0"
+slug: govee2mqtt_v2
+description: Python Govee Platform API v2 to MQTT bridge
+arch:
+  - amd64
+  - aarch64
+  - armv7
+  - armhf
+  - i386
+startup: services
+boot: auto
+options:
+  govee_api_key: ""
+  mqtt_host: ""
+  mqtt_port: 1883
+  mqtt_username: ""
+  mqtt_password: ""
+  mqtt_base_topic: "govee2mqtt"
+  poll_interval_seconds: 120
+  log_level: "info"
+schema:
+  govee_api_key: str
+  mqtt_host: str
+  mqtt_port: int
+  mqtt_username: str?
+  mqtt_password: password?
+  mqtt_base_topic: str
+  poll_interval_seconds: int
+  log_level: str
