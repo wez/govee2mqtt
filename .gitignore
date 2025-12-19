@@ -5,3 +5,7 @@ docker-target
 node_modules
 package.json
 package-lock.json
+__pycache__
+*.pyc
+.pytest_cache
+.venv
