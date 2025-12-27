@@ -383,7 +383,6 @@ impl ServeCommand {
 
                     let state = state.clone();
                     let client = client.clone();
-                    let db_for_status = db_for_lan.clone();
                     tokio::spawn(async move {
                         if let Ok(status) = client.query_status(&lan_device).await {
                             state
@@ -393,11 +392,6 @@ impl ServeCommand {
 
                             log::trace!("LAN disco: update and notify {}", lan_device.device);
                             state.notify_of_state_change(&lan_device.device).await.ok();
-
-                            // Save database periodically on LAN updates
-                            if let Err(err) = db_for_status.save() {
-                                log::trace!("Failed to save device database: {err:#}");
-                            }
                         }
                     });
                 }
