@@ -48,6 +48,7 @@ thiserror = "2.0.9"
 arc-swap = "1.6.0"
 async-trait = "0.1.77"
 parking_lot = "0.12.1"
+tempfile = "3.14"
 
 [dependencies.mosquitto-rs]
 version = "0.11.1"
@@ -57,4 +58,3 @@ features = ["vendored-openssl"]
 [dev-dependencies]
 anyhow = "1"
 k9 = "0.12.0"
-tempfile = "3.14"

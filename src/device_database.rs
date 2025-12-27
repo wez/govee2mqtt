@@ -15,10 +15,12 @@
 //!
 //! ## File Format
 //!
-//! The database is stored as a pretty-printed JSON file at:
-//! - `/data/devices.json` (Home Assistant add-on)
-//! - `$GOVEE_DEVICE_DB` (if set)
-//! - `~/.cache/govee2mqtt/devices.json` (default)
+//! The database is stored as a pretty-printed JSON file. The path is configured
+//! via the `--device-db` CLI argument or `GOVEE_DEVICE_DB` environment variable.
+//!
+//! Default locations:
+//! - `/data/devices.json` (Home Assistant add-on, set via CLI)
+//! - `~/.cache/govee2mqtt/devices.json` (standalone)
 //!
 //! Writes are atomic (write to temp file, then rename) to prevent corruption.
 
@@ -30,6 +32,7 @@ use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
+use tempfile::NamedTempFile;
 
 /// The persistent device database
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
@@ -43,7 +46,22 @@ pub struct DeviceDatabase {
 }
 
 fn default_version() -> u32 {
-    1
+    2 // Bumped for new data structure
+}
+
+/// Per-API-source metadata
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PersistedApiInfo {
+    /// Device name from this API source
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+
+    /// Room name from this API source
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub room: Option<String>,
+
+    /// Last successful sync from this API source
+    pub last_sync: DateTime<Utc>,
 }
 
 /// Persisted state for a single device
@@ -55,40 +73,25 @@ pub struct PersistedDevice {
     /// Device SKU (e.g., "H6072")
     pub sku: String,
 
-    /// Display name - populated from API or user override
-    /// This is used for Home Assistant entity naming
+    /// Display name - the definitive name for Home Assistant entity naming.
+    /// Updated from API sources, or can be edited directly in the JSON.
     pub name: String,
 
-    /// Room/area - populated from API or user override
-    /// Used for Home Assistant suggested_area
+    /// Room/area - the definitive room for Home Assistant suggested_area.
+    /// Updated from API sources, or can be edited directly in the JSON.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub room: Option<String>,
-
-    /// Which API first discovered this device
-    pub discovered_via: DiscoverySource,
 
     /// When this device was first seen
     pub first_seen: DateTime<Utc>,
 
-    /// When this device was last seen (any source)
-    pub last_seen: DateTime<Utc>,
-
-    /// Last successful API metadata sync
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub last_api_sync: Option<DateTime<Utc>>,
-
-    // === User Overrides (editable via JSON or future web UI) ===
-    /// User-specified name override (takes precedence over API name)
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub user_name: Option<String>,
-
-    /// User-specified room override
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub user_room: Option<String>,
+    /// Per-API-source metadata tracking
+    #[serde(default)]
+    pub api_info: BTreeMap<DiscoverySource, PersistedApiInfo>,
 }
 
-/// Source of initial device discovery
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+/// Source of device discovery
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[serde(rename_all = "snake_case")]
 pub enum DiscoverySource {
     PlatformApi,
@@ -109,32 +112,28 @@ impl std::fmt::Display for DiscoverySource {
 }
 
 impl PersistedDevice {
-    /// Get the effective display name (user override > API name)
-    pub fn display_name(&self) -> &str {
-        self.user_name.as_deref().unwrap_or(&self.name)
-    }
-
-    /// Get the effective room (user override > API room)
-    pub fn effective_room(&self) -> Option<&str> {
-        self.user_room.as_deref().or(self.room.as_deref())
-    }
-
     /// Create a new device with minimal information (LAN discovery)
     pub fn new_minimal(id: &str, sku: &str, source: DiscoverySource) -> Self {
         let now = Utc::now();
         let computed_name = compute_device_name(sku, id);
+
+        let mut api_info = BTreeMap::new();
+        api_info.insert(
+            source,
+            PersistedApiInfo {
+                name: None,
+                room: None,
+                last_sync: now,
+            },
+        );
 
         Self {
             id: id.to_string(),
             sku: sku.to_string(),
             name: computed_name,
             room: None,
-            discovered_via: source,
             first_seen: now,
-            last_seen: now,
-            last_api_sync: None,
-            user_name: None,
-            user_room: None,
+            api_info,
         }
     }
 
@@ -148,18 +147,29 @@ impl PersistedDevice {
     ) -> Self {
         let now = Utc::now();
 
+        let mut api_info = BTreeMap::new();
+        api_info.insert(
+            source,
+            PersistedApiInfo {
+                name: Some(name.to_string()),
+                room: room.map(|s| s.to_string()),
+                last_sync: now,
+            },
+        );
+
         Self {
             id: id.to_string(),
             sku: sku.to_string(),
             name: name.to_string(),
             room: room.map(|s| s.to_string()),
-            discovered_via: source,
             first_seen: now,
-            last_seen: now,
-            last_api_sync: Some(now),
-            user_name: None,
-            user_room: None,
+            api_info,
         }
+    }
+
+    /// Get the most recent API sync timestamp across all sources
+    pub fn last_api_sync(&self) -> Option<DateTime<Utc>> {
+        self.api_info.values().map(|info| info.last_sync).max()
     }
 }
 
@@ -178,50 +188,51 @@ fn compute_device_name(sku: &str, id: &str) -> String {
     format!(
         "{}_{}",
         sku,
-        &normalized_id[normalized_id.len().saturating_sub(4)..]
+        normalized_id
+            .get(normalized_id.len().saturating_sub(4)..)
+            .unwrap_or(&normalized_id)
     )
 }
 
 impl DeviceDatabase {
     /// Load database from disk, or create empty if not exists
     pub fn load(path: &Path) -> anyhow::Result<Self> {
-        if path.exists() {
-            let contents = fs::read_to_string(path)?;
-            let db: DeviceDatabase = serde_json::from_str(&contents)?;
-            log::info!(
-                "Loaded device database with {} devices from {:?}",
-                db.devices.len(),
-                path
-            );
-            Ok(db)
-        } else {
-            log::info!(
-                "No device database found at {:?}, starting fresh",
-                path
-            );
-            Ok(DeviceDatabase::default())
+        match fs::read_to_string(path) {
+            Ok(contents) => {
+                let db: DeviceDatabase = serde_json::from_str(&contents)?;
+                log::info!(
+                    "Loaded device database with {} devices from {:?}",
+                    db.devices.len(),
+                    path
+                );
+                Ok(db)
+            }
+            Err(err) if err.kind() == std::io::ErrorKind::NotFound => {
+                log::info!("No device database found at {:?}, starting fresh", path);
+                Ok(DeviceDatabase::default())
+            }
+            Err(err) => Err(err.into()),
         }
     }
 
     /// Save database atomically (write temp file, then rename)
     pub fn save(&self, path: &Path) -> anyhow::Result<()> {
         // Create parent directory if needed
-        if let Some(parent) = path.parent() {
-            fs::create_dir_all(parent)?;
-        }
+        let parent = path
+            .parent()
+            .ok_or_else(|| anyhow::anyhow!("Invalid database path: no parent directory"))?;
+        fs::create_dir_all(parent)?;
 
-        // Write to temporary file in same directory
-        let temp_path = path.with_extension("json.tmp");
         let contents = serde_json::to_string_pretty(self)?;
 
-        {
-            let mut file = fs::File::create(&temp_path)?;
-            file.write_all(contents.as_bytes())?;
-            file.sync_all()?; // Ensure data is on disk
-        }
-
-        // Atomic rename
-        fs::rename(&temp_path, path)?;
+        // Use NamedTempFile for robust atomic writes:
+        // - Creates file with unique name (avoids collisions)
+        // - Cleans up on drop if persist() fails
+        // - Handles symlink race conditions
+        let mut file = NamedTempFile::new_in(parent)?;
+        file.write_all(contents.as_bytes())?;
+        file.as_file().sync_all()?;
+        file.persist(path)?;
 
         log::debug!(
             "Saved device database with {} devices to {:?}",
@@ -232,24 +243,8 @@ impl DeviceDatabase {
         Ok(())
     }
 
-    /// Get the default database path based on environment
+    /// Get the default database path (cache directory for standalone use)
     pub fn default_path() -> PathBuf {
-        // Check for explicit configuration first
-        if let Ok(path) = std::env::var("GOVEE_DEVICE_DB") {
-            return PathBuf::from(path);
-        }
-
-        // Home Assistant add-on uses /data
-        let addon_path = PathBuf::from("/data/devices.json");
-        if addon_path
-            .parent()
-            .map(|p| p.exists())
-            .unwrap_or(false)
-        {
-            return addon_path;
-        }
-
-        // Fall back to cache directory
         dirs_next::cache_dir()
             .unwrap_or_else(|| PathBuf::from("."))
             .join("govee2mqtt")
@@ -258,14 +253,12 @@ impl DeviceDatabase {
 
     /// Get the effective display name for a device
     pub fn get_display_name(&self, device_id: &str) -> Option<&str> {
-        self.devices.get(device_id).map(|d| d.display_name())
+        self.devices.get(device_id).map(|d| d.name.as_str())
     }
 
     /// Get the effective room for a device
     pub fn get_room(&self, device_id: &str) -> Option<&str> {
-        self.devices
-            .get(device_id)
-            .and_then(|d| d.effective_room())
+        self.devices.get(device_id).and_then(|d| d.room.as_deref())
     }
 
     /// Check if a device exists in the database
@@ -289,7 +282,6 @@ impl DeviceDatabase {
     }
 
     /// Update database from API-discovered device
-    /// Preserves user overrides, updates API-sourced fields
     pub fn update_from_api(
         &mut self,
         device_id: &str,
@@ -301,12 +293,23 @@ impl DeviceDatabase {
         let now = Utc::now();
 
         if let Some(existing) = self.devices.get_mut(device_id) {
-            // Update existing device - preserve user overrides
+            // Update existing device
             existing.sku = sku.to_string();
             existing.name = api_name.to_string();
-            existing.room = api_room.map(|s| s.to_string());
-            existing.last_seen = now;
-            existing.last_api_sync = Some(now);
+            if api_room.is_some() {
+                existing.room = api_room.map(|s| s.to_string());
+            }
+
+            // Update per-API tracking
+            existing.api_info.insert(
+                source.clone(),
+                PersistedApiInfo {
+                    name: Some(api_name.to_string()),
+                    room: api_room.map(|s| s.to_string()),
+                    last_sync: now,
+                },
+            );
+
             log::trace!(
                 "Updated existing device {} in database from {:?}",
                 device_id,
@@ -336,7 +339,15 @@ impl DeviceDatabase {
         self.devices
             .entry(device_id.to_string())
             .and_modify(|d| {
-                d.last_seen = now;
+                // Update LAN API tracking
+                d.api_info.insert(
+                    DiscoverySource::Lan,
+                    PersistedApiInfo {
+                        name: None,
+                        room: None,
+                        last_sync: now,
+                    },
+                );
             })
             .or_insert_with(|| {
                 log::info!(
@@ -363,8 +374,7 @@ pub struct DeviceDatabaseHandle {
 
 impl DeviceDatabaseHandle {
     /// Create a new handle by loading or creating the database
-    pub fn open(path: Option<PathBuf>) -> anyhow::Result<Self> {
-        let path = path.unwrap_or_else(DeviceDatabase::default_path);
+    pub fn open(path: PathBuf) -> anyhow::Result<Self> {
         let db = DeviceDatabase::load(&path)?;
 
         Ok(Self {
@@ -378,9 +388,15 @@ impl DeviceDatabaseHandle {
         &self.path
     }
 
-    /// Save the database to disk
+    /// Clone the database for saving outside the lock
+    fn clone_database(&self) -> DeviceDatabase {
+        self.inner.read().clone()
+    }
+
+    /// Save the database to disk (lock-free IO)
+    /// Clones the data first, releases lock, then writes to disk
     pub fn save(&self) -> anyhow::Result<()> {
-        let db = self.inner.read();
+        let db = self.clone_database();
         db.save(&self.path)
     }
 
@@ -433,7 +449,7 @@ impl DeviceDatabaseHandle {
     pub fn handle_lan_discovery(&self, device_id: &str, sku: &str) -> String {
         let mut db = self.inner.write();
         let device = db.handle_lan_discovery(device_id, sku);
-        device.display_name().to_string()
+        device.name.clone()
     }
 
     /// Get all devices from the database
@@ -493,56 +509,78 @@ mod tests {
     }
 
     #[test]
-    fn test_persisted_device_display_name() {
-        let mut device = PersistedDevice::new_from_api(
-            "test-id",
-            "H6072",
-            "Living Room Lamp",
-            Some("Living Room"),
-            DiscoverySource::PlatformApi,
-        );
-
-        // Default: use API name
-        assert_eq!(device.display_name(), "Living Room Lamp");
-        assert_eq!(device.effective_room(), Some("Living Room"));
-
-        // User override takes precedence
-        device.user_name = Some("My Custom Name".to_string());
-        device.user_room = Some("Kitchen".to_string());
-
-        assert_eq!(device.display_name(), "My Custom Name");
-        assert_eq!(device.effective_room(), Some("Kitchen"));
-    }
-
-    #[test]
-    fn test_device_database_roundtrip() -> anyhow::Result<()> {
-        let temp_dir = TempDir::new()?;
-        let db_path = temp_dir.path().join("devices.json");
+    fn test_database_roundtrip() {
+        let dir = TempDir::new().unwrap();
+        let path = dir.path().join("test_devices.json");
 
         let mut db = DeviceDatabase::default();
         db.update_from_api(
-            "device-1",
+            "AA:BB:CC:DD:EE:FF:00:11",
             "H6072",
             "Test Light",
             Some("Living Room"),
             DiscoverySource::PlatformApi,
         );
 
-        db.save(&db_path)?;
+        db.save(&path).unwrap();
 
-        let loaded = DeviceDatabase::load(&db_path)?;
+        let loaded = DeviceDatabase::load(&path).unwrap();
         assert_eq!(loaded.devices.len(), 1);
-        assert_eq!(loaded.get_display_name("device-1"), Some("Test Light"));
-        assert_eq!(loaded.get_room("device-1"), Some("Living Room"));
 
-        Ok(())
+        let device = loaded.devices.get("AA:BB:CC:DD:EE:FF:00:11").unwrap();
+        assert_eq!(device.name, "Test Light");
+        assert_eq!(device.room, Some("Living Room".to_string()));
+        assert!(device.api_info.contains_key(&DiscoverySource::PlatformApi));
+    }
+
+    #[test]
+    fn test_lan_discovery_new_device() {
+        let mut db = DeviceDatabase::default();
+        let device = db.handle_lan_discovery("AA:BB:CC:DD:EE:FF:00:11", "H6072");
+
+        assert_eq!(device.name, "H6072_0011");
+        assert_eq!(device.sku, "H6072");
+        assert!(device.api_info.contains_key(&DiscoverySource::Lan));
+    }
+
+    #[test]
+    fn test_api_updates_existing_device() {
+        let mut db = DeviceDatabase::default();
+
+        // First, LAN discovery
+        db.handle_lan_discovery("AA:BB:CC:DD:EE:FF:00:11", "H6072");
+
+        // Then API enriches it
+        db.update_from_api(
+            "AA:BB:CC:DD:EE:FF:00:11",
+            "H6072",
+            "Kitchen Light",
+            Some("Kitchen"),
+            DiscoverySource::PlatformApi,
+        );
+
+        let device = db.get("AA:BB:CC:DD:EE:FF:00:11").unwrap();
+        assert_eq!(device.name, "Kitchen Light");
+        assert_eq!(device.room, Some("Kitchen".to_string()));
+        // Should have both LAN and Platform API entries
+        assert!(device.api_info.contains_key(&DiscoverySource::Lan));
+        assert!(device.api_info.contains_key(&DiscoverySource::PlatformApi));
+    }
+
+    #[test]
+    fn test_handle_missing_file() {
+        let dir = TempDir::new().unwrap();
+        let path = dir.path().join("nonexistent.json");
+
+        let db = DeviceDatabase::load(&path).unwrap();
+        assert!(db.is_empty());
     }
 
     #[test]
     fn test_startup_mode_detection() {
-        let temp_dir = TempDir::new().unwrap();
-        let db_path = temp_dir.path().join("devices.json");
-        let cache_path = temp_dir.path().join("cache.sqlite");
+        let dir = TempDir::new().unwrap();
+        let db_path = dir.path().join("devices.json");
+        let cache_path = dir.path().join("cache.sqlite");
 
         // Fresh install
         assert_eq!(
@@ -550,14 +588,14 @@ mod tests {
             StartupMode::FreshInstall
         );
 
-        // Create cache file - upgrade scenario
-        std::fs::write(&cache_path, "test").unwrap();
+        // Upgrade (cache exists, no DB)
+        std::fs::write(&cache_path, "").unwrap();
         assert_eq!(
             StartupMode::detect(&db_path, &cache_path),
             StartupMode::Upgrade
         );
 
-        // Create device DB - normal startup
+        // Normal (DB exists)
         std::fs::write(&db_path, "{}").unwrap();
         assert_eq!(
             StartupMode::detect(&db_path, &cache_path),
@@ -566,62 +604,27 @@ mod tests {
     }
 
     #[test]
-    fn test_handle_lan_discovery() {
+    fn test_last_api_sync() {
         let mut db = DeviceDatabase::default();
 
-        // First discovery - creates new entry
-        let device = db.handle_lan_discovery("AA:BB:CC:DD:EE:FF:00:11", "H6072");
-        assert_eq!(device.name, "H6072_0011");
-        assert_eq!(device.discovered_via, DiscoverySource::Lan);
+        // Add via LAN first
+        db.handle_lan_discovery("AA:BB:CC:DD:EE:FF:00:11", "H6072");
+        let device = db.get("AA:BB:CC:DD:EE:FF:00:11").unwrap();
+        let lan_sync = device.last_api_sync();
 
-        // Second discovery - updates last_seen
-        let first_seen = device.first_seen;
-        let last_seen = device.last_seen;
-
+        // Update via Platform API
         std::thread::sleep(std::time::Duration::from_millis(10));
-        let device2 = db.handle_lan_discovery("AA:BB:CC:DD:EE:FF:00:11", "H6072");
-
-        assert_eq!(device2.first_seen, first_seen);
-        assert!(device2.last_seen >= last_seen);
-    }
-
-    #[test]
-    fn test_update_from_api_preserves_user_overrides() {
-        let mut db = DeviceDatabase::default();
-
-        // Initial API discovery
         db.update_from_api(
-            "device-1",
+            "AA:BB:CC:DD:EE:FF:00:11",
             "H6072",
-            "Original Name",
-            Some("Original Room"),
+            "Test",
+            None,
             DiscoverySource::PlatformApi,
         );
+        let device = db.get("AA:BB:CC:DD:EE:FF:00:11").unwrap();
+        let platform_sync = device.last_api_sync();
 
-        // Set user overrides
-        if let Some(device) = db.devices.get_mut("device-1") {
-            device.user_name = Some("User Name".to_string());
-            device.user_room = Some("User Room".to_string());
-        }
-
-        // API update
-        db.update_from_api(
-            "device-1",
-            "H6072",
-            "New API Name",
-            Some("New API Room"),
-            DiscoverySource::PlatformApi,
-        );
-
-        // Verify user overrides are preserved
-        let device = db.devices.get("device-1").unwrap();
-        assert_eq!(device.name, "New API Name"); // API name updated
-        assert_eq!(device.room, Some("New API Room".to_string())); // API room updated
-        assert_eq!(device.user_name, Some("User Name".to_string())); // User override preserved
-        assert_eq!(device.user_room, Some("User Room".to_string())); // User override preserved
-
-        // display_name should use user override
-        assert_eq!(device.display_name(), "User Name");
-        assert_eq!(device.effective_room(), Some("User Room"));
+        // Platform sync should be newer
+        assert!(platform_sync > lan_sync);
     }
 }
