@@ -16,11 +16,11 @@
 //! ## File Format
 //!
 //! The database is stored as a pretty-printed JSON file. The path is configured
-//! via the `--device-db` CLI argument or `GOVEE_DEVICE_DB` environment variable.
+//! via the `--device-db` CLI argument.
 //!
 //! Default locations:
-//! - `/data/devices.json` (Home Assistant add-on, set via CLI)
-//! - `~/.cache/govee2mqtt/devices.json` (standalone)
+//! - `/data/devices.json` (Home Assistant add-on, explicitly set via CLI in run.sh)
+//! - `~/.cache/govee2mqtt/devices.json` (standalone, when --device-db is not specified)
 //!
 //! Writes are atomic (write to temp file, then rename) to prevent corruption.
 
