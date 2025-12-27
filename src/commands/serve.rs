@@ -1,6 +1,8 @@
+use crate::device_database::{DeviceDatabase, DeviceDatabaseHandle, DiscoverySource, StartupMode};
 use crate::lan_api::Client as LanClient;
 use crate::platform_api::GoveeApiClient;
 use crate::service::device::Device;
+use std::path::PathBuf;
 use crate::service::hass::spawn_hass_integration;
 use crate::service::http::run_http_server;
 use crate::service::iot::start_iot_client;
@@ -17,11 +19,27 @@ use tokio::time::{sleep, Duration};
 
 pub const POLL_INTERVAL: Lazy<chrono::Duration> = Lazy::new(|| chrono::Duration::seconds(900));
 
+/// Path to the SQLite cache file (for upgrade detection)
+fn cache_file_path() -> std::path::PathBuf {
+    let cache_dir = std::env::var("GOVEE_CACHE_DIR")
+        .ok()
+        .map(std::path::PathBuf::from)
+        .or_else(|| dirs_next::cache_dir())
+        .expect("failed to resolve cache dir");
+
+    cache_dir.join("govee2mqtt-cache.sqlite")
+}
+
 #[derive(clap::Parser, Debug)]
 pub struct ServeCommand {
     /// The port on which the HTTP API will listen
     #[arg(long, default_value_t = 8056)]
     http_port: u16,
+
+    /// Path to the persistent device database file.
+    /// If not specified, defaults to ~/.cache/govee2mqtt/devices.json
+    #[arg(long)]
+    device_db: Option<PathBuf>,
 }
 
 async fn poll_single_device(state: &StateHandle, device: &Device) -> anyhow::Result<()> {
@@ -122,9 +140,26 @@ async fn enumerate_devices_via_platform_api(
 
     log::info!("Querying platform API for device list");
     for info in client.get_devices().await? {
+        // Update device database with API-discovered device
+        if let Some(db) = state.get_device_database().await {
+            db.update_from_api(
+                &info.device,
+                &info.sku,
+                &info.device_name,
+                None, // Platform API doesn't provide room info
+                DiscoverySource::PlatformApi,
+            );
+        }
+
         let mut device = state.device_mut(&info.sku, &info.device).await;
         device.set_http_device_info(info);
     }
+
+    // Save database after enumeration
+    if let Err(err) = state.save_device_database().await {
+        log::warn!("Failed to save device database: {err:#}");
+    }
+
     Ok(())
 }
 
@@ -148,10 +183,30 @@ async fn enumerate_devices_via_undo_api(
     for group in info.groups {
         group_by_id.insert(group.group_id, group.group_name);
     }
-    for entry in info.devices {
-        let mut device = state.device_mut(&entry.sku, &entry.device).await;
+    for entry in &info.devices {
         let room_name = group_by_id.get(&entry.group_id).map(|name| name.as_str());
-        device.set_undoc_device_info(entry, room_name);
+
+        // Update device database with undoc API-discovered device
+        // This provides room information that platform API doesn't have
+        if let Some(db) = state.get_device_database().await {
+            // Use device name from undoc API if available
+            let device_name = entry.device_name.clone();
+            db.update_from_api(
+                &entry.device,
+                &entry.sku,
+                &device_name,
+                room_name,
+                DiscoverySource::UndocApi,
+            );
+        }
+
+        let mut device = state.device_mut(&entry.sku, &entry.device).await;
+        device.set_undoc_device_info(entry.clone(), room_name);
+    }
+
+    // Save database after enumeration
+    if let Err(err) = state.save_device_database().await {
+        log::warn!("Failed to save device database: {err:#}");
     }
 
     if needs_start {
@@ -160,80 +215,145 @@ async fn enumerate_devices_via_undo_api(
     Ok(())
 }
 
-const ISSUE_76_EXPLANATION: &str = "Startup cannot automatically continue because entity names\n\
-    could become inconsistent especially across frequent similar\n\
-    intermittent issues if/as they occur on an ongoing basis.\n\
-    Please see https://github.com/wez/govee2mqtt/issues/76\n\
-    A workaround is to remove the Govee API credentials from your\n\
-    configuration, which will cause this govee2mqtt to use only\n\
-    the LAN API. Two consequences of that will be loss of control\n\
-    over devices that do not support the LAN API, and also devices\n\
-    changing entity ID to less descriptive names due to lack of\n\
-    metadata availability via the LAN API.";
-
 impl ServeCommand {
     pub async fn run(&self, args: &crate::Args) -> anyhow::Result<()> {
         log::info!("Starting service. version {}", govee_version());
         let state = Arc::new(crate::service::state::State::new());
 
-        // First, use the HTTP APIs to determine the list of devices and
-        // their names.
+        // Initialize the device database for persistent device storage
+        let db_path = self
+            .device_db
+            .clone()
+            .unwrap_or_else(DeviceDatabase::default_path);
+        let cache_path = cache_file_path();
+        let startup_mode = StartupMode::detect(&db_path, &cache_path);
+
+        log::info!("Device database path: {:?}", db_path);
+        match &startup_mode {
+            StartupMode::FreshInstall => {
+                log::info!("Fresh install detected - no existing device data");
+            }
+            StartupMode::Upgrade => {
+                log::info!("Upgrade detected - device database will be populated on next API success");
+            }
+            StartupMode::Normal => {
+                log::info!("Normal startup - loading existing device data");
+            }
+        }
+
+        let device_db = DeviceDatabaseHandle::open(db_path.clone())
+            .context("Failed to open device database")?;
+
+        state.set_device_database(device_db.clone()).await;
+
+        // Record discovery start time to detect stale devices later
+        let discovery_start = chrono::Utc::now();
+
+        // Step 1: Always load devices from persistent database first
+        // The database is the source of truth for device naming
+        let initial_device_count = device_db.len();
+        if initial_device_count > 0 {
+            log::info!(
+                "Loading {} devices from persistent database",
+                initial_device_count
+            );
+            for persisted in device_db.list_devices() {
+                let mut device = state.device_mut(&persisted.sku, &persisted.id).await;
+                device.name = Some(persisted.name.clone());
+                device.room = persisted.room.clone();
+            }
+        }
+
+        // Step 2: Attempt API discovery to refresh/update device metadata
+        // API updates will set last_api_sync timestamps
 
         if let Ok(client) = args.api_args.api_client() {
-            if let Err(err) =
-                enumerate_devices_via_platform_api(state.clone(), Some(client.clone())).await
-            {
-                anyhow::bail!(
-                    "Error during initial platform API discovery: {err:#}\n{ISSUE_76_EXPLANATION}"
-                );
-            }
+            match enumerate_devices_via_platform_api(state.clone(), Some(client.clone())).await {
+                Ok(()) => {
+                    // Record the client after successful discovery
+                    state.set_platform_client(client).await;
 
-            // only record the client after we've completed the
-            // initial platform disco attempt
-            state.set_platform_client(client).await;
-
-            // spawn periodic discovery task
-            let state = state.clone();
-            tokio::spawn(async move {
-                loop {
-                    sleep(Duration::from_secs(600)).await;
-                    if let Err(err) = enumerate_devices_via_platform_api(state.clone(), None).await
-                    {
-                        log::error!("Error during periodic platform API discovery: {err:#}");
-                    }
+                    // Spawn periodic discovery task
+                    let state = state.clone();
+                    tokio::spawn(async move {
+                        loop {
+                            sleep(Duration::from_secs(600)).await;
+                            if let Err(err) =
+                                enumerate_devices_via_platform_api(state.clone(), None).await
+                            {
+                                log::error!(
+                                    "Error during periodic platform API discovery: {err:#}"
+                                );
+                            }
+                        }
+                    });
                 }
-            });
+                Err(err) => {
+                    log::warn!("Platform API discovery failed: {err:#}");
+                    // Continue - we'll use database data and/or LAN discovery
+                }
+            }
         }
+
         if let Ok(client) = args.undoc_args.api_client() {
-            if let Err(err) = enumerate_devices_via_undo_api(
+            match enumerate_devices_via_undo_api(
                 state.clone(),
                 Some(client.clone()),
                 &args.undoc_args,
             )
             .await
             {
-                anyhow::bail!(
-                    "Error during initial undoc API discovery: {err:#}\n{ISSUE_76_EXPLANATION}"
+                Ok(()) => {
+                    // Record the client after successful discovery
+                    state.set_undoc_client(client).await;
+
+                    // Spawn periodic discovery task
+                    let state = state.clone();
+                    let args = args.undoc_args.clone();
+                    tokio::spawn(async move {
+                        loop {
+                            sleep(Duration::from_secs(600)).await;
+                            if let Err(err) =
+                                enumerate_devices_via_undo_api(state.clone(), None, &args).await
+                            {
+                                log::error!("Error during periodic undoc API discovery: {err:#}");
+                            }
+                        }
+                    });
+                }
+                Err(err) => {
+                    log::warn!("Undoc API discovery failed: {err:#}");
+                    // Continue - we'll use database data and/or LAN discovery
+                }
+            }
+        }
+
+        // Step 3: Check which devices didn't get API updates during discovery
+        // These are using cached data from the persistent database
+        let stale_devices: Vec<_> = device_db
+            .list_devices()
+            .into_iter()
+            .filter(|d| {
+                d.last_api_sync()
+                    .map(|ts| ts < discovery_start)
+                    .unwrap_or(true)
+            })
+            .collect();
+
+        if !stale_devices.is_empty() {
+            log::warn!(
+                "{} device(s) using cached data (no recent API sync):",
+                stale_devices.len()
+            );
+            for device in &stale_devices {
+                log::warn!(
+                    "  {} ({}) - last sync: {:?}",
+                    device.name,
+                    device.sku,
+                    device.last_api_sync()
                 );
             }
-
-            // only record the client after we've completed the
-            // initial undoc disco attempt
-            state.set_undoc_client(client).await;
-
-            // spawn periodic discovery task
-            let state = state.clone();
-            let args = args.undoc_args.clone();
-            tokio::spawn(async move {
-                loop {
-                    sleep(Duration::from_secs(600)).await;
-                    if let Err(err) =
-                        enumerate_devices_via_undo_api(state.clone(), None, &args).await
-                    {
-                        log::error!("Error during periodic undoc API discovery: {err:#}");
-                    }
-                }
-            });
+            log::warn!("LAN-capable devices should still be controllable");
         }
 
         // Now start LAN discovery
@@ -242,6 +362,7 @@ impl ServeCommand {
         if !options.is_empty() {
             log::info!("Starting LAN discovery");
             let state = state.clone();
+            let db_for_lan = device_db.clone();
             let (client, mut scan) = LanClient::new(options).await?;
 
             state.set_lan_client(client.clone()).await;
@@ -249,6 +370,12 @@ impl ServeCommand {
             tokio::spawn(async move {
                 while let Some(lan_device) = scan.recv().await {
                     log::trace!("LAN disco: {lan_device:?}");
+
+                    // Update device database with LAN-discovered device
+                    // This ensures LAN-only devices get persisted even without API
+                    let _display_name =
+                        db_for_lan.handle_lan_discovery(&lan_device.device, &lan_device.sku);
+
                     state
                         .device_mut(&lan_device.sku, &lan_device.device)
                         .await
