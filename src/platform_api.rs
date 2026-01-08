@@ -956,9 +956,25 @@ pub struct IntegerRange {
     pub precision: u32,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum Name {
+    Text(String),
+    Map(HashMap<String, String>),
+}
+
+impl Name {
+    pub fn as_str(&self) -> Option<&str> {
+        match self {
+            Name::Text(s) => Some(s),
+            Name::Map(m) => m.get("en").map(String::as_str),
+        }
+    }
+}
+
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct EnumOption {
-    pub name: String,
+    pub name: Name,
     #[serde(default)]
     pub value: JsonValue,
     #[serde(flatten)]
