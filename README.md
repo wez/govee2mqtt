@@ -25,7 +25,7 @@ via the [Home Assistant MQTT Integration](https://www.home-assistant.io/integrat
 |Segment Color|API Key|Find the `Segment 00X` light entities associated with your main light device in Home Assistant|
 
 * `API Key` means that you have [applied for a key from Govee](https://developer.govee.com/reference/apply-you-govee-api-key)
-  and have configured it for use in goovee2mqtt
+  and have configured it for use in govee2mqtt
 * `IoT` means that you have configured your Govee account email and password for
   use in govee2mqtt, which will then attempt to use the
   *undocumented and likely unsupported* AWS MQTT-based IoT service
