@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-tokio = {version="1.22", features=["macros", "rt-multi-thread", "rt", "net", "sync", "time"]}
+tokio = {version="1.49", features=["macros", "rt-multi-thread", "rt", "net", "sync", "time"]}
 serde_json = "1.0.148"
 serde = {version="1.0.147", features=["derive"]}
 anyhow = "1"
@@ -17,8 +17,8 @@ color-backtrace = "0.7.1"
 chrono = { version = "0.4.31", features = ["serde"] }
 chrono-tz = "0.10"
 iana-time-zone = "0.1.58"
-clap = { version = "4.4.12", features = ["derive"] }
-reqwest = { version = "0.12", features = ["json"] }
+clap = { version = "4.5.54", features = ["derive"] }
+reqwest = { version = "0.13", features = ["json"] }
 sqlite-cache = "0.1.4"
 dirs-next = "2.0.0"
 rusqlite = {version="0.32.0", features=["bundled"]}
