@@ -38,8 +38,10 @@ pub struct Device {
 
     pub nightlight_state: Option<NotifyHumidifierNightlightParams>,
     pub target_humidity_percent: Option<u8>,
+    pub target_fan_speed: Option<u8>,
     pub humidifier_work_mode: Option<u8>,
     pub humidifier_param_by_mode: HashMap<u8, u8>,
+    pub fan_oscillate: Option<bool>,
 
     pub last_polled: Option<DateTime<Utc>>,
 
@@ -183,6 +185,10 @@ impl Device {
 
     pub fn set_target_humidity(&mut self, percent: u8) {
         self.target_humidity_percent.replace(percent);
+    }
+    
+    pub fn set_fan_speed(&mut self, percent: u8) {
+        self.target_fan_speed.replace(percent);
     }
 
     pub fn set_humidifier_work_mode_and_param(&mut self, mode: u8, param: u8) {
