@@ -44,6 +44,14 @@ pub struct Device {
     pub last_polled: Option<DateTime<Utc>>,
 
     active_scene: Option<ActiveSceneInfo>,
+
+    /// Device name from persistent database.
+    /// This is the definitive name used for Home Assistant entity naming.
+    pub name: Option<String>,
+
+    /// Room name from persistent database.
+    /// This is the definitive room used for Home Assistant suggested_area.
+    pub room: Option<String>,
 }
 
 impl std::fmt::Display for Device {
@@ -109,13 +117,15 @@ impl Device {
         }
     }
 
-    /// Returns the device name; either the name defined in the Govee App,
-    /// or, if we don't have the information for some reason, then we compute
-    /// a name from the SKU and the last couple of bytes from the device id,
-    /// similar to the device name that would show up in a BLE scan, or
-    /// the default name for the device if not otherwise configured in the
-    /// Govee App.
+    /// Returns the device name.
+    /// Priority: persistent database name > Govee App name > computed name.
+    /// The database name is the source of truth for Home Assistant entity naming.
     pub fn name(&self) -> String {
+        // Database name is the definitive source of truth
+        if let Some(name) = &self.name {
+            return name.clone();
+        }
+        // Fallback to API name if available (fresh discovery)
         if let Some(name) = self.govee_name() {
             return name.to_string();
         }
@@ -131,6 +141,11 @@ impl Device {
     }
 
     pub fn room_name(&self) -> Option<&str> {
+        // Database room is the definitive source of truth
+        if let Some(room) = &self.room {
+            return Some(room.as_str());
+        }
+        // Fallback to API room if available (fresh discovery)
         if let Some(info) = &self.undoc_device_info {
             return info.room_name.as_deref();
         }
@@ -152,7 +167,11 @@ impl Device {
             id.push(c.to_ascii_uppercase());
         }
 
-        format!("{}_{}", self.sku, &id[id.len().saturating_sub(4)..])
+        format!(
+            "{}_{}",
+            self.sku,
+            id.get(id.len().saturating_sub(4)..).unwrap_or(&id)
+        )
     }
 
     pub fn preferred_poll_interval(&self) -> chrono::Duration {
@@ -617,5 +636,23 @@ mod test {
 
         let device = Device::new("H6127", "ce");
         assert_eq!(device.name(), "H6127_CE");
+    }
+
+    #[test]
+    fn database_name_priority() {
+        // Test that database name takes priority over computed name
+        let mut device = Device::new("H6072", "AA:BB:CC:DD:EE:FF:11:22");
+
+        // Initially, name() returns computed name
+        assert_eq!(device.name(), "H6072_1122");
+        assert_eq!(device.room_name(), None);
+
+        // Set database name and room (loaded from persistent database)
+        device.name = Some("Kitchen Lights".to_string());
+        device.room = Some("Kitchen".to_string());
+
+        // Now name() should return the database name
+        assert_eq!(device.name(), "Kitchen Lights");
+        assert_eq!(device.room_name(), Some("Kitchen").as_deref());
     }
 }
