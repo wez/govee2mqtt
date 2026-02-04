@@ -43,7 +43,7 @@ TZ=America/Phoenix
 name: govee2mqtt
 services:
   govee2mqtt:
-    image: ghcr.io/wez/govee2mqtt:latest
+    image: ghcr.io/jacobbratcher/govee2mqtt:latest
     container_name: govee2mqtt
     restart: unless-stopped
     env_file:

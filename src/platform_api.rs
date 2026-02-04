@@ -98,6 +98,16 @@ impl GoveeApiClient {
         anyhow::bail!("device {id} not found");
     }
 
+    /// Check if an error message indicates a retryable transient error
+    fn is_retryable_error(err: &anyhow::Error) -> bool {
+        let err_str = format!("{err:#}").to_lowercase();
+        // "service is busy" is a known transient error from Govee API
+        err_str.contains("service is busy")
+            || err_str.contains("try again later")
+            || err_str.contains("rate limit")
+            || err_str.contains("too many requests")
+    }
+
     pub async fn control_device<V: Into<JsonValue>>(
         &self,
         device: &HttpDeviceInfo,
@@ -105,6 +115,7 @@ impl GoveeApiClient {
         value: V,
     ) -> anyhow::Result<ControlDeviceResponseCapability> {
         let url = endpoint("/router/api/v1/device/control");
+        let value = value.into();
         let request = ControlDeviceRequest {
             request_id: "uuid".to_string(),
             payload: ControlDevicePayload {
@@ -113,18 +124,52 @@ impl GoveeApiClient {
                 capability: ControlDeviceCapability {
                     kind: capability.kind.clone(),
                     instance: capability.instance.to_string(),
-                    value: value.into(),
+                    value: value.clone(),
                 },
             },
         };
 
-        let resp: ControlDeviceResponse = self
-            .request_with_json_response(Method::POST, url, &request)
-            .await?;
+        // Retry with exponential backoff for transient errors
+        const MAX_RETRIES: u32 = 3;
+        const INITIAL_DELAY_MS: u64 = 1000;
 
-        log::info!("control_device result: {resp:?}");
+        let mut last_error = None;
+        for attempt in 0..=MAX_RETRIES {
+            if attempt > 0 {
+                let delay_ms = INITIAL_DELAY_MS * 2u64.pow(attempt - 1);
+                log::info!(
+                    "control_device: Retry attempt {attempt}/{MAX_RETRIES} after {delay_ms}ms delay"
+                );
+                tokio::time::sleep(Duration::from_millis(delay_ms)).await;
+            }
 
-        Ok(resp.capability)
+            match self
+                .request_with_json_response::<_, _, ControlDeviceResponse>(
+                    Method::POST,
+                    url.clone(),
+                    &request,
+                )
+                .await
+            {
+                Ok(resp) => {
+                    log::info!("control_device result: {resp:?}");
+                    return Ok(resp.capability);
+                }
+                Err(err) => {
+                    if Self::is_retryable_error(&err) && attempt < MAX_RETRIES {
+                        log::warn!(
+                            "control_device: Transient error on attempt {}: {err:#}",
+                            attempt + 1
+                        );
+                        last_error = Some(err);
+                        continue;
+                    }
+                    return Err(err);
+                }
+            }
+        }
+
+        Err(last_error.unwrap_or_else(|| anyhow::anyhow!("control_device failed after retries")))
     }
 
     pub async fn get_device_state(
@@ -956,8 +1001,46 @@ pub struct IntegerRange {
     pub precision: u32,
 }
 
+/// Deserializes a string that may be either a plain string or a localized object
+/// with language codes (e.g., {"en": "Movie", "de": "Film", "key": "movie_key"}).
+/// This handles the internationalization format used by some Govee devices like H66A1.
+fn localized_string<'de, D: Deserializer<'de>>(deserializer: D) -> Result<String, D::Error> {
+    let value: JsonValue = serde::de::Deserialize::deserialize(deserializer)?;
+    match value {
+        JsonValue::String(s) => Ok(s),
+        JsonValue::Object(map) => {
+            // Try to get the English translation first, then "key", then any available value
+            if let Some(JsonValue::String(en)) = map.get("en") {
+                Ok(en.clone())
+            } else if let Some(JsonValue::String(key)) = map.get("key") {
+                Ok(key.clone())
+            } else {
+                // Fall back to the first string value found
+                for (_, v) in &map {
+                    if let JsonValue::String(s) = v {
+                        return Ok(s.clone());
+                    }
+                }
+                Err(serde::de::Error::custom(
+                    "Localized name object contains no string values",
+                ))
+            }
+        }
+        _ => Err(serde::de::Error::custom(format!(
+            "Expected string or localized object for name, got {:?}",
+            value
+        ))),
+    }
+}
+
+/// Serializes a string (for round-trip compatibility when the original was a localized object)
+fn serialize_string<S: Serializer>(s: &String, serializer: S) -> Result<S::Ok, S::Error> {
+    serializer.serialize_str(s)
+}
+
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct EnumOption {
+    #[serde(deserialize_with = "localized_string", serialize_with = "serialize_string")]
     pub name: String,
     #[serde(default)]
     pub value: JsonValue,

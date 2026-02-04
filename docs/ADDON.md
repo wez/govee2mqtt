@@ -53,7 +53,7 @@ when we get to that point.
 ![image](https://github.com/wez/govee-lan-hass/assets/117777/c425615b-d7be-4ff2-a0d9-c8b7cfb8b63e)
 
 4. Click on "Repositories"
-5. Enter `https://github.com/wez/govee2mqtt` and click "Add"
+5. Enter `https://github.com/JacobBratcher/govee2mqtt` and click "Add"
 6. You should see:
 
 ![image](https://github.com/wez/govee-lan-hass/assets/117777/a2603e2d-dec1-4711-8d94-c957bf4a7a01)
