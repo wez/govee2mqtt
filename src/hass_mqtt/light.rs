@@ -24,6 +24,7 @@ pub struct LightConfig {
     pub state_topic: String,
     pub optimistic: bool,
     pub supported_color_modes: Vec<String>,
+    #[serde(skip_serializing)]
     /// Flag that defines if the light supports brightness.
     pub brightness: bool,
     /// Defines the maximum brightness value (i.e., 100%) of the MQTT device.
@@ -82,8 +83,34 @@ impl EntityInstance for DeviceLight {
 
                 let is_on = device_state.light_on.unwrap_or(false);
 
+                // Determine the color_mode to report based on what
+                // this light advertised in supported_color_modes.
+                let has_rgb = self.light.supported_color_modes.iter().any(|m| m == "rgb");
+                let has_color_temp = self.light.supported_color_modes.iter().any(|m| m == "color_temp");
+
                 let light_state = if is_on {
-                    if device_state.kelvin == 0 {
+                    if has_rgb && device_state.kelvin == 0 {
+                        json!({
+                            "state": "ON",
+                            "color_mode": "rgb",
+                            "color": {
+                                "r": device_state.color.r,
+                                "g": device_state.color.g,
+                                "b": device_state.color.b,
+                            },
+                            "brightness": device_state.brightness,
+                            "effect": device_state.scene,
+                        })
+                    } else if has_color_temp && device_state.kelvin > 0 {
+                        json!({
+                            "state": "ON",
+                            "color_mode": "color_temp",
+                            "brightness": device_state.brightness,
+                            "color_temp": kelvin_to_mired(device_state.kelvin),
+                            "effect": device_state.scene,
+                        })
+                    } else if has_rgb {
+                        // Fallback to RGB when we have RGB support
                         json!({
                             "state": "ON",
                             "color_mode": "rgb",
@@ -96,11 +123,12 @@ impl EntityInstance for DeviceLight {
                             "effect": device_state.scene,
                         })
                     } else {
+                        // brightness-only or onoff device
                         json!({
                             "state": "ON",
-                            "color_mode": "color_temp",
+                            "color_mode": self.light.supported_color_modes.first()
+                                .map(|s| s.as_str()).unwrap_or("brightness"),
                             "brightness": device_state.brightness,
-                            "color_temp": kelvin_to_mired(device_state.kelvin),
                             "effect": device_state.scene,
                         })
                     }
@@ -197,6 +225,16 @@ impl DeviceLight {
                 .as_ref()
                 .map(|info| info.supports_brightness())
                 .unwrap_or(false);
+
+        // Ensure supported_color_modes is never empty.
+        // HA 2025.3+ requires this instead of the deprecated brightness flag.
+        if supported_color_modes.is_empty() {
+            if brightness {
+                supported_color_modes.push("brightness".to_string());
+            } else {
+                supported_color_modes.push("onoff".to_string());
+            }
+        }
 
         let name = match segment {
             Some(n) => Some(format!("Segment {:03}", n + 1)),
