@@ -696,8 +696,17 @@ pub async fn spawn_hass_integration(
 }
 
 pub fn camel_case_to_space_separated(camel: &str) -> String {
-    let mut result = camel[..1].to_ascii_uppercase();
-    for c in camel.chars().skip(1) {
+    // 1) Lire le premier caractère en sécurité (sans slicing en octets)
+    let mut chars = camel.chars();
+    let first = match chars.next() {
+        Some(ch) => ch.to_uppercase().to_string(), // peut produire 1..N scalars
+        None => return String::new(),              // chaîne vide: on renvoie ""
+    };
+
+    // 2) Reconstituer la sortie: 1er caractère en majuscule,
+    //    puis ajouter un espace devant les majuscules suivantes (logique d'origine)
+    let mut result = String::from(first);
+    for c in chars {
         if c.is_uppercase() {
             result.push(' ');
         }
