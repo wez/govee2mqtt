@@ -1,9 +1,8 @@
-name: Govee to MQTT Bridge
-image: ghcr.io/wez/govee2mqtt-{arch}
-version: "2025.11.25-60a39bcc"
+name: Govee to MQTT Bridge (patched)
+version: "2026.03.16-44fc86d2"
 slug: govee2mqtt
 description: Control Govee Devices
-url: https://github.com/wez/govee2mqtt
+url: https://github.com/homeassilol/govee2mqtt
 arch:
   - amd64
   - aarch64
