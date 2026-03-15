@@ -43,3 +43,5 @@ schema:
   broadcast_all: "bool?"
   global_broadcast: "bool?"
   scan: "str?"
+  disable_effects: "bool?"
+  allowed_effects: "str?"

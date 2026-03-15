@@ -161,14 +161,39 @@ impl DeviceLight {
         let effect_list = if segment.is_some() {
             vec![]
         } else {
-            match state.device_list_scenes(device).await {
-                Ok(scenes) => scenes,
-                Err(err) => {
-                    log::error!("Unable to list scenes for {device}: {err:#}");
-                    vec![]
+            let disable_effects = std::env::var("GOVEE_DISABLE_EFFECTS")
+                .map(|v| v == "true")
+                .unwrap_or(false);
+
+            if disable_effects {
+                vec![]
+            } else {
+                let mut scenes = match state.device_list_scenes(device).await {
+                    Ok(scenes) => scenes,
+                    Err(err) => {
+                        log::error!("Unable to list scenes for {device}: {err:#}");
+                        vec![]
+                    }
+                };
+
+                if let Ok(allowed) = std::env::var("GOVEE_ALLOWED_EFFECTS") {
+                    let allowed_list: Vec<String> = allowed
+                        .split(',')
+                        .map(|s| s.trim().to_lowercase())
+                        .collect();
+
+                    scenes.retain(|s| {
+                        !s.is_empty() && allowed_list.contains(&s.to_lowercase())
+                    });
+                } else {
+                    scenes.retain(|s| !s.is_empty());
                 }
+
+                scenes
             }
         };
+
+        let effect = !effect_list.is_empty();
 
         let mut supported_color_modes = vec![];
 
@@ -222,7 +247,7 @@ impl DeviceLight {
                 supported_color_modes,
                 brightness,
                 brightness_scale: 100,
-                effect: true,
+                effect,
                 effect_list,
                 payload_available: "online".to_string(),
                 max_mireds,
