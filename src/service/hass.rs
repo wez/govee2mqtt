@@ -696,8 +696,16 @@ pub async fn spawn_hass_integration(
 }
 
 pub fn camel_case_to_space_separated(camel: &str) -> String {
-    let mut result = camel[..1].to_ascii_uppercase();
-    for c in camel.chars().skip(1) {
+    if !camel.is_ascii() {
+        return camel.to_string();
+    }
+    let mut chars = camel.chars();
+    let first = match chars.next() {
+        None => return String::new(),
+        Some(c) => c,
+    };
+    let mut result = first.to_ascii_uppercase().to_string();
+    for c in chars {
         if c.is_uppercase() {
             result.push(' ');
         }
@@ -713,5 +721,10 @@ fn test_camel_case_to_space_separated() {
     assert_eq!(
         camel_case_to_space_separated("oscillationToggle"),
         "Oscillation Toggle"
+    );
+    // Non-ASCII strings are not camelCase and must pass through unchanged.
+    assert_eq!(
+        camel_case_to_space_separated("用于三灯头中的第二个"),
+        "用于三灯头中的第二个"
     );
 }
