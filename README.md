@@ -12,8 +12,8 @@ via the [Home Assistant MQTT Integration](https://www.home-assistant.io/integrat
 
 | Commit | File | Change |
 |--------|------|--------|
-| `0070e48` | `src/service/hass.rs` | Replace byte slicing (`camel[..1]`) with char iteration (`chars().next()`) to fix UTF-8 panic on non-ASCII preset names |
-| `dcdf964` | `addon/config.yaml` | Bump version to `2026.03.14-0070e48-patched`, update name/image/url to distinguish from upstream |
+| `624fb96` | `src/service/hass.rs` | Replace byte slicing (`camel[..1]`) with char iteration (`chars().next()`) to fix UTF-8 panic on non-ASCII preset names |
+| `52d0b9c` | `addon/config.yaml`, `.github/`, `README.md` | Brand fork with CI, addon images, version `2026.03.16-44fc86d2`, and config |
 
 **Upstream PR:** [wez/govee2mqtt#606](https://github.com/wez/govee2mqtt/pull/606) by theg1nger
 **Upstream issue:** [wez/govee2mqtt#604](https://github.com/wez/govee2mqtt/issues/604)
