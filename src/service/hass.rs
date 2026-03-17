@@ -715,7 +715,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_camel_case_to_space_separated() {
+    fn test_camel_case_ascii() {
         assert_eq!(camel_case_to_space_separated("powerSwitch"), "Power Switch");
         assert_eq!(
             camel_case_to_space_separated("oscillationToggle"),

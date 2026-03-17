@@ -1,4 +1,5 @@
 name: Govee to MQTT Bridge (patched)
+image: ghcr.io/homeassilol/govee2mqtt-{arch}
 version: "2026.03.16-44fc86d2"
 slug: govee2mqtt
 description: Control Govee Devices
