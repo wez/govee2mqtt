@@ -45,7 +45,7 @@ filter_unconventional = false
 split_commits = false
 # regex for preprocessing the commit messages
 commit_preprocessors = [
-  { pattern = '\((\w+\s)?#([0-9]+)\)', replace = "([#${2}](https://github.com/wez/govee2mqtt/issues/${2}))"}, # replace issue numbers
+  { pattern = '\((\w+\s)?#([0-9]+)\)', replace = "([#${2}](https://github.com/homeassilol/govee2mqtt/issues/${2}))"}, # replace issue numbers
 
   # dependabot craps out crlfs in its commit messages, unixify them
   { pattern = '\r\n?', replace = "\n" },
