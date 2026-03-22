@@ -9,7 +9,6 @@
 ### 🐛 Bug Fixes
 
 - Prevent service crashes from `.expect()` panics and silent `exit(0)` ([#4](https://github.com/homeassilol/govee2mqtt/pull/4))
-- Handle non-ASCII unicode in `camel_case_to_space_separated`
 
 ### 📚 Documentation
 
@@ -18,8 +17,21 @@
 ### ⚙️ Miscellaneous
 
 - Add Claude Code CI, regression tests, and fork fixes ([#3](https://github.com/homeassilol/govee2mqtt/pull/3))
-- Brand fork with CI, addon images, and config
+
+## [2026.03.16-44fc86d2] - 2026-03-16
+
+Initial release of the homeassilol fork, based on upstream 2025.11.25-60a39bcc.
+
+### 🐛 Bug Fixes
+
+- Handle non-ASCII unicode in `camel_case_to_space_separated`
+
+### ⚙️ Miscellaneous
+
+- Fork branding: point addon images, CI, and config to homeassilol
 - Add docker secret support for handling environment variables
+- Upgrade Home Assistant builder
+- Remove deprecated platforms from build
 - Dependency updates
 
 ## [2025.11.25-60a39bcc] - 2025-11-25 14:02
