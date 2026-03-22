@@ -168,11 +168,13 @@ impl EntityInstance for CapabilitySensor {
     }
 
     async fn notify_state(&self, client: &HassClient) -> anyhow::Result<()> {
-        let device = self
-            .state
-            .device_by_id(&self.device_id)
-            .await
-            .expect("device to exist");
+        let Some(device) = self.state.device_by_id(&self.device_id).await else {
+            log::warn!(
+                "Device {} not found in state, skipping notify",
+                self.device_id
+            );
+            return Ok(());
+        };
 
         let quirk = device.resolve_quirk();
 
@@ -265,11 +267,13 @@ impl EntityInstance for DeviceStatusDiagnostic {
     }
 
     async fn notify_state(&self, client: &HassClient) -> anyhow::Result<()> {
-        let device = self
-            .state
-            .device_by_id(&self.device_id)
-            .await
-            .expect("device to exist");
+        let Some(device) = self.state.device_by_id(&self.device_id).await else {
+            log::warn!(
+                "Device {} not found in state, skipping notify",
+                self.device_id
+            );
+            return Ok(());
+        };
 
         let iot_state = device.compute_iot_device_state();
         let lan_state = device.compute_lan_device_state();

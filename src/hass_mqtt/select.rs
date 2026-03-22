@@ -67,11 +67,13 @@ impl EntityInstance for WorkModeSelect {
     }
 
     async fn notify_state(&self, client: &HassClient) -> anyhow::Result<()> {
-        let device = self
-            .state
-            .device_by_id(&self.device_id)
-            .await
-            .expect("device to exist");
+        let Some(device) = self.state.device_by_id(&self.device_id).await else {
+            log::warn!(
+                "Device {} not found in state, skipping notify",
+                self.device_id
+            );
+            return Ok(());
+        };
 
         if let Some(mode_value) = device.humidifier_work_mode {
             if let Ok(work_mode) = ParsedWorkMode::with_device(&device) {
@@ -146,11 +148,13 @@ impl EntityInstance for SceneModeSelect {
     }
 
     async fn notify_state(&self, client: &HassClient) -> anyhow::Result<()> {
-        let device = self
-            .state
-            .device_by_id(&self.device_id)
-            .await
-            .expect("device to exist");
+        let Some(device) = self.state.device_by_id(&self.device_id).await else {
+            log::warn!(
+                "Device {} not found in state, skipping notify",
+                self.device_id
+            );
+            return Ok(());
+        };
 
         if let Some(device_state) = device.device_state() {
             client
