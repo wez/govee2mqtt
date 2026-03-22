@@ -21,3 +21,5 @@ cargo fmt --all -- --check
 ## CI
 
 PRs must pass `cargo build`, `cargo test`, and `cargo fmt --check` (see `.github/workflows/pr.yml`).
+
+The fork also runs Claude Code CI (`.github/workflows/claude.yml`).

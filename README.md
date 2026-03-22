@@ -14,6 +14,9 @@ via the [Home Assistant MQTT Integration](https://www.home-assistant.io/integrat
 |--------|------|--------|
 | `624fb96` | `src/service/hass.rs` | Replace byte slicing (`camel[..1]`) with char iteration (`chars().next()`) to fix UTF-8 panic on non-ASCII preset names |
 | `52d0b9c` | `addon/config.yaml`, `.github/`, `README.md` | Brand fork with CI, addon images, version `2026.03.16-44fc86d2`, and config |
+| `1c1886e` | `.github/workflows/`, tests | Add Claude Code CI, regression tests, and fork fixes |
+| `2df8a4b` | `src/service/quirks.rs` | Add Govee H60B0 (Neon Rope Light 2) as LAN-capable light |
+| `e69fec4` | `src/hass_mqtt/*.rs`, `src/service/hass.rs` | Replace `.expect()` panics with graceful handling; fix silent `exit(0)` → `exit(1)` so HA restarts the addon on failure |
 
 **Upstream PR:** [wez/govee2mqtt#606](https://github.com/wez/govee2mqtt/pull/606) by theg1nger
 **Upstream issue:** [wez/govee2mqtt#604](https://github.com/wez/govee2mqtt/issues/604)
