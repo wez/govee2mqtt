@@ -16,7 +16,7 @@ use uuid::Uuid;
 
 // <https://github.com/constructorfleet/homebridge-ultimate-govee/blob/main/src/data/clients/RestClient.ts>
 
-const APP_VERSION: &str = "5.6.01";
+const APP_VERSION: &str = "6.5.02";
 const HALF_DAY: Duration = Duration::from_secs(3600 * 12);
 const ONE_DAY: Duration = Duration::from_secs(86400);
 const ONE_WEEK: Duration = Duration::from_secs(86400 * 7);
@@ -207,6 +207,12 @@ impl GoveeUndocumentedApi {
                 Method::POST,
                 "https://app2.govee.com/account/rest/account/v1/login",
             )
+            .header("appVersion", APP_VERSION)
+            .header("clientId", &self.client_id)
+            .heer("clientType", "1")
+            .header("iotVersion", "0")
+            .header("timestamp", ms_timestamp())
+            .header("User-Agent", user_agent())
             .json(&serde_json::json!({
                 "email": self.email,
                 "password": self.password,
