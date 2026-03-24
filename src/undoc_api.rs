@@ -209,7 +209,7 @@ impl GoveeUndocumentedApi {
             )
             .header("appVersion", APP_VERSION)
             .header("clientId", &self.client_id)
-            .heer("clientType", "1")
+            .header("clientType", "1")
             .header("iotVersion", "0")
             .header("timestamp", ms_timestamp())
             .header("User-Agent", user_agent())
