@@ -321,6 +321,7 @@ fn load_quirks() -> HashMap<String, Quirk> {
         Quirk::lan_api_capable_light("H61A3", STRIP),
         Quirk::lan_api_capable_light("H61A5", STRIP),
         Quirk::lan_api_capable_light("H61A8", STRIP),
+        Quirk::lan_api_capable_light("H61A9", STRIP),
         Quirk::lan_api_capable_light("H61B2", TV_BACK),
         Quirk::lan_api_capable_light("H61E1", STRIP),
         Quirk::lan_api_capable_light("H7012", STRING),
