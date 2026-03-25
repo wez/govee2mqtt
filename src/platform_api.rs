@@ -175,9 +175,25 @@ impl GoveeApiClient {
                     },
                 };
 
-                let resp: GetDeviceScenesResponse = self
+                let resp: GetDeviceScenesResponse = match self
                     .request_with_json_response(Method::POST, url, &request)
-                    .await?;
+                    .await
+                {
+                    Ok(resp) => resp,
+                    Err(err) => {
+                        if let Some(req_err) = HttpRequestFailed::from_err(&err) {
+                            if req_err.status == reqwest::StatusCode::BAD_REQUEST {
+                                log::warn!(
+                                    "get_device_diy_scenes: device {} {} does not support scenes",
+                                    device.sku,
+                                    device.device
+                                );
+                                return Ok(CacheComputeResult::Value(vec![]));
+                            }
+                        }
+                        return Err(err);
+                    }
+                };
 
                 Ok(CacheComputeResult::Value(resp.payload.capabilities))
             },
@@ -213,9 +229,25 @@ impl GoveeApiClient {
                     },
                 };
 
-                let resp: GetDeviceScenesResponse = self
+                let resp: GetDeviceScenesResponse = match self
                     .request_with_json_response(Method::POST, url, &request)
-                    .await?;
+                    .await
+                {
+                    Ok(resp) => resp,
+                    Err(err) => {
+                        if let Some(req_err) = HttpRequestFailed::from_err(&err) {
+                            if req_err.status == reqwest::StatusCode::BAD_REQUEST {
+                                log::warn!(
+                                    "get_device_scenes: device {} {} does not support scenes",
+                                    device.sku,
+                                    device.device
+                                );
+                                return Ok(CacheComputeResult::Value(vec![]));
+                            }
+                        }
+                        return Err(err);
+                    }
+                };
 
                 Ok(CacheComputeResult::Value(resp.payload.capabilities))
             },
@@ -993,8 +1025,8 @@ struct EmbeddedRequestStatus {
 #[derive(Error, Debug)]
 #[error("Failed with status {status} {}: {content}", .status.canonical_reason().unwrap_or(""))]
 pub struct HttpRequestFailed {
-    status: reqwest::StatusCode,
-    content: String,
+    pub status: reqwest::StatusCode,
+    pub content: String,
 }
 
 impl HttpRequestFailed {

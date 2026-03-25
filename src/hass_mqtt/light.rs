@@ -1,6 +1,6 @@
 use crate::hass_mqtt::base::{Device, EntityConfig, Origin};
 use crate::hass_mqtt::instance::{publish_entity_config, EntityInstance};
-use crate::platform_api::DeviceType;
+use crate::platform_api::{DeviceType, HttpRequestFailed};
 use crate::service::device::Device as ServiceDevice;
 use crate::service::hass::{
     availability_topic, kelvin_to_mired, light_segment_state_topic, light_state_topic,
@@ -164,8 +164,17 @@ impl DeviceLight {
             match state.device_list_scenes(device).await {
                 Ok(scenes) => scenes,
                 Err(err) => {
-                    log::error!("Unable to list scenes for {device}: {err:#}");
-                    vec![]
+                    if let Some(req_err) = HttpRequestFailed::from_err(&err) {
+                        if req_err.status == reqwest::StatusCode::BAD_REQUEST {
+                            vec![]
+                        } else {
+                            log::warn!("Unable to list scenes for {device}: {err:#}");
+                            vec![]
+                        }
+                    } else {
+                        log::warn!("Unable to list scenes for {device}: {err:#}");
+                        vec![]
+                    }
                 }
             }
         };

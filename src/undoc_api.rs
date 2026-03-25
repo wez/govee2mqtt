@@ -619,7 +619,6 @@ pub struct OneClickComponent {
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-#[cfg_attr(debug_assertions, serde(deny_unknown_fields))]
 pub struct OneClick {
     pub name: String,
     pub plan_type: i64,
@@ -635,11 +634,11 @@ pub struct OneClick {
     pub group_name: String,
     #[serde(default)]
     pub iot_rules: Vec<OneClickIotRule>,
+    pub component_id: Option<u64>,
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-#[cfg_attr(debug_assertions, serde(deny_unknown_fields))]
 pub struct OneClickIotRule {
     pub device_obj: OneClickIotRuleDevice,
     pub rule: Vec<OneClickIotRuleEntry>,
@@ -647,7 +646,6 @@ pub struct OneClickIotRule {
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-#[cfg_attr(debug_assertions, serde(deny_unknown_fields))]
 pub struct OneClickIotRuleEntry {
     #[serde(deserialize_with = "embedded_json", serialize_with = "as_json")]
     pub blue_msg: JsonValue,
@@ -657,11 +655,11 @@ pub struct OneClickIotRuleEntry {
     pub device_type: u32,
     #[serde(deserialize_with = "embedded_json", serialize_with = "as_json")]
     pub iot_msg: JsonValue,
+    pub effect: Option<JsonValue>,
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-#[cfg_attr(debug_assertions, serde(deny_unknown_fields))]
 pub struct OneClickIotRuleEntryCmd {
     pub open: Option<u32>,
     pub scenes_code: Option<u16>,
@@ -672,7 +670,6 @@ pub struct OneClickIotRuleEntryCmd {
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-#[cfg_attr(debug_assertions, serde(deny_unknown_fields))]
 pub struct OneClickIotRuleDevice {
     pub name: Option<String>,
     pub device: Option<String>,
@@ -707,6 +704,7 @@ pub struct OneClickIotRuleDevice {
     pub version_soft: Option<String>,
     pub wifi_soft_version: Option<String>,
     pub wifi_hard_version: Option<String>,
+    pub segment_count: Option<u32>,
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
@@ -788,7 +786,6 @@ impl DeviceEntry {
 
 #[derive(Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-#[cfg_attr(debug_assertions, serde(deny_unknown_fields))]
 pub struct DeviceEntryExt {
     #[serde(deserialize_with = "embedded_json", serialize_with = "as_json")]
     pub device_settings: DeviceSettings,
@@ -800,7 +797,6 @@ pub struct DeviceEntryExt {
 
 #[derive(Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-#[cfg_attr(debug_assertions, serde(deny_unknown_fields))]
 pub struct DeviceSettings {
     /// Maybe be absent for BLE devices
     pub wifi_name: Option<String>,
@@ -868,6 +864,8 @@ pub struct DeviceSettings {
     /// eg: Glide Hexa. Value is base64 encoded data
     pub shapes: Option<String>,
     pub support_ble_broad_v3: Option<bool>,
+    pub support_enc: Option<bool>,
+    pub mac: Option<String>,
 }
 
 #[derive(Deserialize, Debug, Clone)]
