@@ -5,6 +5,7 @@ use crate::platform_api::{
     DeviceCapability, DeviceCapabilityState, DeviceType, HttpDeviceInfo, HttpDeviceState,
 };
 use crate::service::quirks::{resolve_quirk, Quirk, BULB};
+use crate::service::state::SceneCatalogCategory;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
@@ -44,6 +45,8 @@ pub struct Device {
     pub last_polled: Option<DateTime<Utc>>,
 
     active_scene: Option<ActiveSceneInfo>,
+    /// Cached scene catalog to avoid repeated API calls during state notifications
+    scene_catalog_cache: Option<Vec<SceneCatalogCategory>>,
 }
 
 impl std::fmt::Display for Device {
@@ -365,6 +368,21 @@ impl Device {
         candidates.sort_by(|a, b| a.updated.cmp(&b.updated));
 
         candidates.pop()
+    }
+
+    /// Returns the active scene name, if any
+    pub fn active_scene_name(&self) -> Option<&str> {
+        self.active_scene.as_ref().map(|s| s.name.as_str())
+    }
+
+    /// Returns the cached scene catalog, if available
+    pub fn scene_catalog(&self) -> Option<&Vec<SceneCatalogCategory>> {
+        self.scene_catalog_cache.as_ref()
+    }
+
+    /// Caches the scene catalog for this device
+    pub fn set_scene_catalog(&mut self, catalog: Vec<SceneCatalogCategory>) {
+        self.scene_catalog_cache = Some(catalog);
     }
 
     /// Records the active scene name

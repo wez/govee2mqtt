@@ -8,12 +8,25 @@ use crate::service::iot::IotClient;
 use crate::temperature::{TemperatureScale, TemperatureValue};
 use crate::undoc_api::GoveeUndocumentedApi;
 use anyhow::Context;
+use serde::{Deserialize, Serialize};
 use serde_json::Value as JsonValue;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Instant;
 use tokio::sync::{MappedMutexGuard, Mutex, MutexGuard, Semaphore};
 use tokio::time::{sleep, Duration};
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct SceneCatalogCategory {
+    pub name: String,
+    pub scenes: Vec<SceneCatalogEntry>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct SceneCatalogEntry {
+    pub name: String,
+    pub icon_urls: Vec<String>,
+}
 
 #[derive(Default)]
 pub struct State {
@@ -620,6 +633,87 @@ impl State {
         }
 
         log::trace!("Platform API unavailable: Don't know how to list scenes for {device}");
+
+        Ok(vec![])
+    }
+
+    /// Returns the scene catalog with category structure preserved.
+    /// Unlike `device_list_scenes()` which returns a flat `Vec<String>`,
+    /// this preserves category groupings and icon URLs from the Govee API.
+    /// Results are cached in the Device struct after first fetch.
+    pub async fn device_list_scenes_categorized(
+        &self,
+        device: &Device,
+    ) -> anyhow::Result<Vec<SceneCatalogCategory>> {
+        // Return cached catalog if available
+        if let Some(cached) = device.scene_catalog() {
+            return Ok(cached.clone());
+        }
+
+        let catalog = self.fetch_scene_catalog(device).await?;
+
+        // Cache the result for future calls
+        if !catalog.is_empty() {
+            self.device_mut(&device.sku, &device.id)
+                .await
+                .set_scene_catalog(catalog.clone());
+        }
+
+        Ok(catalog)
+    }
+
+    /// Fetches the scene catalog from the Govee API (no caching).
+    async fn fetch_scene_catalog(
+        &self,
+        device: &Device,
+    ) -> anyhow::Result<Vec<SceneCatalogCategory>> {
+        // Try platform API first (no category info — wrap in "All")
+        if let Some(client) = self.get_platform_client().await {
+            if let Some(info) = &device.http_device_info {
+                let names = sort_and_dedup_scenes(client.list_scene_names(info).await?);
+                if !names.is_empty() {
+                    return Ok(vec![SceneCatalogCategory {
+                        name: "All".to_string(),
+                        scenes: names
+                            .into_iter()
+                            .map(|name| SceneCatalogEntry {
+                                name,
+                                icon_urls: vec![],
+                            })
+                            .collect(),
+                    }]);
+                }
+            }
+        }
+
+        // Try undocumented API (has categories)
+        if let Ok(categories) = GoveeUndocumentedApi::get_scenes_for_device(&device.sku).await {
+            let mut result = vec![];
+            for cat in categories {
+                let mut scenes = vec![];
+                for scene in cat.scenes {
+                    // Same validity filter as device_list_scenes():
+                    // include only if at least one LightEffectEntry has scene_code != 0
+                    let valid = scene
+                        .light_effects
+                        .iter()
+                        .any(|effect| effect.scene_code != 0);
+                    if valid {
+                        scenes.push(SceneCatalogEntry {
+                            name: scene.scene_name,
+                            icon_urls: scene.icon_urls,
+                        });
+                    }
+                }
+                if !scenes.is_empty() {
+                    result.push(SceneCatalogCategory {
+                        name: cat.category_name,
+                        scenes,
+                    });
+                }
+            }
+            return Ok(result);
+        }
 
         Ok(vec![])
     }

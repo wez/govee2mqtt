@@ -7,7 +7,9 @@ use crate::hass_mqtt::light::DeviceLight;
 use crate::hass_mqtt::number::WorkModeNumber;
 use crate::hass_mqtt::scene::SceneConfig;
 use crate::hass_mqtt::select::{SceneModeSelect, WorkModeSelect};
-use crate::hass_mqtt::sensor::{CapabilitySensor, DeviceStatusDiagnostic, GlobalFixedDiagnostic};
+use crate::hass_mqtt::sensor::{
+    CapabilitySensor, DeviceStatusDiagnostic, GlobalFixedDiagnostic, SceneInfoSensor,
+};
 use crate::hass_mqtt::switch::CapabilitySwitch;
 use crate::hass_mqtt::work_mode::ParsedWorkMode;
 use crate::platform_api::{DeviceCapability, DeviceCapabilityKind, DeviceType};
@@ -155,6 +157,13 @@ pub async fn enumerate_entities_for_device<'a>(
 
     entities.add(DeviceStatusDiagnostic::new(d, state));
     entities.add(ButtonConfig::request_platform_data_for_device(d));
+
+    // Add scene cycling buttons for devices that support scenes
+    if d.supports_rgb() || d.get_color_temperature_range().is_some() {
+        entities.add(ButtonConfig::scene_next_for_device(d));
+        entities.add(ButtonConfig::scene_prev_for_device(d));
+        entities.add(SceneInfoSensor::new(d, state));
+    }
 
     if d.supports_rgb() || d.get_color_temperature_range().is_some() || d.supports_brightness() {
         entities.add(DeviceLight::for_device(&d, state, None).await?);

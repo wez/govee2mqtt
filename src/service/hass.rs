@@ -168,6 +168,19 @@ impl HassClient {
         Ok(())
     }
 
+    pub async fn publish_obj_retained<T: AsRef<str> + std::fmt::Display, P: Serialize>(
+        &self,
+        topic: T,
+        payload: P,
+    ) -> anyhow::Result<()> {
+        let payload = serde_json::to_string(&payload)?;
+        log::trace!("{topic} -> {payload} (retained)");
+        self.client
+            .publish(topic, payload, QoS::AtMostOnce, true)
+            .await?;
+        Ok(())
+    }
+
     pub async fn advise_hass_of_light_state(
         &self,
         device: &ServiceDevice,
@@ -235,6 +248,76 @@ pub fn purge_cache_topic() -> String {
 #[derive(Deserialize)]
 pub struct IdParameter {
     pub id: String,
+}
+
+/// Someone pressed the "Scene Next" button
+async fn mqtt_scene_next(
+    Params(IdParameter { id }): Params<IdParameter>,
+    State(state): State<StateHandle>,
+) -> anyhow::Result<()> {
+    scene_cycle(&state, &id, 1).await
+}
+
+/// Someone pressed the "Scene Previous" button
+async fn mqtt_scene_prev(
+    Params(IdParameter { id }): Params<IdParameter>,
+    State(state): State<StateHandle>,
+) -> anyhow::Result<()> {
+    scene_cycle(&state, &id, -1).await
+}
+
+/// Computes the target scene index for cycling.
+/// Returns the index into `scenes` to activate.
+fn compute_scene_cycle_index(
+    scenes: &[String],
+    current_name: Option<&str>,
+    direction: i32,
+) -> usize {
+    let total = scenes.len() as i32;
+    match current_name.and_then(|name| scenes.iter().position(|n| n.eq_ignore_ascii_case(name))) {
+        Some(idx) => ((idx as i32 + direction).rem_euclid(total)) as usize,
+        None => {
+            if direction > 0 {
+                0
+            } else {
+                (total - 1) as usize
+            }
+        }
+    }
+}
+
+/// Shared logic for scene next/prev cycling
+async fn scene_cycle(state: &StateHandle, id: &str, direction: i32) -> anyhow::Result<()> {
+    // Acquire Coordinator first to prevent races with concurrent scene changes
+    let coord = state.resolve_device_for_control(id).await?;
+
+    let catalog = state.device_list_scenes_categorized(&coord).await?;
+    let flat: Vec<String> = catalog
+        .into_iter()
+        .flat_map(|cat| cat.scenes.into_iter().map(|s| s.name))
+        .collect();
+
+    if flat.is_empty() {
+        anyhow::bail!("No scenes available for device {id}");
+    }
+
+    let current_name = coord.active_scene_name().map(|s| s.to_string());
+    let new_idx = compute_scene_cycle_index(&flat, current_name.as_deref(), direction);
+
+    let target_scene = &flat[new_idx];
+
+    log::info!(
+        "Scene cycle {}: {} -> {} (index {} of {})",
+        if direction > 0 { "next" } else { "prev" },
+        current_name.as_deref().unwrap_or("None"),
+        target_scene,
+        new_idx,
+        flat.len()
+    );
+
+    state.device_set_scene(&coord, target_scene).await?;
+
+    Ok(())
 }
 
 /// Someone clicked the "Request Platform API State" button
@@ -542,6 +625,12 @@ async fn run_mqtt_loop(
             )
             .await?;
         router
+            .route("gv2mqtt/:id/scene-next", mqtt_scene_next)
+            .await?;
+        router
+            .route("gv2mqtt/:id/scene-prev", mqtt_scene_prev)
+            .await?;
+        router
             .route(
                 "gv2mqtt/number/:id/command/:mode_name/:work_mode",
                 mqtt_number_command,
@@ -741,5 +830,63 @@ mod tests {
     #[test]
     fn test_camel_case_emoji() {
         assert_eq!(camel_case_to_space_separated("🔥lightMode"), "🔥light Mode");
+    }
+
+    #[test]
+    fn test_scene_cycle_next_from_middle() {
+        let scenes: Vec<String> = vec!["A".into(), "B".into(), "C".into()];
+        assert_eq!(compute_scene_cycle_index(&scenes, Some("B"), 1), 2);
+    }
+
+    #[test]
+    fn test_scene_cycle_prev_from_middle() {
+        let scenes: Vec<String> = vec!["A".into(), "B".into(), "C".into()];
+        assert_eq!(compute_scene_cycle_index(&scenes, Some("B"), -1), 0);
+    }
+
+    #[test]
+    fn test_scene_cycle_next_wraps_last_to_first() {
+        let scenes: Vec<String> = vec!["A".into(), "B".into(), "C".into()];
+        assert_eq!(compute_scene_cycle_index(&scenes, Some("C"), 1), 0);
+    }
+
+    #[test]
+    fn test_scene_cycle_prev_wraps_first_to_last() {
+        let scenes: Vec<String> = vec!["A".into(), "B".into(), "C".into()];
+        assert_eq!(compute_scene_cycle_index(&scenes, Some("A"), -1), 2);
+    }
+
+    #[test]
+    fn test_scene_cycle_no_active_scene_next() {
+        let scenes: Vec<String> = vec!["A".into(), "B".into(), "C".into()];
+        assert_eq!(compute_scene_cycle_index(&scenes, None, 1), 0);
+    }
+
+    #[test]
+    fn test_scene_cycle_no_active_scene_prev() {
+        let scenes: Vec<String> = vec!["A".into(), "B".into(), "C".into()];
+        assert_eq!(compute_scene_cycle_index(&scenes, None, -1), 2);
+    }
+
+    #[test]
+    fn test_scene_cycle_case_insensitive() {
+        let scenes: Vec<String> = vec!["Sunset".into(), "Rainbow".into()];
+        assert_eq!(compute_scene_cycle_index(&scenes, Some("sunset"), 1), 1);
+    }
+
+    #[test]
+    fn test_scene_cycle_single_scene() {
+        let scenes: Vec<String> = vec!["Only".into()];
+        assert_eq!(compute_scene_cycle_index(&scenes, Some("Only"), 1), 0);
+        assert_eq!(compute_scene_cycle_index(&scenes, Some("Only"), -1), 0);
+    }
+
+    #[test]
+    fn test_scene_cycle_unknown_scene_treated_as_no_active() {
+        let scenes: Vec<String> = vec!["A".into(), "B".into()];
+        assert_eq!(
+            compute_scene_cycle_index(&scenes, Some("nonexistent"), 1),
+            0
+        );
     }
 }

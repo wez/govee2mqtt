@@ -105,6 +105,44 @@ impl ButtonConfig {
         }
     }
 
+    pub fn scene_next_for_device(device: &ServiceDevice) -> Self {
+        let unique_id = format!("gv2mqtt-{id}-scene-next", id = topic_safe_id(device));
+        let command_topic = format!("gv2mqtt/{id}/scene-next", id = topic_safe_id(device));
+        Self {
+            base: EntityConfig {
+                availability_topic: availability_topic(),
+                name: Some("Scene Next".to_string()),
+                entity_category: None,
+                origin: Origin::default(),
+                device: Device::for_device(device),
+                unique_id,
+                device_class: None,
+                icon: Some("mdi:skip-next".to_string()),
+            },
+            command_topic,
+            payload_press: None,
+        }
+    }
+
+    pub fn scene_prev_for_device(device: &ServiceDevice) -> Self {
+        let unique_id = format!("gv2mqtt-{id}-scene-prev", id = topic_safe_id(device));
+        let command_topic = format!("gv2mqtt/{id}/scene-prev", id = topic_safe_id(device));
+        Self {
+            base: EntityConfig {
+                availability_topic: availability_topic(),
+                name: Some("Scene Previous".to_string()),
+                entity_category: None,
+                origin: Origin::default(),
+                device: Device::for_device(device),
+                unique_id,
+                device_class: None,
+                icon: Some("mdi:skip-previous".to_string()),
+            },
+            command_topic,
+            payload_press: None,
+        }
+    }
+
     pub fn request_platform_data_for_device(device: &ServiceDevice) -> Self {
         let unique_id = format!(
             "gv2mqtt-{id}-request-platform-data",
