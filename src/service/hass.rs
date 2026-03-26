@@ -268,13 +268,13 @@ async fn mqtt_scene_prev(
 
 /// Computes the target scene index for cycling.
 /// Returns the index into `scenes` to activate.
-fn compute_scene_cycle_index(scenes: &[String], current_name: Option<&str>, direction: i32) -> usize {
+fn compute_scene_cycle_index(
+    scenes: &[String],
+    current_name: Option<&str>,
+    direction: i32,
+) -> usize {
     let total = scenes.len() as i32;
-    match current_name.and_then(|name| {
-        scenes
-            .iter()
-            .position(|n| n.eq_ignore_ascii_case(name))
-    }) {
+    match current_name.and_then(|name| scenes.iter().position(|n| n.eq_ignore_ascii_case(name))) {
         Some(idx) => ((idx as i32 + direction).rem_euclid(total)) as usize,
         None => {
             if direction > 0 {

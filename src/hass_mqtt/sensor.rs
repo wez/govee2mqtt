@@ -367,8 +367,7 @@ impl EntityInstance for SceneInfoSensor {
                 .await
                 .unwrap_or_default();
             if !catalog.is_empty() {
-                let catalog_topic =
-                    format!("gv2mqtt/{}/scene-catalog", self.device_topic_id);
+                let catalog_topic = format!("gv2mqtt/{}/scene-catalog", self.device_topic_id);
                 if let Err(err) = client.publish_obj_retained(&catalog_topic, &catalog).await {
                     log::warn!("Failed to publish scene catalog: {err:#}");
                 }
@@ -383,10 +382,7 @@ impl EntityInstance for SceneInfoSensor {
             return Ok(());
         };
 
-        let scene_name = device
-            .active_scene_name()
-            .unwrap_or("None")
-            .to_string();
+        let scene_name = device.active_scene_name().unwrap_or("None").to_string();
 
         let catalog = self
             .state
