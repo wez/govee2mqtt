@@ -313,3 +313,130 @@ impl EntityInstance for DeviceStatusDiagnostic {
         Ok(())
     }
 }
+
+pub struct SceneInfoSensor {
+    sensor: SensorConfig,
+    device_id: String,
+    device_topic_id: String,
+    state: StateHandle,
+}
+
+impl SceneInfoSensor {
+    pub fn new(device: &ServiceDevice, state: &StateHandle) -> Self {
+        let unique_id = format!("sensor-{id}-gv2mqtt-scene-info", id = topic_safe_id(device));
+
+        Self {
+            device_topic_id: topic_safe_id(device),
+            sensor: SensorConfig {
+                base: EntityConfig {
+                    availability_topic: availability_topic(),
+                    name: Some("Scene Info".to_string()),
+                    entity_category: None,
+                    origin: Origin::default(),
+                    device: Device::for_device(device),
+                    unique_id: unique_id.clone(),
+                    device_class: None,
+                    icon: Some("mdi:palette".to_string()),
+                },
+                state_topic: format!("gv2mqtt/sensor/{unique_id}/state"),
+                state_class: None,
+                json_attributes_topic: Some(format!("gv2mqtt/sensor/{unique_id}/attributes")),
+                unit_of_measurement: None,
+            },
+            device_id: device.id.to_string(),
+            state: state.clone(),
+        }
+    }
+}
+
+#[async_trait]
+impl EntityInstance for SceneInfoSensor {
+    async fn publish_config(
+        &self,
+        state: &StateHandle,
+        client: &HassClient,
+    ) -> anyhow::Result<()> {
+        self.sensor.publish(state, client).await?;
+
+        // Publish scene catalog as retained MQTT message during registration (once),
+        // not on every state change. HA automations can subscribe to this topic.
+        if let Some(device) = self.state.device_by_id(&self.device_id).await {
+            let catalog = self
+                .state
+                .device_list_scenes_categorized(&device)
+                .await
+                .unwrap_or_default();
+            if !catalog.is_empty() {
+                let catalog_topic =
+                    format!("gv2mqtt/{}/scene-catalog", self.device_topic_id);
+                if let Err(err) = client.publish_obj_retained(&catalog_topic, &catalog).await {
+                    log::warn!("Failed to publish scene catalog: {err:#}");
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    async fn notify_state(&self, client: &HassClient) -> anyhow::Result<()> {
+        let Some(device) = self.state.device_by_id(&self.device_id).await else {
+            return Ok(());
+        };
+
+        let scene_name = device
+            .active_scene_name()
+            .unwrap_or("None")
+            .to_string();
+
+        let catalog = self
+            .state
+            .device_list_scenes_categorized(&device)
+            .await
+            .unwrap_or_default();
+
+        // Build flat ordered list for index lookup
+        let flat: Vec<(&str, &str)> = catalog
+            .iter()
+            .flat_map(|cat| {
+                cat.scenes
+                    .iter()
+                    .map(move |s| (s.name.as_str(), cat.name.as_str()))
+            })
+            .collect();
+
+        let current_idx = flat
+            .iter()
+            .position(|(name, _)| name.eq_ignore_ascii_case(&scene_name));
+
+        let (category, index, next_scene, prev_scene) = if let Some(idx) = current_idx {
+            let total = flat.len();
+            let next_idx = (idx + 1) % total;
+            let prev_idx = if idx == 0 { total - 1 } else { idx - 1 };
+            (
+                flat[idx].1.to_string(),
+                idx,
+                flat[next_idx].0.to_string(),
+                flat[prev_idx].0.to_string(),
+            )
+        } else {
+            let next = flat.first().map(|(n, _)| n.to_string()).unwrap_or_default();
+            let prev = flat.last().map(|(n, _)| n.to_string()).unwrap_or_default();
+            ("Unknown".to_string(), 0, next, prev)
+        };
+
+        let attributes = json!({
+            "scene_name": scene_name,
+            "category": category,
+            "index": index,
+            "total": flat.len(),
+            "next_scene": next_scene,
+            "prev_scene": prev_scene,
+        });
+
+        self.sensor.notify_state(client, &scene_name).await?;
+        if let Some(topic) = &self.sensor.json_attributes_topic {
+            client.publish_obj(topic, attributes).await?;
+        }
+        Ok(())
+    }
+}
