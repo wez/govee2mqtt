@@ -14,16 +14,17 @@ via the [Home Assistant MQTT Integration](https://www.home-assistant.io/integrat
 
 | Commit | File | Change |
 |--------|------|--------|
-| `624fb96` | `src/service/hass.rs` | Replace byte slicing (`camel[..1]`) with char iteration (`chars().next()`) to fix UTF-8 panic on non-ASCII preset names |
-| `52d0b9c` | `addon/config.yaml`, `.github/`, `README.md` | Brand fork with CI, addon images, version `2026.03.22-ba238f5e`, and config |
-| `1c1886e` | `.github/workflows/`, tests | Add Claude Code CI, regression tests, and fork fixes |
-| `2df8a4b` | `src/service/quirks.rs` | Add Govee H60B0 (Neon Rope Light 2) as LAN-capable light |
-| `e69fec4` | `src/hass_mqtt/*.rs`, `src/service/hass.rs` | Replace `.expect()` panics with graceful handling; fix silent `exit(0)` → `exit(1)` so HA restarts the addon on failure |
+| `6f2f5cc` | `addon/config.yaml`, `.github/`, `README.md` | Brand fork with CI, addon images, custom addon images, and config |
+| `da4aeb1` | `.github/workflows/`, tests | Add Claude Code CI, regression tests, and fork fixes |
+| `f41ac85` | `src/service/quirks.rs` | Add Govee H60B0 (Neon Rope Light 2) as LAN-capable light |
+| `261eb48` | `src/hass_mqtt/*.rs`, `src/service/hass.rs` | Replace `.expect()` panics with graceful handling; fix silent `exit(0)` → `exit(1)` so HA restarts the addon on failure |
+| `0666c35` | `src/hass_mqtt/*.rs`, `src/service/*.rs` | Scene quick-cycle: Next/Previous buttons, scene info sensor, categorized catalog endpoint with caching |
 
 **Upstream status:**
 - ✅ UTF-8 fix — [merged via #606](https://github.com/wez/govee2mqtt/pull/606) on 2026-03-25
 - ⏳ H60B0 device support — [PR #629](https://github.com/wez/govee2mqtt/pull/629) pending
 - ⏳ Panic hardening + exit code fix — [#617](https://github.com/wez/govee2mqtt/issues/617), [#618](https://github.com/wez/govee2mqtt/issues/618) filed, no PR yet
+- 🆕 Scene quick-cycle buttons + catalog — fork-only feature, not submitted upstream
 
 ## Features
 

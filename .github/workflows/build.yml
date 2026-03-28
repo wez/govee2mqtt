@@ -22,7 +22,7 @@ on:
       - ".dockerignore"
 
 env:
-  IMAGE: ghcr.io/homeassilol/govee2mqtt
+  IMAGE: ghcr.io/florianhorner/govee2mqtt
 
 jobs:
   build:

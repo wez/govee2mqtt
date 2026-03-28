@@ -54,7 +54,7 @@ when we get to that point.
 
 4. Click on "Repositories"
 5. Enter `https://github.com/wez/govee2mqtt` and click "Add"
-   > **Fork users:** Use `https://github.com/homeassilol/govee2mqtt` instead if you need the patched version with the UTF-8 crash fix.
+   > **Fork users:** Use `https://github.com/florianhorner/govee2mqtt` instead if you need the patched version with the UTF-8 crash fix.
 6. You should see:
 
 ![image](https://github.com/wez/govee-lan-hass/assets/117777/a2603e2d-dec1-4711-8d94-c957bf4a7a01)
