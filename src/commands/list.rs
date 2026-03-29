@@ -89,7 +89,7 @@ impl ListCommand {
                 room = d
                     .room_name()
                     .map(|room| format!("({room})"))
-                    .unwrap_or_else(|| String::new()),
+                    .unwrap_or_else(String::new),
             );
         }
 

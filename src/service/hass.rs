@@ -454,7 +454,7 @@ async fn mqtt_light_segment_command(
 
         if let Some(brightness) = command.brightness {
             client
-                .set_segment_brightness(&info, segment, brightness)
+                .set_segment_brightness(info, segment, brightness)
                 .await?;
         } else if command.state == "OFF" {
             // Do nothing here. We used to set brightness to zero,
@@ -468,7 +468,7 @@ async fn mqtt_light_segment_command(
         }
         if let Some(color) = &command.color {
             client
-                .set_segment_rgb(&info, segment, color.r, color.g, color.b)
+                .set_segment_rgb(info, segment, color.r, color.g, color.b)
                 .await?;
         }
     } else {
@@ -511,7 +511,7 @@ async fn mqtt_oneclick(
         .await
         .ok_or_else(|| anyhow::anyhow!("AWS IoT client is not available"))?;
 
-    iot.activate_one_click(&item).await
+    iot.activate_one_click(item).await
 }
 
 #[derive(Deserialize)]
@@ -663,7 +663,7 @@ async fn run_mqtt_loop(
             .get_hass_client()
             .await
             .expect("have hass client")
-            .register_with_hass(&state)
+            .register_with_hass(state)
             .await
             .context("register_with_hass")?;
 

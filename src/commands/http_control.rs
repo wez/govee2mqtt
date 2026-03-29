@@ -94,7 +94,7 @@ impl HttpControlCommand {
                     .ok_or_else(|| anyhow::anyhow!("device has no colorRgb"))?;
                 let [r, g, b, _a] = color.to_rgba8();
                 let value = ((r as u32) << 16) | ((g as u32) << 8) | (b as u32);
-                let result = client.control_device(&device, &cap, value).await?;
+                let result = client.control_device(&device, cap, value).await?;
                 println!("{result:#?}");
             }
 
@@ -188,7 +188,7 @@ impl HttpControlCommand {
                             ((r as u32) << 16) | ((g as u32) << 8) | (b as u32)
                         }),
                     });
-                    let result = client.control_device(&device, &cap, value).await?;
+                    let result = client.control_device(&device, cap, value).await?;
                     println!("{result:#?}");
                 }
             }

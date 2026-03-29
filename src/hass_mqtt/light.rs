@@ -62,7 +62,7 @@ pub struct DeviceLight {
 #[async_trait]
 impl EntityInstance for DeviceLight {
     async fn publish_config(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
-        self.light.publish(&state, &client).await
+        self.light.publish(state, client).await
     }
 
     async fn notify_state(&self, client: &HassClient) -> anyhow::Result<()> {
@@ -157,7 +157,7 @@ impl DeviceLight {
         let unique_id = format!(
             "gv2mqtt-{id}{seg}",
             id = topic_safe_id(device),
-            seg = segment.map(|n| format!("-{n}")).unwrap_or(String::new())
+            seg = segment.map(|n| format!("-{n}")).unwrap_or_default()
         );
 
         let effect_list = if segment.is_some() {

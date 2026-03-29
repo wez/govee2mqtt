@@ -103,17 +103,15 @@ impl Humidifier {
 
         if let Some(info) = &device.http_device_info {
             if let Some(cap) = info.capability_by_instance("humidity") {
-                match &cap.parameters {
-                    Some(DeviceParameters::Integer {
-                        range: IntegerRange { min, max, .. },
-                        unit,
-                    }) => {
-                        if unit.as_deref() == Some("unit.percent") {
-                            min_humidity.replace(*min as u8);
-                            max_humidity.replace(*max as u8);
-                        }
+                if let Some(DeviceParameters::Integer {
+                    range: IntegerRange { min, max, .. },
+                    unit,
+                }) = &cap.parameters
+                {
+                    if unit.as_deref() == Some("unit.percent") {
+                        min_humidity.replace(*min as u8);
+                        max_humidity.replace(*max as u8);
                     }
-                    _ => {}
                 }
             }
         }

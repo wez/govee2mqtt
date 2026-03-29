@@ -42,13 +42,13 @@ async fn resolve_device_for_control(
     id: &str,
 ) -> Result<Coordinator, Response> {
     state
-        .resolve_device_for_control(&id)
+        .resolve_device_for_control(id)
         .await
         .map_err(not_found)
 }
 
 async fn resolve_device_read_only(state: &StateHandle, id: &str) -> Result<Device, Response> {
-    state.resolve_device_read_only(&id).await.map_err(not_found)
+    state.resolve_device_read_only(id).await.map_err(not_found)
 }
 
 /// Returns a json array of device information
@@ -235,7 +235,7 @@ async fn activate_one_click(
         .ok_or_else(|| anyhow::anyhow!("AWS IoT client is not available"))
         .map_err(generic)?;
 
-    iot.activate_one_click(&item).await.map_err(generic)?;
+    iot.activate_one_click(item).await.map_err(generic)?;
 
     Ok(response_with_code(StatusCode::OK, "ok"))
 }

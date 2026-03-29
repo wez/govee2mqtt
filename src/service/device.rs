@@ -305,7 +305,6 @@ impl Device {
         for cap in &state.capabilities {
             if let Ok(value) = serde_json::from_value::<IntegerValueState>(cap.state.clone()) {
                 if light_instance
-                    .as_deref()
                     .map(|inst| inst == cap.instance.as_str())
                     .unwrap_or(false)
                 {
@@ -457,11 +456,10 @@ impl Device {
             return false;
         }
         let device_type = self.device_type();
-        match (device_type, self.sku.as_str()) {
-            (_, "H7160") => true,
-            (DeviceType::Light, _) => true,
-            _ => false,
-        }
+        matches!(
+            (device_type, self.sku.as_str()),
+            (_, "H7160") | (DeviceType::Light, _)
+        )
     }
 
     pub fn avoid_platform_api(&self) -> bool {
@@ -605,19 +603,13 @@ impl Device {
             return Some(false);
         }
 
-        if let Some(info) = &self.undoc_device_info {
-            Some(info.entry.device_ext.device_settings.wifi_name.is_none())
-        } else {
-            // Don't know for sure
-            None
-        }
+        self.undoc_device_info
+            .as_ref()
+            .map(|info| info.entry.device_ext.device_settings.wifi_name.is_none())
     }
 
     pub fn is_controllable(&self) -> bool {
-        match self.is_ble_only_device() {
-            Some(true) => false,
-            _ => true,
-        }
+        !matches!(self.is_ble_only_device(), Some(true))
     }
 }
 

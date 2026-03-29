@@ -63,7 +63,7 @@ impl WorkModeSelect {
 #[async_trait::async_trait]
 impl EntityInstance for WorkModeSelect {
     async fn publish_config(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
-        self.select.publish(&state, &client).await
+        self.select.publish(state, client).await
     }
 
     async fn notify_state(&self, client: &HassClient) -> anyhow::Result<()> {
@@ -144,7 +144,7 @@ impl SceneModeSelect {
 #[async_trait::async_trait]
 impl EntityInstance for SceneModeSelect {
     async fn publish_config(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
-        self.select.publish(&state, &client).await
+        self.select.publish(state, client).await
     }
 
     async fn notify_state(&self, client: &HassClient) -> anyhow::Result<()> {

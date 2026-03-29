@@ -8,7 +8,7 @@ fn main() {
             ci_tag = s.trim().to_string();
         }
     } else if let Ok(output) = std::process::Command::new("git")
-        .args(&[
+        .args([
             "-c",
             "core.abbrev=8",
             "show",

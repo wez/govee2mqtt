@@ -81,7 +81,7 @@ async fn enumerate_scenes(state: &StateHandle, entities: &mut EntityList) -> any
     Ok(())
 }
 
-async fn entities_for_work_mode<'a>(
+async fn entities_for_work_mode(
     d: &ServiceDevice,
     state: &StateHandle,
     cap: &DeviceCapability,
@@ -146,8 +146,8 @@ async fn entities_for_work_mode<'a>(
     Ok(())
 }
 
-pub async fn enumerate_entities_for_device<'a>(
-    d: &'a ServiceDevice,
+pub async fn enumerate_entities_for_device(
+    d: &ServiceDevice,
     state: &StateHandle,
     entities: &mut EntityList,
 ) -> anyhow::Result<()> {
@@ -166,14 +166,14 @@ pub async fn enumerate_entities_for_device<'a>(
     }
 
     if d.supports_rgb() || d.get_color_temperature_range().is_some() || d.supports_brightness() {
-        entities.add(DeviceLight::for_device(&d, state, None).await?);
+        entities.add(DeviceLight::for_device(d, state, None).await?);
     }
 
     if matches!(
         d.device_type(),
         DeviceType::Humidifier | DeviceType::Dehumidifier
     ) {
-        entities.add(Humidifier::new(&d, state).await?);
+        entities.add(Humidifier::new(d, state).await?);
     }
 
     if d.device_type() != DeviceType::Light {
@@ -186,7 +186,7 @@ pub async fn enumerate_entities_for_device<'a>(
         for cap in &info.capabilities {
             match &cap.kind {
                 DeviceCapabilityKind::Toggle | DeviceCapabilityKind::OnOff => {
-                    entities.add(CapabilitySwitch::new(&d, state, cap).await?);
+                    entities.add(CapabilitySwitch::new(d, state, cap).await?);
                 }
                 DeviceCapabilityKind::ColorSetting
                 | DeviceCapabilityKind::SegmentColorSetting
@@ -202,11 +202,11 @@ pub async fn enumerate_entities_for_device<'a>(
                 }
 
                 DeviceCapabilityKind::Property => {
-                    entities.add(CapabilitySensor::new(&d, state, cap).await?);
+                    entities.add(CapabilitySensor::new(d, state, cap).await?);
                 }
 
                 DeviceCapabilityKind::TemperatureSetting => {
-                    entities.add(TargetTemperatureEntity::new(&d, state, cap).await?);
+                    entities.add(TargetTemperatureEntity::new(d, state, cap).await?);
                 }
 
                 kind => {
@@ -220,7 +220,7 @@ pub async fn enumerate_entities_for_device<'a>(
 
         if let Some(segments) = info.supports_segmented_rgb() {
             for n in segments {
-                entities.add(DeviceLight::for_device(&d, state, Some(n)).await?);
+                entities.add(DeviceLight::for_device(d, state, Some(n)).await?);
             }
         }
     }

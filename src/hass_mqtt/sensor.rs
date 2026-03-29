@@ -57,11 +57,11 @@ pub struct GlobalFixedDiagnostic {
 #[async_trait]
 impl EntityInstance for GlobalFixedDiagnostic {
     async fn publish_config(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
-        self.sensor.publish(&state, &client).await
+        self.sensor.publish(state, client).await
     }
 
     async fn notify_state(&self, client: &HassClient) -> anyhow::Result<()> {
-        self.sensor.notify_state(&client, &self.value).await
+        self.sensor.notify_state(client, &self.value).await
     }
 }
 
@@ -150,7 +150,7 @@ impl CapabilitySensor {
                     icon: None,
                 },
                 state_topic: format!("gv2mqtt/sensor/{unique_id}/state"),
-                state_class: state_class,
+                state_class,
                 unit_of_measurement,
                 json_attributes_topic: None,
             },
@@ -164,7 +164,7 @@ impl CapabilitySensor {
 #[async_trait]
 impl EntityInstance for CapabilitySensor {
     async fn publish_config(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
-        self.sensor.publish(&state, &client).await
+        self.sensor.publish(state, client).await
     }
 
     async fn notify_state(&self, client: &HassClient) -> anyhow::Result<()> {
@@ -208,7 +208,7 @@ impl EntityInstance for CapabilitySensor {
                         .state
                         .pointer("/value")
                         .and_then(|v| v.as_f64())
-                        .map(|v| units.from_reading_to_relative_percent(v))
+                        .map(|v| units.reading_to_relative_percent(v))
                     {
                         Some(v) => format!("{v:.2}"),
                         None => "".to_string(),
@@ -217,7 +217,7 @@ impl EntityInstance for CapabilitySensor {
                 _ => cap.state.to_string(),
             };
 
-            return self.sensor.notify_state(&client, &value).await;
+            return self.sensor.notify_state(client, &value).await;
         }
         log::trace!(
             "CapabilitySensor::notify_state: didn't find state for {device} {instance}",
@@ -263,7 +263,7 @@ impl DeviceStatusDiagnostic {
 #[async_trait]
 impl EntityInstance for DeviceStatusDiagnostic {
     async fn publish_config(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
-        self.sensor.publish(&state, &client).await
+        self.sensor.publish(state, client).await
     }
 
     async fn notify_state(&self, client: &HassClient) -> anyhow::Result<()> {
@@ -306,7 +306,7 @@ impl EntityInstance for DeviceStatusDiagnostic {
             "overall": device_state,
         });
 
-        self.sensor.notify_state(&client, &summary).await?;
+        self.sensor.notify_state(client, &summary).await?;
         if let Some(topic) = &self.sensor.json_attributes_topic {
             client.publish_obj(topic, attributes).await?;
         }
@@ -351,11 +351,7 @@ impl SceneInfoSensor {
 
 #[async_trait]
 impl EntityInstance for SceneInfoSensor {
-    async fn publish_config(
-        &self,
-        state: &StateHandle,
-        client: &HassClient,
-    ) -> anyhow::Result<()> {
+    async fn publish_config(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
         self.sensor.publish(state, client).await?;
 
         // Publish scene catalog as retained MQTT message during registration (once),
