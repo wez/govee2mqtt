@@ -19,6 +19,7 @@ via the [Home Assistant MQTT Integration](https://www.home-assistant.io/integrat
 | `f41ac85` | `src/service/quirks.rs` | Add Govee H60B0 (Neon Rope Light 2) as LAN-capable light |
 | `261eb48` | `src/hass_mqtt/*.rs`, `src/service/hass.rs` | Replace `.expect()` panics with graceful handling; fix silent `exit(0)` → `exit(1)` so HA restarts the addon on failure |
 | `0666c35` | `src/hass_mqtt/*.rs`, `src/service/*.rs` | Scene quick-cycle: Next/Previous buttons, scene info sensor, categorized catalog endpoint with caching |
+| `2b87f42` | `.github/workflows/pr.yml`, `.pre-commit-config.yaml`, `src/**` | Add clippy CI gate (`-D warnings`), pre-commit hooks (fmt + clippy), fix all existing clippy warnings |
 
 **Upstream status:**
 - ✅ UTF-8 fix — [merged via #606](https://github.com/wez/govee2mqtt/pull/606) on 2026-03-25

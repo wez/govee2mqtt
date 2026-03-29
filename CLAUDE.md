@@ -7,6 +7,7 @@ Rust project that bridges Govee smart home devices to MQTT / Home Assistant.
 ```bash
 cargo build --all
 cargo test --all -- --show-output
+cargo clippy --all -- -D warnings
 cargo fmt --all -- --check
 ```
 
@@ -20,6 +21,15 @@ cargo fmt --all -- --check
 
 ## CI
 
-PRs must pass `cargo build`, `cargo test`, and `cargo fmt --check` (see `.github/workflows/pr.yml`).
+PRs must pass `cargo build`, `cargo clippy -- -D warnings`, `cargo test`, and `cargo fmt --check` (see `.github/workflows/pr.yml`).
 
 The fork also runs Claude Code CI (`.github/workflows/claude.yml`).
+
+## Pre-commit Hooks
+
+The repo includes `.pre-commit-config.yaml` with local hooks for `cargo fmt` and `cargo clippy`. To enable:
+
+```bash
+pip install pre-commit
+pre-commit install
+```
