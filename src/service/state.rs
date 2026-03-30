@@ -26,6 +26,7 @@ pub struct SceneCatalogCategory {
 pub struct SceneCatalogEntry {
     pub name: String,
     pub icon_urls: Vec<String>,
+    pub hint: String,
 }
 
 #[derive(Default)]
@@ -679,6 +680,7 @@ impl State {
                             .map(|name| SceneCatalogEntry {
                                 name,
                                 icon_urls: vec![],
+                                hint: String::new(),
                             })
                             .collect(),
                     }]);
@@ -702,6 +704,7 @@ impl State {
                         scenes.push(SceneCatalogEntry {
                             name: scene.scene_name,
                             icon_urls: scene.icon_urls,
+                            hint: scene.scenes_hint,
                         });
                     }
                 }
