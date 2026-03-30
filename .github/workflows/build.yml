@@ -40,7 +40,7 @@ jobs:
       - name: Docker meta
         if: ${{ github.event_name != 'pull_request' }}
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ${{ env.IMAGE }}
           tags: |
@@ -121,7 +121,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
       - name: Docker meta
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ${{ env.IMAGE }}
           tags: |
