@@ -26,6 +26,8 @@ pub struct SceneCatalogCategory {
 pub struct SceneCatalogEntry {
     pub name: String,
     pub icon_urls: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub hint: Option<String>,
 }
 
 #[derive(Default)]
@@ -679,6 +681,7 @@ impl State {
                             .map(|name| SceneCatalogEntry {
                                 name,
                                 icon_urls: vec![],
+                                hint: None,
                             })
                             .collect(),
                     }]);
@@ -702,6 +705,11 @@ impl State {
                         scenes.push(SceneCatalogEntry {
                             name: scene.scene_name,
                             icon_urls: scene.icon_urls,
+                            hint: if scene.scenes_hint.is_empty() {
+                                None
+                            } else {
+                                Some(scene.scenes_hint)
+                            },
                         });
                     }
                 }
@@ -791,4 +799,56 @@ pub fn sort_and_dedup_scenes(mut scenes: Vec<String>) -> Vec<String> {
     scenes.sort_by_key(|s| s.to_ascii_lowercase());
     scenes.dedup();
     scenes
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_scene_catalog_entry_hint_serde_round_trip() {
+        // hint: Some should serialize with "hint" field present
+        let entry_with_hint = SceneCatalogEntry {
+            name: "Karst Cave".to_string(),
+            icon_urls: vec!["https://example.com/icon.png".to_string()],
+            hint: Some("Calm green tones".to_string()),
+        };
+        let json = serde_json::to_string(&entry_with_hint).unwrap();
+        assert!(json.contains("\"hint\":\"Calm green tones\""));
+        let deserialized: SceneCatalogEntry = serde_json::from_str(&json).unwrap();
+        assert_eq!(deserialized.hint, Some("Calm green tones".to_string()));
+
+        // hint: None should omit the "hint" field entirely (skip_serializing_if)
+        let entry_no_hint = SceneCatalogEntry {
+            name: "Sunset Glow".to_string(),
+            icon_urls: vec![],
+            hint: None,
+        };
+        let json = serde_json::to_string(&entry_no_hint).unwrap();
+        assert!(!json.contains("hint"));
+        // Deserializing JSON without "hint" field should produce None (serde default)
+        let deserialized: SceneCatalogEntry = serde_json::from_str(&json).unwrap();
+        assert_eq!(deserialized.hint, None);
+    }
+
+    #[test]
+    fn test_scene_catalog_entry_hint_empty_string_convention() {
+        // The convention: empty scenes_hint from API becomes None, non-empty becomes Some.
+        // This tests the pattern used in fetch_scene_catalog.
+        let empty_hint = "";
+        let result: Option<String> = if empty_hint.is_empty() {
+            None
+        } else {
+            Some(empty_hint.to_string())
+        };
+        assert_eq!(result, None);
+
+        let non_empty_hint = "Gentle pulsing warmth";
+        let result: Option<String> = if non_empty_hint.is_empty() {
+            None
+        } else {
+            Some(non_empty_hint.to_string())
+        };
+        assert_eq!(result, Some("Gentle pulsing warmth".to_string()));
+    }
 }
