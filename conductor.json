@@ -1,0 +1,61 @@
+{
+  "scripts": {
+    "setup": "cargo build --all",
+    "run": "cargo test --all -- --show-output",
+    "archive": "#!/usr/bin/env bash\nset -euo pipefail\ncd \"$(dirname \"$0\")\"\ncargo clean 2>/dev/null || true\nrm -rf target/debug target/release 2>/dev/null || true\nrm -f *.log 2>/dev/null || true"
+  },
+  "codeReview": {
+    "focus": [
+      "Memory safety: no unwrap() on network/IO results — use proper error handling",
+      "MQTT message handling: verify topic patterns and QoS levels",
+      "Govee LAN API protocol compliance — check against docs/ reference",
+      "Concurrency: no data races, proper use of Arc/Mutex where shared state exists",
+      "Error propagation: use Result<T, E> chains, avoid silent failures",
+      "Test coverage for new device types or protocol changes",
+      "HA add-on config consistency (addon/ directory)"
+    ],
+    "ignore": [
+      "Do not suggest async runtime changes (tokio vs async-std) without benchmarks",
+      "Do not flag cargo fmt issues — CI catches those"
+    ]
+  },
+  "pullRequest": {
+    "titleStyle": "Imperative mood, max 60 chars",
+    "descriptionMust": [
+      "What changed: which modules, device support, or protocol handling",
+      "Why: what bug, device, or feature this addresses",
+      "Testing: cargo test output, and if applicable, tested with physical Govee hardware"
+    ],
+    "rules": [
+      "Keep it concise — no boilerplate sections if they'd be empty",
+      "Note if PR adds support for new Govee device models"
+    ]
+  },
+  "branchNaming": {
+    "style": "conventional",
+    "format": "prefix/short-description",
+    "prefixes": ["feat", "fix", "chore", "docs", "refactor"],
+    "rules": [
+      "Use lowercase-hyphenated descriptions after prefix",
+      "Keep it short and descriptive — max 4 words after prefix",
+      "Example: feat/h615-device-support, fix/mqtt-reconnect-loop, chore/update-deps"
+    ]
+  },
+  "general": {
+    "description": "Rust bridge between Govee smart home devices and MQTT/Home Assistant. Supports LAN API discovery, BLE fallback, and HA add-on packaging.",
+    "rules": [
+      "Prefer explicit error handling over expect()/unwrap()",
+      "Keep add-on config (addon/) in sync with any new CLI flags or env vars",
+      "Test with real Govee devices when possible — note in PR if hardware-tested",
+      "Solo developer — no team process overhead needed"
+    ],
+    "outputFormatting": {
+      "structure": "Always use markdown: headers (##/###), bullets, bold for key terms, tables for comparisons",
+      "tldr": "Lead every response with a single TL;DR line before any detail",
+      "decisions": "For multi-option decisions: Option A / B / C with explicit tradeoffs in a table or bullet list — never buried in prose",
+      "density": "Max 3 sentences per paragraph. Break up walls of text. Prefer visual hierarchy over long paragraphs.",
+      "codeBlocks": "Always fence code with language hint (```rust, ```toml, ```bash). Never inline code longer than one expression.",
+      "citations": "When referencing files, use relative paths as inline code (`src/foo.rs`). When referencing external docs, link them."
+    }
+  }
+}

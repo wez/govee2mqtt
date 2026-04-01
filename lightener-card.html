@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lightener Curve Editor</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* ── Theme tokens ─────────────────────────────────────────────── */
+  /* Maps to HA's CSS custom properties. Fallbacks for standalone use. */
+  :root {
+    --card-bg: #fff;
+    --card-border: #e8e8e8;
+    --primary-text: #212121;
+    --secondary-text: #727272;
+    --disabled-text: #bdbdbd;
+    --divider: #e8e8e8;
+    --graph-bg: #fafafa;
+    --graph-grid: #e0e0e0;
+    --graph-border: #d6d6d6;
+    --tooltip-bg: #333;
+    --tooltip-text: #fff;
+    --btn-primary-bg: #03a9f4;
+    --btn-primary-text: #fff;
+    --btn-secondary-border: #bdbdbd;
+    --btn-secondary-text: #616161;
+    --btn-secondary-hover: #f5f5f5;
+    --accent: #03a9f4;
+    --point-stroke: #fff;
+    --page-bg: #f0f0f0;
+  }
+
+  [data-theme="dark"] {
+    --card-bg: #1c1c1e;
+    --card-border: #3a3a3c;
+    --primary-text: #e5e5e7;
+    --secondary-text: #8e8e93;
+    --disabled-text: #48484a;
+    --divider: #3a3a3c;
+    --graph-bg: #141416;
+    --graph-grid: #2c2c2e;
+    --graph-border: #3a3a3c;
+    --tooltip-bg: #000;
+    --tooltip-text: #e5e5e7;
+    --btn-primary-bg: #0a84ff;
+    --btn-primary-text: #fff;
+    --btn-secondary-border: #48484a;
+    --btn-secondary-text: #aeaeb2;
+    --btn-secondary-hover: #2c2c2e;
+    --accent: #0a84ff;
+    --point-stroke: #1c1c1e;
+    --page-bg: #000;
+  }
+
+  body {
+    background: var(--page-bg);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    color: var(--primary-text);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    padding: 32px 16px;
+    transition: background 0.2s;
+  }
+
+  /* ── Theme toggle ─────────────────────────────────────────────── */
+  .theme-toggle {
+    position: fixed;
+    top: 12px;
+    right: 12px;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--secondary-text);
+    cursor: pointer;
+    z-index: 100;
+    transition: all 0.2s;
+  }
+  .theme-toggle:hover { color: var(--primary-text); }
+
+  /* ── Card ──────────────────────────────────────────────────────── */
+  .card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    padding: 16px;
+    width: 100%;
+    max-width: 520px;
+    position: relative;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
+  }
+
+  [data-theme="dark"] .card {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  }
+
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+
+  .card-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--primary-text);
+  }
+
+  .card-subtitle {
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--secondary-text);
+    margin-top: 1px;
+  }
+
+  /* ── Graph ─────────────────────────────────────────────────────── */
+  .graph-container {
+    position: relative;
+    width: 100%;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+  }
+
+  .graph-container svg {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  .axis-label {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 9.5px;
+    font-weight: 500;
+  }
+
+  .axis-title {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 9.5px;
+    font-weight: 500;
+    letter-spacing: 0.03em;
+  }
+
+  .curve-line {
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .curve-line-hit {
+    fill: none;
+    stroke: transparent;
+    stroke-width: 16;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    cursor: pointer;
+  }
+
+  .control-point {
+    cursor: grab;
+    transition: r 0.12s ease;
+  }
+
+  .control-point:hover { r: 6.5; }
+  .control-point.dragging { cursor: grabbing; r: 6.5; }
+
+  /* ── Legend ─────────────────────────────────────────────────────── */
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 16px;
+    margin-top: 10px;
+    padding: 0 2px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--secondary-text);
+    transition: opacity 0.2s ease;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .legend-item:hover { color: var(--primary-text); }
+  .legend-item.hidden { opacity: 0.3; }
+  .legend-item.hidden .legend-label { text-decoration: line-through; }
+
+  .legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* ── Tooltip ────────────────────────────────────────────────────── */
+  .tooltip {
+    position: absolute;
+    pointer-events: none;
+    background: var(--tooltip-bg);
+    border-radius: 4px;
+    padding: 3px 7px;
+    font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--tooltip-text);
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.1s ease;
+    z-index: 10;
+    transform: translate(-50%, -100%);
+    margin-top: -10px;
+  }
+
+  .tooltip.visible { opacity: 1; }
+
+  /* ── Save bar ───────────────────────────────────────────────────── */
+  .save-bar {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 8px;
+    margin-top: 0;
+    padding-top: 0;
+    border-top: 1px solid transparent;
+    opacity: 0;
+    max-height: 0;
+    overflow: hidden;
+    transition: opacity 0.2s ease, max-height 0.2s ease, margin-top 0.2s ease, padding-top 0.2s ease, border-color 0.2s ease;
+  }
+
+  .save-bar.dirty {
+    opacity: 1;
+    max-height: 60px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top-color: var(--divider);
+  }
+
+  .save-bar .unsaved-label {
+    font-size: 11px;
+    color: var(--secondary-text);
+    margin-right: auto;
+  }
+
+  .save-bar .unsaved-dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    margin-right: 5px;
+    vertical-align: middle;
+  }
+
+  .btn {
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 500;
+    border: none;
+    border-radius: 6px;
+    padding: 6px 14px;
+    cursor: pointer;
+    transition: all 0.12s ease;
+  }
+
+  .btn-cancel {
+    background: transparent;
+    color: var(--btn-secondary-text);
+    border: 1px solid var(--btn-secondary-border);
+  }
+
+  .btn-cancel:hover {
+    background: var(--btn-secondary-hover);
+    color: var(--primary-text);
+  }
+
+  .btn-save {
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-text);
+  }
+
+  .btn-save:hover {
+    filter: brightness(1.1);
+  }
+
+  .hint {
+    font-size: 10px;
+    color: var(--disabled-text);
+    text-align: center;
+    margin-top: 8px;
+  }
+</style>
+</head>
+<body>
+
+<button class="theme-toggle" id="themeToggle">Dark theme</button>
+
+<div class="card">
+  <div class="card-header">
+    <div>
+      <div class="card-title">Living Room</div>
+      <div class="card-subtitle">Brightness curves</div>
+    </div>
+  </div>
+
+  <div class="graph-container" id="graphContainer">
+    <svg id="graph" viewBox="0 0 520 300" preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <filter id="curveGlow" x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation="3" result="blur"/>
+          <feComposite in="blur" in2="SourceGraphic" operator="over"/>
+        </filter>
+      </defs>
+
+      <!-- Graph area background -->
+      <rect id="graphBg" x="50" y="10" width="440" height="250" rx="4"/>
+      <rect id="graphBorder" x="50" y="10" width="440" height="250" fill="none" stroke-width="0.5" rx="4"/>
+
+      <!-- Grid lines -->
+      <g id="gridLines">
+        <line x1="50" y1="72.5" x2="490" y2="72.5"/>
+        <line x1="50" y1="135" x2="490" y2="135"/>
+        <line x1="50" y1="197.5" x2="490" y2="197.5"/>
+        <line x1="160" y1="10" x2="160" y2="260"/>
+        <line x1="270" y1="10" x2="270" y2="260"/>
+        <line x1="380" y1="10" x2="380" y2="260"/>
+      </g>
+
+      <!-- Y-axis labels -->
+      <text class="axis-label" id="axY0" x="44" y="263" text-anchor="end">0%</text>
+      <text class="axis-label" id="axY25" x="44" y="200.5" text-anchor="end">25</text>
+      <text class="axis-label" id="axY50" x="44" y="138" text-anchor="end">50</text>
+      <text class="axis-label" id="axY75" x="44" y="75.5" text-anchor="end">75</text>
+      <text class="axis-label" id="axY100" x="44" y="14" text-anchor="end">100%</text>
+
+      <!-- X-axis labels -->
+      <text class="axis-label" id="axX0" x="50" y="278" text-anchor="middle">0%</text>
+      <text class="axis-label" id="axX25" x="160" y="278" text-anchor="middle">25</text>
+      <text class="axis-label" id="axX50" x="270" y="278" text-anchor="middle">50</text>
+      <text class="axis-label" id="axX75" x="380" y="278" text-anchor="middle">75</text>
+      <text class="axis-label" id="axX100" x="490" y="278" text-anchor="middle">100%</text>
+
+      <!-- Axis titles -->
+      <text class="axis-title" id="axTitleX" x="270" y="294" text-anchor="middle">Group brightness</text>
+      <text class="axis-title" id="axTitleY" x="12" y="135" text-anchor="middle" transform="rotate(-90, 12, 135)">Light brightness</text>
+
+      <!-- Curves rendered by JS -->
+      <g id="curvesGroup"></g>
+    </svg>
+
+    <div class="tooltip" id="tooltip"></div>
+  </div>
+
+  <div class="legend" id="legend"></div>
+
+  <div class="save-bar" id="saveBar">
+    <span class="unsaved-label"><span class="unsaved-dot"></span>Unsaved changes</span>
+    <button class="btn btn-cancel" id="btnCancel">Cancel</button>
+    <button class="btn btn-save" id="btnSave">Save</button>
+  </div>
+
+  <div class="hint">Drag points to edit &middot; Click curve to add &middot; Double-click to remove</div>
+</div>
+
+<script>
+// ── Theme ───────────────────────────────────────────────────────────
+function applyTheme() {
+  const isDark = document.documentElement.dataset.theme === 'dark';
+  // SVG elements that need dynamic fill/stroke
+  document.getElementById('graphBg').setAttribute('fill', isDark ? '#141416' : '#fafafa');
+  document.getElementById('graphBorder').setAttribute('stroke', isDark ? '#3a3a3c' : '#d6d6d6');
+  const gridColor = isDark ? '#2c2c2e' : '#e0e0e0';
+  document.querySelectorAll('#gridLines line').forEach(l => {
+    l.setAttribute('stroke', gridColor);
+    l.setAttribute('stroke-width', '0.5');
+  });
+  const labelColor = isDark ? '#636366' : '#9e9e9e';
+  document.querySelectorAll('.axis-label').forEach(t => t.setAttribute('fill', labelColor));
+  document.querySelectorAll('.axis-title').forEach(t => t.setAttribute('fill', isDark ? '#48484a' : '#bdbdbd'));
+  render();
+}
+
+document.getElementById('themeToggle').addEventListener('click', () => {
+  const html = document.documentElement;
+  const isDark = html.dataset.theme === 'dark';
+  if (isDark) {
+    delete html.dataset.theme;
+    document.getElementById('themeToggle').textContent = 'Dark theme';
+  } else {
+    html.dataset.theme = 'dark';
+    document.getElementById('themeToggle').textContent = 'Light theme';
+  }
+  applyTheme();
+});
+
+// ── Config ──────────────────────────────────────────────────────────
+const GRAPH = { left: 50, top: 10, width: 440, height: 250 };
+// Colors chosen to work on both light and dark backgrounds
+const COLORS = ['#2196f3', '#ff9800', '#4caf50', '#e91e63', '#9c27b0', '#00bcd4'];
+const POINT_R = 5;
+const MIN_X = 1, MAX_X = 100, MIN_Y = 0, MAX_Y = 100;
+
+// ── Mock data ───────────────────────────────────────────────────────
+const initialData = [
+  {
+    id: 'light.ceiling_leds',
+    name: 'Ceiling LEDs',
+    points: [{ x: 1, y: 0 }, { x: 30, y: 60 }, { x: 60, y: 90 }, { x: 100, y: 100 }]
+  },
+  {
+    id: 'light.sofa_lamp',
+    name: 'Sofa lamp',
+    points: [{ x: 1, y: 0 }, { x: 20, y: 40 }, { x: 50, y: 40 }, { x: 80, y: 80 }, { x: 100, y: 100 }]
+  },
+  {
+    id: 'light.reading_light',
+    name: 'Reading light',
+    points: [{ x: 1, y: 0 }, { x: 10, y: 70 }, { x: 100, y: 100 }]
+  }
+];
+
+// ── State ───────────────────────────────────────────────────────────
+let lights = JSON.parse(JSON.stringify(initialData));
+let savedState = JSON.stringify(initialData.map(l => l.points));
+let hiddenLights = new Set();
+let dragging = null;
+let wasDragging = false;
+
+// ── Coordinate helpers ──────────────────────────────────────────────
+function dataToSvg(x, y) {
+  return {
+    sx: GRAPH.left + (x / 100) * GRAPH.width,
+    sy: GRAPH.top + GRAPH.height - (y / 100) * GRAPH.height
+  };
+}
+
+function svgToData(sx, sy) {
+  return {
+    x: Math.round(((sx - GRAPH.left) / GRAPH.width) * 100),
+    y: Math.round(((GRAPH.top + GRAPH.height - sy) / GRAPH.height) * 100)
+  };
+}
+
+function clamp(val, min, max) {
+  return Math.max(min, Math.min(max, val));
+}
+
+function getSvgPoint(e) {
+  const svg = document.getElementById('graph');
+  const rect = svg.getBoundingClientRect();
+  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+  const scaleX = 520 / rect.width;
+  const scaleY = 300 / rect.height;
+  return {
+    sx: (clientX - rect.left) * scaleX,
+    sy: (clientY - rect.top) * scaleY
+  };
+}
+
+// ── Rendering ───────────────────────────────────────────────────────
+function buildPath(points) {
+  return points
+    .slice()
+    .sort((a, b) => a.x - b.x)
+    .map((p, i) => {
+      const { sx, sy } = dataToSvg(p.x, p.y);
+      return `${i === 0 ? 'M' : 'L'}${sx},${sy}`;
+    })
+    .join(' ');
+}
+
+function render() {
+  const group = document.getElementById('curvesGroup');
+  const isDark = document.documentElement.dataset.theme === 'dark';
+  const pointStroke = isDark ? '#1c1c1e' : '#fff';
+  group.innerHTML = '';
+
+  lights.forEach((light, li) => {
+    const color = COLORS[li % COLORS.length];
+    const isHidden = hiddenLights.has(li);
+    const sorted = light.points.slice().sort((a, b) => a.x - b.x);
+    const pathD = buildPath(sorted);
+
+    if (isHidden) return;
+
+    // Subtle glow (reduced from previous version)
+    const glow = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    glow.setAttribute('d', pathD);
+    glow.setAttribute('fill', 'none');
+    glow.setAttribute('stroke', color);
+    glow.setAttribute('stroke-width', '5');
+    glow.setAttribute('stroke-linecap', 'round');
+    glow.setAttribute('opacity', isDark ? '0.12' : '0.08');
+    glow.setAttribute('filter', 'url(#curveGlow)');
+    glow.style.pointerEvents = 'none';
+    group.appendChild(glow);
+
+    // Fill area under curve
+    const lastPt = sorted[sorted.length - 1];
+    const firstPt = sorted[0];
+    const { sx: lastSx } = dataToSvg(lastPt.x, lastPt.y);
+    const { sx: firstSx } = dataToSvg(firstPt.x, firstPt.y);
+    const baseline = GRAPH.top + GRAPH.height;
+    const fillD = pathD + ` L${lastSx},${baseline} L${firstSx},${baseline} Z`;
+    const fill = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    fill.setAttribute('d', fillD);
+    fill.setAttribute('fill', color);
+    fill.setAttribute('opacity', isDark ? '0.06' : '0.05');
+    fill.style.pointerEvents = 'none';
+    group.appendChild(fill);
+
+    // Hit target
+    const hit = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    hit.setAttribute('d', pathD);
+    hit.classList.add('curve-line-hit');
+    hit.dataset.lightIdx = li;
+    hit.addEventListener('click', onCurveClick);
+    group.appendChild(hit);
+
+    // Visible curve line
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    line.setAttribute('d', pathD);
+    line.classList.add('curve-line');
+    line.setAttribute('stroke', color);
+    line.style.pointerEvents = 'none';
+    group.appendChild(line);
+
+    // Control points
+    sorted.forEach((p) => {
+      const origIdx = light.points.indexOf(p);
+      const { sx, sy } = dataToSvg(p.x, p.y);
+      const isDragging = dragging && dragging.lightIdx === li && dragging.pointIdx === origIdx;
+
+      // Point
+      const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      circle.setAttribute('cx', sx);
+      circle.setAttribute('cy', sy);
+      circle.setAttribute('r', String(POINT_R));
+      circle.setAttribute('fill', color);
+      circle.setAttribute('stroke', pointStroke);
+      circle.setAttribute('stroke-width', '2');
+      circle.classList.add('control-point');
+      circle.dataset.lightIdx = li;
+      circle.dataset.pointIdx = origIdx;
+      if (isDragging) circle.classList.add('dragging');
+      circle.addEventListener('pointerdown', onPointDown);
+      circle.addEventListener('dblclick', onPointDblClick);
+      group.appendChild(circle);
+    });
+  });
+
+  renderLegend();
+  updateDirtyState();
+}
+
+function renderLegend() {
+  const legend = document.getElementById('legend');
+  legend.innerHTML = '';
+  lights.forEach((light, li) => {
+    const item = document.createElement('div');
+    item.className = 'legend-item' + (hiddenLights.has(li) ? ' hidden' : '');
+    item.innerHTML = `
+      <span class="legend-dot" style="background:${COLORS[li % COLORS.length]}"></span>
+      <span class="legend-label">${light.name}</span>
+    `;
+    item.addEventListener('click', () => {
+      if (hiddenLights.has(li)) hiddenLights.delete(li);
+      else hiddenLights.add(li);
+      render();
+    });
+    legend.appendChild(item);
+  });
+}
+
+function updateDirtyState() {
+  const current = JSON.stringify(lights.map(l =>
+    l.points.slice().sort((a, b) => a.x - b.x)
+  ));
+  const isDirty = current !== savedState;
+  document.getElementById('saveBar').classList.toggle('dirty', isDirty);
+}
+
+// ── Tooltip ─────────────────────────────────────────────────────────
+function showTooltip(x, y, sx, sy) {
+  const tooltip = document.getElementById('tooltip');
+  const svg = document.getElementById('graph');
+  const rect = svg.getBoundingClientRect();
+  const px = (sx / 520) * rect.width;
+  const py = (sy / 300) * rect.height;
+  tooltip.textContent = `${x}% \u2192 ${y}%`;
+  tooltip.style.left = px + 'px';
+  tooltip.style.top = (py - 10) + 'px';
+  tooltip.classList.add('visible');
+}
+
+function hideTooltip() {
+  document.getElementById('tooltip').classList.remove('visible');
+}
+
+// ── Drag interaction ────────────────────────────────────────────────
+function onPointDown(e) {
+  if (e.button !== 0) return;
+  e.preventDefault();
+  e.stopPropagation();
+  const li = parseInt(e.target.dataset.lightIdx);
+  const pi = parseInt(e.target.dataset.pointIdx);
+  const p = lights[li].points[pi];
+
+  const { sx: grabSx, sy: grabSy } = getSvgPoint(e);
+  const { sx: pointSx, sy: pointSy } = dataToSvg(p.x, p.y);
+  const offsetSx = grabSx - pointSx;
+  const offsetSy = grabSy - pointSy;
+
+  dragging = { lightIdx: li, pointIdx: pi, offsetSx, offsetSy };
+  wasDragging = false;
+
+  e.target.setPointerCapture(e.pointerId);
+  e.target.classList.add('dragging');
+
+  showTooltip(p.x, p.y, pointSx, pointSy);
+  render();
+
+  const onMove = (ev) => {
+    ev.preventDefault();
+    wasDragging = true;
+
+    const { sx: msx, sy: msy } = getSvgPoint(ev);
+    let { x, y } = svgToData(msx - offsetSx, msy - offsetSy);
+
+    x = clamp(x, MIN_X, MAX_X);
+    y = clamp(y, MIN_Y, MAX_Y);
+
+    const sorted = lights[li].points
+      .map((pt, idx) => ({ ...pt, idx }))
+      .sort((a, b) => a.x - b.x);
+    const sortedIdx = sorted.findIndex(s => s.idx === pi);
+    const prevX = sortedIdx > 0 ? sorted[sortedIdx - 1].x + 1 : MIN_X;
+    const nextX = sortedIdx < sorted.length - 1 ? sorted[sortedIdx + 1].x - 1 : MAX_X;
+    x = clamp(x, prevX, nextX);
+
+    lights[li].points[pi] = { x, y };
+    const { sx: tsx, sy: tsy } = dataToSvg(x, y);
+    showTooltip(x, y, tsx, tsy);
+    render();
+  };
+
+  const onUp = (ev) => {
+    dragging = null;
+    hideTooltip();
+    document.removeEventListener('pointermove', onMove);
+    document.removeEventListener('pointerup', onUp);
+    if (wasDragging) {
+      setTimeout(() => { wasDragging = false; }, 50);
+    } else {
+      wasDragging = false;
+    }
+    render();
+  };
+
+  document.addEventListener('pointermove', onMove);
+  document.addEventListener('pointerup', onUp);
+}
+
+// ── Add point (click on curve) ──────────────────────────────────────
+function onCurveClick(e) {
+  if (dragging || wasDragging) return;
+  const li = parseInt(e.target.dataset.lightIdx);
+  const { sx, sy } = getSvgPoint(e);
+  let { x, y } = svgToData(sx, sy);
+
+  x = clamp(x, MIN_X, MAX_X);
+  y = clamp(y, MIN_Y, MAX_Y);
+
+  const existing = lights[li].points.find(p => p.x === x);
+  if (existing) return;
+
+  lights[li].points.push({ x, y });
+  render();
+}
+
+// ── Remove point (double-click) ─────────────────────────────────────
+function onPointDblClick(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  const li = parseInt(e.target.dataset.lightIdx);
+  const pi = parseInt(e.target.dataset.pointIdx);
+  const p = lights[li].points[pi];
+
+  const sorted = lights[li].points.slice().sort((a, b) => a.x - b.x);
+  if (sorted.length <= 2) return;
+  if (p === sorted[0] || p === sorted[sorted.length - 1]) return;
+
+  lights[li].points.splice(pi, 1);
+  render();
+}
+
+// ── Save / Cancel ───────────────────────────────────────────────────
+document.getElementById('btnSave').addEventListener('click', () => {
+  const config = {};
+  lights.forEach(light => {
+    const map = {};
+    light.points.slice().sort((a, b) => a.x - b.x).forEach(p => {
+      map[String(p.x)] = String(p.y);
+    });
+    config[light.id] = { brightness: map };
+  });
+  console.log('lightener/save_curves payload:', JSON.stringify(config, null, 2));
+  savedState = JSON.stringify(lights.map(l =>
+    l.points.slice().sort((a, b) => a.x - b.x)
+  ));
+  updateDirtyState();
+});
+
+document.getElementById('btnCancel').addEventListener('click', () => {
+  lights = JSON.parse(JSON.stringify(initialData));
+  render();
+});
+
+// ── Init ────────────────────────────────────────────────────────────
+savedState = JSON.stringify(initialData.map(l =>
+  l.points.slice().sort((a, b) => a.x - b.x)
+));
+applyTheme();
+</script>
+
+<!--
+  ── Backend WS handler sketch (for __init__.py) ──────────────────────
+
+  from homeassistant.components import websocket_api
+  import voluptuous as vol
+
+  CURVES_SCHEMA = vol.Schema({
+      vol.Required(str): {
+          vol.Required("brightness"): {
+              vol.Required(str): str
+          }
+      }
+  })
+
+  async def async_setup_entry(hass, entry):
+      # ... existing setup ...
+      websocket_api.async_register_command(hass, websocket_save_curves)
+
+  @websocket_api.require_admin
+  @websocket_api.websocket_command({
+      vol.Required("type"): "lightener/save_curves",
+      vol.Required("entry_id"): str,
+      vol.Required("curves"): CURVES_SCHEMA,
+  })
+  @websocket_api.async_response
+  async def websocket_save_curves(hass, connection, msg):
+      entry_id = msg["entry_id"]
+      entry = hass.config_entries.async_get_entry(entry_id)
+      if not entry:
+          connection.send_error(msg["id"], "not_found", "Config entry not found")
+          return
+
+      curves = msg["curves"]
+      for entity_id, config in curves.items():
+          points = config.get("brightness", {})
+          xs = []
+          for x_str, y_str in points.items():
+              x, y = int(x_str), int(y_str)
+              if x < 1 or x > 100:
+                  connection.send_error(msg["id"], "invalid", f"X={x} out of range 1-100")
+                  return
+              if y < 0 or y > 100:
+                  connection.send_error(msg["id"], "invalid", f"Y={y} out of range 0-100")
+                  return
+              if x in xs:
+                  connection.send_error(msg["id"], "invalid", f"Duplicate X={x}")
+                  return
+              xs.append(x)
+
+      new_data = dict(entry.data)
+      for entity_id, config in curves.items():
+          if entity_id in new_data.get("entities", {}):
+              new_data["entities"][entity_id]["brightness"] = config["brightness"]
+
+      hass.config_entries.async_update_entry(entry, data=new_data)
+      await hass.config_entries.async_reload(entry_id)
+      connection.send_result(msg["id"], {"success": True})
+-->
+</body>
+</html>
