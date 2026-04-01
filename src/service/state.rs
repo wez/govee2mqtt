@@ -8,12 +8,27 @@ use crate::service::iot::IotClient;
 use crate::temperature::{TemperatureScale, TemperatureValue};
 use crate::undoc_api::GoveeUndocumentedApi;
 use anyhow::Context;
+use serde::{Deserialize, Serialize};
 use serde_json::Value as JsonValue;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Instant;
 use tokio::sync::{MappedMutexGuard, Mutex, MutexGuard, Semaphore};
 use tokio::time::{sleep, Duration};
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct SceneCatalogCategory {
+    pub name: String,
+    pub scenes: Vec<SceneCatalogEntry>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct SceneCatalogEntry {
+    pub name: String,
+    pub icon_urls: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub hint: Option<String>,
+}
 
 #[derive(Default)]
 pub struct State {
@@ -470,7 +485,7 @@ impl State {
         apply: F,
     ) -> anyhow::Result<bool> {
         let mut params: SetHumidifierNightlightParams =
-            device.nightlight_state.clone().unwrap_or_default().into();
+            device.nightlight_state.unwrap_or_default().into();
         (apply)(&mut params);
 
         if let Ok(command) = Base64HexBytes::encode_for_sku(&device.sku, &params) {
@@ -624,6 +639,93 @@ impl State {
         Ok(vec![])
     }
 
+    /// Returns the scene catalog with category structure preserved.
+    /// Unlike `device_list_scenes()` which returns a flat `Vec<String>`,
+    /// this preserves category groupings and icon URLs from the Govee API.
+    /// Results are cached in the Device struct after first fetch.
+    pub async fn device_list_scenes_categorized(
+        &self,
+        device: &Device,
+    ) -> anyhow::Result<Vec<SceneCatalogCategory>> {
+        // Return cached catalog if available
+        if let Some(cached) = device.scene_catalog() {
+            return Ok(cached.clone());
+        }
+
+        let catalog = self.fetch_scene_catalog(device).await?;
+
+        // Cache the result for future calls
+        if !catalog.is_empty() {
+            self.device_mut(&device.sku, &device.id)
+                .await
+                .set_scene_catalog(catalog.clone());
+        }
+
+        Ok(catalog)
+    }
+
+    /// Fetches the scene catalog from the Govee API (no caching).
+    async fn fetch_scene_catalog(
+        &self,
+        device: &Device,
+    ) -> anyhow::Result<Vec<SceneCatalogCategory>> {
+        // Try platform API first (no category info — wrap in "All")
+        if let Some(client) = self.get_platform_client().await {
+            if let Some(info) = &device.http_device_info {
+                let names = sort_and_dedup_scenes(client.list_scene_names(info).await?);
+                if !names.is_empty() {
+                    return Ok(vec![SceneCatalogCategory {
+                        name: "All".to_string(),
+                        scenes: names
+                            .into_iter()
+                            .map(|name| SceneCatalogEntry {
+                                name,
+                                icon_urls: vec![],
+                                hint: None,
+                            })
+                            .collect(),
+                    }]);
+                }
+            }
+        }
+
+        // Try undocumented API (has categories)
+        if let Ok(categories) = GoveeUndocumentedApi::get_scenes_for_device(&device.sku).await {
+            let mut result = vec![];
+            for cat in categories {
+                let mut scenes = vec![];
+                for scene in cat.scenes {
+                    // Same validity filter as device_list_scenes():
+                    // include only if at least one LightEffectEntry has scene_code != 0
+                    let valid = scene
+                        .light_effects
+                        .iter()
+                        .any(|effect| effect.scene_code != 0);
+                    if valid {
+                        scenes.push(SceneCatalogEntry {
+                            name: scene.scene_name,
+                            icon_urls: scene.icon_urls,
+                            hint: if scene.scenes_hint.is_empty() {
+                                None
+                            } else {
+                                Some(scene.scenes_hint)
+                            },
+                        });
+                    }
+                }
+                if !scenes.is_empty() {
+                    result.push(SceneCatalogCategory {
+                        name: cat.category_name,
+                        scenes,
+                    });
+                }
+            }
+            return Ok(result);
+        }
+
+        Ok(vec![])
+    }
+
     pub async fn device_set_target_temperature(
         self: &Arc<Self>,
         device: &Device,
@@ -680,7 +782,7 @@ impl State {
     // Take care not to call this while you hold a mutable device
     // reference, as that will deadlock!
     pub async fn notify_of_state_change(self: &Arc<Self>, device_id: &str) -> anyhow::Result<()> {
-        let Some(canonical_device) = self.device_by_id(&device_id).await else {
+        let Some(canonical_device) = self.device_by_id(device_id).await else {
             anyhow::bail!("cannot find device {device_id}!?");
         };
 
@@ -697,4 +799,56 @@ pub fn sort_and_dedup_scenes(mut scenes: Vec<String>) -> Vec<String> {
     scenes.sort_by_key(|s| s.to_ascii_lowercase());
     scenes.dedup();
     scenes
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_scene_catalog_entry_hint_serde_round_trip() {
+        // hint: Some should serialize with "hint" field present
+        let entry_with_hint = SceneCatalogEntry {
+            name: "Karst Cave".to_string(),
+            icon_urls: vec!["https://example.com/icon.png".to_string()],
+            hint: Some("Calm green tones".to_string()),
+        };
+        let json = serde_json::to_string(&entry_with_hint).unwrap();
+        assert!(json.contains("\"hint\":\"Calm green tones\""));
+        let deserialized: SceneCatalogEntry = serde_json::from_str(&json).unwrap();
+        assert_eq!(deserialized.hint, Some("Calm green tones".to_string()));
+
+        // hint: None should omit the "hint" field entirely (skip_serializing_if)
+        let entry_no_hint = SceneCatalogEntry {
+            name: "Sunset Glow".to_string(),
+            icon_urls: vec![],
+            hint: None,
+        };
+        let json = serde_json::to_string(&entry_no_hint).unwrap();
+        assert!(!json.contains("hint"));
+        // Deserializing JSON without "hint" field should produce None (serde default)
+        let deserialized: SceneCatalogEntry = serde_json::from_str(&json).unwrap();
+        assert_eq!(deserialized.hint, None);
+    }
+
+    #[test]
+    fn test_scene_catalog_entry_hint_empty_string_convention() {
+        // The convention: empty scenes_hint from API becomes None, non-empty becomes Some.
+        // This tests the pattern used in fetch_scene_catalog.
+        let empty_hint = "";
+        let result: Option<String> = if empty_hint.is_empty() {
+            None
+        } else {
+            Some(empty_hint.to_string())
+        };
+        assert_eq!(result, None);
+
+        let non_empty_hint = "Gentle pulsing warmth";
+        let result: Option<String> = if non_empty_hint.is_empty() {
+            None
+        } else {
+            Some(non_empty_hint.to_string())
+        };
+        assert_eq!(result, Some("Gentle pulsing warmth".to_string()));
+    }
 }

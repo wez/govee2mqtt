@@ -23,7 +23,7 @@ impl SceneConfig {
 #[async_trait]
 impl EntityInstance for SceneConfig {
     async fn publish_config(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
-        self.publish(&state, &client).await
+        self.publish(state, client).await
     }
 
     async fn notify_state(&self, _client: &HassClient) -> anyhow::Result<()> {

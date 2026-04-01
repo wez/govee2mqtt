@@ -5,6 +5,7 @@ use crate::platform_api::{
     DeviceCapability, DeviceCapabilityState, DeviceType, HttpDeviceInfo, HttpDeviceState,
 };
 use crate::service::quirks::{resolve_quirk, Quirk, BULB};
+use crate::service::state::SceneCatalogCategory;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
@@ -44,6 +45,8 @@ pub struct Device {
     pub last_polled: Option<DateTime<Utc>>,
 
     active_scene: Option<ActiveSceneInfo>,
+    /// Cached scene catalog to avoid repeated API calls during state notifications
+    scene_catalog_cache: Option<Vec<SceneCatalogCategory>>,
 }
 
 impl std::fmt::Display for Device {
@@ -302,7 +305,6 @@ impl Device {
         for cap in &state.capabilities {
             if let Ok(value) = serde_json::from_value::<IntegerValueState>(cap.state.clone()) {
                 if light_instance
-                    .as_deref()
                     .map(|inst| inst == cap.instance.as_str())
                     .unwrap_or(false)
                 {
@@ -365,6 +367,21 @@ impl Device {
         candidates.sort_by(|a, b| a.updated.cmp(&b.updated));
 
         candidates.pop()
+    }
+
+    /// Returns the active scene name, if any
+    pub fn active_scene_name(&self) -> Option<&str> {
+        self.active_scene.as_ref().map(|s| s.name.as_str())
+    }
+
+    /// Returns the cached scene catalog, if available
+    pub fn scene_catalog(&self) -> Option<&Vec<SceneCatalogCategory>> {
+        self.scene_catalog_cache.as_ref()
+    }
+
+    /// Caches the scene catalog for this device
+    pub fn set_scene_catalog(&mut self, catalog: Vec<SceneCatalogCategory>) {
+        self.scene_catalog_cache = Some(catalog);
     }
 
     /// Records the active scene name
@@ -439,11 +456,10 @@ impl Device {
             return false;
         }
         let device_type = self.device_type();
-        match (device_type, self.sku.as_str()) {
-            (_, "H7160") => true,
-            (DeviceType::Light, _) => true,
-            _ => false,
-        }
+        matches!(
+            (device_type, self.sku.as_str()),
+            (_, "H7160") | (DeviceType::Light, _)
+        )
     }
 
     pub fn avoid_platform_api(&self) -> bool {
@@ -587,19 +603,13 @@ impl Device {
             return Some(false);
         }
 
-        if let Some(info) = &self.undoc_device_info {
-            Some(info.entry.device_ext.device_settings.wifi_name.is_none())
-        } else {
-            // Don't know for sure
-            None
-        }
+        self.undoc_device_info
+            .as_ref()
+            .map(|info| info.entry.device_ext.device_settings.wifi_name.is_none())
     }
 
     pub fn is_controllable(&self) -> bool {
-        match self.is_ble_only_device() {
-            Some(true) => false,
-            _ => true,
-        }
+        !matches!(self.is_ble_only_device(), Some(true))
     }
 }
 

@@ -129,15 +129,17 @@ impl TargetTemperatureEntity {
 #[async_trait::async_trait]
 impl EntityInstance for TargetTemperatureEntity {
     async fn publish_config(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
-        self.number.publish(&state, &client).await
+        self.number.publish(state, client).await
     }
 
     async fn notify_state(&self, client: &HassClient) -> anyhow::Result<()> {
-        let device = self
-            .state
-            .device_by_id(&self.device_id)
-            .await
-            .expect("device to exist");
+        let Some(device) = self.state.device_by_id(&self.device_id).await else {
+            log::warn!(
+                "Device {} not found in state, skipping notify",
+                self.device_id
+            );
+            return Ok(());
+        };
 
         let quirk = device.resolve_quirk();
 
@@ -175,7 +177,7 @@ impl EntityInstance for TargetTemperatureEntity {
 
             log::debug!("setting value to {value}");
 
-            return self.number.notify_state(&client, &value).await;
+            return self.number.notify_state(client, &value).await;
         }
 
         Ok(())

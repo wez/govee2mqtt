@@ -32,26 +32,20 @@ impl ParsedWorkMode {
             .struct_field_by_name("workMode")
             .ok_or_else(|| anyhow!("workMode not found in {cap:?}"))?;
 
-        match &wm.field_type {
-            DeviceParameters::Enum { options } => {
-                for opt in options {
-                    work_modes.add(opt.name.to_string(), opt.value.clone());
-                }
+        if let DeviceParameters::Enum { options } = &wm.field_type {
+            for opt in options {
+                work_modes.add(opt.name.to_string(), opt.value.clone());
             }
-            _ => {}
         }
 
         if let Some(mv) = cap.struct_field_by_name("modeValue") {
-            match &mv.field_type {
-                DeviceParameters::Enum { options } => {
-                    for opt in options {
-                        let mode_name = &opt.name;
-                        if let Some(work_mode) = work_modes.get_mut(mode_name) {
-                            work_mode.add_values(opt);
-                        }
+            if let DeviceParameters::Enum { options } = &mv.field_type {
+                for opt in options {
+                    let mode_name = &opt.name;
+                    if let Some(work_mode) = work_modes.get_mut(mode_name) {
+                        work_mode.add_values(opt);
                     }
                 }
-                _ => {}
             }
         }
         Ok(work_modes)
@@ -75,19 +69,19 @@ impl ParsedWorkMode {
     pub fn adjust_for_device(&mut self, sku: &str) {
         match sku {
             "H7160" | "H7143" => {
-                self.modes
-                    .get_mut("Manual")
-                    .map(|m| m.label = "Manual: Mist Level".to_string());
+                if let Some(m) = self.modes.get_mut("Manual") {
+                    m.label = "Manual: Mist Level".to_string();
+                }
             }
             "H7131" => {
-                self.modes.get_mut("gearMode").map(|m| {
+                if let Some(m) = self.modes.get_mut("gearMode") {
                     m.label = "Heat".to_string();
-                });
+                }
             }
             "H7173" => {
-                self.modes.get_mut("gearMode").map(|m| {
+                if let Some(m) = self.modes.get_mut("gearMode") {
                     m.label = "Heat".to_string();
-                });
+                }
             }
             _ => {
                 for mode in self.modes.values_mut() {
@@ -98,12 +92,10 @@ impl ParsedWorkMode {
     }
 
     pub fn mode_for_value(&self, value: &JsonValue) -> Option<&WorkMode> {
-        for mode in self.modes.values() {
-            if mode.value == *value {
-                return Some(mode);
-            }
-        }
-        None
+        self.modes
+            .values()
+            .find(|&mode| mode.value == *value)
+            .map(|v| v as _)
     }
 
     pub fn mode_by_name(&self, name: &str) -> Option<&WorkMode> {
@@ -112,12 +104,10 @@ impl ParsedWorkMode {
 
     #[allow(unused)]
     pub fn mode_by_label(&self, name: &str) -> Option<&WorkMode> {
-        for mode in self.modes.values() {
-            if mode.label() == name {
-                return Some(mode);
-            }
-        }
-        None
+        self.modes
+            .values()
+            .find(|&mode| mode.label() == name)
+            .map(|v| v as _)
     }
 
     pub fn get_mode_names(&self) -> Vec<String> {
@@ -143,13 +133,7 @@ impl ParsedWorkMode {
 
     #[allow(unused)]
     pub fn modes_with_values(&self) -> impl Iterator<Item = &WorkMode> {
-        self.modes.values().filter_map(|mode| {
-            if mode.values.is_empty() {
-                None
-            } else {
-                Some(mode)
-            }
-        })
+        self.modes.values().filter(|mode| !mode.values.is_empty())
     }
 }
 
@@ -237,7 +221,7 @@ impl WorkMode {
         self.default_value
             .as_ref()
             .and_then(|v| v.as_i64())
-            .or_else(|| self.values.get(0).and_then(|wmv| wmv.value.as_i64()))
+            .or_else(|| self.values.first().and_then(|wmv| wmv.value.as_i64()))
             .or_else(|| self.value_range.as_ref().map(|r| r.start))
             .unwrap_or(0)
     }
@@ -267,7 +251,7 @@ impl WorkMode {
             if item != expect {
                 return None;
             }
-            expect = expect + 1;
+            expect += 1;
         }
 
         Some(min..max + 1)

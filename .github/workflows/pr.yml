@@ -17,6 +17,8 @@ jobs:
     - uses: actions/checkout@v6
     - name: Build
       run: cargo build --all
+    - name: Clippy
+      run: cargo clippy --all -- -D warnings
     - name: Run tests
       run: cargo test --all -- --show-output
     - name: Check formatting

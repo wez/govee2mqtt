@@ -17,6 +17,7 @@ impl std::fmt::Debug for HexBytes {
     }
 }
 
+#[allow(clippy::type_complexity)]
 pub struct PacketCodec {
     encode: Box<dyn Fn(&dyn Any) -> anyhow::Result<Vec<u8>> + Sync + Send>,
     decode: Box<dyn Fn(&[u8]) -> anyhow::Result<GoveeBlePacket> + Sync + Send>,
@@ -57,10 +58,10 @@ impl PacketManager {
                 let mut map = HashMap::new();
 
                 for codec in &self.all_codecs {
-                    if codec.supported_skus.iter().any(|s| *s == sku) {
-                        if map.insert(codec.type_id.clone(), codec.clone()).is_some() {
-                            eprintln!("Conflicting PacketCodecs for {sku} {:?}", codec.type_id);
-                        }
+                    if codec.supported_skus.contains(&sku)
+                        && map.insert(codec.type_id, codec.clone()).is_some()
+                    {
+                        eprintln!("Conflicting PacketCodecs for {sku} {:?}", codec.type_id);
                     }
                 }
 
@@ -252,7 +253,7 @@ pub trait DecodePacketParam {
 
 impl DecodePacketParam for u8 {
     fn decode_param<'a>(&mut self, data: &'a [u8]) -> anyhow::Result<&'a [u8]> {
-        *self = *data.get(0).ok_or_else(|| anyhow!("EOF"))?;
+        *self = *data.first().ok_or_else(|| anyhow!("EOF"))?;
         Ok(&data[1..])
     }
 
@@ -263,7 +264,7 @@ impl DecodePacketParam for u8 {
 
 impl DecodePacketParam for u16 {
     fn decode_param<'a>(&mut self, data: &'a [u8]) -> anyhow::Result<&'a [u8]> {
-        let lo = *data.get(0).ok_or_else(|| anyhow!("EOF"))?;
+        let lo = *data.first().ok_or_else(|| anyhow!("EOF"))?;
         let hi = *data.get(1).ok_or_else(|| anyhow!("EOF"))?;
         *self = ((hi as u16) << 8) | lo as u16;
         Ok(&data[2..])
@@ -286,14 +287,14 @@ pub struct SetHumidifierNightlightParams {
     pub brightness: u8,
 }
 
-impl Into<SetHumidifierNightlightParams> for NotifyHumidifierNightlightParams {
-    fn into(self) -> SetHumidifierNightlightParams {
+impl From<NotifyHumidifierNightlightParams> for SetHumidifierNightlightParams {
+    fn from(val: NotifyHumidifierNightlightParams) -> Self {
         SetHumidifierNightlightParams {
-            on: self.on,
-            r: self.r,
-            g: self.g,
-            b: self.b,
-            brightness: self.brightness,
+            on: val.on,
+            r: val.r,
+            g: val.g,
+            b: val.b,
+            brightness: val.brightness,
         }
     }
 }
@@ -312,9 +313,9 @@ pub struct NotifyHumidifierNightlightParams {
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct TargetHumidity(u8);
 
-impl Into<u8> for TargetHumidity {
-    fn into(self) -> u8 {
-        self.0
+impl From<TargetHumidity> for u8 {
+    fn from(val: TargetHumidity) -> Self {
+        val.0
     }
 }
 
@@ -381,7 +382,7 @@ impl SetSceneCode {
         let mut last_line_marker = 1;
 
         for b in bytes {
-            if data.len() % 19 == 0 {
+            if data.len().is_multiple_of(19) {
                 num_lines += 1;
 
                 data.push(0xa3);
@@ -478,7 +479,7 @@ impl<'de> Deserialize<'de> for Base64HexBytes {
 fn calculate_checksum(data: &[u8]) -> u8 {
     let mut checksum: u8 = 0;
     for &b in data {
-        checksum = checksum ^ b;
+        checksum ^= b;
     }
     checksum
 }

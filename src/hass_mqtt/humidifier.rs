@@ -103,17 +103,15 @@ impl Humidifier {
 
         if let Some(info) = &device.http_device_info {
             if let Some(cap) = info.capability_by_instance("humidity") {
-                match &cap.parameters {
-                    Some(DeviceParameters::Integer {
-                        range: IntegerRange { min, max, .. },
-                        unit,
-                    }) => {
-                        if unit.as_deref() == Some("unit.percent") {
-                            min_humidity.replace(*min as u8);
-                            max_humidity.replace(*max as u8);
-                        }
+                if let Some(DeviceParameters::Integer {
+                    range: IntegerRange { min, max, .. },
+                    unit,
+                }) = &cap.parameters
+                {
+                    if unit.as_deref() == Some("unit.percent") {
+                        min_humidity.replace(*min as u8);
+                        max_humidity.replace(*max as u8);
                     }
-                    _ => {}
                 }
             }
         }
@@ -170,11 +168,13 @@ impl EntityInstance for Humidifier {
     }
 
     async fn notify_state(&self, client: &HassClient) -> anyhow::Result<()> {
-        let device = self
-            .state
-            .device_by_id(&self.device_id)
-            .await
-            .expect("device to exist");
+        let Some(device) = self.state.device_by_id(&self.device_id).await else {
+            log::warn!(
+                "Device {} not found in state, skipping notify",
+                self.device_id
+            );
+            return Ok(());
+        };
 
         match device.device_state() {
             Some(device_state) => {

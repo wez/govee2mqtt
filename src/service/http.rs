@@ -42,13 +42,13 @@ async fn resolve_device_for_control(
     id: &str,
 ) -> Result<Coordinator, Response> {
     state
-        .resolve_device_for_control(&id)
+        .resolve_device_for_control(id)
         .await
         .map_err(not_found)
 }
 
 async fn resolve_device_read_only(state: &StateHandle, id: &str) -> Result<Device, Response> {
-    state.resolve_device_read_only(&id).await.map_err(not_found)
+    state.resolve_device_read_only(id).await.map_err(not_found)
 }
 
 /// Returns a json array of device information
@@ -175,6 +175,21 @@ async fn device_set_scene(
     Ok(response_with_code(StatusCode::OK, "ok"))
 }
 
+/// Returns a JSON array of the available scenes with category structure preserved
+async fn device_list_scenes_categorized(
+    State(state): State<StateHandle>,
+    Path(id): Path<String>,
+) -> Result<Response, Response> {
+    let device = resolve_device_read_only(&state, &id).await?;
+
+    let catalog = state
+        .device_list_scenes_categorized(&device)
+        .await
+        .map_err(generic)?;
+
+    Ok(Json(catalog).into_response())
+}
+
 /// Returns a JSON array of the available scene names for a given device
 async fn device_list_scenes(
     State(state): State<StateHandle>,
@@ -220,7 +235,7 @@ async fn activate_one_click(
         .ok_or_else(|| anyhow::anyhow!("AWS IoT client is not available"))
         .map_err(generic)?;
 
-    iot.activate_one_click(&item).await.map_err(generic)?;
+    iot.activate_one_click(item).await.map_err(generic)?;
 
     Ok(response_with_code(StatusCode::OK, "ok"))
 }
@@ -245,6 +260,10 @@ fn build_router(state: StateHandle) -> Router {
         .route("/api/device/{id}/color/{color}", get(device_set_color))
         .route("/api/device/{id}/scene/{scene}", get(device_set_scene))
         .route("/api/device/{id}/scenes", get(device_list_scenes))
+        .route(
+            "/api/device/{id}/scene-catalog",
+            get(device_list_scenes_categorized),
+        )
         .route("/api/oneclicks", get(list_one_clicks))
         .route("/api/oneclick/activate/{scene}", get(activate_one_click))
         .route("/", get(redirect_to_index))

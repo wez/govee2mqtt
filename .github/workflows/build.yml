@@ -1,6 +1,7 @@
 name: Container Build
 
 on:
+  workflow_dispatch:
   pull_request:
     branches:
       - main
@@ -21,7 +22,7 @@ on:
       - ".dockerignore"
 
 env:
-  IMAGE: ghcr.io/wez/govee2mqtt
+  IMAGE: ghcr.io/florianhorner/govee2mqtt
 
 jobs:
   build:

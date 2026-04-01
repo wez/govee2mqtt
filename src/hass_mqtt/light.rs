@@ -62,7 +62,7 @@ pub struct DeviceLight {
 #[async_trait]
 impl EntityInstance for DeviceLight {
     async fn publish_config(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
-        self.light.publish(&state, &client).await
+        self.light.publish(state, client).await
     }
 
     async fn notify_state(&self, client: &HassClient) -> anyhow::Result<()> {
@@ -70,11 +70,13 @@ impl EntityInstance for DeviceLight {
             return Ok(());
         }
 
-        let device = self
-            .state
-            .device_by_id(&self.device_id)
-            .await
-            .expect("device to exist");
+        let Some(device) = self.state.device_by_id(&self.device_id).await else {
+            log::warn!(
+                "Device {} not found in state, skipping notify",
+                self.device_id
+            );
+            return Ok(());
+        };
 
         match device.device_state() {
             Some(device_state) => {
@@ -155,7 +157,7 @@ impl DeviceLight {
         let unique_id = format!(
             "gv2mqtt-{id}{seg}",
             id = topic_safe_id(device),
-            seg = segment.map(|n| format!("-{n}")).unwrap_or(String::new())
+            seg = segment.map(|n| format!("-{n}")).unwrap_or_default()
         );
 
         let effect_list = if segment.is_some() {

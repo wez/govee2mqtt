@@ -84,15 +84,17 @@ impl CapabilitySwitch {
 #[async_trait]
 impl EntityInstance for CapabilitySwitch {
     async fn publish_config(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
-        self.switch.publish(&state, &client).await
+        self.switch.publish(state, client).await
     }
 
     async fn notify_state(&self, client: &HassClient) -> anyhow::Result<()> {
-        let device = self
-            .state
-            .device_by_id(&self.device_id)
-            .await
-            .expect("device to exist");
+        let Some(device) = self.state.device_by_id(&self.device_id).await else {
+            log::warn!(
+                "Device {} not found in state, skipping notify",
+                self.device_id
+            );
+            return Ok(());
+        };
 
         if self.instance_name == "powerSwitch" {
             if let Some(state) = device.device_state() {

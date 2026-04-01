@@ -116,7 +116,7 @@ impl WorkModeNumber {
 #[async_trait]
 impl EntityInstance for WorkModeNumber {
     async fn publish_config(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
-        self.number.publish(&state, &client).await
+        self.number.publish(state, client).await
     }
 
     async fn notify_state(&self, client: &HassClient) -> anyhow::Result<()> {
@@ -126,11 +126,13 @@ impl EntityInstance for WorkModeNumber {
             .as_ref()
             .ok_or_else(|| anyhow!("state_topic is None!?"))?;
 
-        let device = self
-            .state
-            .device_by_id(&self.device_id)
-            .await
-            .expect("device to exist");
+        let Some(device) = self.state.device_by_id(&self.device_id).await else {
+            log::warn!(
+                "Device {} not found in state, skipping notify",
+                self.device_id
+            );
+            return Ok(());
+        };
 
         if let Some(cap) = device.get_state_capability_by_instance("workMode") {
             if let Some(work_mode) = cap.state.pointer("/value/workMode") {
