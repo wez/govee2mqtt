@@ -16,7 +16,7 @@ use uuid::Uuid;
 
 // <https://github.com/constructorfleet/homebridge-ultimate-govee/blob/main/src/data/clients/RestClient.ts>
 
-const APP_VERSION: &str = "6.5.02";
+const APP_VERSION: &str = "7.4.10";
 const HALF_DAY: Duration = Duration::from_secs(3600 * 12);
 const ONE_DAY: Duration = Duration::from_secs(86400);
 const ONE_WEEK: Duration = Duration::from_secs(86400 * 7);
@@ -54,7 +54,7 @@ impl<T: std::fmt::Debug> std::ops::Deref for Redacted<T> {
 
 fn user_agent() -> String {
     format!(
-        "GoveeHome/{APP_VERSION} (com.ihoment.GoVeeSensor; build:2; iOS 16.5.0) Alamofire/5.6.4"
+        "GoveeHome/{APP_VERSION} (com.ihoment.GoVeeSensor; build:2; iOS 18.4.0) Alamofire/5.10.2"
     )
 }
 
