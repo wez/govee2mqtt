@@ -18,7 +18,7 @@ impl LanDiscoCommand {
         let state = crate::service::state::State::new();
 
         while let Ok(Some(lan_device)) = tokio::time::timeout_at(deadline, scan.recv()).await {
-            if !state.device_by_id(&lan_device.device).await.is_some() {
+            if state.device_by_id(&lan_device.device).await.is_none() {
                 let mut device = state.device_mut(&lan_device.sku, &lan_device.device).await;
 
                 device.set_lan_device(lan_device.clone());

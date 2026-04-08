@@ -470,7 +470,7 @@ impl State {
         apply: F,
     ) -> anyhow::Result<bool> {
         let mut params: SetHumidifierNightlightParams =
-            device.nightlight_state.clone().unwrap_or_default().into();
+            device.nightlight_state.unwrap_or_default().into();
         (apply)(&mut params);
 
         if let Ok(command) = Base64HexBytes::encode_for_sku(&device.sku, &params) {
@@ -680,7 +680,7 @@ impl State {
     // Take care not to call this while you hold a mutable device
     // reference, as that will deadlock!
     pub async fn notify_of_state_change(self: &Arc<Self>, device_id: &str) -> anyhow::Result<()> {
-        let Some(canonical_device) = self.device_by_id(&device_id).await else {
+        let Some(canonical_device) = self.device_by_id(device_id).await else {
             anyhow::bail!("cannot find device {device_id}!?");
         };
 

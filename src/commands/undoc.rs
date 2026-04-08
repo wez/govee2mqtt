@@ -8,6 +8,7 @@ pub struct UndocCommand {
 }
 
 #[derive(clap::Parser, Debug)]
+#[allow(clippy::enum_variant_names)]
 enum SubCommand {
     DumpOneClick {},
     ShowOneClick {},
@@ -41,7 +42,7 @@ impl UndocCommand {
                 start_iot_client(&args.undoc_args, state.clone(), None).await?;
                 let iot = state.get_iot_client().await.expect("just started iot");
 
-                iot.activate_one_click(&item).await?;
+                iot.activate_one_click(item).await?;
             }
         }
         Ok(())

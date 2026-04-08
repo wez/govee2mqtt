@@ -116,7 +116,7 @@ impl WorkModeNumber {
 #[async_trait]
 impl EntityInstance for WorkModeNumber {
     async fn publish_config(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
-        self.number.publish(&state, &client).await
+        self.number.publish(state, client).await
     }
 
     async fn notify_state(&self, client: &HassClient) -> anyhow::Result<()> {

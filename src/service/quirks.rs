@@ -12,6 +12,7 @@ pub enum HumidityUnits {
 }
 
 impl HumidityUnits {
+    #[allow(clippy::wrong_self_convention)]
     pub fn from_reading_to_relative_percent(&self, value: f64) -> f64 {
         match self {
             Self::RelativePercent => value,
