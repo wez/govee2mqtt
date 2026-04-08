@@ -149,7 +149,7 @@ impl TemperatureValue {
 
     pub fn as_unit(&self, unit: TemperatureUnits) -> Self {
         if self.unit == unit {
-            return self.clone();
+            return *self;
         }
 
         let normalized = self.value / self.unit.factor();
@@ -196,7 +196,7 @@ fn atoi<F: FromStr>(input: &str) -> Result<(F, &str), <F as FromStr>::Err> {
     let input = input.trim();
     let i = input
         .find(|c: char| !c.is_numeric() && c != '.')
-        .unwrap_or_else(|| input.len());
+        .unwrap_or(input.len());
     let number = input[..i].parse::<F>()?;
     Ok((number, input[i..].trim()))
 }

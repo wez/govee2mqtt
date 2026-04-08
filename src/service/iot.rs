@@ -426,7 +426,7 @@ async fn run_iot_subscriber(
                                                     g: nl.g,
                                                     b: nl.b,
                                                 };
-                                                device.set_nightlight_state(nl.clone());
+                                                device.set_nightlight_state(nl);
                                             }
                                             GoveeBlePacket::NotifyHumidifierAutoMode(
                                                 HumidifierAutoMode { target_humidity },

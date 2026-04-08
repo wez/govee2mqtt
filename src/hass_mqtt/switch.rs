@@ -84,7 +84,7 @@ impl CapabilitySwitch {
 #[async_trait]
 impl EntityInstance for CapabilitySwitch {
     async fn publish_config(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
-        self.switch.publish(&state, &client).await
+        self.switch.publish(state, client).await
     }
 
     async fn notify_state(&self, client: &HassClient) -> anyhow::Result<()> {

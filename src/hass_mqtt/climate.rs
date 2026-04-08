@@ -129,7 +129,7 @@ impl TargetTemperatureEntity {
 #[async_trait::async_trait]
 impl EntityInstance for TargetTemperatureEntity {
     async fn publish_config(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
-        self.number.publish(&state, &client).await
+        self.number.publish(state, client).await
     }
 
     async fn notify_state(&self, client: &HassClient) -> anyhow::Result<()> {
@@ -175,7 +175,7 @@ impl EntityInstance for TargetTemperatureEntity {
 
             log::debug!("setting value to {value}");
 
-            return self.number.notify_state(&client, &value).await;
+            return self.number.notify_state(client, &value).await;
         }
 
         Ok(())
