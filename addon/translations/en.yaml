@@ -23,6 +23,12 @@ configuration:
       at https://developer.govee.com/reference/apply-you-govee-api-key
       Configuring this will cause govee2mqtt to require working
       internet connectivity on startup.
+  govee_app_version:
+    name: Govee App Version Override
+    description: >-
+      Override the Govee app version string sent in API requests.
+      Only set this if you need to match a newer version of the
+      Govee Home app. If left blank, the built-in default is used.
 
   mqtt_host:
     name: MQTT Broker Host Name

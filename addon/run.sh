@@ -67,6 +67,10 @@ if bashio::config.has_value govee_api_key ; then
   export GOVEE_API_KEY="$(bashio::config govee_api_key)"
 fi
 
+if bashio::config.has_value govee_app_version ; then
+  export GOVEE_APP_VERSION="$(bashio::config govee_app_version)"
+fi
+
 if bashio::config.has_value no_multicast ; then
   export GOVEE_LAN_NO_MULTICAST="$(bashio::config no_multicast)"
 fi
