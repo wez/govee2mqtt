@@ -19,6 +19,7 @@ here](https://developer.govee.com/reference/apply-you-govee-api-key).
 |`--govee-email`|`GOVEE_EMAIL`|`govee_email`|The email address you registered with your govee account|
 |`--govee-password`|`GOVEE_PASSWORD`|`govee_password`|The password you registered for your govee account|
 |`--api-key`|`GOVEE_API_KEY`|`govee_api_key`|The API key you requested from Govee support|
+|`--govee-app-version`|`GOVEE_APP_VERSION`|`govee_app_version`|Override the app version sent in Govee API headers (default: built-in)|
 
 *Concerned about sharing your credentials? See [Privacy](PRIVACY.md) for
 information about how data is used and retained by `govee2mqtt`*

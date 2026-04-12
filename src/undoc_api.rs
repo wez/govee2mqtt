@@ -16,7 +16,16 @@ use uuid::Uuid;
 
 // <https://github.com/constructorfleet/homebridge-ultimate-govee/blob/main/src/data/clients/RestClient.ts>
 
-const APP_VERSION: &str = "6.5.02";
+const DEFAULT_APP_VERSION: &str = "7.4.10";
+static APP_VERSION_OVERRIDE: once_cell::sync::OnceCell<String> = once_cell::sync::OnceCell::new();
+
+fn app_version() -> &'static str {
+    APP_VERSION_OVERRIDE
+        .get()
+        .map(|s| s.as_str())
+        .unwrap_or(DEFAULT_APP_VERSION)
+}
+
 const HALF_DAY: Duration = Duration::from_secs(3600 * 12);
 const ONE_DAY: Duration = Duration::from_secs(86400);
 const ONE_WEEK: Duration = Duration::from_secs(86400 * 7);
@@ -54,7 +63,8 @@ impl<T: std::fmt::Debug> std::ops::Deref for Redacted<T> {
 
 fn user_agent() -> String {
     format!(
-        "GoveeHome/{APP_VERSION} (com.ihoment.GoVeeSensor; build:2; iOS 16.5.0) Alamofire/5.6.4"
+        "GoveeHome/{} (com.ihoment.GoVeeSensor; build:2; iOS 18.4.0) Alamofire/5.10.2",
+        app_version()
     )
 }
 
@@ -79,6 +89,13 @@ pub struct UndocApiArguments {
     /// the GOVEE_PASSWORD environment variable.
     #[arg(long, global = true)]
     pub govee_password: Option<String>,
+
+    /// Override the Govee app version sent in API headers.
+    /// If not passed here, it will be read from
+    /// the GOVEE_APP_VERSION environment variable.
+    /// Defaults to the built-in version if not set.
+    #[arg(long, global = true)]
+    pub govee_app_version: Option<String>,
 
     /// Where to store the AWS IoT key file.
     #[arg(long, global = true, default_value = "/dev/shm/govee.iot.key")]
@@ -126,7 +143,19 @@ impl UndocApiArguments {
         })
     }
 
+    pub fn resolve_app_version(&self) -> anyhow::Result<()> {
+        let version = match &self.govee_app_version {
+            Some(v) => Some(v.to_string()),
+            None => opt_env_var("GOVEE_APP_VERSION")?,
+        };
+        if let Some(v) = version {
+            let _ = APP_VERSION_OVERRIDE.set(v);
+        }
+        Ok(())
+    }
+
     pub fn api_client(&self) -> anyhow::Result<GoveeUndocumentedApi> {
+        self.resolve_app_version()?;
         let email = self.email()?;
         let password = self.password()?;
         Ok(GoveeUndocumentedApi::new(email, password))
@@ -170,7 +199,7 @@ impl GoveeUndocumentedApi {
                     .build()?
                     .request(Method::GET, "https://app2.govee.com/app/v1/account/iot/key")
                     .header("Authorization", format!("Bearer {token}"))
-                    .header("appVersion", APP_VERSION)
+                    .header("appVersion", app_version())
                     .header("clientId", &self.client_id)
                     .header("clientType", "1")
                     .header("iotVersion", "0")
@@ -207,7 +236,7 @@ impl GoveeUndocumentedApi {
                 Method::POST,
                 "https://app2.govee.com/account/rest/account/v1/login",
             )
-            .header("appVersion", APP_VERSION)
+            .header("appVersion", app_version())
             .header("clientId", &self.client_id)
             .header("clientType", "1")
             .header("iotVersion", "0")
@@ -265,7 +294,7 @@ impl GoveeUndocumentedApi {
                 "https://app2.govee.com/device/rest/devices/v1/list",
             )
             .header("Authorization", format!("Bearer {token}"))
-            .header("appVersion", APP_VERSION)
+            .header("appVersion", app_version())
             .header("clientId", &self.client_id)
             .header("clientType", "1")
             .header("iotVersion", "0")
@@ -367,7 +396,7 @@ impl GoveeUndocumentedApi {
                             "https://app2.govee.com/appsku/v1/light-effect-libraries?sku={sku}"
                         ),
                     )
-                    .header("AppVersion", APP_VERSION)
+                    .header("AppVersion", app_version())
                     .header("User-Agent", user_agent())
                     .send()
                     .await?;
@@ -434,7 +463,7 @@ impl GoveeUndocumentedApi {
                         "https://app2.govee.com/bff-app/v1/exec-plat/home",
                     )
                     .header("Authorization", format!("Bearer {community_token}"))
-                    .header("appVersion", APP_VERSION)
+                    .header("appVersion", app_version())
                     .header("clientId", &self.client_id)
                     .header("clientType", "1")
                     .header("iotVersion", "0")
