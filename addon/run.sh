@@ -87,6 +87,14 @@ if bashio::config.has_value temperature_scale ; then
   export GOVEE_TEMPERATURE_SCALE="$(bashio::config temperature_scale)"
 fi
 
+if bashio::config.has_value disable_effects ; then
+  export GOVEE_DISABLE_EFFECTS="$(bashio::config disable_effects)"
+fi
+
+if bashio::config.has_value allowed_effects ; then
+  export GOVEE_ALLOWED_EFFECTS="$(bashio::config allowed_effects)"
+fi
+
 env | grep GOVEE_ | sed -r 's/_(EMAIL|KEY|PASSWORD)=.*/_\1=REDACTED/'
 set -x
 
