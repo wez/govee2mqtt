@@ -88,6 +88,10 @@ impl Quirk {
         Self::device(sku, DeviceType::Thermometer, "mdi:thermometer")
     }
 
+    pub fn air_quality_monitor<SKU: Into<Cow<'static, str>>>(sku: SKU) -> Self {
+        Self::device(sku, DeviceType::AirQualityMonitor, "mdi:molecule-co2")
+    }
+
     pub fn with_rgb(mut self) -> Self {
         self.supports_rgb = true;
         self
@@ -271,6 +275,17 @@ fn load_quirks() -> HashMap<String, Quirk> {
         Quirk::thermometer("H5179")
             .with_platform_temperature_sensor_units(TemperatureUnits::Fahrenheit)
             .with_platform_humidity_sensor_units(HumidityUnits::RelativePercent),
+        // <https://github.com/wez/govee2mqtt/issues/634>
+        Quirk::air_quality_monitor("H5140")
+            .with_platform_temperature_sensor_units(TemperatureUnits::Fahrenheit)
+            .with_platform_humidity_sensor_units(HumidityUnits::RelativePercent)
+            .with_iot_api_support(true),
+        // <https://github.com/wez/govee2mqtt/issues/561>
+        Quirk::air_quality_monitor("H5106")
+            .with_platform_temperature_sensor_units(TemperatureUnits::Fahrenheit)
+            .with_platform_humidity_sensor_units(HumidityUnits::RelativePercent)
+            .with_ble_only(true)
+            .with_iot_api_support(true),
         Quirk::device("H7170", DeviceType::Kettle, "mdi:kettle")
             .with_platform_temperature_sensor_units(TemperatureUnits::Fahrenheit),
         Quirk::device("H7171", DeviceType::Kettle, "mdi:kettle")
