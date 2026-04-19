@@ -23,6 +23,7 @@ pub struct LightConfig {
     /// it is not passed
     pub state_topic: String,
     pub optimistic: bool,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub supported_color_modes: Vec<String>,
     /// Flag that defines if the light supports brightness.
     pub brightness: bool,
