@@ -698,3 +698,102 @@ pub fn sort_and_dedup_scenes(mut scenes: Vec<String>) -> Vec<String> {
     scenes.dedup();
     scenes
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn sort_and_dedup_scenes_removes_duplicates_and_sorts() {
+        let scenes = vec![
+            "Sunset".to_string(),
+            "aurora".to_string(),
+            "Blaze".to_string(),
+            "aurora".to_string(),
+            "Sunset".to_string(),
+        ];
+
+        let result = sort_and_dedup_scenes(scenes);
+
+        assert_eq!(result, vec!["aurora", "Blaze", "Sunset"]);
+    }
+
+    #[test]
+    fn sort_and_dedup_scenes_handles_empty_input() {
+        let result = sort_and_dedup_scenes(vec![]);
+
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn sort_and_dedup_scenes_orders_case_insensitively() {
+        let scenes = vec!["Zelda".to_string(), "alpha".to_string(), "Beta".to_string()];
+
+        let result = sort_and_dedup_scenes(scenes);
+
+        assert_eq!(result, vec!["alpha", "Beta", "Zelda"]);
+    }
+
+    #[tokio::test]
+    async fn state_temperature_scale_defaults_to_celsius() {
+        let state = State::new();
+
+        let scale = state.get_temperature_scale().await;
+
+        assert!(matches!(scale, TemperatureScale::Celsius));
+    }
+
+    #[tokio::test]
+    async fn state_temperature_scale_round_trips() {
+        let state = State::new();
+
+        state
+            .set_temperature_scale(TemperatureScale::Fahrenheit)
+            .await;
+        let scale = state.get_temperature_scale().await;
+
+        assert!(matches!(scale, TemperatureScale::Fahrenheit));
+    }
+
+    #[tokio::test]
+    async fn state_hass_discovery_prefix_defaults_to_empty_string() {
+        let state = State::new();
+
+        let prefix = state.get_hass_disco_prefix().await;
+
+        assert_eq!(prefix, "");
+    }
+
+    #[tokio::test]
+    async fn state_hass_discovery_prefix_round_trips() {
+        let state = State::new();
+
+        state
+            .set_hass_disco_prefix("homeassistant".to_string())
+            .await;
+        let prefix = state.get_hass_disco_prefix().await;
+
+        assert_eq!(prefix, "homeassistant");
+    }
+
+    #[tokio::test]
+    async fn state_device_mut_creates_device() {
+        let state = State::new();
+
+        {
+            let _device = state.device_mut("H6001", "AA:BB:CC:DD:EE:FF").await;
+        }
+        let devices = state.devices().await;
+
+        assert_eq!(devices.len(), 1);
+    }
+
+    #[tokio::test]
+    async fn state_devices_is_empty_by_default() {
+        let state = State::new();
+
+        let devices = state.devices().await;
+
+        assert!(devices.is_empty());
+    }
+}
