@@ -63,6 +63,10 @@ if bashio::config.has_value govee_password ; then
   export GOVEE_PASSWORD="$(bashio::config govee_password)"
 fi
 
+if bashio::config.has_value govee_2fa_code ; then
+  export GOVEE_2FA_CODE="$(bashio::config govee_2fa_code)"
+fi
+
 if bashio::config.has_value govee_api_key ; then
   export GOVEE_API_KEY="$(bashio::config govee_api_key)"
 fi
@@ -87,7 +91,7 @@ if bashio::config.has_value temperature_scale ; then
   export GOVEE_TEMPERATURE_SCALE="$(bashio::config temperature_scale)"
 fi
 
-env | grep GOVEE_ | sed -r 's/_(EMAIL|KEY|PASSWORD)=.*/_\1=REDACTED/'
+env | grep GOVEE_ | sed -r 's/_(EMAIL|KEY|PASSWORD|CODE)=.*/_\1=REDACTED/'
 set -x
 
 cd /app
