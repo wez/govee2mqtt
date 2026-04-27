@@ -15,6 +15,11 @@ configuration:
     name: Govee Account Password
     description: >-
       The password you registered with your Govee Account
+  govee_2fa_code:
+    name: Govee 2FA Code
+    description: >-
+      The verification code Govee sends to your account email when
+      additional login verification is required.
   govee_api_key:
     name: Govee API Key
     description: >-
@@ -89,7 +94,6 @@ configuration:
       global broadcast address 255.255.255.255. To be honest, if
       multicast-UDP doesn't work, this isn't likely to work any
       better.
-
 
 
 

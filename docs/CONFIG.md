@@ -18,6 +18,7 @@ here](https://developer.govee.com/reference/apply-you-govee-api-key).
 |---|---|-----|-------|
 |`--govee-email`|`GOVEE_EMAIL`|`govee_email`|The email address you registered with your govee account|
 |`--govee-password`|`GOVEE_PASSWORD`|`govee_password`|The password you registered for your govee account|
+|`--govee-2fa-code`|`GOVEE_2FA_CODE`|`govee_2fa_code`|The verification code Govee sends when account login requires 2FA|
 |`--api-key`|`GOVEE_API_KEY`|`govee_api_key`|The API key you requested from Govee support|
 
 *Concerned about sharing your credentials? See [Privacy](PRIVACY.md) for
@@ -65,4 +66,3 @@ You will also need to configure `govee2mqtt` to use the same broker:
 |`--mqtt-port`|`GOVEE_MQTT_PORT`|`mqtt_port`|The port number of the mqtt broker. The default is `1883`|
 |`--mqtt-username`|`GOVEE_MQTT_USER`|`mqtt_username`|If your broker requires authentication, the username to use|
 |`--mqtt-password`|`GOVEE_MQTT_PASSWORD`|`mqtt_password`|If your broker requires authentication, the password to use|
-
