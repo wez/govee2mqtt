@@ -355,7 +355,7 @@ async fn mqtt_light_segment_command(
     Params(IdAndSeg { id, segment }): Params<IdAndSeg>,
     State(state): State<StateHandle>,
 ) -> anyhow::Result<()> {
-    let device = state.resolve_device_for_control(&id).await?;
+    let device = state.resolve_device_for_control_without_poll(&id).await?;
     let segment: u32 = segment.parse()?;
 
     let command: HassLightCommand = from_json(&payload)?;

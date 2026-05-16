@@ -118,6 +118,26 @@ impl State {
         Ok(Coordinator::new(device, permit, tx))
     }
 
+    /// Resolve a device for serialized control without scheduling a follow-up poll.
+    ///
+    /// Segment color/brightness commands are optimistic in Home Assistant. Polling
+    /// the platform API after each segment update returns only a device-level light
+    /// state rather than the per-segment state, which can make Home Assistant and
+    /// subsequent controls reconcile against misleading whole-device color data.
+    pub async fn resolve_device_for_control_without_poll(
+        self: &Arc<Self>,
+        label: &str,
+    ) -> anyhow::Result<Coordinator> {
+        let device = self
+            .resolve_device(label)
+            .await
+            .ok_or_else(|| anyhow::anyhow!("device '{label}' not found"))?;
+        let semaphore = self.semaphore_for_device(&device).await;
+        let permit = semaphore.acquire_owned().await?;
+
+        Ok(Coordinator::new_without_poll(device, permit))
+    }
+
     /// Resolve a device using its name, computed name, id or label,
     /// ignoring case.
     pub async fn resolve_device(&self, label: &str) -> Option<Device> {
