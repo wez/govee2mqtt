@@ -826,6 +826,7 @@ pub enum DeviceType {
     AromaDiffuser = "devices.types.aroma_diffuser",
     Fan = "devices.types.fan",
     Kettle = "devices.types.kettle",
+    AirQualityMonitor = "devices.types.air_quality_monitor",
 }
 }
 
