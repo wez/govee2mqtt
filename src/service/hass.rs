@@ -641,22 +641,28 @@ pub async fn spawn_hass_integration(
     let mut connected = false;
     for _ in 0..30 {
         log::info!("Attempting connection to mqtt broker {mqtt_host}:{mqtt_port}...");
-        match client
-            .connect(
+        match tokio::time::timeout(
+            Duration::from_secs(125),
+            client.connect(
                 &mqtt_host,
                 mqtt_port.into(),
                 Duration::from_secs(120),
                 args.mqtt_bind_address.as_deref(),
             )
-            .await
+        )
+        .await
         {
-            Ok(status) => {
+            Ok(Ok(status)) => {
                 log::info!("Connected to mqtt broker {mqtt_host}:{mqtt_port}, status={status}");
                 connected = true;
                 break;
             }
-            Err(err) => {
+            Ok(Err(err)) => {
                 log::error!("Failed to connect to mqtt broker {mqtt_host}:{mqtt_port}: {err:#}");
+                tokio::time::sleep(Duration::from_secs(2)).await;
+            }
+            Err(_) => {
+                log::error!("Failed to connect to mqtt broker {mqtt_host}:{mqtt_port}: Tokio timeout reached");
                 tokio::time::sleep(Duration::from_secs(2)).await;
             }
         }
