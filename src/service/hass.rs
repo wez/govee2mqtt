@@ -453,6 +453,10 @@ async fn mqtt_switch_command(
 
     if instance == "powerSwitch" {
         state.device_power_on(&device, on).await?;
+    } else if instance == "videoMode" {
+        // Synthetic toggle (see CapabilitySwitch::video_mode); not a real
+        // Platform-API capability, so it must not fall through to set_toggle_state.
+        state.device_set_video_mode(&device, on).await?;
     } else if let Some(client) = state.get_platform_client().await {
         if let Some(http_dev) = &device.http_device_info {
             client.set_toggle_state(http_dev, &instance, on).await?;

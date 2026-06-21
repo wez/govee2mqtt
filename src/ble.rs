@@ -462,6 +462,23 @@ impl Base64HexBytes {
     }
 }
 
+/// Raw frame that switches an Envisual/DreamView TV backlight (e.g. H6098) into
+/// camera "video" / screen-sync mode. Govee's Platform API never advertises this
+/// as a toggle capability, so it cannot be discovered or sent via the normal
+/// capability path; the frame below was captured from the official app and
+/// confirmed on hardware. `finish()` pads to 19 bytes and appends the XOR
+/// checksum, yielding the exact 20-byte frame the device accepts.
+pub fn video_mode_on_frame() -> Base64HexBytes {
+    Base64HexBytes::with_bytes(vec![0x33, 0x05, 0x00, 0x00, 0x08, 0x32, 0x00, 0x02, 0x32])
+}
+
+/// Best-effort exit from video mode: there is no captured "video off" frame, so
+/// we fall back to setting a solid color (here: the "Experience" mode), which
+/// takes the strip out of camera sync. Documented as best-effort in the PR.
+pub fn video_mode_off_frame() -> Base64HexBytes {
+    Base64HexBytes::with_bytes(vec![0x33, 0x05, 0x15, 0x01, 0x00, 0x00, 0xff, 0x00])
+}
+
 impl<'de> Deserialize<'de> for Base64HexBytes {
     fn deserialize<D>(deserializer: D) -> Result<Self, <D as Deserializer<'de>>::Error>
     where
@@ -552,6 +569,18 @@ mod test {
         let bytes = Base64HexBytes::encode_for_sku(sku, value).unwrap();
         let decoded = bytes.decode_for_sku(sku);
         assert_eq!(decoded, expect);
+    }
+
+    #[test]
+    fn video_mode_on_frame_matches_capture() {
+        // The captured 20-byte frame the H6098 accepted (Frida dump from the
+        // official app): byte[19]=0x3c is XOR(bytes 0..=18). base64 of that
+        // single chunk must match exactly.
+        let frame = video_mode_on_frame();
+        assert_eq!(
+            frame.base64(),
+            vec!["MwUAAAgyAAIyAAAAAAAAAAAAADw=".to_string()]
+        );
     }
 
     #[test]

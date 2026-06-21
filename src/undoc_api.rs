@@ -4,8 +4,9 @@ use crate::lan_api::{boolean_int, truthy};
 use crate::opt_env_var;
 use crate::platform_api::{
     from_json, http_response_body, DeviceCapability, DeviceCapabilityKind, DeviceParameters,
-    EnumOption,
+    EnumOption, HttpRequestFailed,
 };
+use anyhow::Context;
 use reqwest::Method;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
@@ -248,6 +249,94 @@ impl GoveeUndocumentedApi {
             async { self.login_account_impl().await },
         )
         .await
+    }
+
+    /// Login, preferring the primary account API but transparently falling
+    /// back to the community API when the primary login is blocked by Govee's
+    /// 2FA wall (it reports application status 454).
+    ///
+    /// Govee began returning 454 for the primary `account/v1/login` endpoint
+    /// for client ids that have never completed an in-app 2FA challenge, which
+    /// makes a fresh server-side login impossible. This is
+    /// <https://github.com/wez/govee2mqtt/issues/682>. The community login
+    /// (`community-api.govee.com`) is not subject to 2FA, and the bearer token
+    /// it returns is accepted by the same `app2.govee.com` endpoints we need
+    /// (the IoT key + device list), so we can reconstruct enough of a
+    /// [`LoginAccountResponse`] from it to bring up the AWS IoT session.
+    pub async fn login_account_or_community(&self) -> anyhow::Result<LoginAccountResponse> {
+        match self.login_account_cached().await {
+            Ok(acct) => Ok(acct),
+            Err(err) if is_2fa_login_block(&err) => {
+                log::warn!(
+                    "Primary Govee login is blocked by 2FA (status 454); \
+                    falling back to the community API login. \
+                    See https://github.com/wez/govee2mqtt/issues/682"
+                );
+                self.login_community_synthetic().await
+            }
+            Err(err) => Err(err),
+        }
+    }
+
+    /// Build a [`LoginAccountResponse`] from a community-API login. The
+    /// community login only returns a bearer token, so we derive the
+    /// `account_id` by decoding it out of the token's JWT claims and leave the
+    /// account-level `topic` empty (the IoT subscriber tolerates this; raw
+    /// sends use per-device topics regardless). Cached under its own key so we
+    /// don't repeat the JWT decode on every discovery pass.
+    async fn login_community_synthetic(&self) -> anyhow::Result<LoginAccountResponse> {
+        cache_get(
+            CacheGetOptions {
+                topic: "undoc-api",
+                key: "account-info-community",
+                soft_ttl: HALF_DAY,
+                hard_ttl: HALF_DAY,
+                negative_ttl: FIFTEEN_MINS,
+                allow_stale: false,
+            },
+            async {
+                let token = self.login_community().await?;
+                let account_id = account_id_from_jwt(&token)
+                    .context("deriving account_id from the community login token")?;
+
+                let now = std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .expect("unix epoch in the past")
+                    .as_secs();
+                let token_expire_cycle = jwt_exp_seconds(&token)
+                    .and_then(|exp| exp.checked_sub(now))
+                    .unwrap_or_else(|| ONE_DAY.as_secs())
+                    .min(u32::MAX as u64) as u32;
+
+                let resp = LoginAccountResponse {
+                    a: Redacted(String::new()),
+                    b: Redacted(String::new()),
+                    account_id: Redacted(account_id),
+                    client: Redacted(self.client_id.clone()),
+                    is_savvy_user: false,
+                    refresh_token: None,
+                    client_name: None,
+                    push_token: None,
+                    version_code: None,
+                    version_name: None,
+                    sys_version: None,
+                    token: Redacted(token),
+                    token_expire_cycle,
+                    // The community login does not expose the account-level IoT
+                    // topic. The subscriber treats an empty topic as "no
+                    // account feed" and keeps running; per-device sends and
+                    // status polling are unaffected.
+                    topic: Redacted(String::new()),
+                };
+
+                Ok(CacheComputeResult::Value(resp))
+            },
+        )
+        .await
+    }
+
+    pub fn invalidate_community_synthetic(&self) {
+        crate::cache::invalidate_key("undoc-api", "account-info-community").ok();
     }
 
     #[allow(dead_code)]
@@ -709,6 +798,89 @@ pub struct OneClickIotRuleDevice {
     pub wifi_hard_version: Option<String>,
 }
 
+/// Detect Govee's 2FA login block (it reports application status 454 on the
+/// primary `account/v1/login` endpoint). We check both the typed
+/// [`HttpRequestFailed`] error and the rendered error chain: the typed error is
+/// the cleanest signal, but the response cache (see `cache.rs`) renders compute
+/// errors to a string before returning them, which erases the concrete error
+/// type. Matching `code 454` (emitted by `HttpRequestFailed`'s content) covers
+/// the cached case without the false positives a bare `454` match would risk.
+fn is_2fa_login_block(err: &anyhow::Error) -> bool {
+    if HttpRequestFailed::from_err(err).map(|e| e.status().as_u16()) == Some(454) {
+        return true;
+    }
+    let rendered = format!("{err:#}");
+    rendered.contains("code 454") || rendered.contains("status 454")
+}
+
+/// Decode the claims (the second, payload segment) of a JWT without verifying
+/// its signature. We only ever read non-secret routing fields out of Govee's
+/// own token, so signature verification is unnecessary here.
+fn decode_jwt_claims(token: &str) -> anyhow::Result<JsonValue> {
+    let payload = token
+        .split('.')
+        .nth(1)
+        .context("JWT does not have a payload segment")?;
+    // JWTs use base64url with the padding stripped.
+    let bytes = data_encoding::BASE64URL_NOPAD
+        .decode(payload.as_bytes())
+        .context("base64url-decoding the JWT payload")?;
+    serde_json::from_slice(&bytes).context("parsing the JWT payload as JSON")
+}
+
+/// Parse a JSON value that holds the account id (a string or a number) into a
+/// `u64`.
+fn account_id_value_to_u64(id_val: &JsonValue) -> anyhow::Result<u64> {
+    match id_val {
+        JsonValue::String(s) => s
+            .parse::<u64>()
+            .with_context(|| format!("accountId string {s:?} is not a u64")),
+        JsonValue::Number(n) => n
+            .as_u64()
+            .with_context(|| format!("accountId number {n} is not a u64")),
+        other => anyhow::bail!("accountId has an unexpected JSON type: {other:?}"),
+    }
+}
+
+/// Look for `accountId` within an object that may itself be the account object,
+/// or a wrapper containing an `account` field. Govee in practice encodes the
+/// `account` field as a *stringified* JSON object (e.g.
+/// `"account": "{\"accountId\":\"123\",...}"`), so we parse it when it is a
+/// string. Older tokens placed `accountId` directly on the object.
+fn find_account_id(value: &JsonValue) -> Option<u64> {
+    // Direct: { "accountId": ... }
+    if let Some(id) = value.get("accountId") {
+        return account_id_value_to_u64(id).ok();
+    }
+    // Wrapped: { "account": <object | stringified-json-object> }
+    match value.get("account") {
+        Some(JsonValue::String(s)) => {
+            let parsed: JsonValue = serde_json::from_str(s).ok()?;
+            account_id_value_to_u64(parsed.get("accountId")?).ok()
+        }
+        Some(obj) => account_id_value_to_u64(obj.get("accountId")?).ok(),
+        None => None,
+    }
+}
+
+/// Extract the Govee `accountId` from a community-login bearer token. Govee
+/// nests it under `data.account.accountId`, where `data.account` is itself a
+/// stringified JSON object; older tokens used `data.accountId` directly. The id
+/// is encoded as a string but we also accept a JSON number.
+fn account_id_from_jwt(token: &str) -> anyhow::Result<u64> {
+    let claims = decode_jwt_claims(token)?;
+    let data = claims.get("data").unwrap_or(&claims);
+    find_account_id(data)
+        .or_else(|| find_account_id(&claims))
+        .context("accountId not present in the JWT claims")
+}
+
+/// Read the standard `exp` (expiry, seconds since epoch) claim from a JWT, if
+/// present and well-formed.
+fn jwt_exp_seconds(token: &str) -> Option<u64> {
+    decode_jwt_claims(token).ok()?.get("exp")?.as_u64()
+}
+
 #[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct LoginAccountResponse {
@@ -967,5 +1139,74 @@ mod test {
         let resp: DevicesResponse =
             from_json(include_str!("../test-data/undoc-device-list-issue-21.json")).unwrap();
         k9::assert_matches_snapshot!(format!("{resp:#?}"));
+    }
+
+    // The header and signature segments are arbitrary; only the payload is
+    // decoded. Payload of PRIMARY_JWT decodes to
+    // {"data":{"account":{"accountId":"1234567890"}},"exp":1999999999}.
+    const PRIMARY_JWT: &str = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.\
+        eyJkYXRhIjp7ImFjY291bnQiOnsiYWNjb3VudElkIjoiMTIzNDU2Nzg5MCJ9fSwiZXhwIjoxOTk5OTk5OTk5fQ.\
+        bm90LWEtcmVhbC1zaWduYXR1cmU";
+    // Payload decodes to {"data":{"accountId":987654321}} (older shape, numeric id).
+    const LEGACY_JWT: &str = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.\
+        eyJkYXRhIjp7ImFjY291bnRJZCI6OTg3NjU0MzIxfX0.\
+        bm90LWEtcmVhbC1zaWduYXR1cmU";
+
+    #[test]
+    fn account_id_from_primary_jwt() {
+        assert_eq!(account_id_from_jwt(PRIMARY_JWT).unwrap(), 1234567890);
+        assert_eq!(jwt_exp_seconds(PRIMARY_JWT), Some(1999999999));
+    }
+
+    #[test]
+    fn account_id_from_legacy_jwt() {
+        assert_eq!(account_id_from_jwt(LEGACY_JWT).unwrap(), 987654321);
+        // No exp claim in this token.
+        assert_eq!(jwt_exp_seconds(LEGACY_JWT), None);
+    }
+
+    // The real shape observed from a live Govee community token: `data.account`
+    // is a *stringified* JSON object. Payload decodes to
+    // {"data":{"account":"{\"accountId\":\"55555555\",\"email\":\"...\"}"},
+    //  "iat":1700000000,"exp":1999999999}.
+    const STRINGIFIED_ACCOUNT_JWT: &str = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.\
+        eyJkYXRhIjp7ImFjY291bnQiOiJ7XCJhY2NvdW50SWRcIjpcIjU1NTU1NTU1XCIsXCJlbWFpbFwiOlwieEBleGFtcGxlLmNvbVwifSJ9LCJpYXQiOjE3MDAwMDAwMDAsImV4cCI6MTk5OTk5OTk5OX0.\
+        c2ln";
+
+    #[test]
+    fn account_id_from_stringified_account_jwt() {
+        assert_eq!(
+            account_id_from_jwt(STRINGIFIED_ACCOUNT_JWT).unwrap(),
+            55555555
+        );
+        assert_eq!(jwt_exp_seconds(STRINGIFIED_ACCOUNT_JWT), Some(1999999999));
+    }
+
+    #[test]
+    fn account_id_from_garbage_jwt_errors() {
+        assert!(account_id_from_jwt("not-a-jwt").is_err());
+        assert!(account_id_from_jwt("only.two").is_err());
+    }
+
+    #[test]
+    fn detects_2fa_block_from_cached_string_error() {
+        // The response cache renders compute errors to a string, so the typed
+        // HttpRequestFailed is gone by the time we see it. This is the exact
+        // rendered chain observed from a live 454.
+        let rendered = "request https://app2.govee.com/account/rest/account/v1/login \
+            status 200: OK: parsing https://app2.govee.com/account/rest/account/v1/login \
+            response: Failed with status 454 <unknown status code> : Request to \
+            https://app2.govee.com/account/rest/account/v1/login failed with code 454 \
+            <unknown status code> . Full response: {\"status\":454,\"message\":\"\"}";
+        let err = anyhow::Error::msg(rendered);
+        assert!(is_2fa_login_block(&err));
+    }
+
+    #[test]
+    fn does_not_flag_unrelated_errors() {
+        let err = anyhow::anyhow!("request .../login status 401: Unauthorized");
+        assert!(!is_2fa_login_block(&err));
+        let err = anyhow::anyhow!("network timeout");
+        assert!(!is_2fa_login_block(&err));
     }
 }

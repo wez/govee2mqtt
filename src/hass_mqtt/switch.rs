@@ -79,6 +79,19 @@ impl CapabilitySwitch {
             instance_name: instance.instance.to_string(),
         })
     }
+
+    /// Switch for the camera "video mode" of an Envisual/DreamView TV backlight.
+    /// Govee's Platform API never advertises this as a capability, so we build a
+    /// synthetic `videoMode` toggle; commands are routed to a raw-frame send in
+    /// `mqtt_switch_command`. State is optimistic (Govee reports nothing for it).
+    pub async fn video_mode(device: &ServiceDevice, state: &StateHandle) -> anyhow::Result<Self> {
+        Self::new(
+            device,
+            state,
+            &DeviceCapability::synthetic_toggle("videoMode"),
+        )
+        .await
+    }
 }
 
 #[async_trait]

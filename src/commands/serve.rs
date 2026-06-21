@@ -140,7 +140,7 @@ async fn enumerate_devices_via_undo_api(
     };
 
     log::info!("Querying undocumented API for device + room list");
-    let acct = client.login_account_cached().await?;
+    let acct = client.login_account_or_community().await?;
     let info = client.get_device_list(&acct.token).await?;
     let mut group_by_id = HashMap::new();
     for group in info.groups {

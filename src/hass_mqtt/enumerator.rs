@@ -13,6 +13,7 @@ use crate::hass_mqtt::work_mode::ParsedWorkMode;
 use crate::platform_api::{DeviceCapability, DeviceCapabilityKind, DeviceType};
 use crate::service::device::Device as ServiceDevice;
 use crate::service::hass::{availability_topic, oneclick_topic, purge_cache_topic};
+use crate::service::quirks::sku_supports_video_mode;
 use crate::service::state::StateHandle;
 use crate::version_info::govee_version;
 use anyhow::Context;
@@ -171,6 +172,13 @@ pub async fn enumerate_entities_for_device(
         if let Some(scenes) = SceneModeSelect::new(d, state).await? {
             entities.add(scenes);
         }
+    }
+
+    // Envisual/DreamView TV backlights (e.g. H6098) expose camera "video mode"
+    // via a raw frame that Govee's Platform API never advertises as a
+    // capability, so it is added explicitly here rather than via the loop below.
+    if sku_supports_video_mode(&d.sku) {
+        entities.add(CapabilitySwitch::video_mode(d, state).await?);
     }
 
     if let Some(info) = &d.http_device_info {
