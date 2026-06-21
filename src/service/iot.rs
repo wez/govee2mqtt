@@ -235,7 +235,7 @@ pub async fn start_iot_client(
     let client = args.api_client()?;
     let acct = match acct {
         Some(a) => a,
-        None => client.login_account_cached().await?,
+        None => client.login_account_or_community().await?,
     };
     log::trace!("{acct:#?}");
     let res = client.get_iot_key(&acct.token).await?;
@@ -482,10 +482,23 @@ async fn run_iot_subscriber(
             Event::Connected(status) => {
                 log::info!("IoT (re)connected with status {status}");
 
-                client
+                // Subscribe to the account-level topic so we receive state
+                // updates for all of our devices. This is best-effort: when we
+                // authenticated via the community-API fallback we don't have an
+                // account topic (it is empty), and a transient subscribe error
+                // shouldn't tear down the whole IoT loop. Per-device sends and
+                // status polling work regardless of this subscription.
+                if acct.topic.is_empty() {
+                    log::info!(
+                        "No account-level IoT topic (community-API login); \
+                        relying on per-device status polling for state updates"
+                    );
+                } else if let Err(err) = client
                     .subscribe(&acct.topic, mosquitto_rs::QoS::AtMostOnce)
                     .await
-                    .context("subscribe to account topic")?;
+                {
+                    log::warn!("Failed to subscribe to account topic: {err:#}; continuing");
+                }
                 // This logic tries to subscribe to the same data that is
                 // being sent to the individual devices, but the server
                 // will close the connection on us when we try this.

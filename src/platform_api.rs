@@ -999,6 +999,15 @@ impl HttpRequestFailed {
     pub fn from_err(err: &anyhow::Error) -> Option<&Self> {
         err.root_cause().downcast_ref::<Self>()
     }
+
+    /// The numeric status that Govee reported. Note that Govee embeds
+    /// application-level statuses (e.g. 454 for "2FA required") in the JSON
+    /// body even when the HTTP transport status is 200, so this may be a
+    /// non-standard code.
+    #[allow(unused)]
+    pub fn status(&self) -> reqwest::StatusCode {
+        self.status
+    }
 }
 
 pub async fn json_body<T: serde::de::DeserializeOwned>(
