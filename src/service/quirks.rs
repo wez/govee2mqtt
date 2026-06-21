@@ -173,6 +173,18 @@ const WALL_SCONCE: &str = "mdi:wall-sconce";
 const OUTDOOR_LAMP: &str = "mdi:outdoor-lamp";
 const SPOTLIGHT: &str = "mdi:lightbulb-spot";
 
+/// SKUs of Envisual/DreamView TV backlights whose camera "video" / screen-sync
+/// mode is driven by a raw frame rather than an enumerable Platform-API
+/// capability. These devices get an extra "Video Mode" switch. Only SKUs whose
+/// frame has been captured and confirmed on hardware belong here.
+const VIDEO_MODE_SKUS: &[&str] = &["H6098"];
+
+/// True if this SKU should expose a camera "Video Mode" switch (see
+/// [`VIDEO_MODE_SKUS`]).
+pub fn sku_supports_video_mode(sku: &str) -> bool {
+    VIDEO_MODE_SKUS.contains(&sku)
+}
+
 fn load_quirks() -> HashMap<String, Quirk> {
     let mut map = HashMap::new();
     for quirk in [

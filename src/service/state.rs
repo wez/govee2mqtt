@@ -381,6 +381,39 @@ impl State {
         anyhow::bail!("Unable to control power state for {device}");
     }
 
+    /// Enter (`on`) or exit (`!on`) the camera "video mode" of an
+    /// Envisual/DreamView TV backlight (e.g. H6098). Govee exposes no toggle
+    /// capability for this, so we send a captured raw frame over the LAN API if
+    /// the device is LAN-reachable, otherwise over the AWS IoT (`ptReal`) path.
+    pub async fn device_set_video_mode(
+        self: &Arc<Self>,
+        device: &Device,
+        on: bool,
+    ) -> anyhow::Result<()> {
+        let commands = if on {
+            crate::ble::video_mode_on_frame()
+        } else {
+            crate::ble::video_mode_off_frame()
+        }
+        .base64();
+
+        if let Some(lan_dev) = &device.lan_device {
+            log::info!("Using LAN API to set {device} video mode -> {on}");
+            lan_dev.send_real(commands).await?;
+            return Ok(());
+        }
+
+        if let Some(iot) = self.get_iot_client().await {
+            if let Some(info) = &device.undoc_device_info {
+                log::info!("Using IoT API to set {device} video mode -> {on}");
+                iot.send_real(&info.entry, commands).await?;
+                return Ok(());
+            }
+        }
+
+        anyhow::bail!("Unable to set video mode for {device}: no LAN or IoT path available");
+    }
+
     pub async fn device_set_brightness(
         self: &Arc<Self>,
         device: &Device,

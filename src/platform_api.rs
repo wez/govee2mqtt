@@ -862,6 +862,20 @@ pub struct DeviceCapability {
 }
 
 impl DeviceCapability {
+    /// Build an in-memory toggle capability that does not come from Govee's
+    /// Platform API. Used for controls the API never advertises (e.g. the
+    /// H6098 camera "video mode"), so the existing switch machinery can render
+    /// a switch for them. Never deserialized from or serialized back to Govee.
+    pub fn synthetic_toggle(instance: &str) -> Self {
+        Self {
+            kind: DeviceCapabilityKind::Toggle,
+            instance: instance.to_string(),
+            parameters: None,
+            alarm_type: None,
+            event_state: None,
+        }
+    }
+
     pub fn enum_parameter_by_name(&self, name: &str) -> Option<u32> {
         self.parameters
             .as_ref()
