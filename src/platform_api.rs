@@ -33,6 +33,20 @@ pub struct GoveeApiArguments {
     /// the GOVEE_API_KEY environment variable.
     #[arg(long, global = true)]
     pub api_key: Option<String>,
+
+    /// Disable subscribing to Govee's cloud MQTT broker that delivers
+    /// device events such as ice-maker-full, water-empty and presence
+    /// detection. You may also set GOVEE_DISABLE_PLATFORM_MQTT=true via
+    /// the environment.
+    #[arg(long, global = true)]
+    pub disable_platform_mqtt: bool,
+
+    /// Path to a CA certificate file, or a directory of CA certificates,
+    /// used to validate the TLS connection to Govee's cloud MQTT broker.
+    /// Defaults to autodetecting the system CA bundle. You may also set
+    /// GOVEE_MQTT_PLATFORM_CA via the environment.
+    #[arg(long, global = true)]
+    pub platform_mqtt_ca: Option<std::path::PathBuf>,
 }
 
 impl GoveeApiArguments {
@@ -55,6 +69,25 @@ impl GoveeApiArguments {
     pub fn api_client(&self) -> anyhow::Result<GoveeApiClient> {
         let key = self.api_key()?;
         Ok(GoveeApiClient::new(key))
+    }
+
+    /// Whether the Govee cloud MQTT event subscription should be enabled.
+    /// Enabled by default; can be turned off via the --disable-platform-mqtt
+    /// flag or the GOVEE_DISABLE_PLATFORM_MQTT environment variable.
+    /// A misconfigured toggle should not take down the service, so any error
+    /// reading the environment variable is logged and treated as enabled.
+    pub fn platform_mqtt_enabled(&self) -> bool {
+        if self.disable_platform_mqtt {
+            return false;
+        }
+        match opt_env_var::<String>("GOVEE_DISABLE_PLATFORM_MQTT") {
+            Ok(Some(v)) => !crate::lan_api::truthy(&v).unwrap_or(false),
+            Ok(None) => true,
+            Err(err) => {
+                log::warn!("ignoring invalid GOVEE_DISABLE_PLATFORM_MQTT: {err:#}");
+                true
+            }
+        }
     }
 }
 

@@ -211,6 +211,17 @@ pub fn light_state_topic(device: &ServiceDevice) -> String {
     format!("gv2mqtt/light/{id}/state", id = topic_safe_id(device))
 }
 
+/// The topic on which we publish event states for a device's event
+/// capability (eg: ice-maker-full, water-empty). The matching HASS event
+/// entity subscribes to this topic.
+pub fn event_state_topic(device: &ServiceDevice, instance: &str) -> String {
+    format!(
+        "gv2mqtt/event/{id}/{inst}/state",
+        id = topic_safe_id(device),
+        inst = topic_safe_string(instance)
+    )
+}
+
 pub fn light_segment_state_topic(device: &ServiceDevice, segment: u32) -> String {
     format!(
         "gv2mqtt/light/{id}/state/{segment}",

@@ -3,6 +3,7 @@ pub mod button;
 pub mod climate;
 pub mod cover;
 pub mod enumerator;
+pub mod event;
 pub mod humidifier;
 pub mod instance;
 pub mod light;

@@ -4,6 +4,7 @@ use crate::service::device::Device;
 use crate::service::hass::spawn_hass_integration;
 use crate::service::http::run_http_server;
 use crate::service::iot::start_iot_client;
+use crate::service::platform_mqtt::{resolve_ca_location, start_platform_mqtt_client};
 use crate::service::state::StateHandle;
 use crate::undoc_api::GoveeUndocumentedApi;
 use crate::version_info::govee_version;
@@ -349,6 +350,25 @@ impl ServeCommand {
 
         // start advertising on local mqtt
         spawn_hass_integration(state.clone(), &args.hass_args).await?;
+
+        // Subscribe to Govee's cloud MQTT broker for device events (eg:
+        // ice-maker-full, water-empty, presence). This needs the platform API
+        // key and is what surfaces those events to Home Assistant without
+        // requiring a separate Mosquitto bridge.
+        // <https://github.com/wez/govee2mqtt/issues/343>
+        if state.get_platform_client().await.is_some() && args.api_args.platform_mqtt_enabled() {
+            match args.api_args.api_key() {
+                Ok(api_key) => match resolve_ca_location(args.api_args.platform_mqtt_ca.clone()) {
+                    Ok(ca) => start_platform_mqtt_client(api_key, state.clone(), ca),
+                    Err(err) => {
+                        log::error!("platform MQTT: not subscribing to device events: {err:#}")
+                    }
+                },
+                Err(err) => {
+                    log::warn!("platform MQTT: no API key available; not subscribing: {err:#}")
+                }
+            }
+        }
 
         run_http_server(state.clone(), self.http_port)
             .await

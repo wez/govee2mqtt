@@ -66,3 +66,31 @@ You will also need to configure `govee2mqtt` to use the same broker:
 |`--mqtt-username`|`GOVEE_MQTT_USER`|`mqtt_username`|If your broker requires authentication, the username to use|
 |`--mqtt-password`|`GOVEE_MQTT_PASSWORD`|`mqtt_password`|If your broker requires authentication, the password to use|
 
+## Device Events
+
+Some Govee devices emit *events* rather than ongoing state. Examples include
+the ice-maker-full and water-empty notifications on the H7172 ice maker, and
+presence/absence on presence sensors such as the H5127.
+
+When a Govee API Key is configured, `govee2mqtt` subscribes directly to Govee's
+cloud MQTT broker (`mqtt.openapi.govee.com`) and republishes these events to
+Home Assistant as
+[MQTT `event` entities](https://www.home-assistant.io/integrations/event.mqtt/).
+This removes the need for the manual Mosquitto bridge workaround described in
+[issue #343](https://github.com/wez/govee2mqtt/issues/343); the relevant event
+entities are created automatically as part of the normal discovery process.
+
+This feature is enabled automatically whenever an API Key is present and the
+device advertises an event capability. The connection is supervised and will
+reconnect automatically (with exponential backoff) if it is dropped.
+
+|CLI|ENV|Purpose|
+|---|---|-------|
+|`--disable-platform-mqtt`|`GOVEE_DISABLE_PLATFORM_MQTT=true`|Disable subscribing to Govee's cloud MQTT broker for device events.|
+|`--platform-mqtt-ca`|`GOVEE_MQTT_PLATFORM_CA`|Path to a CA certificate file, or a directory of CA certificates, used to validate the TLS connection to Govee's cloud MQTT broker. Defaults to autodetecting the system CA bundle, which is correct for the official container image and Home Assistant Add-on.|
+
+*The events delivered here are momentary. If `govee2mqtt` is restarted or
+briefly disconnected, any events that occur during that window are missed; this
+is a limitation of the Govee cloud and applies equally to the manual bridge
+workaround.*
+

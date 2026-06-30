@@ -1,6 +1,7 @@
 use crate::hass_mqtt::base::{Device, EntityConfig, Origin};
 use crate::hass_mqtt::button::ButtonConfig;
 use crate::hass_mqtt::climate::TargetTemperatureEntity;
+use crate::hass_mqtt::event::EventConfig;
 use crate::hass_mqtt::humidifier::Humidifier;
 use crate::hass_mqtt::instance::EntityList;
 use crate::hass_mqtt::light::DeviceLight;
@@ -182,9 +183,17 @@ pub async fn enumerate_entities_for_device(
                 DeviceCapabilityKind::ColorSetting
                 | DeviceCapabilityKind::SegmentColorSetting
                 | DeviceCapabilityKind::MusicSetting
-                | DeviceCapabilityKind::Event
                 | DeviceCapabilityKind::Mode
                 | DeviceCapabilityKind::DynamicScene => {}
+
+                DeviceCapabilityKind::Event => {
+                    // Devices that publish events (eg: ice-maker-full,
+                    // water-empty, presence) expose them via Govee's cloud
+                    // MQTT broker; see service::platform_mqtt.
+                    if let Some(event) = EventConfig::new(d, cap) {
+                        entities.add(event);
+                    }
+                }
 
                 DeviceCapabilityKind::Range if cap.instance == "brightness" => {}
                 DeviceCapabilityKind::Range if cap.instance == "humidity" => {}
