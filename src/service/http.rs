@@ -8,7 +8,7 @@ use axum::response::{IntoResponse, Response};
 use axum::routing::get;
 use axum::{Json, Router};
 use serde::Serialize;
-use std::net::IpAddr;
+use std::net::{IpAddr, SocketAddr};
 use tower_http::services::ServeDir;
 
 fn response_with_code<T: ToString + std::fmt::Display>(code: StatusCode, err: T) -> Response {
@@ -264,9 +264,10 @@ fn test_build_router() {
     let _ = build_router(StateHandle::default());
 }
 
-pub async fn run_http_server(state: StateHandle, port: u16) -> anyhow::Result<()> {
+pub async fn run_http_server(state: StateHandle, addr: IpAddr, port: u16) -> anyhow::Result<()> {
     let app = build_router(state);
-    let listener = tokio::net::TcpListener::bind(("0.0.0.0", port))
+    let sa = SocketAddr::new(addr, port);
+    let listener = tokio::net::TcpListener::bind(sa)
         .await
         .with_context(|| format!("run_http_server: binding to port {port}"))?;
     let addr = listener.local_addr()?;

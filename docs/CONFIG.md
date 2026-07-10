@@ -66,3 +66,9 @@ You will also need to configure `govee2mqtt` to use the same broker:
 |`--mqtt-username`|`GOVEE_MQTT_USER`|`mqtt_username`|If your broker requires authentication, the username to use|
 |`--mqtt-password`|`GOVEE_MQTT_PASSWORD`|`mqtt_password`|If your broker requires authentication, the password to use|
 
+## HTTP Configuration
+
+|CLI|ENV|Purpose|
+|---|---|-----|-------|
+|`--http-addr`|`HTTP_ADDR`|The IP where the HTTP listener binds to. The default is `0.0.0.0`|
+|`--http-port`|`HTTP_PORT`|The port number where the HTTP listener binds to. The default is `8056`|

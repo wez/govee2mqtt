@@ -35,6 +35,10 @@ RUST_LOG_STYLE=always
 
 # Set the timezone for timestamps in the log
 TZ=America/Phoenix
+
+# Optional configure http listener address
+HTTP_ADDR=::
+HTTP_PORT:8057
 ```
 
 3. Set up your `docker-compose.yml`:
