@@ -12,6 +12,7 @@ use anyhow::Context;
 use chrono::Utc;
 use once_cell::sync::Lazy;
 use std::collections::HashMap;
+use std::net::{IpAddr, Ipv4Addr};
 use std::sync::Arc;
 use tokio::time::{sleep, Duration};
 
@@ -20,8 +21,12 @@ pub static POLL_INTERVAL: Lazy<chrono::Duration> = Lazy::new(|| chrono::Duration
 #[derive(clap::Parser, Debug)]
 pub struct ServeCommand {
     /// The port on which the HTTP API will listen
-    #[arg(long, default_value_t = 8056)]
+    #[arg(long, default_value_t = 8056, env = "HTTP_PORT")]
     http_port: u16,
+
+    /// The address on which the HTTP API will listen
+    #[arg(long, default_value_t = IpAddr::V4(Ipv4Addr::new(0,0,0,0)), env = "HTTP_ADDR")]
+    http_addr: IpAddr,
 }
 
 async fn poll_single_device(state: &StateHandle, device: &Device) -> anyhow::Result<()> {
@@ -350,8 +355,13 @@ impl ServeCommand {
         // start advertising on local mqtt
         spawn_hass_integration(state.clone(), &args.hass_args).await?;
 
-        run_http_server(state.clone(), self.http_port)
+        run_http_server(state.clone(), self.http_addr, self.http_port)
             .await
-            .with_context(|| format!("Starting HTTP service on port {}", self.http_port))
+            .with_context(|| {
+                format!(
+                    "Starting HTTP service on {}:{}",
+                    self.http_addr, self.http_port
+                )
+            })
     }
 }
