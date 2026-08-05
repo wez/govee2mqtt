@@ -326,6 +326,10 @@ struct StateUpdate {
     pub color: Option<DeviceColor>,
     #[serde(rename = "colorTemInKelvin")]
     pub color_temperature_kelvin: Option<u32>,
+    /// Active work mode number, present in `cmd:"status"` messages
+    /// from (at least) light devices. SKU-specific meaning.
+    #[serde(default)]
+    pub mode: Option<i64>,
     pub sku: Option<String>,
     pub device: Option<String>,
 }
@@ -396,6 +400,7 @@ async fn run_iot_subscriber(
                                             brightness: state.brightness,
                                             color: state.color,
                                             color_temperature_kelvin: state.kelvin,
+                                            mode: state.mode,
                                         },
                                         None => DeviceStatus::default(),
                                     },
@@ -412,6 +417,9 @@ async fn run_iot_subscriber(
                                 if let Some(v) = packet.state.color_temperature_kelvin {
                                     state.color_temperature_kelvin = v;
                                     state.on = true;
+                                }
+                                if let Some(v) = packet.state.mode {
+                                    state.mode = Some(v);
                                 }
 
                                 if let Some(op) = &packet.op {

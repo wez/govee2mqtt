@@ -5,6 +5,7 @@ use crate::platform_api::{
     DeviceCapability, DeviceCapabilityState, DeviceType, HttpDeviceInfo, HttpDeviceState,
 };
 use crate::service::quirks::{resolve_quirk, Quirk, BULB};
+use crate::service::state::SceneCatalogCache;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
@@ -43,23 +44,18 @@ pub struct Device {
 
     pub last_polled: Option<DateTime<Utc>>,
 
-    active_scene: Option<ActiveSceneInfo>,
+    /// The scene the bridge last applied to this device. Govee never reports the
+    /// live scene, so this is the bridge's own record. Cleared only when the bridge
+    /// itself sets a solid color/temperature (see the command paths in state.rs).
+    active_scene: Option<String>,
+    /// Cached scene catalog to avoid repeated API calls during state notifications
+    scene_catalog_cache: Option<SceneCatalogCache>,
 }
 
 impl std::fmt::Display for Device {
     fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(fmt, "{} ({} {})", self.name(), self.id, self.sku)
     }
-}
-
-/// Govee doesn't report the active scene or music mode,
-/// so we maintain our own idea of it, clearing it when
-/// the color of the light is changed
-#[derive(Clone, Debug)]
-struct ActiveSceneInfo {
-    pub name: String,
-    pub color: crate::lan_api::DeviceColor,
-    pub kelvin: u32,
 }
 
 /// Represents the device state; synthesized from the various
@@ -85,6 +81,12 @@ pub struct DeviceState {
 
     /// The active effect mode, if known
     pub scene: Option<String>,
+
+    /// The active work mode number as reported by the device via
+    /// the AWS IoT status message, when known. SKU-specific meaning
+    /// (eg: H607C reports 5 for manual color and 4 for music mode).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub mode: Option<i64>,
 
     /// Where the information came from
     pub source: &'static str,
@@ -205,14 +207,14 @@ impl Device {
             .unwrap_or(true);
         self.lan_device_status.replace(status);
         self.last_lan_device_status_update.replace(Utc::now());
-        self.clear_scene_if_color_changed();
+        self.clear_scene_if_light_powered_off(self.compute_lan_device_state());
         changed
     }
 
     pub fn set_iot_device_status(&mut self, status: LanDeviceStatus) {
         self.iot_device_status.replace(status);
         self.last_iot_device_status_update.replace(Utc::now());
-        self.clear_scene_if_color_changed();
+        self.clear_scene_if_light_powered_off(self.compute_iot_device_state());
     }
 
     pub fn set_http_device_info(&mut self, info: HttpDeviceInfo) {
@@ -223,7 +225,7 @@ impl Device {
     pub fn set_http_device_state(&mut self, state: HttpDeviceState) {
         self.http_device_state.replace(state);
         self.last_http_device_state_update.replace(Utc::now());
-        self.clear_scene_if_color_changed();
+        self.clear_scene_if_light_powered_off(self.compute_http_device_state());
     }
 
     pub fn set_undoc_device_info(
@@ -236,7 +238,6 @@ impl Device {
             room_name: room_name.map(|s| s.to_string()),
         });
         self.last_undoc_device_info_update.replace(Utc::now());
-        self.clear_scene_if_color_changed();
     }
 
     pub fn compute_iot_device_state(&self) -> Option<DeviceState> {
@@ -254,7 +255,8 @@ impl Device {
             brightness: status.brightness,
             color: status.color,
             kelvin: status.color_temperature_kelvin,
-            scene: self.active_scene.as_ref().map(|info| info.name.to_string()),
+            scene: self.active_scene.clone(),
+            mode: status.mode,
             source: "AWS IoT API",
             updated,
         })
@@ -271,7 +273,12 @@ impl Device {
             brightness: status.brightness,
             color: status.color,
             kelvin: status.color_temperature_kelvin,
-            scene: self.active_scene.as_ref().map(|info| info.name.to_string()),
+            scene: self.active_scene.clone(),
+            // The LAN devStatus response doesn't carry a mode field;
+            // carry over the last mode learned via AWS IoT, if any.
+            mode: status.mode.or_else(|| {
+                self.iot_device_status.as_ref().and_then(|s| s.mode)
+            }),
             source: "LAN API",
             updated,
         })
@@ -341,7 +348,10 @@ impl Device {
             brightness,
             color,
             kelvin,
-            scene: self.active_scene.as_ref().map(|info| info.name.to_string()),
+            scene: self.active_scene.clone(),
+            // The Platform API doesn't report a work mode for lights;
+            // carry over the last mode learned via AWS IoT, if any.
+            mode: self.iot_device_status.as_ref().and_then(|s| s.mode),
             source: "PLATFORM API",
             updated,
         })
@@ -361,44 +371,53 @@ impl Device {
             candidates.push(state);
         }
 
-        candidates.sort_by(|a, b| a.updated.cmp(&b.updated));
+        candidates.sort_by_key(|a| a.updated);
 
         candidates.pop()
     }
 
-    /// Records the active scene name
-    pub fn set_active_scene(&mut self, scene: Option<&str>) {
-        match scene {
-            None => {
-                self.active_scene.take();
-            }
-            Some(scene) => {
-                let (color, kelvin) = self
-                    .device_state()
-                    .map(|s| (s.color, s.kelvin))
-                    .unwrap_or_default();
-                self.active_scene.replace(ActiveSceneInfo {
-                    name: scene.to_string(),
-                    color,
-                    kelvin,
-                });
-            }
-        }
+    /// Returns the active scene name, if any
+    pub fn active_scene_name(&self) -> Option<&str> {
+        self.active_scene.as_deref()
     }
 
-    pub fn clear_scene_if_color_changed(&mut self) {
-        if let Some(info) = &self.active_scene {
-            let current = self
-                .device_state()
-                .map(|s| (s.color, s.kelvin))
-                .unwrap_or_default();
-            let scene_state = (info.color, info.kelvin);
-            if current != scene_state {
-                log::info!(
-                    "Clearing reported scene because current {current:?} != {scene_state:?}"
-                );
-                self.active_scene.take();
-            }
+    /// Returns the full cached scene catalog metadata, if available
+    pub fn scene_catalog_cache(&self) -> Option<&SceneCatalogCache> {
+        self.scene_catalog_cache.as_ref()
+    }
+
+    /// Caches the scene catalog for this device
+    pub fn set_scene_catalog(&mut self, catalog: SceneCatalogCache) {
+        self.scene_catalog_cache = Some(catalog);
+    }
+
+    /// Drops the cached scene catalog so the next request refetches it. Used by the
+    /// MQTT cache-purge button, which otherwise only clears the on-disk cache.
+    pub fn clear_scene_catalog(&mut self) {
+        self.scene_catalog_cache = None;
+    }
+
+    /// Records the active scene name the bridge just applied, or clears it.
+    /// We do NOT clear based on observed color changes: Govee scenes animate their
+    /// colors, so a poll-time color diff is not a reliable "scene ended" signal and
+    /// caused the bridge to forget scenes it had correctly set. The scene is cleared
+    /// by the explicit command paths that move the light to a solid color/temperature,
+    /// and by `clear_scene_if_light_powered_off` when the device reports the light off.
+    pub fn set_active_scene(&mut self, scene: Option<&str>) {
+        self.active_scene = scene.map(|s| s.to_string());
+    }
+
+    /// Clears the remembered scene if the device reports the light powered off.
+    /// "Off" is an unambiguous, non-animating signal that no scene is playing, so it
+    /// recovers the common case where the light is turned off outside the bridge
+    /// (Govee app, physical button, another integration) without the animation
+    /// false-positives the old color-diff check produced. Color changes while the
+    /// light stays on remain "last applied by the bridge" until a bridge command
+    /// moves it off the scene.
+    fn clear_scene_if_light_powered_off(&mut self, source_state: Option<DeviceState>) {
+        let is_light_off = source_state.map(|s| s.light_on.unwrap_or(s.on)) == Some(false);
+        if self.active_scene.is_some() && is_light_off {
+            self.active_scene.take();
         }
     }
 
@@ -609,5 +628,89 @@ mod test {
 
         let device = Device::new("H6127", "ce");
         assert_eq!(device.name(), "H6127_CE");
+    }
+
+    #[test]
+    fn active_scene_round_trips() {
+        let mut device = Device::new("H6000", "AA:BB:CC:DD:EE:FF:42:2A");
+        assert_eq!(device.active_scene_name(), None);
+        device.set_active_scene(Some("Aurora"));
+        assert_eq!(device.active_scene_name(), Some("Aurora"));
+        device.set_active_scene(None);
+        assert_eq!(device.active_scene_name(), None);
+    }
+
+    /// Regression guard for the self-clear-on-animation bug: a status poll reporting a
+    /// different color (every animated Govee scene does this) must NOT make the bridge
+    /// forget a scene it set itself. Clearing only happens on explicit command paths.
+    #[test]
+    fn status_poll_does_not_clear_active_scene() {
+        let animated_frame = LanDeviceStatus {
+            on: true,
+            brightness: 100,
+            color: DeviceColor { r: 1, g: 2, b: 3 },
+            color_temperature_kelvin: 0,
+        };
+
+        // LAN poll
+        let mut device = Device::new("H6000", "AA:BB:CC:DD:EE:FF:42:2A");
+        device.set_active_scene(Some("Aurora"));
+        device.set_lan_device_status(animated_frame.clone());
+        assert_eq!(device.active_scene_name(), Some("Aurora"));
+
+        // IoT poll (primary path for animated-scene devices)
+        let mut device = Device::new("H6000", "AA:BB:CC:DD:EE:FF:42:2A");
+        device.set_active_scene(Some("Aurora"));
+        device.set_iot_device_status(animated_frame);
+        assert_eq!(device.active_scene_name(), Some("Aurora"));
+    }
+
+    /// A poll reporting the light OFF unambiguously means no scene is playing, so it
+    /// must clear the remembered scene (recovers "turned off in the Govee app").
+    #[test]
+    fn powered_off_poll_clears_active_scene() {
+        let off_frame = LanDeviceStatus {
+            on: false,
+            brightness: 0,
+            color: DeviceColor { r: 0, g: 0, b: 0 },
+            color_temperature_kelvin: 0,
+        };
+
+        // LAN poll
+        let mut device = Device::new("H6000", "AA:BB:CC:DD:EE:FF:42:2A");
+        device.set_active_scene(Some("Aurora"));
+        device.set_lan_device_status(off_frame.clone());
+        assert_eq!(device.active_scene_name(), None);
+
+        // IoT poll
+        let mut device = Device::new("H6000", "AA:BB:CC:DD:EE:FF:42:2A");
+        device.set_active_scene(Some("Aurora"));
+        device.set_iot_device_status(off_frame);
+        assert_eq!(device.active_scene_name(), None);
+    }
+
+    #[test]
+    fn powered_off_poll_clears_active_scene_even_with_newer_cached_source() {
+        let on_frame = LanDeviceStatus {
+            on: true,
+            brightness: 100,
+            color: DeviceColor { r: 1, g: 2, b: 3 },
+            color_temperature_kelvin: 0,
+        };
+        let off_frame = LanDeviceStatus {
+            on: false,
+            brightness: 0,
+            color: DeviceColor { r: 0, g: 0, b: 0 },
+            color_temperature_kelvin: 0,
+        };
+
+        let mut device = Device::new("H6000", "AA:BB:CC:DD:EE:FF:42:2A");
+        device.set_lan_device_status(on_frame);
+        device.last_lan_device_status_update = Some(Utc::now() + chrono::Duration::seconds(5));
+        device.set_active_scene(Some("Aurora"));
+
+        device.set_iot_device_status(off_frame);
+
+        assert_eq!(device.active_scene_name(), None);
     }
 }

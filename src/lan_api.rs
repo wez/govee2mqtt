@@ -307,6 +307,12 @@ pub struct DeviceStatus {
     pub color: DeviceColor,
     #[serde(rename = "colorTemInKelvin")]
     pub color_temperature_kelvin: u32,
+    /// Active work mode number. Reported by the AWS IoT status
+    /// message; not present in LAN devStatus responses.
+    /// The meaning of the number varies by SKU (eg: H607C reports
+    /// 5 for manual color and 4 for music mode).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub mode: Option<i64>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, Default, PartialEq, Eq)]
