@@ -39,6 +39,11 @@ pub struct Quirk {
     /// their state.
     pub iot_api_supported: bool,
     pub show_as_preset_buttons: Option<&'static [&'static str]>,
+    /// If true, the platform API reports an empty string instead of a real
+    /// value for this device's toggle and mode capabilities. Consumers use
+    /// this to fall back to an inferred/optimistic state rather than leaving
+    /// the entity unknown forever.
+    pub empty_platform_state: bool,
 }
 
 impl Quirk {
@@ -61,6 +66,7 @@ impl Quirk {
             platform_humidity_sensor_units: None,
             iot_api_supported: false,
             show_as_preset_buttons: None,
+            empty_platform_state: false,
         }
     }
 
@@ -130,6 +136,11 @@ impl Quirk {
 
     pub fn with_show_as_preset_modes(mut self, modes: &'static [&'static str]) -> Self {
         self.show_as_preset_buttons.replace(modes);
+        self
+    }
+
+    pub fn with_empty_platform_state(mut self) -> Self {
+        self.empty_platform_state = true;
         self
     }
 
@@ -279,6 +290,32 @@ fn load_quirks() -> HashMap<String, Quirk> {
         Quirk::device("H7173", DeviceType::Kettle, "mdi:kettle")
             .with_platform_temperature_sensor_units(TemperatureUnits::Fahrenheit)
             .with_show_as_preset_modes(&["Tea", "Coffee", "DIY"]),
+        // Ceiling fans: LAN light + platform fan capabilities (fanSpeedMode).
+        //
+        // Note that `DeviceType::Fan` only applies while we have no platform
+        // metadata: `Device::device_type()` prefers `http_device_info`, and
+        // Govee reports these as `devices.types.light`. The icon below still
+        // takes effect precisely because of that (see `light.rs`, which only
+        // applies the quirk icon for `DeviceType::Light`). Behavior that must
+        // hold for these devices is therefore driven by the explicit flags
+        // here, not by the device type.
+        // The colorTemperatureK range is what the H1310 reports in its own
+        // platform metadata. H1370 deliberately gets no range here: we have
+        // no unit to measure, and an unset range now falls through to the
+        // device's own metadata rather than disabling color temperature.
+        Quirk::device("H1310", DeviceType::Fan, "mdi:fan")
+            .with_lan_api()
+            .with_rgb()
+            .with_brightness()
+            .with_color_temp_range(2700, 6500)
+            .with_iot_api_support(true)
+            .with_empty_platform_state(),
+        Quirk::device("H1370", DeviceType::Fan, "mdi:fan")
+            .with_lan_api()
+            .with_rgb()
+            .with_brightness()
+            .with_iot_api_support(true)
+            .with_empty_platform_state(),
         // Lights from the list of LAN API enabled devices
         // at <https://app-h5.govee.com/user-manual/wlan-guide>
         Quirk::lan_api_capable_light("H6072", FLOOR_LAMP),

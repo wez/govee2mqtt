@@ -1,5 +1,6 @@
 use crate::hass_mqtt::base::{Device, EntityConfig, Origin};
 use crate::hass_mqtt::button::ButtonConfig;
+use crate::hass_mqtt::capability_mode::CapabilityModeSelect;
 use crate::hass_mqtt::climate::TargetTemperatureEntity;
 use crate::hass_mqtt::humidifier::Humidifier;
 use crate::hass_mqtt::instance::EntityList;
@@ -182,9 +183,21 @@ pub async fn enumerate_entities_for_device(
                 DeviceCapabilityKind::ColorSetting
                 | DeviceCapabilityKind::SegmentColorSetting
                 | DeviceCapabilityKind::MusicSetting
-                | DeviceCapabilityKind::Event
-                | DeviceCapabilityKind::Mode
-                | DeviceCapabilityKind::DynamicScene => {}
+                | DeviceCapabilityKind::Event => {}
+
+                DeviceCapabilityKind::Mode => {
+                    match CapabilityModeSelect::new(d, state, cap).await {
+                        Ok(select) => entities.add(select),
+                        Err(err) => {
+                            log::warn!(
+                                "Skipping mode capability {} for {d}: {err:#}",
+                                cap.instance
+                            );
+                        }
+                    }
+                }
+
+                DeviceCapabilityKind::DynamicScene => {}
 
                 DeviceCapabilityKind::Range if cap.instance == "brightness" => {}
                 DeviceCapabilityKind::Range if cap.instance == "humidity" => {}

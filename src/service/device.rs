@@ -41,6 +41,12 @@ pub struct Device {
     pub humidifier_work_mode: Option<u8>,
     pub humidifier_param_by_mode: HashMap<u8, u8>,
 
+    /// Optimistic mode capability labels when platform API returns empty state
+    pub mode_capability_label_by_instance: HashMap<String, String>,
+
+    /// Optimistic toggle states when platform API returns empty state
+    pub toggle_state_by_instance: HashMap<String, bool>,
+
     pub last_polled: Option<DateTime<Utc>>,
 
     active_scene: Option<ActiveSceneInfo>,
@@ -361,7 +367,7 @@ impl Device {
             candidates.push(state);
         }
 
-        candidates.sort_by(|a, b| a.updated.cmp(&b.updated));
+        candidates.sort_by_key(|a| a.updated);
 
         candidates.pop()
     }
@@ -419,6 +425,13 @@ impl Device {
             return true;
         }
 
+        // Devices whose platform state is empty still have to be polled: the
+        // platform API is the only source for their toggle/mode capabilities,
+        // even though the values themselves arrive empty.
+        if self.has_empty_platform_state() {
+            return true;
+        }
+
         let device_type = self.device_type();
         match (device_type, self.sku.as_str()) {
             (_, "H7160") => false,
@@ -465,6 +478,15 @@ impl Device {
             }
         }
         false
+    }
+
+    /// True when the platform API reports empty strings rather than real
+    /// values for this device's toggle and mode capabilities.
+    /// See `Quirk::empty_platform_state`.
+    pub fn has_empty_platform_state(&self) -> bool {
+        self.resolve_quirk()
+            .map(|q| q.empty_platform_state)
+            .unwrap_or(false)
     }
 
     pub fn resolve_quirk(&self) -> Option<Quirk> {
@@ -520,8 +542,12 @@ impl Device {
     }
 
     pub fn get_color_temperature_range(&self) -> Option<(u32, u32)> {
-        if let Some(quirk) = self.resolve_quirk() {
-            return quirk.color_temp_range;
+        // A quirk that names a range wins, but one that stays silent must not
+        // veto what the device itself reports: returning the quirk's `None`
+        // unconditionally hid colorTemperatureK from hass for every quirked
+        // device that never set a range.
+        if let Some(range) = self.resolve_quirk().and_then(|q| q.color_temp_range) {
+            return Some(range);
         }
 
         if self.lan_device.is_some() {
@@ -593,11 +619,32 @@ impl Device {
     pub fn is_controllable(&self) -> bool {
         !matches!(self.is_ble_only_device(), Some(true))
     }
+
+    pub fn set_mode_capability_label(&mut self, instance: &str, label: String) {
+        self.mode_capability_label_by_instance
+            .insert(instance.to_string(), label);
+    }
+
+    pub fn get_mode_capability_label(&self, instance: &str) -> Option<String> {
+        self.mode_capability_label_by_instance
+            .get(instance)
+            .cloned()
+    }
+
+    pub fn set_toggle_capability_state(&mut self, instance: &str, on: bool) {
+        self.toggle_state_by_instance
+            .insert(instance.to_string(), on);
+    }
+
+    pub fn get_toggle_capability_state(&self, instance: &str) -> Option<bool> {
+        self.toggle_state_by_instance.get(instance).copied()
+    }
 }
 
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::platform_api::{from_json, DeviceType};
 
     #[test]
     fn name_compute() {
@@ -609,5 +656,36 @@ mod test {
 
         let device = Device::new("H6127", "ce");
         assert_eq!(device.name(), "H6127_CE");
+    }
+
+    /// The H1310 reports colorTemperatureK 2700-6500 in its metadata. Before
+    /// the quirk carried a range, `get_color_temperature_range` returned the
+    /// quirk's `None` and hass only ever saw 'rgb'.
+    #[test]
+    fn h1310_reports_color_temperature_range() {
+        let mut device = Device::new("H1310", "47:64:F8:9C:BD:BC:DF:4A");
+        device.http_device_info =
+            Some(from_json(include_str!("../../test-data/h1310_platform_metadata.json")).unwrap());
+        assert_eq!(device.get_color_temperature_range(), Some((2700, 6500)));
+    }
+
+    /// A quirk without a range must fall through to the device's own
+    /// metadata instead of vetoing color temperature outright.
+    #[test]
+    fn quirk_without_range_falls_through_to_metadata() {
+        // H7160 has a quirk but no color_temp_range, and no metadata here,
+        // so nothing can be resolved -- the point is that it does not panic
+        // and does not report a bogus range.
+        let device = Device::new("H7160", "aa:bb");
+        assert_eq!(device.get_color_temperature_range(), None);
+    }
+
+    #[test]
+    fn h1310_needs_platform_poll_despite_light_type() {
+        let mut device = Device::new("H1310", "47:64:F8:9C:BD:BC:DF:4A");
+        device.http_device_info =
+            Some(from_json(include_str!("../../test-data/h1310_platform_metadata.json")).unwrap());
+        assert_eq!(device.device_type(), DeviceType::Light);
+        assert!(device.needs_platform_poll());
     }
 }

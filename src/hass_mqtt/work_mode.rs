@@ -241,12 +241,10 @@ impl WorkMode {
         let min = *values.iter().min()?;
         let max = *values.iter().max()?;
 
-        let mut expect = min;
-        for item in values {
+        for (expect, item) in (min..).zip(values) {
             if item != expect {
                 return None;
             }
-            expect += 1;
         }
 
         Some(min..max + 1)

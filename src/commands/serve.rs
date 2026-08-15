@@ -69,11 +69,11 @@ async fn poll_single_device(state: &StateHandle, device: &Device) -> anyhow::Res
         Some(state) => now - state.updated > poll_interval,
     };
 
-    if !needs_update {
+    let needs_platform = device.needs_platform_poll();
+
+    if !should_attempt_platform_refresh(needs_update, needs_platform) {
         return Ok(());
     }
-
-    let needs_platform = device.needs_platform_poll();
 
     // Don't interrogate via HTTP if we can use the LAN.
     // If we have LAN and the device is stale, it is likely
@@ -91,6 +91,25 @@ async fn poll_single_device(state: &StateHandle, device: &Device) -> anyhow::Res
     state.poll_platform_api(device).await?;
 
     Ok(())
+}
+
+/// A device is due for a platform-API refresh when its generic freshness
+/// tracking (`needs_update`, driven by `device_state().updated`) is stale,
+/// OR when the device depends on data that is *only* ever available via the
+/// platform API (`Device::needs_platform_poll`), even while the generic
+/// state looks fresh.
+///
+/// This applies to every device that opts into `needs_platform_poll`
+/// (Humidifier, Kettle, H1310/H1370, ...), not only the H1310/H1370 ceiling
+/// fans that prompted this change: their platform-only capabilities (e.g. a
+/// humidifier's nightlight/work-mode state, or an H1310's fan toggles) are
+/// not reflected in the generic `device_state().updated` timestamp, so
+/// relying on that alone could leave those capabilities stale indefinitely
+/// once LAN/IoT keeps the generic state "fresh". Devices that don't need
+/// platform polling are unaffected: for them `needs_platform` is always
+/// `false`, so behavior is unchanged.
+fn should_attempt_platform_refresh(needs_update: bool, needs_platform: bool) -> bool {
+    needs_update || needs_platform
 }
 
 async fn periodic_state_poll(state: StateHandle) -> anyhow::Result<()> {
@@ -353,5 +372,33 @@ impl ServeCommand {
         run_http_server(state.clone(), self.http_port)
             .await
             .with_context(|| format!("Starting HTTP service on port {}", self.http_port))
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn platform_refresh_needed_when_generic_state_stale() {
+        // Pre-existing behavior for every device: a stale generic state
+        // (LAN/IoT) alone is reason enough to refresh.
+        assert!(should_attempt_platform_refresh(true, false));
+    }
+
+    #[test]
+    fn platform_refresh_needed_for_platform_only_data_even_if_state_fresh() {
+        // New behavior, applies to any `needs_platform_poll()` device
+        // (Humidifier, Kettle, H1310/H1370, ...): platform-only capabilities
+        // aren't captured by the generic freshness check, so they must be
+        // polled independently of it.
+        assert!(should_attempt_platform_refresh(false, true));
+    }
+
+    #[test]
+    fn platform_refresh_skipped_when_neither_is_stale() {
+        // Devices that don't need platform polling (e.g. most lights) are
+        // unaffected: `needs_platform` is always false for them.
+        assert!(!should_attempt_platform_refresh(false, false));
     }
 }

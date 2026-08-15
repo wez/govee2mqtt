@@ -1,6 +1,9 @@
 use crate::ble::{Base64HexBytes, SetHumidifierMode, SetHumidifierNightlightParams};
+use crate::hass_mqtt::capability_mode::mode_label_for_platform_value;
 use crate::lan_api::{Client as LanClient, DeviceStatus as LanDeviceStatus, LanDevice};
-use crate::platform_api::{DeviceCapability, DeviceType, GoveeApiClient};
+use crate::platform_api::{
+    ControlDeviceResponseCapability, DeviceCapability, DeviceType, GoveeApiClient,
+};
 use crate::service::coordinator::Coordinator;
 use crate::service::device::Device;
 use crate::service::hass::{topic_safe_id, HassClient};
@@ -286,17 +289,54 @@ impl State {
         device: &Device,
         capability: &DeviceCapability,
         value: V,
-    ) -> anyhow::Result<()> {
+    ) -> anyhow::Result<ControlDeviceResponseCapability> {
         let value: JsonValue = value.into();
         if let Some(client) = self.get_platform_client().await {
             if let Some(info) = &device.http_device_info {
                 log::info!("Using Platform API to send {value:?} control to {device}");
-                client.control_device(info, capability, value).await?;
-                return Ok(());
+                return client.control_device(info, capability, value).await;
             }
         }
 
         anyhow::bail!("Unable to use Platform API to control {device}");
+    }
+
+    pub async fn device_set_mode_capability(
+        self: &Arc<Self>,
+        device: &Device,
+        capability: &DeviceCapability,
+        label: &str,
+        value: JsonValue,
+    ) -> anyhow::Result<()> {
+        let response = self.device_control(device, capability, value).await?;
+        let label = mode_label_from_control_response(capability, &response)
+            .unwrap_or_else(|| label.to_string());
+        self.device_mut(&device.sku, &device.id)
+            .await
+            .set_mode_capability_label(&capability.instance, label);
+        self.notify_of_state_change(&device.id).await?;
+        Ok(())
+    }
+
+    pub async fn device_set_toggle_capability(
+        self: &Arc<Self>,
+        device: &Device,
+        instance: &str,
+        on: bool,
+    ) -> anyhow::Result<()> {
+        if let Some(client) = self.get_platform_client().await {
+            if let Some(http_dev) = &device.http_device_info {
+                log::info!("Using Platform API to set {device} {instance} to {on}");
+                let response = client.set_toggle_state(http_dev, instance, on).await?;
+                let on = toggle_state_from_control_response(&response).unwrap_or(on);
+                self.device_mut(&device.sku, &device.id)
+                    .await
+                    .set_toggle_capability_state(instance, on);
+                self.notify_of_state_change(&device.id).await?;
+                return Ok(());
+            }
+        }
+        anyhow::bail!("Unable to set {instance} toggle for {device}");
     }
 
     pub async fn device_light_power_on(
@@ -693,8 +733,61 @@ impl State {
     }
 }
 
+pub fn toggle_state_from_control_response(
+    response: &ControlDeviceResponseCapability,
+) -> Option<bool> {
+    response.value.as_i64().map(|n| n != 0).or_else(|| {
+        response
+            .state
+            .pointer("/value")
+            .and_then(|v| v.as_i64())
+            .map(|n| n != 0)
+    })
+}
+
+fn mode_label_from_control_response(
+    capability: &DeviceCapability,
+    response: &ControlDeviceResponseCapability,
+) -> Option<String> {
+    mode_label_for_platform_value(capability, &response.value).or_else(|| {
+        response
+            .state
+            .pointer("/value")
+            .and_then(|v| mode_label_for_platform_value(capability, v))
+    })
+}
+
 pub fn sort_and_dedup_scenes(mut scenes: Vec<String>) -> Vec<String> {
     scenes.sort_by_key(|s| s.to_ascii_lowercase());
     scenes.dedup();
     scenes
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::platform_api::{ControlDeviceResponseCapability, DeviceCapabilityKind};
+    use serde_json::json;
+
+    #[test]
+    fn toggle_state_from_control_response_value() {
+        let resp = ControlDeviceResponseCapability {
+            kind: DeviceCapabilityKind::Toggle,
+            instance: "fanToggle".to_string(),
+            value: json!(1),
+            state: json!({}),
+        };
+        assert_eq!(toggle_state_from_control_response(&resp), Some(true));
+    }
+
+    #[test]
+    fn toggle_state_from_control_response_state_pointer() {
+        let resp = ControlDeviceResponseCapability {
+            kind: DeviceCapabilityKind::Toggle,
+            instance: "fanToggle".to_string(),
+            value: json!(""),
+            state: json!({ "value": 0 }),
+        };
+        assert_eq!(toggle_state_from_control_response(&resp), Some(false));
+    }
 }

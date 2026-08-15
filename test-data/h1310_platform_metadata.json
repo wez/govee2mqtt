@@ -1,0 +1,291 @@
+{
+  "capabilities": [
+    {
+      "alarmType": null,
+      "eventState": null,
+      "instance": "powerSwitch",
+      "parameters": {
+        "dataType": "ENUM",
+        "options": [
+          {
+            "name": "on",
+            "value": 1
+          },
+          {
+            "name": "off",
+            "value": 0
+          }
+        ]
+      },
+      "type": "devices.capabilities.on_off"
+    },
+    {
+      "alarmType": null,
+      "eventState": null,
+      "instance": "brightness",
+      "parameters": {
+        "dataType": "INTEGER",
+        "range": {
+          "max": 100,
+          "min": 1,
+          "precision": 1
+        },
+        "unit": "unit.percent"
+      },
+      "type": "devices.capabilities.range"
+    },
+    {
+      "alarmType": null,
+      "eventState": null,
+      "instance": "segmentedBrightness",
+      "parameters": {
+        "dataType": "STRUCT",
+        "fields": [
+          {
+            "dataType": "Array",
+            "defaultValue": null,
+            "elementRange": {
+              "max": 7,
+              "min": 0
+            },
+            "elementType": "INTEGER",
+            "fieldName": "segment",
+            "options": [],
+            "required": true,
+            "size": {
+              "max": 8,
+              "min": 1
+            }
+          },
+          {
+            "dataType": "INTEGER",
+            "defaultValue": null,
+            "fieldName": "brightness",
+            "range": {
+              "max": 100,
+              "min": 0,
+              "precision": 1
+            },
+            "required": true,
+            "unit": null
+          }
+        ]
+      },
+      "type": "devices.capabilities.segment_color_setting"
+    },
+    {
+      "alarmType": null,
+      "eventState": null,
+      "instance": "segmentedColorRgb",
+      "parameters": {
+        "dataType": "STRUCT",
+        "fields": [
+          {
+            "dataType": "Array",
+            "defaultValue": null,
+            "elementRange": {
+              "max": 7,
+              "min": 0
+            },
+            "elementType": "INTEGER",
+            "fieldName": "segment",
+            "options": [],
+            "required": true,
+            "size": {
+              "max": 8,
+              "min": 1
+            }
+          },
+          {
+            "dataType": "INTEGER",
+            "defaultValue": null,
+            "fieldName": "rgb",
+            "range": {
+              "max": 16777215,
+              "min": 0,
+              "precision": 1
+            },
+            "required": true,
+            "unit": null
+          }
+        ]
+      },
+      "type": "devices.capabilities.segment_color_setting"
+    },
+    {
+      "alarmType": null,
+      "eventState": null,
+      "instance": "colorRgb",
+      "parameters": {
+        "dataType": "INTEGER",
+        "range": {
+          "max": 16777215,
+          "min": 0,
+          "precision": 1
+        },
+        "unit": null
+      },
+      "type": "devices.capabilities.color_setting"
+    },
+    {
+      "alarmType": null,
+      "eventState": null,
+      "instance": "colorTemperatureK",
+      "parameters": {
+        "dataType": "INTEGER",
+        "range": {
+          "max": 6500,
+          "min": 2700,
+          "precision": 1
+        },
+        "unit": null
+      },
+      "type": "devices.capabilities.color_setting"
+    },
+    {
+      "alarmType": null,
+      "eventState": null,
+      "instance": "lightScene",
+      "parameters": {
+        "dataType": "ENUM",
+        "options": []
+      },
+      "type": "devices.capabilities.dynamic_scene"
+    },
+    {
+      "alarmType": null,
+      "eventState": null,
+      "instance": "diyScene",
+      "parameters": {
+        "dataType": "ENUM",
+        "options": []
+      },
+      "type": "devices.capabilities.dynamic_scene"
+    },
+    {
+      "alarmType": null,
+      "eventState": null,
+      "instance": "snapshot",
+      "parameters": {
+        "dataType": "ENUM",
+        "options": []
+      },
+      "type": "devices.capabilities.dynamic_scene"
+    },
+    {
+      "alarmType": null,
+      "eventState": null,
+      "instance": "mainLightToggle",
+      "parameters": {
+        "dataType": "ENUM",
+        "options": [
+          {
+            "name": "on",
+            "value": 1
+          },
+          {
+            "name": "off",
+            "value": 0
+          }
+        ]
+      },
+      "type": "devices.capabilities.toggle"
+    },
+    {
+      "alarmType": null,
+      "eventState": null,
+      "instance": "backgroundLightToggle",
+      "parameters": {
+        "dataType": "ENUM",
+        "options": [
+          {
+            "name": "on",
+            "value": 1
+          },
+          {
+            "name": "off",
+            "value": 0
+          }
+        ]
+      },
+      "type": "devices.capabilities.toggle"
+    },
+    {
+      "alarmType": null,
+      "eventState": null,
+      "instance": "fanToggle",
+      "parameters": {
+        "dataType": "ENUM",
+        "options": [
+          {
+            "name": "on",
+            "value": 1
+          },
+          {
+            "name": "off",
+            "value": 0
+          }
+        ]
+      },
+      "type": "devices.capabilities.toggle"
+    },
+    {
+      "alarmType": null,
+      "eventState": null,
+      "instance": "fanSpeedMode",
+      "parameters": {
+        "dataType": "ENUM",
+        "options": [
+          {
+            "name": "Speed 1",
+            "value": 1
+          },
+          {
+            "name": "Speed 2",
+            "value": 2
+          },
+          {
+            "name": "Speed 3",
+            "value": 3
+          },
+          {
+            "name": "Speed 4",
+            "value": 4
+          },
+          {
+            "name": "Speed 5",
+            "value": 5
+          },
+          {
+            "name": "Speed 6",
+            "value": 6
+          }
+        ]
+      },
+      "type": "devices.capabilities.mode"
+    },
+    {
+      "alarmType": null,
+      "eventState": null,
+      "instance": "reverseAirflowToggle",
+      "parameters": {
+        "dataType": "ENUM",
+        "options": [
+          {
+            "name": "on",
+            "value": 1
+          },
+          {
+            "name": "off",
+            "value": 0
+          }
+        ]
+      },
+      "type": "devices.capabilities.toggle"
+    }
+  ],
+  "device": "47:64:F8:9C:BD:BC:DF:4A",
+  "deviceName": "Ceiling Fan Bedroom",
+  "sku": "H1310",
+  "type": "devices.types.light"
+}

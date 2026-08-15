@@ -223,35 +223,26 @@ impl GoveeApiClient {
         .await
     }
 
-    pub async fn get_scene_caps(
-        &self,
-        device: &HttpDeviceInfo,
-    ) -> anyhow::Result<Vec<DeviceCapability>> {
+    /// Collect the capabilities from `sources` that represent selectable
+    /// scenes.
+    ///
+    /// `Mode` capabilities are deliberately *not* scenes. They are exposed as
+    /// their own hass select entity (see `hass_mqtt::capability_mode`), and
+    /// treating them as scenes as well put entries like an H1310's
+    /// "Speed 1".."Speed 6" fan speeds into the light's effect list, where
+    /// they do not belong and cannot be applied as a scene.
+    pub fn collect_scene_caps(
+        sources: &[(&str, &[DeviceCapability])],
+        sku: &str,
+        device_id: &str,
+    ) -> Vec<DeviceCapability> {
         let mut result = vec![];
 
-        let scene_caps = self.get_device_scenes(device).await?;
-        let diy_caps = self.get_device_diy_scenes(device).await?;
-        let undoc_caps =
-            match GoveeUndocumentedApi::synthesize_platform_api_scene_list(&device.sku).await {
-                Ok(caps) => caps,
-                Err(err) => {
-                    log::warn!("synthesize_platform_api_scene_list: {err:#}");
-                    vec![]
-                }
-            };
-
-        for (origin, caps) in [
-            ("device.capabilities", &device.capabilities),
-            ("scene_caps", &scene_caps),
-            ("diy_caps", &diy_caps),
-            ("undoc_caps", &undoc_caps),
-        ] {
-            for cap in caps {
+        for (origin, caps) in sources {
+            for cap in *caps {
                 let is_scene = matches!(
                     cap.kind,
-                    DeviceCapabilityKind::DynamicScene
-                        | DeviceCapabilityKind::DynamicSetting
-                        | DeviceCapabilityKind::Mode
+                    DeviceCapabilityKind::DynamicScene | DeviceCapabilityKind::DynamicSetting
                 );
                 if !is_scene {
                     continue;
@@ -266,13 +257,63 @@ impl GoveeApiClient {
                     }
                     _ => {
                         log::warn!(
-                            "get_scene_caps(sku={sku} device={id}): \
+                            "get_scene_caps(sku={sku} device={device_id}): \
                             Unexpected cap.parameters in {origin}: {cap:#?}. \
                             Ignoring this entry.",
-                            sku = device.sku,
-                            id = device.device
                         );
                     }
+                }
+            }
+        }
+
+        result
+    }
+
+    /// True when `caps` actually offers something selectable. An empty option
+    /// list is as useless to hass as no capability at all, and must not be
+    /// mistaken for "this device has its own scenes".
+    pub fn has_usable_scene_options(caps: &[DeviceCapability]) -> bool {
+        caps.iter().any(|cap| {
+            matches!(&cap.parameters,
+                Some(DeviceParameters::Enum { options }) if !options.is_empty())
+        })
+    }
+
+    pub async fn get_scene_caps(
+        &self,
+        device: &HttpDeviceInfo,
+    ) -> anyhow::Result<Vec<DeviceCapability>> {
+        let scene_caps = self.get_device_scenes(device).await?;
+        let diy_caps = self.get_device_diy_scenes(device).await?;
+
+        let mut result = Self::collect_scene_caps(
+            &[
+                ("device.capabilities", device.capabilities.as_slice()),
+                ("scene_caps", scene_caps.as_slice()),
+                ("diy_caps", diy_caps.as_slice()),
+            ],
+            &device.sku,
+            &device.device,
+        );
+
+        // The undocumented app library is keyed by SKU alone, not by device,
+        // so it offers whatever that product line can theoretically do rather
+        // than what this unit accepts. Feeding it into the list unconditionally
+        // is what made hass advertise scenes the device rejects with
+        // "Scene '...' is not available for this device". Consult it only when
+        // the device-specific sources gave us nothing to work with, so devices
+        // whose platform API exposes no scenes at all keep their effects.
+        if !Self::has_usable_scene_options(&result) {
+            match GoveeUndocumentedApi::synthesize_platform_api_scene_list(&device.sku).await {
+                Ok(undoc_caps) => {
+                    result = Self::collect_scene_caps(
+                        &[("undoc_caps", undoc_caps.as_slice())],
+                        &device.sku,
+                        &device.device,
+                    );
+                }
+                Err(err) => {
+                    log::warn!("synthesize_platform_api_scene_list: {err:#}");
                 }
             }
         }
@@ -1118,6 +1159,57 @@ mod test {
         k9::assert_matches_snapshot!(format!("{resp:#?}"));
     }
 
+    /// An H1310's fanSpeedMode is a `Mode` capability whose enum options are
+    /// "Speed 1".."Speed 6". Those are fan speeds driven through the select
+    /// entity, and must never reach the light's effect list.
+    #[test]
+    fn fan_speed_mode_is_not_a_scene() {
+        let info: HttpDeviceInfo =
+            from_json(include_str!("../test-data/h1310_platform_metadata.json")).unwrap();
+
+        let caps = GoveeApiClient::collect_scene_caps(
+            &[("device.capabilities", info.capabilities.as_slice())],
+            &info.sku,
+            &info.device,
+        );
+
+        assert!(
+            !caps.iter().any(|c| c.instance == "fanSpeedMode"),
+            "fanSpeedMode must not be treated as a scene, got {:?}",
+            caps.iter().map(|c| &c.instance).collect::<Vec<_>>()
+        );
+    }
+
+    /// The SKU-wide app library may only stand in when the device's own
+    /// sources yield nothing selectable; an enum with no options does not
+    /// count as "this device has scenes".
+    #[test]
+    fn usable_scene_options_gates_the_fallback() {
+        let empty_enum = DeviceCapability {
+            kind: DeviceCapabilityKind::DynamicScene,
+            instance: "lightScene".to_string(),
+            parameters: Some(DeviceParameters::Enum { options: vec![] }),
+            alarm_type: None,
+            event_state: None,
+        };
+        assert!(!GoveeApiClient::has_usable_scene_options(
+            std::slice::from_ref(&empty_enum)
+        ));
+
+        let populated = DeviceCapability {
+            parameters: Some(DeviceParameters::Enum {
+                options: vec![EnumOption {
+                    name: "Sunrise".to_string(),
+                    value: json!(1),
+                    extras: HashMap::new(),
+                }],
+            }),
+            ..empty_enum
+        };
+        assert!(GoveeApiClient::has_usable_scene_options(&[populated]));
+        assert!(!GoveeApiClient::has_usable_scene_options(&[]));
+    }
+
     const GET_DEVICE_STATE_EXAMPLE: &str = include_str!("../test-data/get_device_state.json");
 
     #[test]
@@ -1158,5 +1250,19 @@ mod test {
             serde_json::to_string(&DeviceType::Other("something".to_string())).unwrap(),
             "\"something\""
         );
+    }
+
+    #[test]
+    fn h1310_platform_state() {
+        let resp: GetDeviceStateResponse =
+            from_json(include_str!("../test-data/h1310_platform_state.json")).unwrap();
+        let fan_speed = resp
+            .payload
+            .capabilities
+            .iter()
+            .find(|c| c.instance == "fanSpeedMode")
+            .expect("fanSpeedMode");
+        assert_eq!(fan_speed.state["value"], JsonValue::from(""));
+        assert_eq!(resp.payload.sku, "H1310");
     }
 }

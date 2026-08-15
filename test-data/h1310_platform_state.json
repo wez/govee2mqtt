@@ -1,0 +1,116 @@
+{
+  "requestId": "uuid",
+  "msg": "success",
+  "code": 200,
+  "payload": {
+    "capabilities": [
+      {
+        "instance": "online",
+        "state": {
+          "value": true
+        },
+        "type": "devices.capabilities.online"
+      },
+      {
+        "instance": "powerSwitch",
+        "state": {
+          "value": 1
+        },
+        "type": "devices.capabilities.on_off"
+      },
+      {
+        "instance": "brightness",
+        "state": {
+          "value": 20
+        },
+        "type": "devices.capabilities.range"
+      },
+      {
+        "instance": "segmentedBrightness",
+        "state": {
+          "value": ""
+        },
+        "type": "devices.capabilities.segment_color_setting"
+      },
+      {
+        "instance": "segmentedColorRgb",
+        "state": {
+          "value": ""
+        },
+        "type": "devices.capabilities.segment_color_setting"
+      },
+      {
+        "instance": "colorRgb",
+        "state": {
+          "value": 0
+        },
+        "type": "devices.capabilities.color_setting"
+      },
+      {
+        "instance": "colorTemperatureK",
+        "state": {
+          "value": 10000
+        },
+        "type": "devices.capabilities.color_setting"
+      },
+      {
+        "instance": "lightScene",
+        "state": {
+          "value": ""
+        },
+        "type": "devices.capabilities.dynamic_scene"
+      },
+      {
+        "instance": "diyScene",
+        "state": {
+          "value": ""
+        },
+        "type": "devices.capabilities.dynamic_scene"
+      },
+      {
+        "instance": "snapshot",
+        "state": {
+          "value": ""
+        },
+        "type": "devices.capabilities.dynamic_scene"
+      },
+      {
+        "instance": "mainLightToggle",
+        "state": {
+          "value": ""
+        },
+        "type": "devices.capabilities.toggle"
+      },
+      {
+        "instance": "backgroundLightToggle",
+        "state": {
+          "value": ""
+        },
+        "type": "devices.capabilities.toggle"
+      },
+      {
+        "instance": "fanToggle",
+        "state": {
+          "value": ""
+        },
+        "type": "devices.capabilities.toggle"
+      },
+      {
+        "instance": "fanSpeedMode",
+        "state": {
+          "value": ""
+        },
+        "type": "devices.capabilities.mode"
+      },
+      {
+        "instance": "reverseAirflowToggle",
+        "state": {
+          "value": ""
+        },
+        "type": "devices.capabilities.toggle"
+      }
+    ],
+    "device": "47:64:F8:9C:BD:BC:DF:4A",
+    "sku": "H1310"
+  }
+}

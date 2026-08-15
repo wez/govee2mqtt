@@ -1,3 +1,4 @@
+use crate::hass_mqtt::capability_mode::mqtt_capability_mode_command;
 use crate::hass_mqtt::climate::mqtt_set_temperature;
 use crate::hass_mqtt::enumerator::{enumerate_all_entites, enumerate_entities_for_device};
 use crate::hass_mqtt::humidifier::{mqtt_device_set_work_mode, mqtt_humidifier_set_target};
@@ -453,33 +454,21 @@ async fn mqtt_switch_command(
 
     if instance == "powerSwitch" {
         state.device_power_on(&device, on).await?;
-    } else if let Some(client) = state.get_platform_client().await {
-        if let Some(http_dev) = &device.http_device_info {
-            client.set_toggle_state(http_dev, &instance, on).await?;
-        } else {
-            anyhow::bail!("No platform state available to set {id} {instance} to {on}");
-        }
     } else {
-        anyhow::bail!("Don't know how to {command} for {id} {instance}!");
+        state
+            .device_set_toggle_capability(&device, &instance, on)
+            .await?;
     }
 
     Ok(())
 }
 
 pub fn mired_to_kelvin(mired: u32) -> u32 {
-    if mired == 0 {
-        0
-    } else {
-        1000000 / mired
-    }
+    1_000_000u32.checked_div(mired).unwrap_or(0)
 }
 
 pub fn kelvin_to_mired(kelvin: u32) -> u32 {
-    if kelvin == 0 {
-        0
-    } else {
-        1000000 / kelvin
-    }
+    1_000_000u32.checked_div(kelvin).unwrap_or(0)
 }
 
 /// HASS is advising us that its status has changed
@@ -531,6 +520,12 @@ async fn run_mqtt_loop(
             .await?;
         router
             .route("gv2mqtt/switch/:id/command/:instance", mqtt_switch_command)
+            .await?;
+        router
+            .route(
+                "gv2mqtt/select/:id/command/:instance",
+                mqtt_capability_mode_command,
+            )
             .await?;
 
         router.route(oneclick_topic(), mqtt_oneclick).await?;

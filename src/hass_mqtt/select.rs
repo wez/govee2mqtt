@@ -17,6 +17,10 @@ pub struct SelectConfig {
     pub command_topic: String,
     pub options: Vec<String>,
     pub state_topic: String,
+    /// Set when the selected option cannot be read back from the device and
+    /// is instead remembered from the last command we sent.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub optimistic: Option<bool>,
 }
 
 impl SelectConfig {
@@ -53,6 +57,7 @@ impl WorkModeSelect {
                 command_topic,
                 state_topic,
                 options: work_modes.get_mode_names(),
+                optimistic: None,
             },
             device_id: device.id.to_string(),
             state: state.clone(),
@@ -132,6 +137,7 @@ impl SceneModeSelect {
                 command_topic,
                 state_topic,
                 options: scenes,
+                optimistic: None,
             },
             device_id: device.id.to_string(),
             state: state.clone(),

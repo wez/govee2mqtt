@@ -1,3 +1,5 @@
+use anyhow::Context;
+
 use crate::hass_mqtt::base::{Device, EntityConfig, Origin};
 use crate::hass_mqtt::instance::{publish_entity_config, EntityInstance};
 use crate::platform_api::DeviceType;
@@ -161,13 +163,16 @@ impl DeviceLight {
         let effect_list = if segment.is_some() {
             vec![]
         } else {
-            match state.device_list_scenes(device).await {
-                Ok(scenes) => scenes,
-                Err(err) => {
-                    log::error!("Unable to list scenes for {device}: {err:#}");
-                    vec![]
-                }
-            }
+            // Deliberately propagate instead of falling back to an empty
+            // list. Discovery is published with retain=false, so an empty
+            // effect_list would actively overwrite the effects hass already
+            // knows about, and a transient scene-API timeout would wipe them
+            // from the UI. Failing here leaves the previously published
+            // config in place.
+            state
+                .device_list_scenes(device)
+                .await
+                .with_context(|| format!("listing scenes for {device}"))?
         };
 
         let mut supported_color_modes = vec![];

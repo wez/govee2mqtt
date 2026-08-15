@@ -1,5 +1,6 @@
 pub mod base;
 pub mod button;
+pub mod capability_mode;
 pub mod climate;
 pub mod cover;
 pub mod enumerator;
