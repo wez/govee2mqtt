@@ -15,10 +15,16 @@ use async_channel::Receiver;
 use mosquitto_rs::router::{MqttRouter, Params, Payload, State};
 use mosquitto_rs::{Client, Event, QoS};
 use serde::{Deserialize, Serialize};
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
 
 const HASS_REGISTER_DELAY: tokio::time::Duration = tokio::time::Duration::from_secs(15);
+
+/// Monotonic counter used to debounce `mqtt_homeassitant_status`: each
+/// "online" status bumps this, and a pending re-registration checks it
+/// after its delay to see if a newer status message has superseded it.
+static HASS_STATUS_GENERATION: AtomicU64 = AtomicU64::new(0);
 
 #[derive(clap::Parser, Debug)]
 pub struct HassArguments {
@@ -483,17 +489,49 @@ pub fn kelvin_to_mired(kelvin: u32) -> u32 {
 }
 
 /// HASS is advising us that its status has changed
+///
+/// HA's birth/will topic (`<discovery_prefix>/status`) carries both the
+/// "online" birth message on startup and the "offline" will/shutdown
+/// message. Historically this handler reacted to *both*, which meant a
+/// single HA restart could fire two overlapping, unsynchronized calls to
+/// this handler: one for "offline" (started while HA is still shutting
+/// down or not yet back up) and one for "online" (the one that actually
+/// matters). Each call independently sleeps for `HASS_REGISTER_DELAY`
+/// before calling `register_with_hass`, and nothing prevented two of
+/// these delayed calls from being in flight at once and racing each
+/// other's publishes. See https://github.com/wez/govee2mqtt/issues/572.
+///
+/// Only "online" should ever trigger re-registration, and if multiple
+/// "online" messages arrive in quick succession (HA's MQTT connection can
+/// flap a few times while other integrations are still loading at boot),
+/// only the *last* one should actually run: the generation counter below
+/// debounces that by having each pending call check, after its delay,
+/// whether a newer status message has superseded it.
 async fn mqtt_homeassitant_status(
     Payload(status): Payload<String>,
     State(state): State<StateHandle>,
 ) -> anyhow::Result<()> {
+    if status != "online" {
+        log::info!("Home Assistant status changed: {status}; ignoring (only 'online' triggers re-registration)");
+        return Ok(());
+    }
+
+    let my_generation = HASS_STATUS_GENERATION.fetch_add(1, Ordering::SeqCst) + 1;
+
+    log::info!("Home Assistant status changed: {status}, waiting {HASS_REGISTER_DELAY:?} before re-registering entities");
+    tokio::time::sleep(HASS_REGISTER_DELAY).await;
+
+    if HASS_STATUS_GENERATION.load(Ordering::SeqCst) != my_generation {
+        log::info!(
+            "A newer Home Assistant online message superseded this one; skipping stale re-registration"
+        );
+        return Ok(());
+    }
+
     let client = state
         .get_hass_client()
         .await
         .expect("hass client to be present");
-
-    log::info!("Home Assistant status changed: {status}, waiting {HASS_REGISTER_DELAY:?} before re-registering entities");
-    tokio::time::sleep(HASS_REGISTER_DELAY).await;
 
     client.register_with_hass(&state).await?;
 
