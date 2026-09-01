@@ -1,4 +1,4 @@
-use crate::ble::NotifyHumidifierNightlightParams;
+use crate::ble::{NotifyElementState, NotifyHumidifierNightlightParams};
 use crate::commands::serve::POLL_INTERVAL;
 use crate::lan_api::{DeviceColor, DeviceStatus as LanDeviceStatus, LanDevice};
 use crate::platform_api::{
@@ -37,6 +37,10 @@ pub struct Device {
     pub last_iot_device_status_update: Option<DateTime<Utc>>,
 
     pub nightlight_state: Option<NotifyHumidifierNightlightParams>,
+
+    /// Last reported main-panel / halo-ring state, for fixtures that
+    /// have independently switchable elements
+    pub element_state: Option<NotifyElementState>,
     pub target_humidity_percent: Option<u8>,
     pub humidifier_work_mode: Option<u8>,
     pub humidifier_param_by_mode: HashMap<u8, u8>,
@@ -175,6 +179,10 @@ impl Device {
 
     pub fn set_last_polled(&mut self) {
         self.last_polled.replace(Utc::now());
+    }
+
+    pub fn set_element_state(&mut self, params: NotifyElementState) {
+        self.element_state.replace(params);
     }
 
     pub fn set_nightlight_state(&mut self, params: NotifyHumidifierNightlightParams) {

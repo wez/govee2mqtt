@@ -1,4 +1,6 @@
-use crate::ble::{Base64HexBytes, SetHumidifierMode, SetHumidifierNightlightParams};
+use crate::ble::{
+    Base64HexBytes, SetElementToggle, SetHumidifierMode, SetHumidifierNightlightParams,
+};
 use crate::lan_api::{Client as LanClient, DeviceStatus as LanDeviceStatus, LanDevice};
 use crate::platform_api::{DeviceCapability, DeviceType, GoveeApiClient};
 use crate::service::coordinator::Coordinator;
@@ -461,6 +463,52 @@ impl State {
             }
         }
         anyhow::bail!("Unable to control color temperature for {device}");
+    }
+
+    /// Turn one light element (main panel / background halo ring) on or off.
+    ///
+    /// The Platform API exposes these as the `mainLightToggle` and
+    /// `backgroundLightToggle` instances, but at least on the H1270 those
+    /// report success without changing anything. The IoT path carries the
+    /// packet the vendor app itself uses, so try it first and only fall back
+    /// to the Platform API for devices we have no packet encoding for.
+    pub async fn device_set_element_toggle(
+        self: &Arc<Self>,
+        device: &Device,
+        instance: &str,
+        on: bool,
+    ) -> anyhow::Result<()> {
+        let element = match instance {
+            "mainLightToggle" => Some(0),
+            "backgroundLightToggle" => Some(1),
+            _ => None,
+        };
+
+        if let Some(element) = element {
+            // encode_for_sku only resolves a codec for SKUs the packet is
+            // known to work on, so it doubles as the capability check
+            if let Ok(command) =
+                Base64HexBytes::encode_for_sku(&device.sku, &SetElementToggle { element, on })
+            {
+                if let Some(iot) = self.get_iot_client().await {
+                    if let Some(info) = &device.undoc_device_info {
+                        log::info!("Using IoT API to set {device} {instance} to {on}");
+                        iot.send_real(&info.entry, command.base64()).await?;
+                        return Ok(());
+                    }
+                }
+            }
+        }
+
+        if let Some(client) = self.get_platform_client().await {
+            if let Some(info) = &device.http_device_info {
+                log::info!("Using Platform API to set {device} {instance} to {on}");
+                client.set_toggle_state(info, instance, on).await?;
+                return Ok(());
+            }
+        }
+
+        anyhow::bail!("Unable to set {instance} for {device}");
     }
 
     // FIXME: this function probably shouldn't exist here

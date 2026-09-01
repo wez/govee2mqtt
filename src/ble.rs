@@ -239,6 +239,30 @@ impl PacketManager {
             on,
         ));
 
+        // The H1270 Ceiling Light Ultra has an independently switchable main
+        // panel and halo ring. Its mainLightToggle/backgroundLightToggle
+        // instances in the Platform API return success but do nothing, so this
+        // packet, sent over IoT ptReal, is the only way to control them.
+        all_codecs.push(packet!(
+            &["H1270"],
+            SetElementToggle,
+            SetElementToggle,
+            0x33,
+            0x30,
+            element,
+            on,
+        ));
+
+        all_codecs.push(packet!(
+            &["H1270"],
+            NotifyElementState,
+            NotifyElementState,
+            0xaa,
+            0x30,
+            main,
+            background,
+        ));
+
         Self {
             codec_by_sku: Mutex::new(HashMap::new()),
             all_codecs: all_codecs.into_iter().map(Arc::new).collect(),
@@ -423,12 +447,30 @@ pub struct SetDevicePower {
     pub on: bool,
 }
 
+/// Turns one light element of a multi-element fixture on or off.
+/// Element 0 is the main panel, element 1 the background/halo ring.
+#[derive(Clone, Copy, Default, Debug, PartialEq, Eq)]
+pub struct SetElementToggle {
+    pub element: u8,
+    pub on: bool,
+}
+
+/// The device reports the state of *both* elements in a single packet,
+/// whichever element index was queried.
+#[derive(Clone, Copy, Default, Debug, PartialEq, Eq)]
+pub struct NotifyElementState {
+    pub main: bool,
+    pub background: bool,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum GoveeBlePacket {
     Generic(HexBytes),
     #[allow(unused)] // can remove if/when SetSceneCode::decode has an impl
     SetSceneCode(SetSceneCode),
     SetDevicePower(SetDevicePower),
+    SetElementToggle(SetElementToggle),
+    NotifyElementState(NotifyElementState),
     SetHumidifierNightlight(SetHumidifierNightlightParams),
     NotifyHumidifierMode(NotifyHumidifierMode),
     SetHumidifierMode(SetHumidifierMode),
@@ -554,12 +596,60 @@ mod test {
         assert_eq!(decoded, expect);
     }
 
+    /// The element-toggle bytes were captured from the vendor app's own
+    /// Tap-to-Run payloads for an H1270, so pin them exactly rather than
+    /// only round-tripping them.
+    #[test]
+    fn h1270_element_toggle_matches_captured_app_packets() {
+        let encode = |element, on| {
+            Base64HexBytes::encode_for_sku("H1270", &SetElementToggle { element, on })
+                .unwrap()
+                .base64()
+        };
+        assert_eq!(encode(0, true), vec!["MzAAAQAAAAAAAAAAAAAAAAAAAAI="]);
+        assert_eq!(encode(1, true), vec!["MzABAQAAAAAAAAAAAAAAAAAAAAM="]);
+
+        // ...and the status reply the device sends back, main on / halo off.
+        // with_bytes fills in the padding and checksum for us.
+        let decoded =
+            Base64HexBytes::with_bytes(vec![0xaa, 0x30, 0x01, 0x00]).decode_for_sku("H1270");
+        assert_eq!(
+            decoded,
+            GoveeBlePacket::NotifyElementState(NotifyElementState {
+                main: true,
+                background: false,
+            })
+        );
+    }
+
     #[test]
     fn basic_round_trip() {
         round_trip(
             "Generic:Light",
             &SetDevicePower { on: true },
             GoveeBlePacket::SetDevicePower(SetDevicePower { on: true }),
+        );
+        round_trip(
+            "H1270",
+            &SetElementToggle {
+                element: 1,
+                on: false,
+            },
+            GoveeBlePacket::SetElementToggle(SetElementToggle {
+                element: 1,
+                on: false,
+            }),
+        );
+        round_trip(
+            "H1270",
+            &NotifyElementState {
+                main: true,
+                background: false,
+            },
+            GoveeBlePacket::NotifyElementState(NotifyElementState {
+                main: true,
+                background: false,
+            }),
         );
         round_trip(
             "H7160",

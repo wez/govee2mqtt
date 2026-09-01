@@ -115,6 +115,22 @@ impl EntityInstance for CapabilitySwitch {
         // buttons so that you can at least send the commands to the device.
         // <https://developer.govee.com/discuss/6596e84c901fb900312d5968>
 
+        // Fixtures with independently switchable elements report both states
+        // over IoT. That is the only place they are available: the platform
+        // API returns an empty string for these two instances.
+        if let Some(elements) = device.element_state {
+            let on = match self.instance_name.as_str() {
+                "mainLightToggle" => Some(elements.main),
+                "backgroundLightToggle" => Some(elements.background),
+                _ => None,
+            };
+            if let Some(on) = on {
+                return client
+                    .publish(&self.switch.state_topic, if on { "ON" } else { "OFF" })
+                    .await;
+            }
+        }
+
         if let Some(cap) = device.get_state_capability_by_instance(&self.instance_name) {
             match cap.state.pointer("/value").and_then(|v| v.as_i64()) {
                 Some(n) => {

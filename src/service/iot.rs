@@ -442,10 +442,14 @@ async fn run_iot_subscriber(
                                                     mode, param,
                                                 );
                                             }
+                                            GoveeBlePacket::NotifyElementState(params) => {
+                                                device.set_element_state(params);
+                                            }
                                             GoveeBlePacket::Generic(_) => {
                                                 // Ignore packets that we can't decode
                                             }
                                             GoveeBlePacket::SetHumidifierMode(_)
+                                            | GoveeBlePacket::SetElementToggle(_)
                                             | GoveeBlePacket::SetHumidifierNightlight(_) => {
                                                 // Ignore packets that are essentially echoing
                                                 // commands sent to the device
