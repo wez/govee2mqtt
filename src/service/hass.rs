@@ -453,6 +453,13 @@ async fn mqtt_switch_command(
 
     if instance == "powerSwitch" {
         state.device_power_on(&device, on).await?;
+    } else if matches!(
+        instance.as_str(),
+        "mainLightToggle" | "backgroundLightToggle"
+    ) {
+        state
+            .device_set_element_toggle(&device, &instance, on)
+            .await?;
     } else if let Some(client) = state.get_platform_client().await {
         if let Some(http_dev) = &device.http_device_info {
             client.set_toggle_state(http_dev, &instance, on).await?;
