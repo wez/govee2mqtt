@@ -267,7 +267,11 @@ impl LanDevice {
                     if scene.scene_name == scene_name && effect.scene_code != 0 {
                         let encoded = Base64HexBytes::encode_for_sku(
                             "Generic:Light",
-                            &SetSceneCode::new(effect.scene_code, effect.scence_param),
+                            &SetSceneCode::new(
+                                effect.scene_code,
+                                effect.scence_param,
+                                self.sku.clone(),
+                            ),
                         )?
                         .base64();
                         log::info!(

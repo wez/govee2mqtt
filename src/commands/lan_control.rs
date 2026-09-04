@@ -80,7 +80,11 @@ impl LanControlCommand {
                             if effect.scene_code != 0 {
                                 scene_code_by_name.insert(
                                     Uncased::new(scene.scene_name),
-                                    SetSceneCode::new(effect.scene_code, effect.scence_param),
+                                    SetSceneCode::new(
+                                        effect.scene_code,
+                                        effect.scence_param,
+                                        device.sku.clone(),
+                                    ),
                                 );
                                 break;
                             }

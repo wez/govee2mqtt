@@ -360,15 +360,111 @@ pub struct HumidifierAutoMode {
     pub target_humidity: TargetHumidity,
 }
 
+/// Per-model adjustments that must be applied to the raw `scenceParam`
+/// data before it is framed into BLE packets.
+///
+/// Govee's own app rewrites the leading bytes of the scene parameters on a
+/// per-model basis. Sending the generic form to a model that expects a
+/// different prefix is accepted by the device but silently ignored, so the
+/// scene simply never activates.
+///
+/// The table is derived from the reference implementation at
+/// <https://github.com/AlgoClaw/Govee/blob/main/decoded/v1.2/model_specific_parameters.json>
+struct ScenePrefixRules {
+    skus: &'static [&'static str],
+    /// The multi-packet line prefix. Almost every model uses 0xa3.
+    line_prefix: u8,
+    /// Ordered (prefix_to_remove, prefix_to_add) pairs. The first entry whose
+    /// `prefix_to_remove` matches the start of the scene parameters wins.
+    prefixes: &'static [(&'static [u8], &'static [u8])],
+}
+
+/// Used for any model without a specific entry below. This matches the
+/// behaviour that govee2mqtt had for every model prior to this table existing.
+const GENERIC_SCENE_RULES: ScenePrefixRules = ScenePrefixRules {
+    skus: &[],
+    line_prefix: 0xa3,
+    prefixes: &[(&[], &[0x02])],
+};
+
+const SCENE_PREFIX_RULES: &[ScenePrefixRules] = &[
+    ScenePrefixRules {
+        skus: &["H6022"],
+        line_prefix: 0xa3,
+        prefixes: &[(&[0x41], &[0x58, 0x5a]), (&[0x00], &[0x04])],
+    },
+    ScenePrefixRules {
+        skus: &["H6066"],
+        line_prefix: 0xa3,
+        prefixes: &[(&[0x12, 0x00, 0x00, 0x00, 0x00], &[0x04]), (&[0x1d], &[])],
+    },
+    ScenePrefixRules {
+        skus: &["H6065"],
+        line_prefix: 0xa3,
+        prefixes: &[
+            (&[0x12, 0x00, 0x0c, 0x00, 0x0f], &[0x04]),
+            (&[0x12, 0x00, 0x00, 0x00, 0x00], &[0x04]),
+        ],
+    },
+    ScenePrefixRules {
+        skus: &["H6092"],
+        line_prefix: 0xa3,
+        prefixes: &[(&[0x21], &[0x56, 0x0b])],
+    },
+    ScenePrefixRules {
+        skus: &["H6052"],
+        line_prefix: 0xa3,
+        prefixes: &[(&[0x01, 0x11], &[0x07])],
+    },
+    // These models take the scene parameters unmodified.
+    ScenePrefixRules {
+        skus: &["H610A", "H6079"],
+        line_prefix: 0xa3,
+        prefixes: &[],
+    },
+    ScenePrefixRules {
+        skus: &["H70C4"],
+        line_prefix: 0xa4,
+        prefixes: &[],
+    },
+];
+
+impl ScenePrefixRules {
+    fn for_sku(sku: &str) -> &'static ScenePrefixRules {
+        SCENE_PREFIX_RULES
+            .iter()
+            .find(|rules| rules.skus.contains(&sku))
+            .unwrap_or(&GENERIC_SCENE_RULES)
+    }
+
+    /// Strip the model's expected prefix and substitute the replacement.
+    /// If no rule matches, the parameters are used verbatim.
+    fn apply(&self, params: Vec<u8>) -> Vec<u8> {
+        for (remove, add) in self.prefixes {
+            if params.starts_with(remove) {
+                let mut result = add.to_vec();
+                result.extend_from_slice(&params[remove.len()..]);
+                return result;
+            }
+        }
+        params
+    }
+}
+
 #[derive(Clone, Default, Debug, PartialEq, Eq)]
 pub struct SetSceneCode {
     code: u16,
     scence_param: String,
+    sku: String,
 }
 
 impl SetSceneCode {
-    pub fn new(code: u16, scence_param: String) -> Self {
-        Self { code, scence_param }
+    pub fn new(code: u16, scence_param: String, sku: String) -> Self {
+        Self {
+            code,
+            scence_param,
+            sku,
+        }
     }
 
     /// For reference, see:
@@ -377,7 +473,10 @@ impl SetSceneCode {
     fn encode(&self) -> anyhow::Result<Vec<u8>> {
         let bytes = data_encoding::BASE64.decode(self.scence_param.as_bytes())?;
 
-        let mut data = vec![0xa3, 0x00, 0x01, 0x00 /* line count */, 0x02];
+        let rules = ScenePrefixRules::for_sku(&self.sku);
+        let bytes = rules.apply(bytes);
+
+        let mut data = vec![rules.line_prefix, 0x00, 0x01, 0x00 /* line count */];
         let mut num_lines = 0u8;
         let mut last_line_marker = 1;
 
@@ -385,7 +484,7 @@ impl SetSceneCode {
             if data.len().is_multiple_of(19) {
                 num_lines += 1;
 
-                data.push(0xa3);
+                data.push(rules.line_prefix);
                 last_line_marker = data.len();
 
                 data.push(num_lines);
@@ -580,12 +679,81 @@ mod test {
         );
     }
 
+    /// Helper mirroring the hex formatting used by the snapshot tests.
+    fn scene_hex(command: &SetSceneCode) -> String {
+        let padded = command.encode().unwrap();
+        let mut hex = String::new();
+        for (idx, b) in padded.iter().enumerate() {
+            if idx % 20 == 0 && !hex.is_empty() {
+                hex.push('\n');
+            } else if !hex.is_empty() {
+                hex.push(' ');
+            }
+            hex.push_str(&format!("{b:02x}"));
+        }
+        hex
+    }
+
+    /// The H6022 (Smart Table Lamp 2) expects the leading 0x41 of the scene
+    /// parameters to be replaced by 0x58 0x5a. Sending the generic 0x02 form
+    /// is accepted by the device but silently ignored.
+    ///
+    /// Verified against physical hardware (H6022 firmware reachable over the
+    /// LAN API): sending the generic encoding puts the lamp into an off state,
+    /// while the encoding below is accepted and applies the scene.
+    #[test]
+    fn scene_command_h6022() {
+        const AURORA_SCENCE_PARAM: &str = "QQD/AGQAAi0AAx8AARoAAP8LFRYgISorLDQ1Nj4/QElKS1VdYGdocnN8fVFkBgAB//8AAAAAIgADFAABD4sA/xchIiwtNjc4Qmhpc3R+f1lkBgAB//8AAAAA";
+        const AURORA_SCENE_CODE: u16 = 8481;
+
+        let command = SetSceneCode::new(
+            AURORA_SCENE_CODE,
+            AURORA_SCENCE_PARAM.to_string(),
+            "H6022".to_string(),
+        );
+
+        k9::snapshot!(
+            scene_hex(&command),
+            "
+a3 00 01 06 58 5a 00 ff 00 64 00 02 2d 00 03 1f 00 01 1a 15
+a3 01 00 00 ff 0b 15 16 20 21 2a 2b 2c 34 35 36 3e 3f 40 0f
+a3 02 49 4a 4b 55 5d 60 67 68 72 73 7c 7d 51 64 06 00 01 bc
+a3 03 ff ff 00 00 00 00 22 00 03 14 00 01 0f 8b 00 ff 17 f8
+a3 04 21 22 2c 2d 36 37 38 42 68 69 73 74 7e 7f 59 64 06 e2
+a3 ff 00 01 ff ff 00 00 00 00 00 00 00 00 00 00 00 00 00 5d
+33 05 04 21 21 00 00 00 00 00 00 00 00 00 00 00 00 00 00 32
+"
+        );
+    }
+
+    /// A model with no entry in the table keeps the previous generic encoding.
+    #[test]
+    fn scene_prefix_rules_default_to_generic() {
+        let rules = ScenePrefixRules::for_sku("H6199");
+        assert_eq!(rules.line_prefix, 0xa3);
+        assert_eq!(rules.apply(vec![0x41, 0x99]), vec![0x02, 0x41, 0x99]);
+    }
+
+    /// H6022 has two rules; the one matching the actual prefix must win.
+    #[test]
+    fn scene_prefix_rules_h6022() {
+        let rules = ScenePrefixRules::for_sku("H6022");
+        assert_eq!(rules.apply(vec![0x41, 0x99]), vec![0x58, 0x5a, 0x99]);
+        assert_eq!(rules.apply(vec![0x00, 0x99]), vec![0x04, 0x99]);
+        // No rule matches: parameters are passed through untouched.
+        assert_eq!(rules.apply(vec![0x7f, 0x99]), vec![0x7f, 0x99]);
+    }
+
     #[test]
     fn scene_command() {
         const FOREST_SCENCE_PARAM: &str = "AyYAAQAKAgH/GQG0CgoCyBQF//8AAP//////AP//lP8AFAGWAAAAACMAAg8FAgH/FAH7AAAB+goEBP8AtP8AR///4/8AAAAAAAAAABoAAAABAgH/BQHIFBQC7hQBAP8AAAAAAAAAAA==";
         const FOREST_SCENE_CODE: u16 = 212;
 
-        let command = SetSceneCode::new(FOREST_SCENE_CODE, FOREST_SCENCE_PARAM.to_string());
+        let command = SetSceneCode::new(
+            FOREST_SCENE_CODE,
+            FOREST_SCENCE_PARAM.to_string(),
+            "H6199".to_string(),
+        );
 
         let padded = command.encode().unwrap();
 
