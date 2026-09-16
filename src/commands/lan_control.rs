@@ -44,6 +44,10 @@ enum SubCommand {
         /// Name of a scene to activate
         #[arg(required_unless_present = "list")]
         scene: Option<String>,
+
+        /// Speed option (1-based) to apply when activating the scene
+        #[arg(long, value_name = "INDEX")]
+        speed: Option<usize>,
     },
 }
 
@@ -72,7 +76,7 @@ impl LanControlCommand {
                     .send_color_rgb(crate::lan_api::DeviceColor { r, g, b })
                     .await?;
             }
-            SubCommand::Scene { list, scene } => {
+            SubCommand::Scene { list, scene, speed } => {
                 let mut scene_code_by_name = BTreeMap::new();
                 for category in GoveeUndocumentedApi::get_scenes_for_device(&device.sku).await? {
                     for scene in category.scenes {
@@ -92,14 +96,31 @@ impl LanControlCommand {
                         println!("{name}");
                     }
                 } else {
-                    let scene = Uncased::new(scene.clone().expect("scene if not list"));
-                    if let Some(code) = scene_code_by_name.get(&scene) {
-                        let encoded =
-                            Base64HexBytes::encode_for_sku("Generic:Light", code)?.base64();
+                    let scene_name = scene.clone().expect("scene if not list");
+                    if let Some(speed) = speed {
+                        // Send the scene with the requested speed option applied
+                        if *speed < 1 {
+                            anyhow::bail!("speed must be 1 or greater");
+                        }
+                        let encoded = crate::undoc_api::scene_commands_for_device(
+                            &device.sku,
+                            &scene_name,
+                            Some(speed - 1),
+                        )
+                        .await?
+                        .ok_or_else(|| anyhow::anyhow!("scene {scene_name} not found"))?;
                         println!("Computed {encoded:?}");
                         device.send_real(encoded).await?;
                     } else {
-                        anyhow::bail!("scene {scene} not found");
+                        let scene = Uncased::new(scene_name.clone());
+                        if let Some(code) = scene_code_by_name.get(&scene) {
+                            let encoded =
+                                Base64HexBytes::encode_for_sku("Generic:Light", code)?.base64();
+                            println!("Computed {encoded:?}");
+                            device.send_real(encoded).await?;
+                        } else {
+                            anyhow::bail!("scene {scene_name} not found");
+                        }
                     }
                 }
             }
