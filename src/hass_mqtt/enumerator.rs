@@ -1,6 +1,7 @@
 use crate::hass_mqtt::base::{Device, EntityConfig, Origin};
 use crate::hass_mqtt::button::ButtonConfig;
 use crate::hass_mqtt::climate::TargetTemperatureEntity;
+use crate::hass_mqtt::effect_speed::EffectSpeedNumber;
 use crate::hass_mqtt::humidifier::Humidifier;
 use crate::hass_mqtt::instance::EntityList;
 use crate::hass_mqtt::light::DeviceLight;
@@ -158,6 +159,12 @@ pub async fn enumerate_entities_for_device(
 
     if d.supports_rgb() || d.get_color_temperature_range().is_some() || d.supports_brightness() {
         entities.add(DeviceLight::for_device(d, state, None).await?);
+    }
+
+    if d.device_type() == DeviceType::Light {
+        if let Some(speed) = EffectSpeedNumber::new(d, state).await? {
+            entities.add(speed);
+        }
     }
 
     if matches!(

@@ -1,4 +1,5 @@
 use crate::hass_mqtt::climate::mqtt_set_temperature;
+use crate::hass_mqtt::effect_speed::mqtt_effect_speed_command;
 use crate::hass_mqtt::enumerator::{enumerate_all_entites, enumerate_entities_for_device};
 use crate::hass_mqtt::humidifier::{mqtt_device_set_work_mode, mqtt_humidifier_set_target};
 use crate::hass_mqtt::instance::EntityList;
@@ -567,6 +568,12 @@ async fn run_mqtt_loop(
             .await?;
         router
             .route("gv2mqtt/:id/set-mode-scene", mqtt_set_mode_scene)
+            .await?;
+        router
+            .route(
+                "gv2mqtt/effect-speed/:id/command",
+                mqtt_effect_speed_command,
+            )
             .await?;
 
         tokio::time::sleep(HASS_REGISTER_DELAY).await;
