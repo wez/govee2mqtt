@@ -677,6 +677,57 @@ impl State {
         anyhow::bail!("Unable to set scene for {device}");
     }
 
+    /// Applies a speed option index to the currently active scene.
+    ///
+    /// The Govee Platform API doesn't have a way to control scene
+    /// speed, so this sends the scene with the patched speed
+    /// parameters via LAN, falling back to the IoT API.
+    pub async fn device_set_scene_speed(
+        self: &Arc<Self>,
+        device: &Device,
+        speed_index: usize,
+    ) -> anyhow::Result<()> {
+        let scene_name = device
+            .active_scene_name()
+            .ok_or_else(|| anyhow::anyhow!("No active scene to apply speed to for {device}"))?
+            .to_string();
+
+        if let Some(lan_dev) = &device.lan_device {
+            log::info!(
+                "Using LAN API to set {device} scene {scene_name} speed to option {speed_index}"
+            );
+            lan_dev
+                .set_scene_by_name_with_speed(&scene_name, Some(speed_index))
+                .await?;
+        } else if let Some(iot) = self.get_iot_client().await {
+            let info = device
+                .undoc_device_info
+                .as_ref()
+                .ok_or_else(|| anyhow::anyhow!("No IoT device info for {device}"))?;
+            let commands = crate::undoc_api::scene_commands_for_device(
+                &device.sku,
+                &scene_name,
+                Some(speed_index),
+            )
+            .await?
+            .ok_or_else(|| anyhow::anyhow!("Unable to find scene {scene_name} for {device}"))?;
+            log::info!(
+                "Using IoT API to set {device} scene {scene_name} speed to option {speed_index}"
+            );
+            iot.send_real(&info.entry, commands).await?;
+        } else {
+            anyhow::bail!(
+                "Unable to set scene speed for {device}: neither LAN nor IoT is available"
+            );
+        }
+
+        self.device_mut(&device.sku, &device.id)
+            .await
+            .set_active_scene_speed(Some(speed_index));
+
+        Ok(())
+    }
+
     // Take care not to call this while you hold a mutable device
     // reference, as that will deadlock!
     pub async fn notify_of_state_change(self: &Arc<Self>, device_id: &str) -> anyhow::Result<()> {
