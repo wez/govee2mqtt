@@ -6,6 +6,7 @@ use crate::platform_api::{
     from_json, http_response_body, DeviceCapability, DeviceCapabilityKind, DeviceParameters,
     EnumOption,
 };
+use crate::scene_param::{scene_speed_config, SceneSpeedConfig};
 use reqwest::Method;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
@@ -567,6 +568,81 @@ pub struct LightEffectEntry {
     pub diy_effect_str: String,
     pub rules: Vec<JsonValue>,
     pub speed_info: JsonValue,
+}
+
+impl LightEffectEntry {
+    /// Parse the speed control info for this effect, if any
+    pub fn speed_config(&self) -> Option<SceneSpeedConfig> {
+        scene_speed_config(&self.speed_info)
+    }
+}
+
+/// A scene from the light effect catalog that can be activated
+/// locally via LAN or IoT
+#[derive(Debug, Clone)]
+pub struct SceneEffect {
+    pub scene_code: u16,
+    /// base64 encoded
+    pub scence_param: String,
+    pub speed: Option<SceneSpeedConfig>,
+}
+
+/// Locate the named scene in the light effect catalog for the
+/// specified SKU, returning the first effect that has a usable
+/// scene code.
+pub async fn find_scene_for_device(
+    sku: &str,
+    scene_name: &str,
+) -> anyhow::Result<Option<SceneEffect>> {
+    for category in GoveeUndocumentedApi::get_scenes_for_device(sku).await? {
+        for scene in category.scenes {
+            if scene.scene_name != scene_name {
+                continue;
+            }
+            for effect in scene.light_effects {
+                if effect.scene_code != 0 {
+                    let speed = effect.speed_config();
+                    return Ok(Some(SceneEffect {
+                        scene_code: effect.scene_code,
+                        scence_param: effect.scence_param,
+                        speed,
+                    }));
+                }
+            }
+        }
+    }
+
+    Ok(None)
+}
+
+/// Compute the LAN/IoT scene activation commands for the named
+/// scene, optionally applying a speed option index.
+///
+/// Returns `None` if the scene is not in the catalog for the SKU.
+pub async fn scene_commands_for_device(
+    sku: &str,
+    scene_name: &str,
+    speed_index: Option<usize>,
+) -> anyhow::Result<Option<Vec<String>>> {
+    let Some(scene) = find_scene_for_device(sku, scene_name).await? else {
+        return Ok(None);
+    };
+
+    let mut scence_param = scene.scence_param;
+    if let Some(index) = speed_index {
+        let speed = scene
+            .speed
+            .ok_or_else(|| anyhow::anyhow!("scene {scene_name} doesn't support speed"))?;
+        scence_param = crate::scene_param::apply_scene_speed(&scence_param, &speed, index)?;
+    }
+
+    let encoded = crate::ble::Base64HexBytes::encode_for_sku(
+        "Generic:Light",
+        &crate::ble::SetSceneCode::new(scene.scene_code, scence_param),
+    )?
+    .base64();
+
+    Ok(Some(encoded))
 }
 
 #[derive(Deserialize, Debug)]

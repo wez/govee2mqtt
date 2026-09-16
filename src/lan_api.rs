@@ -1,7 +1,5 @@
-use crate::ble::{Base64HexBytes, SetSceneCode};
 use crate::opt_env_var;
 use crate::platform_api::from_json;
-use crate::undoc_api::GoveeUndocumentedApi;
 use anyhow::Context;
 use if_addrs::IfAddr;
 use serde::{Deserialize, Serialize};
@@ -261,26 +259,25 @@ impl LanDevice {
     }
 
     pub async fn set_scene_by_name(&self, scene_name: &str) -> anyhow::Result<()> {
-        for category in GoveeUndocumentedApi::get_scenes_for_device(&self.sku).await? {
-            for scene in category.scenes {
-                for effect in scene.light_effects {
-                    if scene.scene_name == scene_name && effect.scene_code != 0 {
-                        let encoded = Base64HexBytes::encode_for_sku(
-                            "Generic:Light",
-                            &SetSceneCode::new(effect.scene_code, effect.scence_param),
-                        )?
-                        .base64();
-                        log::info!(
-                            "sending scene packet {encoded:x?} for {scene_name}, code {}",
-                            effect.scene_code
-                        );
-                        return self.send_real(encoded).await;
-                    }
-                }
-            }
-        }
+        self.set_scene_by_name_with_speed(scene_name, None).await
+    }
 
-        anyhow::bail!("unable to set scene {scene_name} for {}", self.device);
+    /// Activate the named scene, optionally applying the supplied
+    /// speed option index
+    pub async fn set_scene_by_name_with_speed(
+        &self,
+        scene_name: &str,
+        speed_index: Option<usize>,
+    ) -> anyhow::Result<()> {
+        let encoded =
+            crate::undoc_api::scene_commands_for_device(&self.sku, scene_name, speed_index)
+                .await?
+                .ok_or_else(|| {
+                    anyhow::anyhow!("unable to set scene {scene_name} for {}", self.device)
+                })?;
+
+        log::info!("sending scene packet {encoded:x?} for {scene_name}");
+        self.send_real(encoded).await
     }
 }
 
