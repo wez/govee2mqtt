@@ -63,6 +63,29 @@ specific devices in this software, which acts as a bridge into Govee's
 documented and undocumented APIs. There isn't anything practical that can be
 done here to directly control a device that isn't supported by Govee's APIs.
 
+## How do I control the speed of a Light Effect?
+
+Some Govee lights support a speed control for some of their effects.
+For those devices, govee2mqtt will create an "Effect Speed" number entity
+alongside the light entity in Home Assistant.  Set it to a value between
+1 and the number of available speed settings while an effect is active to
+change its speed.
+
+A few things to be aware of:
+
+* The Govee Platform API has no way to set effect speed, so speed changes
+  are sent via the LAN API when the device is reachable on your local
+  network, falling back to the IoT API.
+* Speed support is determined by the scene catalog that Govee publishes
+  for each device model; if none of the scenes for your device advertise
+  speed control, no "Effect Speed" entity will be created for it.
+* The number of available speed settings varies from scene to scene;
+  if you select a speed setting that exceeds the range for the active
+  scene, the closest available setting is used.
+* Not all device models use the scene parameter format that this feature
+  understands; panels and other non-strip style devices typically won't
+  expose the entity even if their scenes appear to support speed.
+
 ## The device MAC addresses shown in the logs don't match the MACs on my network!?
 
 Govee device IDs are not network MAC addresses. For some devices the device ID
