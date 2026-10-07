@@ -3,13 +3,13 @@ use crate::hass_mqtt::base::{Device, EntityConfig, Origin};
 use crate::hass_mqtt::humidifier::DEVICE_CLASS_HUMIDITY;
 use crate::hass_mqtt::instance::{publish_entity_config, EntityInstance};
 use crate::platform_api::DeviceCapability;
-use crate::service::device::Device as ServiceDevice;
+use crate::service::device::{Device as ServiceDevice, DeviceState};
 use crate::service::hass::{availability_topic, topic_safe_id, topic_safe_string, HassClient};
 use crate::service::quirks::HumidityUnits;
 use crate::service::state::StateHandle;
 use crate::temperature::{TemperatureUnits, TemperatureValue, DEVICE_CLASS_TEMPERATURE};
 use async_trait::async_trait;
-use chrono::Utc;
+use chrono::{DateTime, Utc};
 use serde::Serialize;
 use serde_json::json;
 
@@ -258,6 +258,26 @@ impl DeviceStatusDiagnostic {
     }
 }
 
+/// Summarizes the device state for the Status sensor.
+/// A state that is fresh but reports the device as offline,
+/// as the Platform API does for a device that has lost its
+/// connection to the Govee cloud, is shown as Offline rather
+/// than Available.
+fn status_summary(state: Option<&DeviceState>, now: DateTime<Utc>) -> String {
+    let threshold = *POLL_INTERVAL + chrono::Duration::seconds(30);
+
+    match state {
+        Some(state) if now - state.updated > threshold => "Missing",
+        Some(DeviceState {
+            online: Some(false),
+            ..
+        }) => "Offline",
+        Some(_) => "Available",
+        None => "Unknown",
+    }
+    .to_string()
+}
+
 #[async_trait]
 impl EntityInstance for DeviceStatusDiagnostic {
     async fn publish_config(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
@@ -278,20 +298,7 @@ impl EntityInstance for DeviceStatusDiagnostic {
         let platform_state = &device.http_device_state;
         let device_state = device.device_state();
 
-        let now = Utc::now();
-
-        let threshold = *POLL_INTERVAL + chrono::Duration::seconds(30);
-
-        let summary = match &device_state {
-            Some(state) => {
-                if now - state.updated > threshold {
-                    "Missing".to_string()
-                } else {
-                    "Available".to_string()
-                }
-            }
-            None => "Unknown".to_string(),
-        };
+        let summary = status_summary(device_state.as_ref(), Utc::now());
 
         let attributes = json!({
             "iot": iot_state,
@@ -307,5 +314,40 @@ impl EntityInstance for DeviceStatusDiagnostic {
             client.publish_obj(topic, attributes).await?;
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::lan_api::DeviceColor;
+
+    fn state(online: Option<bool>, updated: DateTime<Utc>) -> DeviceState {
+        DeviceState {
+            on: true,
+            light_on: None,
+            online,
+            kelvin: 0,
+            color: DeviceColor { r: 0, g: 0, b: 0 },
+            brightness: 0,
+            scene: None,
+            source: "TEST",
+            updated,
+        }
+    }
+
+    #[test]
+    fn status_summary_values() {
+        let now = Utc::now();
+        let stale = now - *POLL_INTERVAL - chrono::Duration::seconds(60);
+
+        let summary = |online, updated| status_summary(Some(&state(online, updated)), now);
+
+        assert_eq!(status_summary(None, now), "Unknown");
+        assert_eq!(summary(None, now), "Available");
+        assert_eq!(summary(Some(true), now), "Available");
+        assert_eq!(summary(Some(false), now), "Offline");
+        assert_eq!(summary(Some(true), stale), "Missing");
+        assert_eq!(summary(Some(false), stale), "Missing");
     }
 }
