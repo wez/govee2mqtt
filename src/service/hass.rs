@@ -20,6 +20,35 @@ use std::time::Duration;
 
 const HASS_REGISTER_DELAY: tokio::time::Duration = tokio::time::Duration::from_secs(15);
 
+/// How frequently we re-assert that we are online by publishing to the
+/// availability topic.
+///
+/// We publish availability without the retain flag, which means that only
+/// the clients that are subscribed to the availability topic *at the moment
+/// we publish* will ever see it.
+///
+/// hass subscribes to our availability topic as a side effect of setting up
+/// each entity from its discovery config, so immediately after we (re)publish
+/// our discovery configs there is a window in which hass has not yet
+/// subscribed. `register_with_hass` sleeps for `10ms * number_of_entities`
+/// to try to stay ahead of that, but on a busy hass startup -- a host reboot,
+/// or a core update, where hass is creating thousands of entities across all
+/// of its integrations -- setting up our entities can take minutes rather
+/// than milliseconds.
+///
+/// When that happens the single "online" message is delivered to nobody, and
+/// because nothing ever publishes it again, every one of our entities stays
+/// `unavailable` in hass until the user manually restarts us, even though we
+/// are connected to the broker and happily polling Govee.
+/// See <https://github.com/wez/govee2mqtt/issues/572>,
+/// <https://github.com/wez/govee2mqtt/issues/227> and
+/// <https://github.com/wez/govee2mqtt/issues/110>.
+///
+/// Re-asserting availability on an interval bounds that window to the
+/// interval, without needing to make any assumptions about how long hass
+/// takes to subscribe.
+const HASS_AVAILABILITY_INTERVAL: tokio::time::Duration = tokio::time::Duration::from_secs(60);
+
 #[derive(clap::Parser, Debug)]
 pub struct HassArguments {
     /// The mqtt broker hostname or address.
@@ -677,6 +706,38 @@ pub async fn spawn_hass_integration(
 
     let disco_prefix = args.hass_discovery_prefix.clone();
     state.set_hass_disco_prefix(disco_prefix).await;
+
+    // Periodically re-assert our availability, so that a hass instance which
+    // subscribes to the availability topic after we published "online" still
+    // learns that we are alive. See HASS_AVAILABILITY_INTERVAL.
+    {
+        let hass_client = HassClient {
+            client: client.clone(),
+        };
+        tokio::spawn(async move {
+            let mut warned = false;
+            loop {
+                // Sleep first: register_with_hass publishes availability as
+                // part of the initial registration, so there is nothing for
+                // us to do until that has had a chance to run.
+                tokio::time::sleep(HASS_AVAILABILITY_INTERVAL).await;
+
+                match hass_client.publish(availability_topic(), "online").await {
+                    Ok(()) => warned = false,
+                    Err(err) if !warned => {
+                        // Expected while we are disconnected from the broker;
+                        // only report the transition into failure so that a
+                        // broker outage doesn't spam the log every interval.
+                        log::warn!("while re-asserting availability: {err:#}");
+                        warned = true;
+                    }
+                    Err(err) => {
+                        log::debug!("while re-asserting availability: {err:#}");
+                    }
+                }
+            }
+        });
+    }
 
     tokio::spawn(async move {
         let res = run_mqtt_loop(state, subscriber, client).await;
