@@ -335,17 +335,25 @@ struct StateUpdate {
 
 impl StateUpdate {
     /// sta.stc holds underscore separated numbers, eg: "19_0_77_40_1".
-    /// Seen with the H5086, where the fourth number is the uptime
-    /// in seconds: it restarts when the plug reboots
+    /// Seen with the H5086
+    fn stc_numbers(&self) -> Option<std::str::Split<'_, char>> {
+        Some(self.sta.as_ref()?.get("stc")?.as_str()?.split('_'))
+    }
+
+    /// The fourth number in sta.stc is the uptime in seconds:
+    /// it restarts when the plug reboots
     fn uptime_seconds(&self) -> Option<u64> {
-        self.sta
-            .as_ref()?
-            .get("stc")?
-            .as_str()?
-            .split('_')
-            .nth(3)?
-            .parse()
-            .ok()
+        self.stc_numbers()?.nth(3)?.parse().ok()
+    }
+
+    /// The first number in sta.stc is 19 in replies to our status
+    /// requests, but 0 in replies to the Govee app's, and 0 or 1 right
+    /// after a reboot. Once a day, a reply to the app carries a small
+    /// energy counter that isn't today's, which looked like a reset
+    fn answers_other_client(&self) -> bool {
+        self.stc_numbers()
+            .and_then(|mut numbers| numbers.next())
+            .is_some_and(|first| first != "19")
     }
 }
 
@@ -461,6 +469,11 @@ async fn run_iot_subscriber(
                                                     mode, param,
                                                 );
                                             }
+                                            GoveeBlePacket::NotifyEnergyMonitoring(_)
+                                                if packet.state.answers_other_client() =>
+                                            {
+                                                // Our next request gets the real readings
+                                            }
                                             GoveeBlePacket::NotifyEnergyMonitoring(report) => {
                                                 device.set_energy_monitoring(report);
                                                 // Without uptime we couldn't tell a reboot
@@ -551,12 +564,28 @@ mod test {
         )
         .unwrap();
         assert_eq!(packet.state.uptime_seconds(), Some(40));
+        assert!(!packet.state.answers_other_client());
         assert_eq!(packet.state.on_off, Some(1));
 
         // Other shapes don't break parsing the rest of the packet
         let packet: Packet =
             from_json(r#"{"sku":"H6008","device":"x","state":{"onOff":0,"sta":5}}"#).unwrap();
         assert_eq!(packet.state.uptime_seconds(), None);
+        assert!(!packet.state.answers_other_client());
         assert_eq!(packet.state.on_off, Some(0));
+    }
+
+    #[test]
+    fn reply_to_the_govee_app() {
+        // Captured from an H5086 at 22:25:55, trimmed: on-time 354s and
+        // 7.2 Wh, while it had been on for 80749s and used 772.1 Wh today
+        let packet: Packet = from_json(
+            r#"{"sku":"H5086","device":"06:20:98:17:3C:95:F7:9E","cmd":"status",
+               "transaction":"a_1791944755350",
+               "state":{"onOff":1,"sta":{"stc":"0_0_70_325070_1"},"result":1}}"#,
+        )
+        .unwrap();
+        assert!(packet.state.answers_other_client());
+        assert_eq!(packet.state.uptime_seconds(), Some(325070));
     }
 }
