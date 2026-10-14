@@ -7,7 +7,7 @@ use crate::hass_mqtt::select::mqtt_set_mode_scene;
 use crate::lan_api::DeviceColor;
 use crate::opt_env_var;
 use crate::platform_api::{from_json, DeviceType};
-use crate::service::device::Device as ServiceDevice;
+use crate::service::device::{Device as ServiceDevice, EnergyCounterState};
 use crate::service::state::StateHandle;
 use crate::temperature::TemperatureScale;
 use anyhow::Context;
@@ -168,6 +168,24 @@ impl HassClient {
         Ok(())
     }
 
+    /// Publishes at QoS 1, for messages the broker must not drop. With
+    /// retain, it keeps them for when we subscribe again after a restart.
+    pub async fn publish_reliably<
+        T: AsRef<str> + std::fmt::Display,
+        P: AsRef<[u8]> + std::fmt::Display,
+    >(
+        &self,
+        topic: T,
+        payload: P,
+        retain: bool,
+    ) -> anyhow::Result<()> {
+        log::trace!("{topic} -> {payload}");
+        self.client
+            .publish(topic, payload, QoS::AtLeastOnce, retain)
+            .await?;
+        Ok(())
+    }
+
     pub async fn advise_hass_of_light_state(
         &self,
         device: &ServiceDevice,
@@ -205,6 +223,12 @@ pub fn switch_instance_state_topic(device: &ServiceDevice, instance: &str) -> St
         "gv2mqtt/switch/{id}/{instance}/state",
         id = topic_safe_id(device)
     )
+}
+
+/// Holds the retained EnergyCounterState of a plug. Home Assistant
+/// doesn't subscribe to it, see mqtt_energy_counter
+pub fn energy_counter_topic(device: &ServiceDevice) -> String {
+    format!("gv2mqtt/energy/{id}/counter", id = topic_safe_id(device))
 }
 
 pub fn light_state_topic(device: &ServiceDevice) -> String {
@@ -500,6 +524,28 @@ async fn mqtt_homeassitant_status(
     Ok(())
 }
 
+/// Restores the energy counter state that a previous run saved in the
+/// retained counter topic of a plug, see EnergyCounterState. Until that's
+/// complete, EnergyMonitoringSensor publishes an empty message to the
+/// topic along with its state. MQTT keeps the order of messages within a topic, so once we
+/// receive it, any retained state has arrived before it.
+async fn mqtt_energy_counter(
+    Payload(payload): Payload<String>,
+    Params(IdParameter { id }): Params<IdParameter>,
+    State(state): State<StateHandle>,
+) -> anyhow::Result<()> {
+    let Some(device) = state.resolve_device(&id).await else {
+        return Ok(());
+    };
+    let mut device = state.device_mut(&device.sku, &device.id).await;
+    if payload.is_empty() {
+        device.energy_counter_restored = true;
+    } else if let Ok(saved) = serde_json::from_str::<EnergyCounterState>(&payload) {
+        device.restore_energy_counter(saved);
+    }
+    Ok(())
+}
+
 async fn run_mqtt_loop(
     state: StateHandle,
     subscriber: Receiver<Event>,
@@ -568,7 +614,14 @@ async fn run_mqtt_loop(
         router
             .route("gv2mqtt/:id/set-mode-scene", mqtt_set_mode_scene)
             .await?;
-
+        router
+            .route("gv2mqtt/energy/:id/counter", mqtt_energy_counter)
+            .await?;
+        // The router subscribes at QoS 0, which would downgrade the delivery
+        // of the counter state, see HassClient::publish_reliably
+        client
+            .subscribe("gv2mqtt/energy/+/counter", QoS::AtLeastOnce)
+            .await?;
         tokio::time::sleep(HASS_REGISTER_DELAY).await;
         state
             .get_hass_client()
@@ -587,13 +640,22 @@ async fn run_mqtt_loop(
     while let Ok(event) = subscriber.recv().await {
         match event {
             Event::Message(msg) => {
+                // Dispatch energy counter states in order, so that the empty
+                // message completing the restore is handled after the retained
+                // state, see mqtt_energy_counter
+                let in_order = msg.topic.starts_with("gv2mqtt/energy/");
                 let router = router.clone();
                 let state = state.clone();
-                tokio::spawn(async move {
-                    if let Err(err) = router.dispatch(msg.clone(), state.clone()).await {
+                let dispatch = async move {
+                    if let Err(err) = router.dispatch(msg.clone(), state).await {
                         log::error!("While dispatching {msg:?}: {err:#}");
                     }
-                });
+                };
+                if in_order {
+                    dispatch.await;
+                } else {
+                    tokio::spawn(dispatch);
+                }
             }
             Event::Disconnected(reason) => {
                 log::warn!("MQTT disconnected with reason={reason}");

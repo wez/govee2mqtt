@@ -1,15 +1,18 @@
+use crate::ble::NotifyEnergyMonitoring;
 use crate::commands::serve::POLL_INTERVAL;
 use crate::hass_mqtt::base::{Device, EntityConfig, Origin};
 use crate::hass_mqtt::humidifier::DEVICE_CLASS_HUMIDITY;
 use crate::hass_mqtt::instance::{publish_entity_config, EntityInstance};
 use crate::platform_api::DeviceCapability;
 use crate::service::device::Device as ServiceDevice;
-use crate::service::hass::{availability_topic, topic_safe_id, topic_safe_string, HassClient};
+use crate::service::hass::{
+    availability_topic, energy_counter_topic, topic_safe_id, topic_safe_string, HassClient,
+};
 use crate::service::quirks::HumidityUnits;
 use crate::service::state::StateHandle;
 use crate::temperature::{TemperatureUnits, TemperatureValue, DEVICE_CLASS_TEMPERATURE};
 use async_trait::async_trait;
-use chrono::Utc;
+use chrono::{DateTime, Utc};
 use serde::Serialize;
 use serde_json::json;
 
@@ -25,6 +28,10 @@ pub struct SensorConfig {
     pub unit_of_measurement: Option<&'static str>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub json_attributes_topic: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub value_template: Option<&'static str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub last_reset_value_template: Option<&'static str>,
 }
 
 #[allow(unused)]
@@ -86,6 +93,8 @@ impl GlobalFixedDiagnostic {
                 state_class: None,
                 unit_of_measurement: None,
                 json_attributes_topic: None,
+                value_template: None,
+                last_reset_value_template: None,
             },
             value: value.into(),
         }
@@ -153,6 +162,8 @@ impl CapabilitySensor {
                 state_class,
                 unit_of_measurement,
                 json_attributes_topic: None,
+                value_template: None,
+                last_reset_value_template: None,
             },
             device_id: device.id.to_string(),
             state: state.clone(),
@@ -225,6 +236,195 @@ impl EntityInstance for CapabilitySensor {
     }
 }
 
+pub struct EnergyMonitoringReading {
+    name: &'static str,
+    id: &'static str,
+    device_class: &'static str,
+    unit_of_measurement: &'static str,
+    diagnostic: bool,
+    /// Whether this is the energy counter, published along with its
+    /// last_reset, see EnergyCounterState
+    energy_counter: bool,
+    format: fn(&NotifyEnergyMonitoring) -> Option<String>,
+}
+
+pub static ENERGY_MONITORING_READINGS: [EnergyMonitoringReading; 6] = [
+    EnergyMonitoringReading {
+        name: "Power",
+        id: "power",
+        device_class: "power",
+        unit_of_measurement: "W",
+        diagnostic: false,
+        energy_counter: false,
+        format: |r| Some(format!("{:.2}", r.power())),
+    },
+    EnergyMonitoringReading {
+        name: "Energy",
+        id: "energy",
+        device_class: "energy",
+        unit_of_measurement: "kWh",
+        diagnostic: false,
+        energy_counter: true,
+        format: |r| Some(format!("{:.4}", r.energy_kwh())),
+    },
+    EnergyMonitoringReading {
+        name: "Voltage",
+        id: "voltage",
+        device_class: "voltage",
+        unit_of_measurement: "V",
+        diagnostic: false,
+        energy_counter: false,
+        format: |r| Some(format!("{:.2}", r.voltage())),
+    },
+    EnergyMonitoringReading {
+        name: "Current",
+        id: "current",
+        device_class: "current",
+        unit_of_measurement: "A",
+        diagnostic: false,
+        energy_counter: false,
+        format: |r| r.current().map(|v| format!("{v:.2}")),
+    },
+    EnergyMonitoringReading {
+        name: "Power Factor",
+        id: "power-factor",
+        device_class: "power_factor",
+        unit_of_measurement: "%",
+        diagnostic: false,
+        energy_counter: false,
+        format: |r| r.power_factor().map(|v| v.to_string()),
+    },
+    EnergyMonitoringReading {
+        name: "On Time",
+        id: "on-time",
+        device_class: "duration",
+        unit_of_measurement: "s",
+        diagnostic: true,
+        energy_counter: false,
+        format: |r| Some(r.on_time_seconds.0.to_string()),
+    },
+];
+
+/// The state of the energy sensor for hass
+#[derive(Serialize)]
+struct EnergyStatePayload {
+    value: Option<String>,
+    last_reset: DateTime<Utc>,
+}
+
+/// The state of the energy sensor, or None if nothing should be published:
+/// a reading that the counter hasn't tracked must not go out with a
+/// last_reset that doesn't match it
+fn energy_state_payload(
+    device: &ServiceDevice,
+    format: fn(&NotifyEnergyMonitoring) -> Option<String>,
+) -> Option<EnergyStatePayload> {
+    let counter = device.energy_counter.as_ref()?;
+    let report = device.energy_monitoring_report();
+    if report.is_some_and(|r| r.energy_deciwatt_hours.0 != counter.energy_deciwatt_hours) {
+        return None;
+    }
+    Some(EnergyStatePayload {
+        value: report.and_then(format),
+        last_reset: counter.last_reset,
+    })
+}
+
+/// Represents an unknown value to the hass mqtt sensor
+const PAYLOAD_NONE: &str = "None";
+
+pub struct EnergyMonitoringSensor {
+    sensor: SensorConfig,
+    device_id: String,
+    state: StateHandle,
+    reading: &'static EnergyMonitoringReading,
+}
+
+impl EnergyMonitoringSensor {
+    pub fn new(
+        device: &ServiceDevice,
+        state: &StateHandle,
+        reading: &'static EnergyMonitoringReading,
+    ) -> Self {
+        let unique_id = format!(
+            "sensor-{id}-energy-monitoring-{reading}",
+            id = topic_safe_id(device),
+            reading = reading.id
+        );
+
+        Self {
+            sensor: SensorConfig {
+                base: EntityConfig {
+                    availability_topic: availability_topic(),
+                    name: Some(reading.name.to_string()),
+                    entity_category: reading.diagnostic.then(|| "diagnostic".to_string()),
+                    origin: Origin::default(),
+                    device: Device::for_device(device),
+                    unique_id: unique_id.clone(),
+                    device_class: Some(reading.device_class),
+                    icon: None,
+                },
+                state_topic: format!("gv2mqtt/sensor/{unique_id}/state"),
+                state_class: Some(if reading.energy_counter {
+                    StateClass::Total
+                } else {
+                    StateClass::Measurement
+                }),
+                unit_of_measurement: Some(reading.unit_of_measurement),
+                json_attributes_topic: None,
+                value_template: reading.energy_counter.then_some("{{ value_json.value }}"),
+                last_reset_value_template: reading
+                    .energy_counter
+                    .then_some("{{ value_json.last_reset }}"),
+            },
+            device_id: device.id.to_string(),
+            state: state.clone(),
+            reading,
+        }
+    }
+}
+
+#[async_trait]
+impl EntityInstance for EnergyMonitoringSensor {
+    async fn publish_config(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
+        self.sensor.publish(state, client).await
+    }
+
+    async fn notify_state(&self, client: &HassClient) -> anyhow::Result<()> {
+        let device = self
+            .state
+            .device_by_id(&self.device_id)
+            .await
+            .expect("device to exist");
+
+        if self.reading.energy_counter {
+            let topic = energy_counter_topic(&device);
+            // Complete the restore of any saved counter state, see mqtt_energy_counter
+            if !device.energy_counter_restored {
+                client.publish_reliably(&topic, "", false).await?;
+            }
+            let Some(counter) = &device.energy_counter else {
+                return Ok(());
+            };
+            client
+                .publish_reliably(&topic, serde_json::to_string(counter)?, true)
+                .await?;
+            let Some(payload) = energy_state_payload(&device, self.reading.format) else {
+                return Ok(());
+            };
+            return client.publish_obj(&self.sensor.state_topic, payload).await;
+        }
+
+        let value = device
+            .energy_monitoring_report()
+            .and_then(self.reading.format);
+
+        self.sensor
+            .notify_state(client, value.as_deref().unwrap_or(PAYLOAD_NONE))
+            .await
+    }
+}
+
 pub struct DeviceStatusDiagnostic {
     sensor: SensorConfig,
     device_id: String,
@@ -250,6 +450,8 @@ impl DeviceStatusDiagnostic {
                 state_topic: format!("gv2mqtt/sensor/{unique_id}/state"),
                 state_class: None,
                 json_attributes_topic: Some(format!("gv2mqtt/sensor/{unique_id}/attributes")),
+                value_template: None,
+                last_reset_value_template: None,
                 unit_of_measurement: None,
             },
             device_id: device.id.to_string(),
@@ -307,5 +509,71 @@ impl EntityInstance for DeviceStatusDiagnostic {
             client.publish_obj(topic, attributes).await?;
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod energy_counter_test {
+    use super::*;
+    use crate::ble::BigEndian24;
+    use crate::service::device::EnergyCounterState;
+
+    fn report(energy_deciwatt_hours: u32) -> NotifyEnergyMonitoring {
+        NotifyEnergyMonitoring {
+            energy_deciwatt_hours: BigEndian24(energy_deciwatt_hours),
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn publish_only_tracked_readings() {
+        let format: fn(&NotifyEnergyMonitoring) -> Option<String> =
+            |r| Some(format!("{:.4}", r.energy_kwh()));
+        let mut device = ServiceDevice::new("H5086", "08:E3:98:17:3C:95:2F:EE");
+
+        // Nothing is known yet
+        assert!(energy_state_payload(&device, format).is_none());
+
+        // After a restart, the saved state is restored and a reading arrives
+        // that the counter hasn't tracked yet, here after a midnight reset
+        let before = Utc::now() - chrono::Duration::minutes(10);
+        device.restore_energy_counter(EnergyCounterState::new(before, 58518, 86284, 29790));
+        device.set_energy_monitoring(report(312));
+        assert!(energy_state_payload(&device, format).is_none());
+
+        // Readings aren't tracked before the restore is complete
+        device.update_energy_counter(&report(312), 29790 + 560);
+        assert!(energy_state_payload(&device, format).is_none());
+
+        // Once it's tracked, it goes out with the matching last_reset
+        device.energy_counter_restored = true;
+        device.update_energy_counter(&report(312), 29790 + 560);
+        let payload = energy_state_payload(&device, format).unwrap();
+        assert_eq!(payload.value.as_deref(), Some("0.0312"));
+        assert!(payload.last_reset > before);
+
+        // When the readings expire, the value becomes unknown
+        device.energy_monitoring = None;
+        let payload = energy_state_payload(&device, format).unwrap();
+        assert_eq!(payload.value, None);
+    }
+
+    #[test]
+    fn payloads() {
+        let counter =
+            EnergyCounterState::new("2026-10-09T04:00:06Z".parse().unwrap(), 70328, 54652, 40);
+        let payload = EnergyStatePayload {
+            value: Some("7.0328".to_string()),
+            last_reset: counter.last_reset,
+        };
+        assert_eq!(
+            serde_json::to_value(payload).unwrap(),
+            json!({"value": "7.0328", "last_reset": "2026-10-09T04:00:06Z"})
+        );
+
+        // The counter state round-trips through its retained message
+        let saved = serde_json::to_string(&counter).unwrap();
+        let restored: EnergyCounterState = serde_json::from_str(&saved).unwrap();
+        assert_eq!(restored, counter);
     }
 }

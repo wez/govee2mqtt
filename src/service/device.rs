@@ -1,4 +1,4 @@
-use crate::ble::NotifyHumidifierNightlightParams;
+use crate::ble::{NotifyEnergyMonitoring, NotifyHumidifierNightlightParams};
 use crate::commands::serve::POLL_INTERVAL;
 use crate::lan_api::{DeviceColor, DeviceStatus as LanDeviceStatus, LanDevice};
 use crate::platform_api::{
@@ -41,10 +41,133 @@ pub struct Device {
     pub humidifier_work_mode: Option<u8>,
     pub humidifier_param_by_mode: HashMap<u8, u8>,
 
+    /// The most recent energy monitoring readings and when they arrived
+    pub energy_monitoring: Option<(DateTime<Utc>, NotifyEnergyMonitoring)>,
+    pub energy_counter: Option<EnergyCounterState>,
+    /// Whether any energy counter state saved by a previous run
+    /// has been restored, see restore_energy_counter
+    pub energy_counter_restored: bool,
+    pub last_energy_monitoring_poll: Option<DateTime<Utc>>,
+
     pub last_polled: Option<DateTime<Utc>>,
 
     active_scene: Option<ActiveSceneInfo>,
 }
+
+/// Tracks the energy counter of a plug with energy monitoring, so that
+/// Home Assistant can tell real resets of the counter from reboots.
+///
+/// The plug's counter covers the current day: it resets at local midnight,
+/// and also when the plug reboots, but then the plug restores a saved copy
+/// of it shortly after. The energy sensor uses the `total` state class, for
+/// which Home Assistant only starts a new cycle when `last_reset` changes,
+/// and books any other change, including the dip and restore of a reboot,
+/// as a plain difference. So we only need to move `last_reset` when the
+/// counter drops while the plug didn't reboot, or when it rebooted but
+/// doesn't restore its counter, eg. after losing power over its reset time.
+///
+/// This is persisted in a retained MQTT message, see energy_counter_topic,
+/// as `last_reset` must not change when govee2mqtt restarts.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct EnergyCounterState {
+    pub last_reset: DateTime<Utc>,
+    /// When the last reading was tracked
+    pub updated: DateTime<Utc>,
+    /// The last energy reading, in units of 0.1Wh
+    pub energy_deciwatt_hours: u32,
+    /// The last on-time reading, in seconds
+    pub on_time_seconds: u32,
+    /// The last uptime reported by the plug, in seconds
+    pub uptime_seconds: u64,
+    /// When we first saw the counter drop after a reboot, while we're
+    /// waiting for the plug to restore it. The readings until then
+    /// aren't tracked, so that nothing goes out with the wrong last_reset.
+    pub reboot_seen: Option<DateTime<Utc>>,
+}
+
+impl EnergyCounterState {
+    /// Drops of up to 1Wh or 5 minutes of on-time are noise, not resets.
+    /// A reset sets both back to zero, and on-time catches resets after
+    /// days with little energy use, as long as the outlet was on.
+    const ENERGY_NOISE_DECIWATT_HOURS: u32 = 10;
+    const ON_TIME_NOISE_SECONDS: u32 = 300;
+
+    /// Plugs restore their counters within about a minute of coming online
+    const RESTORE_TIMEOUT: chrono::Duration = chrono::Duration::minutes(10);
+
+    pub fn new(
+        now: DateTime<Utc>,
+        energy_deciwatt_hours: u32,
+        on_time_seconds: u32,
+        uptime_seconds: u64,
+    ) -> Self {
+        Self {
+            last_reset: now,
+            updated: now,
+            energy_deciwatt_hours,
+            on_time_seconds,
+            uptime_seconds,
+            reboot_seen: None,
+        }
+    }
+
+    /// The plug's uptime runs about 6% slow, in steps of 10 seconds. If it
+    /// grew clearly less than the time that passed since the last reading,
+    /// the plug must have rebooted in between, even if it has been up for
+    /// longer than it was at the last reading.
+    fn rebooted(&self, now: DateTime<Utc>, uptime_seconds: u64) -> bool {
+        let elapsed = (now - self.updated).num_seconds().max(0) as u64;
+        uptime_seconds + 30 < self.uptime_seconds + elapsed * 9 / 10
+    }
+
+    /// Whether the plug has restored its counters after a reboot. On-time
+    /// only counts while the plug is up, so without a restore it can't be
+    /// well above the uptime, nor grow faster than it. Both come from the
+    /// plug's clock, so this holds even if readings reach us delayed.
+    fn restored(&self, on_time_seconds: u32, uptime_seconds: u64) -> bool {
+        let on_time = on_time_seconds as u64;
+        let uptime_growth = uptime_seconds.saturating_sub(self.uptime_seconds);
+        on_time > uptime_seconds * 3 / 2 + 300
+            || on_time > self.on_time_seconds as u64 + uptime_growth * 6 / 5 + 30
+    }
+
+    pub fn update(
+        &mut self,
+        now: DateTime<Utc>,
+        energy_deciwatt_hours: u32,
+        on_time_seconds: u32,
+        uptime_seconds: u64,
+    ) {
+        let dropped = energy_deciwatt_hours + Self::ENERGY_NOISE_DECIWATT_HOURS
+            < self.energy_deciwatt_hours
+            || on_time_seconds + Self::ON_TIME_NOISE_SECONDS < self.on_time_seconds;
+        if let Some(reboot_seen) = self.reboot_seen {
+            if self.restored(on_time_seconds, uptime_seconds) {
+                self.reboot_seen = None;
+            } else if now - reboot_seen >= Self::RESTORE_TIMEOUT {
+                // No restore came, so the reboot was a real reset
+                self.reboot_seen = None;
+                self.last_reset = reboot_seen;
+            }
+        } else if dropped {
+            if !self.rebooted(now, uptime_seconds) {
+                self.last_reset = now;
+            } else if !self.restored(on_time_seconds, uptime_seconds) {
+                self.reboot_seen = Some(now);
+            }
+        }
+        // While waiting for a restore, keep the energy from before the
+        // reboot, so that the readings until then aren't published
+        if self.reboot_seen.is_none() {
+            self.energy_deciwatt_hours = energy_deciwatt_hours;
+        }
+        self.updated = now;
+        self.on_time_seconds = on_time_seconds;
+        self.uptime_seconds = uptime_seconds;
+    }
+}
+
+const ENERGY_MONITORING_POLL_INTERVAL: chrono::Duration = chrono::Duration::seconds(60);
 
 impl std::fmt::Display for Device {
     fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -183,6 +306,56 @@ impl Device {
 
     pub fn set_target_humidity(&mut self, percent: u8) {
         self.target_humidity_percent.replace(percent);
+    }
+
+    pub fn set_energy_monitoring(&mut self, report: NotifyEnergyMonitoring) {
+        self.energy_monitoring.replace((Utc::now(), report));
+    }
+
+    /// Tracks the energy counter of the report. This is only done once any
+    /// state saved by a previous run has been restored, as otherwise
+    /// last_reset would change.
+    pub fn update_energy_counter(&mut self, report: &NotifyEnergyMonitoring, uptime_seconds: u64) {
+        if !self.energy_counter_restored {
+            return;
+        }
+        let now = Utc::now();
+        let energy = report.energy_deciwatt_hours.0;
+        let on_time = report.on_time_seconds.0;
+        self.energy_counter
+            .get_or_insert_with(|| EnergyCounterState::new(now, energy, on_time, uptime_seconds))
+            .update(now, energy, on_time, uptime_seconds);
+    }
+
+    pub fn restore_energy_counter(&mut self, saved: EnergyCounterState) {
+        self.energy_counter.get_or_insert(saved);
+    }
+
+    pub fn energy_monitoring_report(&self) -> Option<&NotifyEnergyMonitoring> {
+        self.energy_monitoring.as_ref().map(|(_, report)| report)
+    }
+
+    pub fn set_last_energy_monitoring_poll(&mut self) {
+        self.last_energy_monitoring_poll.replace(Utc::now());
+    }
+
+    pub fn supports_energy_monitoring(&self) -> bool {
+        resolve_quirk(&self.sku).is_some_and(|quirk| quirk.energy_monitoring)
+    }
+
+    pub fn energy_monitoring_poll_due(&self) -> bool {
+        self.last_energy_monitoring_poll
+            .is_none_or(|last| Utc::now() - last >= ENERGY_MONITORING_POLL_INTERVAL)
+    }
+
+    /// Discards the energy monitoring readings once they are too old
+    /// to reflect the current state of the plug, which happens when
+    /// it stops answering our polls.
+    /// Returns true if readings were discarded.
+    pub fn expire_energy_monitoring(&mut self) -> bool {
+        self.energy_monitoring
+            .take_if(|(updated, _)| Utc::now() - *updated > ENERGY_MONITORING_POLL_INTERVAL * 5)
+            .is_some()
     }
 
     pub fn set_humidifier_work_mode_and_param(&mut self, mode: u8, param: u8) {
@@ -598,6 +771,135 @@ impl Device {
 #[cfg(test)]
 mod test {
     use super::*;
+
+    #[test]
+    fn energy_counter_resets() {
+        let start = Utc::now();
+        let minute = chrono::Duration::minutes(1);
+
+        // Midnight, captured from the dehumidifier: uptime keeps running
+        let mut counter = EnergyCounterState::new(start, 58518, 86284, 29790);
+        counter.update(start + minute, 1, 5, 29850);
+        assert_eq!(counter.last_reset, start + minute);
+
+        // Midnight on a day with less than 1Wh used, while the outlet was on
+        let mut counter = EnergyCounterState::new(start, 8, 86000, 29790);
+        counter.update(start + minute, 0, 5, 29850);
+        assert_eq!(counter.last_reset, start + minute);
+
+        // Midnight passed while the plug was offline for 8 hours
+        let later = start + chrono::Duration::hours(8);
+        let mut counter = EnergyCounterState::new(start, 58518, 86284, 29790);
+        counter.update(later, 3120, 26000, 56800);
+        assert_eq!(counter.last_reset, later);
+
+        // Reboot, captured from the dehumidifier: the counter drops along
+        // with the uptime, and isn't tracked until the saved copy is restored
+        let mut counter = EnergyCounterState::new(start, 38910, 54568, 52410);
+        counter.update(start + minute, 5, 26, 20);
+        counter.update(start + minute, 5, 27, 20);
+        assert_eq!(counter.reboot_seen, Some(start + minute));
+        assert_eq!(counter.energy_deciwatt_hours, 38910);
+        counter.update(start + minute * 2, 38920, 54652, 40);
+        assert_eq!(counter.last_reset, start);
+        assert_eq!(counter.reboot_seen, None);
+        assert_eq!(counter.energy_deciwatt_hours, 38920);
+
+        // Reboot with a small saved copy: a heater that ran for 4 minutes.
+        // The restore shows in on-time growing faster than the clock
+        let mut counter = EnergyCounterState::new(start, 1000, 240, 5000);
+        counter.update(start + minute, 2, 20, 20);
+        assert!(counter.reboot_seen.is_some());
+        counter.update(start + minute * 2, 1000, 240, 76);
+        assert_eq!(counter.reboot_seen, None);
+        assert_eq!(counter.last_reset, start);
+        assert_eq!(counter.energy_deciwatt_hours, 1000);
+
+        // Two readings a minute apart that reach us at the same time, eg.
+        // after a reconnect, don't look like a restore
+        let mut counter = EnergyCounterState::new(start, 38910, 54568, 52410);
+        counter.update(start + minute, 5, 26, 20);
+        counter.update(start + minute * 2, 9, 82, 76);
+        counter.update(start + minute * 2, 14, 142, 132);
+        assert!(counter.reboot_seen.is_some());
+
+        // Powered off over the reset time: no restore comes, so the reboot
+        // becomes the reset once we've waited for it long enough
+        let mut counter = EnergyCounterState::new(start, 58518, 86284, 29790);
+        let boot = start + minute * 20;
+        counter.update(boot, 3, 20, 20);
+        counter.update(boot + minute * 5, 30, 320, 300);
+        assert_eq!(counter.last_reset, start);
+        assert_eq!(counter.energy_deciwatt_hours, 58518);
+        counter.update(boot + minute * 11, 70, 680, 640);
+        assert_eq!(counter.last_reset, boot);
+        assert_eq!(counter.reboot_seen, None);
+        assert_eq!(counter.energy_deciwatt_hours, 70);
+
+        // Rebooted during a 3 hour gap, and has been up for longer than it
+        // was before by now; the restored copy was 0.84kWh behind
+        let later = start + chrono::Duration::hours(3);
+        let mut counter = EnergyCounterState::new(start, 71964, 78032, 5000);
+        counter.update(later, 63553, 69631, 6800);
+        assert_eq!(counter.last_reset, start);
+        assert_eq!(counter.reboot_seen, None);
+
+        // Tiny dips, captured from the freezer
+        let mut counter = EnergyCounterState::new(start, 5055, 695, 1000);
+        counter.update(start + minute, 5054, 656, 1056);
+        assert_eq!(counter.last_reset, start);
+
+        // Switching the outlet off and on doesn't change the counters
+        let mut counter = EnergyCounterState::new(start, 5055, 695, 1000);
+        counter.update(start + minute, 5055, 695, 1056);
+        assert_eq!(counter.last_reset, start);
+    }
+
+    #[test]
+    fn energy_counter_reboot_detection() {
+        let start = Utc::now();
+        let counter = EnergyCounterState::new(start, 0, 0, 29790);
+        // Uptime grows by about 56 seconds per minute
+        assert!(!counter.rebooted(start + chrono::Duration::minutes(1), 29846));
+        assert!(!counter.rebooted(start + chrono::Duration::days(1), 29790 + 81216));
+        assert!(counter.rebooted(start + chrono::Duration::minutes(2), 20));
+        assert!(counter.rebooted(start + chrono::Duration::hours(3), 6800));
+    }
+
+    #[test]
+    fn energy_counter_restore() {
+        let start = Utc::now();
+        let saved = EnergyCounterState::new(start, 38910, 54568, 52410);
+
+        let mut device = Device::new("H5086", "AA:BB:CC:DD:EE:FF:42:2A");
+        device.restore_energy_counter(saved.clone());
+        assert_eq!(device.energy_counter, Some(saved.clone()));
+
+        // Our own retained message comes back while we're running
+        let current = EnergyCounterState::new(start + chrono::Duration::hours(1), 1, 5, 60);
+        device.energy_counter.replace(current.clone());
+        device.restore_energy_counter(saved);
+        assert_eq!(device.energy_counter, Some(current));
+    }
+
+    #[test]
+    fn energy_monitoring_expiry() {
+        let mut device = Device::new("H5086", "AA:BB:CC:DD:EE:FF:42:2A");
+        assert!(!device.expire_energy_monitoring());
+
+        device.set_energy_monitoring(NotifyEnergyMonitoring::default());
+        assert!(!device.expire_energy_monitoring());
+        assert!(device.energy_monitoring.is_some());
+
+        device.energy_monitoring = Some((
+            Utc::now() - ENERGY_MONITORING_POLL_INTERVAL * 6,
+            NotifyEnergyMonitoring::default(),
+        ));
+        assert!(device.expire_energy_monitoring());
+        assert!(device.energy_monitoring.is_none());
+        // Only reported once
+        assert!(!device.expire_energy_monitoring());
+    }
 
     #[test]
     fn name_compute() {

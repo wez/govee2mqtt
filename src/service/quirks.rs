@@ -39,6 +39,9 @@ pub struct Quirk {
     /// their state.
     pub iot_api_supported: bool,
     pub show_as_preset_buttons: Option<&'static [&'static str]>,
+    /// If true, the device reports electrical readings via IoT,
+    /// but only when asked, so we poll it more often
+    pub energy_monitoring: bool,
 }
 
 impl Quirk {
@@ -61,6 +64,7 @@ impl Quirk {
             platform_humidity_sensor_units: None,
             iot_api_supported: false,
             show_as_preset_buttons: None,
+            energy_monitoring: false,
         }
     }
 
@@ -140,6 +144,11 @@ impl Quirk {
 
     pub fn with_ble_only(mut self, ble_only: bool) -> Self {
         self.ble_only = ble_only;
+        self
+    }
+
+    pub fn with_energy_monitoring(mut self) -> Self {
+        self.energy_monitoring = true;
         self
     }
 
@@ -271,6 +280,7 @@ fn load_quirks() -> HashMap<String, Quirk> {
         Quirk::thermometer("H5179")
             .with_platform_temperature_sensor_units(TemperatureUnits::Fahrenheit)
             .with_platform_humidity_sensor_units(HumidityUnits::RelativePercent),
+        Quirk::device("H5086", DeviceType::Socket, "mdi:power-socket-us").with_energy_monitoring(),
         Quirk::device("H7170", DeviceType::Kettle, "mdi:kettle")
             .with_platform_temperature_sensor_units(TemperatureUnits::Fahrenheit),
         Quirk::device("H7171", DeviceType::Kettle, "mdi:kettle")

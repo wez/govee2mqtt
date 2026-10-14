@@ -6,7 +6,7 @@ use crate::service::device::Device;
 use crate::service::hass::{topic_safe_id, HassClient};
 use crate::service::iot::IotClient;
 use crate::temperature::{TemperatureScale, TemperatureValue};
-use crate::undoc_api::GoveeUndocumentedApi;
+use crate::undoc_api::{DeviceEntry, GoveeUndocumentedApi};
 use anyhow::Context;
 use serde_json::Value as JsonValue;
 use std::collections::HashMap;
@@ -185,36 +185,75 @@ impl State {
         self.undoc_client.lock().await.clone()
     }
 
-    pub async fn poll_iot_api(self: &Arc<Self>, device: &Device) -> anyhow::Result<bool> {
-        if let Some(iot) = self.get_iot_client().await {
-            if let Some(info) = device.undoc_device_info.clone() {
-                if iot.is_device_compatible(&info.entry) {
-                    let device_state = device.device_state();
-                    log::info!("requesting update via IoT MQTT {device} {device_state:?}");
-                    match iot
-                        .request_status_update(&info.entry)
-                        .await
-                        .context("iot.request_status_update")
-                    {
-                        Err(err) => {
-                            log::error!("Failed: {err:#}");
-                        }
-                        Ok(()) => {
-                            // The response will come in async via the mqtt loop in iot.rs
-                            // However, if the device is offline, nothing will change our state.
-                            // Let's explicitly mark the device as having been polled so that
-                            // we don't keep sending a request every minute.
-                            self.device_mut(&device.sku, &device.id)
-                                .await
-                                .set_last_polled();
+    /// Returns what we need to talk to the device via IoT,
+    /// if that is possible
+    async fn iot_device<'a>(&self, device: &'a Device) -> Option<(IotClient, &'a DeviceEntry)> {
+        let iot = self.get_iot_client().await?;
+        let info = device.undoc_device_info.as_ref()?;
+        iot.is_device_compatible(&info.entry)
+            .then_some((iot, &info.entry))
+    }
 
-                            return Ok(true);
-                        }
-                    }
-                }
+    pub async fn poll_iot_api(self: &Arc<Self>, device: &Device) -> anyhow::Result<bool> {
+        let Some((iot, entry)) = self.iot_device(device).await else {
+            return Ok(false);
+        };
+        let device_state = device.device_state();
+        log::info!("requesting update via IoT MQTT {device} {device_state:?}");
+        match iot
+            .request_status_update(entry)
+            .await
+            .context("iot.request_status_update")
+        {
+            Err(err) => {
+                log::error!("Failed: {err:#}");
+                Ok(false)
+            }
+            Ok(()) => {
+                // The response will come in async via the mqtt loop in iot.rs
+                // However, if the device is offline, nothing will change our state.
+                // Let's explicitly mark the device as having been polled so that
+                // we don't keep sending a request every minute.
+                self.device_mut(&device.sku, &device.id)
+                    .await
+                    .set_last_polled();
+                Ok(true)
             }
         }
-        Ok(false)
+    }
+
+    /// Ask an energy monitoring plug for its current readings, which
+    /// need a much shorter poll interval than the on/off state.
+    /// The replies also carry the on/off state, so while the plug
+    /// answers, they keep the regular poll in serve.rs from running.
+    pub async fn poll_energy_monitoring(self: &Arc<Self>, device: &Device) -> anyhow::Result<()> {
+        // If the plug has stopped answering, report its readings
+        // as unknown rather than leaving the last ones in place
+        let expired = self
+            .device_mut(&device.sku, &device.id)
+            .await
+            .expire_energy_monitoring();
+        if expired {
+            self.notify_of_state_change(&device.id).await?;
+        }
+
+        if !device.energy_monitoring_poll_due() {
+            return Ok(());
+        }
+        let Some((iot, entry)) = self.iot_device(device).await else {
+            return Ok(());
+        };
+
+        log::trace!("requesting energy monitoring update via IoT MQTT {device}");
+        // Record the attempt up front so that an offline device
+        // doesn't get a request on every pass of the poll loop.
+        // The response will come in async via the mqtt loop in iot.rs
+        self.device_mut(&device.sku, &device.id)
+            .await
+            .set_last_energy_monitoring_poll();
+        iot.request_status_update(entry)
+            .await
+            .context("iot.request_status_update")
     }
 
     pub async fn poll_platform_api(self: &Arc<Self>, device: &Device) -> anyhow::Result<bool> {

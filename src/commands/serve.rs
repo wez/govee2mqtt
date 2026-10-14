@@ -52,6 +52,12 @@ async fn poll_single_device(state: &StateHandle, device: &Device) -> anyhow::Res
         }
     }
 
+    if device.supports_energy_monitoring() {
+        if let Err(err) = state.poll_energy_monitoring(device).await {
+            log::error!("while polling energy monitoring for {device}: {err:#}");
+        }
+    }
+
     let poll_interval = device.preferred_poll_interval();
 
     let can_update = match &device.last_polled {
