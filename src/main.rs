@@ -14,6 +14,7 @@ mod lan_api;
 #[macro_use]
 mod platform_api;
 mod rest_api;
+mod scene_param;
 mod service;
 mod temperature;
 mod undoc_api;

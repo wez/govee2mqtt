@@ -60,6 +60,8 @@ struct ActiveSceneInfo {
     pub name: String,
     pub color: crate::lan_api::DeviceColor,
     pub kelvin: u32,
+    /// The selected speed percentage (0-100) for the scene, if known
+    pub speed: Option<u8>,
 }
 
 /// Represents the device state; synthesized from the various
@@ -381,9 +383,27 @@ impl Device {
                     name: scene.to_string(),
                     color,
                     kelvin,
+                    speed: None,
                 });
             }
         }
+    }
+
+    /// The name of the active scene, if known
+    pub fn active_scene_name(&self) -> Option<&str> {
+        self.active_scene.as_ref().map(|info| info.name.as_str())
+    }
+
+    /// Records the speed percentage selected for the active scene
+    pub fn set_active_scene_speed(&mut self, speed: Option<u8>) {
+        if let Some(info) = self.active_scene.as_mut() {
+            info.speed = speed;
+        }
+    }
+
+    /// The speed percentage selected for the active scene, if known
+    pub fn active_scene_speed(&self) -> Option<u8> {
+        self.active_scene.as_ref().and_then(|info| info.speed)
     }
 
     pub fn clear_scene_if_color_changed(&mut self) {
