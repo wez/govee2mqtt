@@ -67,9 +67,17 @@ done here to directly control a device that isn't supported by Govee's APIs.
 
 Some Govee lights support a speed control for some of their effects.
 For those devices, govee2mqtt will create an "Effect Speed" number entity
-alongside the light entity in Home Assistant.  Set it to a value between
-1 and the number of available speed settings while an effect is active to
-change its speed.
+alongside the light entity in Home Assistant.  Set it to a percentage
+while an effect is active to change its speed:
+
+* 50% is the effect's default speed.
+* 0% is slower than the slowest speed that the Govee app offers for the
+  effect, and 100% is faster than its fastest.  Govee's own speed options
+  often cover only part of what the device can do (for some effects the
+  default is already the slowest option), so the range is extended past
+  them on both sides.
+* Values in between are interpolated, so any percentage works with any
+  effect, whatever its number of speed options in the app.
 
 A few things to be aware of:
 
@@ -79,9 +87,8 @@ A few things to be aware of:
 * Speed support is determined by the scene catalog that Govee publishes
   for each device model; if none of the scenes for your device advertise
   speed control, no "Effect Speed" entity will be created for it.
-* The number of available speed settings varies from scene to scene;
-  if you select a speed setting that exceeds the range for the active
-  scene, the closest available setting is used.
+* Changing the speed re-sends the effect to the device, so its animation
+  restarts from the beginning.
 * Not all device models use the scene parameter format that this feature
   understands; panels and other non-strip style devices typically won't
   expose the entity even if their scenes appear to support speed.

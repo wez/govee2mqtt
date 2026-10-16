@@ -616,24 +616,24 @@ pub async fn find_scene_for_device(
 }
 
 /// Compute the LAN/IoT scene activation commands for the named
-/// scene, optionally applying a speed option index.
+/// scene, optionally applying a speed.
 ///
 /// Returns `None` if the scene is not in the catalog for the SKU.
 pub async fn scene_commands_for_device(
     sku: &str,
     scene_name: &str,
-    speed_index: Option<usize>,
+    speed: Option<crate::scene_param::SceneSpeed>,
 ) -> anyhow::Result<Option<Vec<String>>> {
     let Some(scene) = find_scene_for_device(sku, scene_name).await? else {
         return Ok(None);
     };
 
     let mut scence_param = scene.scence_param;
-    if let Some(index) = speed_index {
-        let speed = scene
+    if let Some(speed) = speed {
+        let config = scene
             .speed
             .ok_or_else(|| anyhow::anyhow!("scene {scene_name} doesn't support speed"))?;
-        scence_param = crate::scene_param::apply_scene_speed(&scence_param, &speed, index)?;
+        scence_param = speed.apply(&scence_param, &config)?;
     }
 
     let encoded = crate::ble::Base64HexBytes::encode_for_sku(

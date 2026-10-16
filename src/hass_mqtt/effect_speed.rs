@@ -10,7 +10,9 @@ use async_trait::async_trait;
 use mosquitto_rs::router::{Params, Payload, State};
 
 /// The "Effect Speed" number entity for lights that support scene
-/// speed control
+/// speed control.  The value is a percentage: 50 is the active scene's
+/// default speed, and 0 and 100 go beyond its slowest and fastest
+/// catalog options; see [`crate::scene_param::value_for_percent`].
 pub struct EffectSpeedNumber {
     number: NumberConfig,
     device_id: String,
@@ -31,20 +33,15 @@ impl EffectSpeedNumber {
             }
         };
 
-        // Determine the maximum number of speed options across
-        // all of the speed-capable scenes for this device
-        let mut max_options = 0usize;
-        for category in categories {
-            for scene in category.scenes {
-                for effect in scene.light_effects {
-                    if let Some(speed) = effect.speed_config() {
-                        max_options = max_options.max(speed.option_count());
-                    }
-                }
-            }
-        }
-
-        if max_options < 2 {
+        let supports_speed = categories.iter().any(|category| {
+            category.scenes.iter().any(|scene| {
+                scene
+                    .light_effects
+                    .iter()
+                    .any(|effect| effect.speed_config().is_some())
+            })
+        });
+        if !supports_speed {
             return Ok(None);
         }
 
@@ -65,10 +62,10 @@ impl EffectSpeedNumber {
                 },
                 command_topic: format!("gv2mqtt/effect-speed/{id}/command"),
                 state_topic: Some(format!("gv2mqtt/effect-speed/{id}/state")),
-                min: Some(1.),
-                max: Some(max_options as f32),
+                min: Some(0.),
+                max: Some(100.),
                 step: 1.,
-                unit_of_measurement: None,
+                unit_of_measurement: Some("%"),
             },
             device_id: device.id.to_string(),
             state: state.clone(),
@@ -102,27 +99,20 @@ impl EntityInstance for EffectSpeedNumber {
         };
         let scene_name = scene_name.to_string();
 
-        let max = self.number.max.expect("effect speed has a max") as usize;
-
-        // Prefer the speed that we last set, falling back to the
-        // default speed for the active scene
-        let speed_index = match device.active_scene_speed() {
-            Some(index) => Some(index),
+        // Prefer the speed that we last set; otherwise a scene that
+        // supports speed control is running at its default, which is 50%
+        let percent = match device.active_scene_speed() {
+            Some(percent) => Some(percent),
             None => match crate::undoc_api::find_scene_for_device(&device.sku, &scene_name).await {
-                Ok(Some(scene)) => scene.speed.map(|speed| speed.default_index()),
+                Ok(Some(scene)) if scene.speed.is_some() => Some(50),
                 _ => None,
             },
         };
 
-        match speed_index {
-            Some(index) => {
-                let value = index.min(max - 1) + 1;
-                client.publish(state_topic, value.to_string()).await?;
-            }
-            None => {
-                // The active scene doesn't support speed control
-                client.publish(state_topic, "").await?;
-            }
+        match percent {
+            Some(percent) => client.publish(state_topic, percent.to_string()).await?,
+            // The active scene doesn't support speed control
+            None => client.publish(state_topic, "").await?,
         }
 
         Ok(())
@@ -131,18 +121,18 @@ impl EntityInstance for EffectSpeedNumber {
 
 /// HASS is requesting that the speed of the active scene be changed
 pub async fn mqtt_effect_speed_command(
-    Payload(value): Payload<i64>,
+    Payload(value): Payload<f64>,
     Params(IdParameter { id }): Params<IdParameter>,
     State(state): State<StateHandle>,
 ) -> anyhow::Result<()> {
-    log::info!("Effect speed for {id}: {value}");
-    if value < 1 {
+    log::info!("Effect speed for {id}: {value}%");
+    if !(0.0..=100.0).contains(&value) {
         anyhow::bail!("invalid speed {value} for {id}");
     }
     let device = state.resolve_device_for_control(&id).await?;
 
     state
-        .device_set_scene_speed(&device, (value - 1) as usize)
+        .device_set_scene_speed(&device, value.round() as u8)
         .await
         .context("mqtt_effect_speed_command")?;
 

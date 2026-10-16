@@ -92,6 +92,7 @@ impl SceneSpeedConfig {
 
     /// The default speed index for the scene; derived from the
     /// first page that reports a default.
+    #[cfg(test)]
     pub fn default_index(&self) -> usize {
         self.pages.first().map(|p| p.default_index).unwrap_or(0)
     }
@@ -256,6 +257,57 @@ fn parse_layers(data: &[u8]) -> anyhow::Result<Vec<(usize, LayerSpeedOffsets)>> 
     Ok(layers)
 }
 
+/// A requested speed for a scene
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SceneSpeed {
+    /// One of the discrete options from Govee's catalog (0-based)
+    Option(usize),
+    /// A percentage (0-100) where 50 is the scene's default speed;
+    /// see [`value_for_percent`]
+    Percent(u8),
+}
+
+impl SceneSpeed {
+    pub fn apply(&self, scence_param: &str, config: &SceneSpeedConfig) -> anyhow::Result<String> {
+        match *self {
+            Self::Option(index) => apply_scene_speed(scence_param, config, index),
+            Self::Percent(percent) => apply_scene_speed_percent(scence_param, config, percent),
+        }
+    }
+}
+
+/// The catalog's speed options rarely span the full range that the
+/// device accepts; percentages extend past the slowest and fastest
+/// options by the width of that span, but by at least this much.
+const MIN_PERCENT_EXTENSION: i32 = 64;
+
+/// Map a speed percentage onto a byte value for a single speed field.
+///
+/// 50% is the scene's default option. 0% and 100% extend below the
+/// slowest and above the fastest catalog options respectively (higher
+/// values animate faster), clamped to the valid 0-255 byte range.
+/// Values in between are linearly interpolated.
+pub fn value_for_percent(values: &[u8], default_index: usize, percent: u8) -> u8 {
+    let Some(&default) = values.get(default_index.min(values.len().saturating_sub(1))) else {
+        return 0;
+    };
+    let lo = *values.iter().min().expect("non-empty") as i32;
+    let hi = *values.iter().max().expect("non-empty") as i32;
+    let default = default as i32;
+    let margin = (hi - lo).max(MIN_PERCENT_EXTENSION);
+    let slowest = (lo - margin).max(0);
+    let fastest = (hi + margin).min(255);
+
+    let percent = percent.min(100) as i32;
+    let (from, to, step) = if percent <= 50 {
+        (slowest, default, percent)
+    } else {
+        (default, fastest, percent - 50)
+    };
+    // round to the nearest integer
+    (from + ((to - from) * step * 2 + 50).div_euclid(100)) as u8
+}
+
 /// Rewrites the speed fields in the supplied `scence_param` (base64
 /// encoded) so that they correspond to the supplied speed option
 /// index, returning the updated base64 encoded parameter.
@@ -266,6 +318,31 @@ pub fn apply_scene_speed(
     scence_param: &str,
     config: &SceneSpeedConfig,
     index: usize,
+) -> anyhow::Result<String> {
+    apply_scene_speed_with(scence_param, config, |values, _default_index| {
+        values[index.min(values.len() - 1)]
+    })
+}
+
+/// Like [`apply_scene_speed`], but sets each speed field to the value
+/// computed by [`value_for_percent`]
+pub fn apply_scene_speed_percent(
+    scence_param: &str,
+    config: &SceneSpeedConfig,
+    percent: u8,
+) -> anyhow::Result<String> {
+    apply_scene_speed_with(scence_param, config, |values, default_index| {
+        value_for_percent(values, default_index, percent)
+    })
+}
+
+/// Rewrites every speed field listed in `config`, using `pick` to
+/// choose a value from that field's catalog options and the page's
+/// default option index.
+fn apply_scene_speed_with(
+    scence_param: &str,
+    config: &SceneSpeedConfig,
+    pick: impl Fn(&[u8], usize) -> u8,
 ) -> anyhow::Result<String> {
     let mut data = data_encoding::BASE64
         .decode(scence_param.as_bytes())
@@ -280,15 +357,14 @@ pub fn apply_scene_speed(
 
         if !page.move_in.is_empty() {
             data[body_start + offsets.selected_movement_speed] =
-                page.move_in[index.min(page.move_in.len() - 1)];
+                pick(&page.move_in, page.default_index);
         }
         if !page.move_all.is_empty() {
             data[body_start + offsets.overall_movement_speed] =
-                page.move_all[index.min(page.move_all.len() - 1)];
+                pick(&page.move_all, page.default_index);
         }
         if !page.colour_speed.is_empty() {
-            data[body_start + offsets.colour_speed] =
-                page.colour_speed[index.min(page.colour_speed.len() - 1)];
+            data[body_start + offsets.colour_speed] = pick(&page.colour_speed, page.default_index);
         }
         for block in &page.brightness {
             if block.values.is_empty() {
@@ -303,7 +379,7 @@ pub fn apply_scene_speed(
                         block.block, page.page
                     )
                 })?;
-            data[body_start + offset] = block.values[index.min(block.values.len() - 1)];
+            data[body_start + offset] = pick(&block.values, page.default_index);
         }
     }
 
@@ -520,5 +596,84 @@ mod tests {
             }],
         };
         assert!(apply_scene_speed(RIVER_PARAM, &bad_config, 0).is_err());
+    }
+
+    #[test]
+    fn test_value_for_percent_anchors() {
+        // H619Z Moonlight brightness: the default is the fastest option
+        let moonlight = [20, 86, 100];
+        assert_eq!(value_for_percent(&moonlight, 2, 50), 100);
+        assert_eq!(value_for_percent(&moonlight, 2, 0), 0);
+        assert_eq!(value_for_percent(&moonlight, 2, 25), 50);
+        assert_eq!(value_for_percent(&moonlight, 2, 100), 180);
+
+        // H619Z Party brightness: options 1 and 2 are identical, so the
+        // catalog has nothing slower than the default
+        let party = [20, 20, 204];
+        assert_eq!(value_for_percent(&party, 1, 0), 0);
+        assert_eq!(value_for_percent(&party, 1, 50), 20);
+        assert_eq!(value_for_percent(&party, 1, 100), 255);
+
+        // A narrow span still extends by at least MIN_PERCENT_EXTENSION
+        let warm = [250, 252, 255];
+        assert_eq!(value_for_percent(&warm, 0, 0), 186);
+        assert_eq!(value_for_percent(&warm, 0, 50), 250);
+        assert_eq!(value_for_percent(&warm, 0, 100), 255);
+    }
+
+    #[test]
+    fn test_value_for_percent_edge_cases() {
+        // Non-monotonic catalog values use the min/max for the range
+        let flower_field = [204, 201, 207];
+        assert_eq!(value_for_percent(&flower_field, 1, 50), 201);
+        assert_eq!(value_for_percent(&flower_field, 1, 0), 137);
+
+        // Out of range inputs are clamped
+        assert_eq!(value_for_percent(&[20, 86, 100], 2, 200), 180);
+        assert_eq!(value_for_percent(&[20, 86, 100], 9, 50), 100);
+
+        // Nothing to pick from
+        assert_eq!(value_for_percent(&[], 0, 50), 0);
+
+        // Every percentage is monotonic non-decreasing
+        let mut last = 0;
+        for percent in 0..=100 {
+            let value = value_for_percent(&[183, 214, 214], 2, percent);
+            assert!(value >= last, "{percent}% went backwards");
+            last = value;
+        }
+    }
+
+    #[test]
+    fn test_apply_speed_percent_river() {
+        let speed_info: JsonValue = serde_json::from_str(RIVER_SPEED_INFO).unwrap();
+        let config = scene_speed_config(&speed_info).unwrap();
+        let layers = parse_layers(&decode(RIVER_PARAM)).unwrap();
+        let (body_start, offsets) = &layers[0];
+        let speed_at = |param: String| decode(&param)[body_start + offsets.selected_movement_speed];
+
+        // 50% is the same as the catalog's default option
+        assert_eq!(
+            apply_scene_speed_percent(RIVER_PARAM, &config, 50).unwrap(),
+            apply_scene_speed(RIVER_PARAM, &config, config.default_index()).unwrap()
+        );
+        assert_eq!(
+            speed_at(apply_scene_speed_percent(RIVER_PARAM, &config, 0).unwrap()),
+            178
+        );
+        assert_eq!(
+            speed_at(apply_scene_speed_percent(RIVER_PARAM, &config, 100).unwrap()),
+            255
+        );
+
+        // SceneSpeed dispatches to the matching function
+        assert_eq!(
+            SceneSpeed::Percent(0).apply(RIVER_PARAM, &config).unwrap(),
+            apply_scene_speed_percent(RIVER_PARAM, &config, 0).unwrap()
+        );
+        assert_eq!(
+            SceneSpeed::Option(1).apply(RIVER_PARAM, &config).unwrap(),
+            apply_scene_speed(RIVER_PARAM, &config, 1).unwrap()
+        );
     }
 }

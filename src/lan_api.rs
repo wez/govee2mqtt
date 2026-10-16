@@ -262,19 +262,17 @@ impl LanDevice {
         self.set_scene_by_name_with_speed(scene_name, None).await
     }
 
-    /// Activate the named scene, optionally applying the supplied
-    /// speed option index
+    /// Activate the named scene, optionally applying the supplied speed
     pub async fn set_scene_by_name_with_speed(
         &self,
         scene_name: &str,
-        speed_index: Option<usize>,
+        speed: Option<crate::scene_param::SceneSpeed>,
     ) -> anyhow::Result<()> {
-        let encoded =
-            crate::undoc_api::scene_commands_for_device(&self.sku, scene_name, speed_index)
-                .await?
-                .ok_or_else(|| {
-                    anyhow::anyhow!("unable to set scene {scene_name} for {}", self.device)
-                })?;
+        let encoded = crate::undoc_api::scene_commands_for_device(&self.sku, scene_name, speed)
+            .await?
+            .ok_or_else(|| {
+                anyhow::anyhow!("unable to set scene {scene_name} for {}", self.device)
+            })?;
 
         log::info!("sending scene packet {encoded:x?} for {scene_name}");
         self.send_real(encoded).await

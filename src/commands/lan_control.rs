@@ -1,5 +1,6 @@
 use crate::ble::{Base64HexBytes, SetSceneCode};
 use crate::lan_api::{Client, DiscoOptions};
+use crate::scene_param::SceneSpeed;
 use crate::undoc_api::GoveeUndocumentedApi;
 use clap_num::maybe_hex;
 use std::collections::BTreeMap;
@@ -46,8 +47,14 @@ enum SubCommand {
         scene: Option<String>,
 
         /// Speed option (1-based) to apply when activating the scene
-        #[arg(long, value_name = "INDEX")]
+        #[arg(long, value_name = "INDEX", conflicts_with = "speed_percent")]
         speed: Option<usize>,
+
+        /// Speed percentage (0-100) to apply when activating the scene.
+        /// 50 is the scene's default speed; 0 and 100 go beyond its
+        /// slowest and fastest catalog options.
+        #[arg(long, value_name = "PERCENT", value_parser = clap::value_parser!(u8).range(0..=100))]
+        speed_percent: Option<u8>,
     },
 }
 
@@ -76,7 +83,12 @@ impl LanControlCommand {
                     .send_color_rgb(crate::lan_api::DeviceColor { r, g, b })
                     .await?;
             }
-            SubCommand::Scene { list, scene, speed } => {
+            SubCommand::Scene {
+                list,
+                scene,
+                speed,
+                speed_percent,
+            } => {
                 let mut scene_code_by_name = BTreeMap::new();
                 for category in GoveeUndocumentedApi::get_scenes_for_device(&device.sku).await? {
                     for scene in category.scenes {
@@ -97,15 +109,18 @@ impl LanControlCommand {
                     }
                 } else {
                     let scene_name = scene.clone().expect("scene if not list");
+                    let speed = match (speed, speed_percent) {
+                        (Some(0), _) => anyhow::bail!("speed must be 1 or greater"),
+                        (Some(speed), _) => Some(SceneSpeed::Option(speed - 1)),
+                        (None, Some(percent)) => Some(SceneSpeed::Percent(*percent)),
+                        (None, None) => None,
+                    };
                     if let Some(speed) = speed {
-                        // Send the scene with the requested speed option applied
-                        if *speed < 1 {
-                            anyhow::bail!("speed must be 1 or greater");
-                        }
+                        // Send the scene with the requested speed applied
                         let encoded = crate::undoc_api::scene_commands_for_device(
                             &device.sku,
                             &scene_name,
-                            Some(speed - 1),
+                            Some(speed),
                         )
                         .await?
                         .ok_or_else(|| anyhow::anyhow!("scene {scene_name} not found"))?;
