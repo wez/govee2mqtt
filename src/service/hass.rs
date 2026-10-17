@@ -8,6 +8,7 @@ use crate::lan_api::DeviceColor;
 use crate::opt_env_var;
 use crate::platform_api::{from_json, DeviceType};
 use crate::service::device::Device as ServiceDevice;
+use crate::service::fade;
 use crate::service::state::StateHandle;
 use crate::temperature::TemperatureScale;
 use anyhow::Context;
@@ -257,6 +258,26 @@ struct HassLightCommand {
     color: Option<DeviceColor>,
     effect: Option<String>,
     brightness: Option<u8>,
+    /// Transition time in seconds, as sent by the Home Assistant light
+    /// schema (`light.turn_on`'s `transition` parameter). Emulated
+    /// bridge-side as a paced software fade of brightness; see
+    /// `service::fade`.
+    transition: Option<f32>,
+}
+
+impl HassLightCommand {
+    /// The fade duration requested by this command, if any. `None` for
+    /// absent/zero/non-finite transitions, which behave exactly as
+    /// before this field existed.
+    fn fade_duration(&self) -> Option<std::time::Duration> {
+        self.transition
+            .filter(|secs| secs.is_finite() && *secs > 0.0)
+            .map(|secs| {
+                std::time::Duration::from_secs_f64(
+                    (secs as f64).min(fade::MAX_FADE_DURATION.as_secs_f64()),
+                )
+            })
+    }
 }
 
 /// HASS is sending a command to a light
@@ -265,10 +286,37 @@ async fn mqtt_light_command(
     Params(IdParameter { id }): Params<IdParameter>,
     State(state): State<StateHandle>,
 ) -> anyhow::Result<()> {
-    let device = state.resolve_device_for_control(&id).await?;
-
+    // Parse the command *before* taking the control permit: the payload
+    // decides whether this command takes the fade path, and the fade path
+    // must be the one entry permit that schedules no reconciling poll of
+    // its own (the fade's runner's final step owns the single poll a fade
+    // costs; see `start_fade`).
     let command: HassLightCommand = serde_json::from_str(&payload)?;
+    let takes_fade = command.state != "OFF"
+        && command.brightness.is_some()
+        && command.effect.is_none()
+        && command.fade_duration().is_some();
+
+    // Capture the value of a live fade *before* resolving: acquiring the
+    // control permit supersedes (cancels) the fade — including a fade
+    // that just finished cleanly but whose reconciling poll has not
+    // landed, whose registration is kept precisely so a retarget in that
+    // window continues from what was emitted rather than from stale
+    // reported state. The fades registry is keyed by the canonical
+    // device id; the router's label is often not that (MQTT command
+    // topics use the colon-stripped form), so resolve first.
+    let fading = match state.resolve_device(&id).await {
+        Some(device) => state.live_fade_value(&device.id).await,
+        None => None,
+    };
+    let mut device = state
+        .resolve_device_for_control_inner(&id, !takes_fade, true)
+        .await?;
+
     log::info!("Command for {device}: {payload}");
+
+    // (Any in-progress fade was already superseded by taking the control
+    // permit above: latest command wins, for every entry point.)
 
     let is_light = device.device_type() == DeviceType::Light;
 
@@ -288,10 +336,38 @@ async fn mqtt_light_command(
         let mut power_on = true;
 
         if let Some(brightness) = command.brightness {
-            state
-                .device_set_brightness(&device, brightness)
-                .await
-                .context("mqtt_light_command: state.device_set_brightness")?;
+            match command.fade_duration() {
+                // A scene/effect command wins over a fade: scenes
+                // subsume brightness control on these devices.
+                Some(duration) if command.effect.is_none() => {
+                    match state
+                        .start_fade(&device, brightness, duration, fading)
+                        .await
+                    {
+                        // A runner took ownership: it carries this
+                        // command's single reconciling poll.
+                        Ok(false) => {}
+                        // Collapsed to a single immediate set: it owes
+                        // the same reconciling poll any plain brightness
+                        // command gets (the entry permit left it unarmed
+                        // for exactly this case).
+                        Ok(true) => device.arm_reconciling_poll(),
+                        // The unknown-start fallback set was attempted
+                        // and failed: like any plain control that failed
+                        // to send, the command still leaves one poll.
+                        Err(err) => {
+                            device.arm_reconciling_poll();
+                            return Err(err).context("mqtt_light_command: state.start_fade");
+                        }
+                    }
+                }
+                _ => {
+                    state
+                        .device_set_brightness(&device, brightness)
+                        .await
+                        .context("mqtt_light_command: state.device_set_brightness")?;
+                }
+            }
             power_on = false;
         }
 
@@ -715,6 +791,46 @@ mod tests {
     use super::*;
 
     #[test]
+    fn light_command_transition_parses_per_ha_light_schema() {
+        // HA's light schema sends `transition` in seconds (float).
+        let cmd: HassLightCommand =
+            serde_json::from_str(r#"{"state":"ON","brightness":128,"transition":4.5}"#).unwrap();
+        assert_eq!(cmd.brightness, Some(128));
+        assert_eq!(
+            cmd.fade_duration(),
+            Some(std::time::Duration::from_millis(4500))
+        );
+
+        // Absent, null, zero and negative transitions all behave exactly
+        // as they did before this field existed: no fade.
+        for payload in [
+            r#"{"state":"ON","brightness":128}"#,
+            r#"{"state":"ON","brightness":128,"transition":null}"#,
+            r#"{"state":"ON","brightness":128,"transition":0}"#,
+            r#"{"state":"ON","brightness":128,"transition":-1}"#,
+        ] {
+            let cmd: HassLightCommand = serde_json::from_str(payload).unwrap();
+            assert_eq!(cmd.fade_duration(), None, "payload: {payload}");
+        }
+    }
+
+    #[test]
+    fn light_command_transition_is_clamped_to_max_fade_duration() {
+        let cmd: HassLightCommand =
+            serde_json::from_str(r#"{"state":"ON","brightness":1,"transition":86400}"#).unwrap();
+        assert_eq!(cmd.fade_duration(), Some(fade::MAX_FADE_DURATION));
+    }
+
+    #[test]
+    fn segment_commands_still_parse_with_transition_present() {
+        // Segment commands share HassLightCommand; a transition on the
+        // segment path must not break deserialization.
+        let cmd: HassLightCommand =
+            serde_json::from_str(r#"{"state":"ON","brightness":40,"transition":2}"#).unwrap();
+        assert_eq!(cmd.brightness, Some(40));
+    }
+
+    #[test]
     fn test_camel_case_to_space_separated() {
         assert_eq!(camel_case_to_space_separated("powerSwitch"), "Power Switch");
         assert_eq!(
@@ -739,5 +855,436 @@ mod tests {
     #[test]
     fn test_camel_case_emoji() {
         assert_eq!(camel_case_to_space_separated("🔥lightMode"), "🔥light Mode");
+    }
+}
+
+/// Fade lifecycle tests against the real runtime: the real MQTT command
+/// handler, the real `start_fade`/`run_fade` runner, the real control
+/// semaphore, and the real reconciling-poll path. Only the leaf device
+/// I/O (`State::device_set_brightness`) and the poll itself are replaced
+/// by `state::test_sink`, so every interaction between fade steps and
+/// competing commands exercises production code.
+#[cfg(test)]
+mod fade_runtime_tests {
+    use super::*;
+    use crate::lan_api::DeviceStatus as LanDeviceStatus;
+    use crate::service::state::{test_sink, State as SvcState};
+    use std::time::Instant;
+
+    const SKU: &str = "H6008";
+
+    fn device_id(n: u8) -> String {
+        format!("AA:BB:CC:DD:EE:FF:00:{n:02X}")
+    }
+
+    /// Register a platform-controlled light whose reported state is
+    /// (on, brightness) and arm the simulated device for it. Each test
+    /// uses its own device id, so they can run in parallel.
+    async fn setup(n: u8, on: bool, brightness: u8, delays: &[u64]) -> (String, StateHandle) {
+        let id = device_id(n);
+        let state: StateHandle = Arc::new(SvcState::default());
+        state
+            .device_mut(SKU, &id)
+            .await
+            .set_iot_device_status(LanDeviceStatus {
+                on,
+                brightness,
+                color: DeviceColor::default(),
+                color_temperature_kelvin: 0,
+            });
+        test_sink::arm(&id, delays);
+        (id, state)
+    }
+
+    async fn cmd(state: &StateHandle, id: &str, payload: &str) {
+        mqtt_light_command(
+            Payload(payload.to_string()),
+            Params(IdParameter { id: id.to_string() }),
+            State(state.clone()),
+        )
+        .await
+        .unwrap();
+    }
+
+    /// A slow first step must not let the fade continue after a newer
+    /// command overtook it: the newer command takes the permit the fade's
+    /// in-flight step is holding, and the runner must observe its own
+    /// cancellation *under that permit* before emitting the next step.
+    #[tokio::test]
+    async fn latest_command_wins_while_a_step_is_in_flight() {
+        let (id, state) = setup(0x01, true, 0, &[1500]).await;
+        let t0 = Instant::now();
+        cmd(
+            &state,
+            &id,
+            r#"{"state":"ON","brightness":100,"transition":10}"#,
+        )
+        .await;
+        tokio::time::sleep(Duration::from_millis(1200)).await;
+        // Retarget to 5 while step 1 is still in flight (held the permit
+        // for 1.5s): the queued fade steps must never be sent afterwards.
+        cmd(&state, &id, r#"{"state":"ON","brightness":5}"#).await;
+        tokio::time::sleep(Duration::from_millis(2500)).await;
+        let log = test_sink::log_since(&id, t0);
+        assert_eq!(
+            log.iter().map(|(_, b)| *b).collect::<Vec<_>>(),
+            vec![10, 5],
+            "stale fade traffic after the newer command: {log:?}"
+        );
+    }
+
+    /// The same race on a multi-threaded runtime (production flavor).
+    #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+    async fn latest_command_wins_while_a_step_is_in_flight_multithread() {
+        let (id, state) = setup(0x02, true, 0, &[1500]).await;
+        cmd(
+            &state,
+            &id,
+            r#"{"state":"ON","brightness":100,"transition":10}"#,
+        )
+        .await;
+        tokio::time::sleep(Duration::from_millis(1200)).await;
+        cmd(&state, &id, r#"{"state":"ON","brightness":5}"#).await;
+        tokio::time::sleep(Duration::from_millis(2500)).await;
+        assert_eq!(
+            test_sink::sent(&id),
+            vec![10, 5],
+            "stale fade traffic after the newer command"
+        );
+    }
+
+    /// A control arriving through a different entry point — this is the
+    /// verbatim body the HTTP API `/api/device/{id}/brightness/{level}`
+    /// path routes through, including its own `resolve_device_for_control`
+    /// — supersedes the fade exactly like an MQTT command would.
+    #[tokio::test]
+    async fn brightness_via_other_control_paths_supersedes_fade() {
+        let (id, state) = setup(0x03, true, 0, &[]).await;
+        cmd(
+            &state,
+            &id,
+            r#"{"state":"ON","brightness":100,"transition":10}"#,
+        )
+        .await;
+        tokio::time::sleep(Duration::from_millis(1500)).await;
+        {
+            let device = state.resolve_device_for_control(&id).await.unwrap();
+            state.device_set_brightness(&device, 5).await.unwrap();
+        }
+        tokio::time::sleep(Duration::from_millis(2500)).await;
+        assert_eq!(
+            test_sink::sent(&id),
+            vec![10, 5],
+            "fade kept writing after a control through the shared chokepoint"
+        );
+    }
+
+    /// A fade of a light that is OFF must fade up from dark, not from
+    /// the brightness the light had when it was last switched off (the
+    /// #376 complaint: "go ON to the last value and then transition").
+    #[tokio::test]
+    async fn fade_of_off_light_starts_from_zero() {
+        let (id, state) = setup(0x04, false, 100, &[]).await;
+        cmd(
+            &state,
+            &id,
+            r#"{"state":"ON","brightness":30,"transition":7}"#,
+        )
+        .await;
+        tokio::time::sleep(Duration::from_millis(8500)).await;
+        assert_eq!(
+            test_sink::sent(&id),
+            vec![4, 9, 13, 17, 21, 26, 30],
+            "fade from off did not ramp up from zero"
+        );
+    }
+
+    /// A fade costs exactly one reconciling poll (scheduled for its final
+    /// step) and leaves no stale registration behind.
+    #[tokio::test]
+    async fn fade_produces_exactly_one_reconciling_poll() {
+        let (id, state) = setup(0x05, true, 0, &[]).await;
+        cmd(
+            &state,
+            &id,
+            r#"{"state":"ON","brightness":90,"transition":9}"#,
+        )
+        .await;
+        tokio::time::sleep(Duration::from_millis(16_500)).await;
+        assert_eq!(test_sink::polls(&id), 1, "unexpected reconciling polls");
+        assert!(
+            !state.has_registered_fade(&id).await,
+            "fade not de-registered"
+        );
+        assert!(!state.fade_active(&id).await, "fade still considered live");
+        assert_eq!(test_sink::sent(&id).last(), Some(&90));
+    }
+
+    /// A failing step abandons the ramp but still attempts the final
+    /// target once: the device must not be left mid-ramp.
+    #[tokio::test]
+    async fn failed_step_still_attempts_final_target() {
+        let (id, state) = setup(0x06, true, 0, &[]).await;
+        test_sink::arm_fails(&id, 1);
+        cmd(
+            &state,
+            &id,
+            r#"{"state":"ON","brightness":100,"transition":3}"#,
+        )
+        .await;
+        tokio::time::sleep(Duration::from_millis(3000)).await;
+        assert_eq!(
+            test_sink::sent(&id),
+            vec![33, 100],
+            "failed fade did not recover with the final target"
+        );
+        assert!(
+            !state.has_registered_fade(&id).await,
+            "fade not de-registered"
+        );
+    }
+
+    /// A failed command does not change the poll budget: a step that
+    /// fails mid-ramp, followed by a recovery attempt that also fails,
+    /// still leaves exactly one reconciling poll — carried by the
+    /// recovery coordinator, like any plain control that failed to
+    /// send.
+    #[tokio::test]
+    async fn failed_step_and_failed_recovery_leave_exactly_one_reconciling_poll() {
+        let (id, state) = setup(0x0E, true, 0, &[]).await;
+        test_sink::arm_fails(&id, 2); // first step + recovery attempt (NACKed after recording)
+        cmd(
+            &state,
+            &id,
+            r#"{"state":"ON","brightness":100,"transition":3}"#,
+        )
+        .await;
+        // recovery drop + 5 s poll delay + load headroom
+        tokio::time::sleep(Duration::from_millis(8000)).await;
+        assert_eq!(
+            test_sink::sent(&id),
+            vec![33, 100],
+            "expected exactly one stepped attempt plus the recovery attempt, both rejected"
+        );
+        assert_eq!(
+            test_sink::polls(&id),
+            1,
+            "fully-failed fade cost more than one reconciling poll"
+        );
+        assert!(
+            !state.has_registered_fade(&id).await,
+            "failed fade not de-registered"
+        );
+    }
+
+    /// The same budget for the failure shape that a review round vetoed
+    /// on an earlier head: when only the final step fails, its own
+    /// coordinator must not fire a poll; the recovery retry is the
+    /// command's last send attempt and fires the single one — never
+    /// two.
+    #[tokio::test]
+    async fn failed_final_step_costs_exactly_one_reconciling_poll() {
+        let (id, state) = setup(0x0F, true, 0, &[]).await;
+        test_sink::arm_fail_at(&id, 3); // only the final step's send is rejected; recovery succeeds
+        cmd(
+            &state,
+            &id,
+            r#"{"state":"ON","brightness":100,"transition":3}"#,
+        )
+        .await;
+        // failed final step at ~3 s, recovery drop, + 5 s poll delay + headroom
+        tokio::time::sleep(Duration::from_millis(10500)).await;
+        assert_eq!(
+            test_sink::sent(&id),
+            vec![33, 67, 100, 100],
+            "expected the three ramp steps (the last rejected) plus the recovery resend"
+        );
+        assert_eq!(
+            test_sink::polls(&id),
+            1,
+            "failed final step cost two reconciling polls"
+        );
+    }
+
+    /// Retargeting a live fade continues from the last value the fade
+    /// actually emitted (here 50), not from the device's reported state
+    /// (still 0 for a platform-only light, since sends don't update it)
+    /// — so the ramp never jumps backwards when, e.g., Adaptive Lighting
+    /// re-applies mid-fade.
+    #[tokio::test]
+    async fn retargeted_fade_continues_from_the_live_ramp() {
+        let (id, state) = setup(0x07, true, 0, &[]).await;
+        cmd(
+            &state,
+            &id,
+            r#"{"state":"ON","brightness":100,"transition":10}"#,
+        )
+        .await;
+        // By t=5.4s the fade has emitted 10,20,30,40,50.
+        tokio::time::sleep(Duration::from_millis(5400)).await;
+        cmd(
+            &state,
+            &id,
+            r#"{"state":"ON","brightness":60,"transition":4}"#,
+        )
+        .await;
+        tokio::time::sleep(Duration::from_millis(5000)).await;
+        assert_eq!(
+            test_sink::sent(&id),
+            vec![10, 20, 30, 40, 50, 53, 55, 58, 60],
+            "retarget restarted from stale state instead of continuing the ramp"
+        );
+    }
+
+    /// A fade that has just COMPLETED must not retarget from stale
+    /// reported state: the finished registration keeps continuity until
+    /// its reconciling poll lands. Without that, an HA slider re-move
+    /// (default `transition: 2`) inside the 5 s pre-poll window flashes
+    /// the light down toward the stale pre-fade value before ramping —
+    /// e.g. after a 0->100 fade, `{brightness:50, transition:3}` first
+    /// sent 17. The continuation from the emitted 100 must instead ramp
+    /// 83, 67, 50.
+    #[tokio::test]
+    async fn retarget_after_a_completed_fade_continues_from_the_emitted_value() {
+        let (id, state) = setup(0x08, true, 0, &[]).await;
+        cmd(
+            &state,
+            &id,
+            r#"{"state":"ON","brightness":100,"transition":3}"#,
+        )
+        .await;
+        // Fade completed at ~3 s (emitted 33,67,100). Reported state is
+        // still the stale pre-fade 0, and the reconciling poll has not
+        // landed (it arrives ~5 s after the final send).
+        tokio::time::sleep(Duration::from_millis(3800)).await;
+        assert!(
+            state.has_registered_fade(&id).await,
+            "a finished fade must keep its registration until its reconciling poll retires it"
+        );
+        cmd(
+            &state,
+            &id,
+            r#"{"state":"ON","brightness":50,"transition":3}"#,
+        )
+        .await;
+        tokio::time::sleep(Duration::from_millis(3600)).await;
+        assert_eq!(
+            test_sink::sent(&id),
+            vec![33, 67, 100, 83, 67, 50],
+            "post-completion retarget flashed down toward stale state instead of continuing from the emitted 100"
+        );
+    }
+
+    /// CX-2 regression (production spelling): MQTT command topics carry
+    /// the colon-stripped id, so the pre-permit continuity lookup must
+    /// resolve the label to the canonical device id before consulting
+    /// the fade registry — a lookup keyed by the raw label misses for
+    /// every id containing a colon (every LAN-capable light), silently
+    /// disabling the whole continuity feature on the production path.
+    #[tokio::test]
+    async fn post_completion_retarget_is_continuous_through_the_production_topic_spelling() {
+        let (id, state) = setup(0x0C, true, 0, &[]).await;
+        let topic_id = id.replace(':', "");
+        cmd(
+            &state,
+            &id,
+            r#"{"state":"ON","brightness":100,"transition":3}"#,
+        )
+        .await;
+        tokio::time::sleep(Duration::from_millis(3800)).await;
+        cmd(
+            &state,
+            &topic_id,
+            r#"{"state":"ON","brightness":50,"transition":3}"#,
+        )
+        .await;
+        tokio::time::sleep(Duration::from_millis(3600)).await;
+        assert_eq!(
+            test_sink::sent(&id),
+            vec![33, 67, 100, 83, 67, 50],
+            "continuity was inert when the retarget arrived with the colon-stripped id spelling"
+        );
+    }
+
+    /// Same production-spelling guarantee while a fade is still running:
+    /// the mid-ramp value (50), not the stale reported state (0), seeds
+    /// the replacement ramp.
+    #[tokio::test]
+    async fn mid_fade_retarget_is_continuous_through_the_production_topic_spelling() {
+        let (id, state) = setup(0x0D, true, 0, &[]).await;
+        let topic_id = id.replace(':', "");
+        cmd(
+            &state,
+            &id,
+            r#"{"state":"ON","brightness":100,"transition":10}"#,
+        )
+        .await;
+        tokio::time::sleep(Duration::from_millis(5400)).await;
+        cmd(
+            &state,
+            &topic_id,
+            r#"{"state":"ON","brightness":60,"transition":4}"#,
+        )
+        .await;
+        tokio::time::sleep(Duration::from_millis(5000)).await;
+        assert_eq!(
+            test_sink::sent(&id),
+            vec![10, 20, 30, 40, 50, 53, 55, 58, 60],
+            "continuity was inert for a mid-fade retarget with the production id spelling"
+        );
+    }
+
+    /// CE-2 regression: a SHORT fade — HA's default slider transition is
+    /// 2 s — costs the same exactly one reconciling poll a long fade
+    /// does: the fade command's entry permit schedules no poll of its
+    /// own at any length. (The pre-fix shape cost two polls for any fade
+    /// under the 5 s poll delay: the entry poll landed after the fade
+    /// was already gone and polled, then the final-step poll polled.)
+    #[tokio::test]
+    async fn short_fade_still_produces_exactly_one_reconciling_poll() {
+        let (id, state) = setup(0x09, true, 0, &[]).await;
+        cmd(
+            &state,
+            &id,
+            r#"{"state":"ON","brightness":100,"transition":2}"#,
+        )
+        .await;
+        // Fade completes at ~2 s; its single poll lands ~5 s later; the
+        // finished registration must be retired by that poll.
+        tokio::time::sleep(Duration::from_millis(8500)).await;
+        assert_eq!(
+            test_sink::polls(&id),
+            1,
+            "short fade cost more than one reconciling poll"
+        );
+        assert!(
+            !state.has_registered_fade(&id).await,
+            "finished fade not retired by its reconciling poll"
+        );
+        assert_eq!(test_sink::sent(&id).last(), Some(&100));
+    }
+
+    /// The claimed scene/effect precedence carries a regression test:
+    /// `transition` alongside an `effect` must produce a single
+    /// immediate brightness set — never a ramp. (The simulated device
+    /// has no scene capability, so the command errors at the scene step;
+    /// what matters is the brightness traffic emitted before that.)
+    #[tokio::test]
+    async fn effect_with_transition_sets_immediately_and_does_not_ramp() {
+        let (id, state) = setup(0x0A, true, 0, &[]).await;
+        let _ = mqtt_light_command(
+            Payload(
+                r#"{"state":"ON","brightness":40,"transition":3,"effect":"Sunset"}"#.to_string(),
+            ),
+            Params(IdParameter { id: id.clone() }),
+            State(state.clone()),
+        )
+        .await;
+        tokio::time::sleep(Duration::from_millis(3800)).await;
+        assert_eq!(
+            test_sink::sent(&id),
+            vec![40],
+            "transition+effect ramped instead of a single immediate set"
+        );
     }
 }

@@ -1,5 +1,6 @@
 pub mod coordinator;
 pub mod device;
+pub mod fade;
 pub mod hass;
 pub mod http;
 pub mod iot;

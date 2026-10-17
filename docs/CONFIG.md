@@ -66,3 +66,48 @@ You will also need to configure `govee2mqtt` to use the same broker:
 |`--mqtt-username`|`GOVEE_MQTT_USER`|`mqtt_username`|If your broker requires authentication, the username to use|
 |`--mqtt-password`|`GOVEE_MQTT_PASSWORD`|`mqtt_password`|If your broker requires authentication, the password to use|
 
+
+## Software fade (`transition` support)
+
+Home Assistant sends a `transition` (seconds) on `light.turn_on`. Govee's
+cloud control API has no fade primitive, so when a light command includes
+both `brightness` and a positive `transition`, `govee2mqtt` emulates the
+fade bridge-side: it computes a step schedule up front and issues
+intermediate brightness commands — the same ordinary control requests a
+plain brightness set uses, so no Govee-side support is required and no
+device capabilities change. There is no configuration for this feature.
+
+Behavior notes:
+
+  * Steps are spaced at least one second apart (Govee documents a
+    per-device control budget of 2 requests/second, burst 6; one step per
+    second leaves the rest for interleaved commands and polling). This
+    floor applies to LAN-capable devices too, so fades pace identically
+    regardless of transport. Durations clamp at 1 hour and fades at 1000
+    commands.
+  * Any newer command to the device — MQTT, HTTP API, scene, or another
+    fade — supersedes an in-progress fade at the moment it takes the
+    device control permit; no queued step of the superseded fade is sent
+    afterwards (latest command wins). A retargeted fade continues from
+    the brightness the interrupted fade had actually emitted. A fade
+    that just completed keeps that continuity until its reconciling poll
+    lands, so a re-applied command in that window (an HA brightness
+    slider re-move defaults to `transition: 2`) ramps from where the
+    light actually is, not from the pre-fade reported state.
+  * A fade of an off light starts from zero: it fades up from dark rather
+    than flashing on at whatever brightness preceded it being switched
+    off.
+  * Home Assistant learns the final value via the normal reconciling
+    poll: a fade costs exactly one reconciling poll (scheduled for its
+    final step — the same single poll a plain command costs, never a
+    second one) and publishes no intermediate states. If a fade step
+    fails, the remaining ramp is abandoned but the final target is
+    attempted once more, so a device is not left stranded mid-ramp.
+  * When many devices fade concurrently, a global floor of one fade step
+    per 100 ms across the whole bridge keeps Govee's account-wide budget
+    (12 requests/second, burst 80) intact; up to ~10 simultaneous fades
+    are unaffected, beyond that step timestamps slip slightly while each
+    fade still ends exactly at its target. A control command arriving
+    during such a pause waits for it (bounded: ~100 ms per currently
+    fading device) and then wins as always.
+

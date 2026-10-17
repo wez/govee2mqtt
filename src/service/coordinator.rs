@@ -22,8 +22,12 @@ pub struct Coordinator {
     // resources and/or trigger follow up work in other tasks.
     #[allow(unused)]
     permit: OwnedSemaphorePermit,
-    #[allow(unused)]
-    trigger_poll: OneShotSender<()>,
+    // Fired by `Drop` when `arm_poll` is set (taken, then consumed by
+    // the send), releasing the follow-up reconciling poll scheduled by
+    // `resolve_device_for_control`. An un-armed drop closes the channel
+    // instead and the parked poll task exits without polling.
+    trigger_poll: Option<OneShotSender<()>>,
+    arm_poll: bool,
 }
 
 impl Coordinator {
@@ -31,11 +35,35 @@ impl Coordinator {
         device: Device,
         permit: OwnedSemaphorePermit,
         trigger_poll: OneShotSender<()>,
+        arm_poll: bool,
     ) -> Self {
         Self {
             device,
             permit,
-            trigger_poll,
+            trigger_poll: Some(trigger_poll),
+            arm_poll,
+        }
+    }
+
+    /// Ask the Coordinator to trigger the reconciling state poll when it
+    /// is dropped, as if it had been taken with polling scheduled. Used
+    /// when a command takes the fade path (whose entry permit schedules
+    /// no poll of its own — the fade's final step owns the one
+    /// reconciling poll) but the fade collapses to a single immediate
+    /// brightness set, which owes the same poll any plain command gets.
+    pub fn arm_reconciling_poll(&mut self) {
+        self.arm_poll = true;
+    }
+}
+
+impl Drop for Coordinator {
+    fn drop(&mut self) {
+        if self.arm_poll {
+            // The value is irrelevant; the receiving task treats any
+            // message (as opposed to a closed channel) as "poll now".
+            if let Some(tx) = self.trigger_poll.take() {
+                let _ = tx.send(());
+            }
         }
     }
 }
