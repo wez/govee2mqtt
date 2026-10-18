@@ -23,6 +23,7 @@ via the [Home Assistant MQTT Integration](https://www.home-assistant.io/integrat
 |Tap-to-Run / One Click Scene|IoT|Find in the overall list of Scenes in Home Assistant, as well as under the `Govee to MQTT` device|
 |Live Device Status Updates|LAN and/or IoT|Devices typically report most changes within a couple of seconds.|
 |Segment Color|API Key|Find the `Segment 00X` light entities associated with your main light device in Home Assistant|
+|Light Transitions|LAN|Set the `transition` attribute (seconds) when calling `light.turn_on`; govee2mqtt synthesizes the fade with stepped brightness commands on LAN-controllable lights. Color/color temperature are applied at the start of the ramp|
 
 * `API Key` means that you have [applied for a key from Govee](https://developer.govee.com/reference/apply-you-govee-api-key)
   and have configured it for use in govee2mqtt

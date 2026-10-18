@@ -257,6 +257,116 @@ struct HassLightCommand {
     color: Option<DeviceColor>,
     effect: Option<String>,
     brightness: Option<u8>,
+    /// Home Assistant's `transition` attribute: the fade duration in
+    /// seconds. See `ramp_brightness` for how it is honored.
+    transition: Option<f64>,
+}
+
+/// The maximum accepted transition duration, in seconds. HA itself allows
+/// arbitrarily large values; we clamp so that a stray number cannot hold
+/// the device coordinator open essentially forever.
+const TRANSITION_MAX_SECONDS: f64 = 3600.0;
+/// Govee's LAN API guidance says consecutive commands should be at least
+/// a second apart; we never send ramp steps any faster than this.
+const TRANSITION_MIN_INTERVAL: Duration = Duration::from_secs(1);
+/// For transitions long enough to allow it, aim for this many steps...
+const TRANSITION_TARGET_STEPS: usize = 10;
+/// ...and never exceed this many, regardless of how long the transition is.
+const TRANSITION_MAX_STEPS: usize = 20;
+
+/// Clamp a caller supplied transition duration to a sane range.
+pub fn clamp_transition_seconds(seconds: f64) -> f64 {
+    if seconds.is_finite() {
+        seconds.clamp(0.0, TRANSITION_MAX_SECONDS)
+    } else {
+        0.0
+    }
+}
+
+/// Plan a stepped brightness ramp of the given `duration`.
+///
+/// Returns `(num_steps, interval_between_steps)`. Longer transitions get
+/// `TRANSITION_TARGET_STEPS..=TRANSITION_MAX_STEPS` evenly spaced steps;
+/// the interval never drops below `TRANSITION_MIN_INTERVAL`, so shorter
+/// transitions get fewer steps, degrading to a single final set when the
+/// duration can't fit even one step at that rate.
+pub fn transition_plan(duration: Duration) -> (usize, Duration) {
+    let secs = duration.as_secs_f64().max(0.0);
+    if secs <= 0.0 {
+        return (1, Duration::ZERO);
+    }
+
+    let desired = (secs.round() as usize)
+        .max(TRANSITION_TARGET_STEPS)
+        .min(TRANSITION_MAX_STEPS);
+    let mut interval = duration / (desired as u32);
+    if interval < TRANSITION_MIN_INTERVAL {
+        interval = TRANSITION_MIN_INTERVAL;
+    }
+
+    let steps = ((secs / interval.as_secs_f64()).floor() as usize).max(1);
+    (steps, interval)
+}
+
+/// Compute the brightness values to send for a ramp from `from` to `to`
+/// in `steps` linearly spaced increments.
+///
+/// The result always ends exactly at `to`, never repeats a value twice in
+/// a row (rounding can collapse adjacent steps for short ranges), and is
+/// monotonic in the direction of the ramp.
+pub fn ramp_values(from: u8, to: u8, steps: usize) -> Vec<u8> {
+    let steps = steps.max(1);
+    let mut values = Vec::with_capacity(steps);
+
+    for i in 1..=steps {
+        let v = from as f64 + (to as f64 - from as f64) * (i as f64 / steps as f64);
+        let v = v.round().clamp(0.0, 255.0) as u8;
+        if values.last() != Some(&v) {
+            values.push(v);
+        }
+    }
+    if values.last() != Some(&to) {
+        values.push(to);
+    }
+    values
+}
+
+/// Bridge-side stepped brightness ramp used to honor HA's `transition`
+/// attribute.
+///
+/// The Govee LAN protocol has no native fade/transition primitive for raw
+/// brightness (and none for color either), so we synthesize the fade by
+/// sending a series of brightness commands, spaced per `transition_plan`.
+/// Each step goes through the normal control path, so the device keeps
+/// reporting its live state and HA sees the brightness moving during the
+/// ramp.
+///
+/// Color and color temperature are applied immediately at the start of
+/// the ramp (final values): interpolating them too would multiply the
+/// command count per step for a benefit that is much less perceptible
+/// than the brightness ramp on the devices this was designed against
+/// (e.g. H1630 bar light), and power on/off keeps whatever natural fade
+/// the device itself applies.
+async fn ramp_brightness(
+    state: &StateHandle,
+    device: &ServiceDevice,
+    from: u8,
+    to: u8,
+    duration: Duration,
+) -> anyhow::Result<()> {
+    let (steps, interval) = transition_plan(duration);
+    let values = ramp_values(from, to, steps);
+    log::info!(
+        "Transitioning {device} brightness {from} -> {to} over {duration:?} in {steps} steps"
+    );
+
+    for value in values {
+        if interval > Duration::ZERO {
+            tokio::time::sleep(interval).await;
+        }
+        state.device_set_brightness(device, value).await?;
+    }
+    Ok(())
 }
 
 /// HASS is sending a command to a light
@@ -285,6 +395,62 @@ async fn mqtt_light_command(
                 .context("mqtt_light_command: state.device_set_brightness")?;
         }
     } else {
+        let transition = command
+            .transition
+            .filter(|t| *t > 0.0)
+            .map(|t| Duration::from_secs_f64(clamp_transition_seconds(t)));
+
+        // We can only synthesize a transition for devices that we control
+        // via the LAN API and that carry a brightness target: the Govee
+        // protocol has no native fade primitive, and the cloud (IoT and
+        // Platform API) paths have tighter rate limits that make an open
+        // loop of stepped commands there a bad idea. A scene/effect change
+        // in the same command also opts out of the ramp.
+        let ramp = match (
+            transition,
+            command.brightness,
+            command.effect.as_ref(),
+            device.lan_device.as_ref(),
+        ) {
+            (Some(duration), Some(target), None, Some(_)) => Some((duration, target)),
+            _ => None,
+        };
+
+        if let Some((duration, target)) = ramp {
+            // Color is part of the final state of the command, but has no
+            // ramp primitive either, so it is applied immediately at the
+            // start of the brightness ramp; see `ramp_brightness`.
+            if let Some(color) = &command.color {
+                state
+                    .device_set_color_rgb(&device, color.r, color.g, color.b)
+                    .await
+                    .context("mqtt_light_command: state.device_set_color_rgb")?;
+            }
+            if let Some(color_temp) = command.color_temp {
+                state
+                    .device_set_color_temperature(&device, mired_to_kelvin(color_temp))
+                    .await
+                    .context("mqtt_light_command: state.device_set_color_temperature")?;
+            }
+
+            let from = device
+                .device_state()
+                .filter(|s| s.on)
+                .map(|s| s.brightness)
+                .unwrap_or(1);
+
+            ramp_brightness(&state, &device, from, target, duration)
+                .await
+                .context("mqtt_light_command: ramp_brightness")?;
+            return Ok(());
+        }
+        if transition.is_some() {
+            log::info!(
+                "Ignoring transition for {device}: stepping requires LAN control, \
+                 a brightness target, and no scene/effect change"
+            );
+        }
+
         let mut power_on = true;
 
         if let Some(brightness) = command.brightness {
@@ -739,5 +905,61 @@ mod tests {
     #[test]
     fn test_camel_case_emoji() {
         assert_eq!(camel_case_to_space_separated("🔥lightMode"), "🔥light Mode");
+    }
+
+    #[test]
+    fn transition_seconds_are_clamped() {
+        assert_eq!(clamp_transition_seconds(3.0), 3.0);
+        assert_eq!(clamp_transition_seconds(-10.0), 0.0);
+        assert_eq!(clamp_transition_seconds(100000.0), 3600.0);
+        assert_eq!(clamp_transition_seconds(f64::NAN), 0.0);
+        assert_eq!(clamp_transition_seconds(f64::INFINITY), 0.0);
+    }
+
+    #[test]
+    fn transition_plan_hits_step_targets() {
+        // A 15s transition gets one step per second, 15 steps total
+        let (steps, interval) = transition_plan(Duration::from_secs(15));
+        assert_eq!(steps, 15);
+        assert_eq!(interval, Duration::from_secs(1));
+
+        // A very long transition is capped at the max step count
+        let (steps, interval) = transition_plan(Duration::from_secs(3600));
+        assert_eq!(steps, TRANSITION_MAX_STEPS);
+        assert_eq!(interval, Duration::from_secs(180));
+
+        // A short transition still respects the minimum interval:
+        // 3 seconds yields 3 one-second steps, not 10 sub-second ones
+        let (steps, interval) = transition_plan(Duration::from_secs(3));
+        assert_eq!(steps, 3);
+        assert_eq!(interval, Duration::from_secs(1));
+
+        // Anything shorter than one step degrades to a single final set
+        let (steps, _) = transition_plan(Duration::from_millis(500));
+        assert_eq!(steps, 1);
+        let (steps, interval) = transition_plan(Duration::ZERO);
+        assert_eq!((steps, interval), (1, Duration::ZERO));
+    }
+
+    #[test]
+    fn ramp_values_endpoints_and_monotonicity() {
+        let up = ramp_values(10, 100, 10);
+        assert_eq!(up.first(), Some(&19));
+        assert_eq!(up.last(), Some(&100));
+        assert!(up.windows(2).all(|w| w[0] < w[1]));
+
+        let down = ramp_values(100, 10, 10);
+        assert_eq!(down.last(), Some(&10));
+        assert!(down.windows(2).all(|w| w[0] > w[1]));
+
+        // No-op ramps and degenerate step counts still land exactly on target
+        assert_eq!(ramp_values(50, 50, 10), vec![50]);
+        assert_eq!(ramp_values(0, 100, 0), vec![100]);
+
+        // When rounding collapses steps for a tiny range we never emit
+        // the same value twice in a row, and we always finish on target
+        let small = ramp_values(10, 12, 20);
+        assert_eq!(small.last(), Some(&12));
+        assert!(small.windows(2).all(|w| w[0] != w[1]));
     }
 }
