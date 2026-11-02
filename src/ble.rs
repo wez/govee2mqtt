@@ -466,12 +466,6 @@ pub struct NotifyKettleKeepWarm {
     pub remaining_minutes: u8,
 }
 
-impl NotifyKettleKeepWarm {
-    pub fn elapsed_minutes(&self) -> u8 {
-        self.total_minutes.saturating_sub(self.remaining_minutes)
-    }
-}
-
 #[derive(Clone, Default, Debug, PartialEq, Eq)]
 pub struct SetSceneCode {
     code: u16,
@@ -741,10 +735,6 @@ mod test {
                 remaining_minutes: 98,
             })
         );
-        match decoded {
-            GoveeBlePacket::NotifyKettleKeepWarm(k) => assert_eq!(k.elapsed_minutes(), 22),
-            _ => unreachable!(),
-        }
     }
 
     #[test]
