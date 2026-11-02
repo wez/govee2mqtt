@@ -1,4 +1,4 @@
-use crate::ble::NotifyHumidifierNightlightParams;
+use crate::ble::{NotifyHumidifierNightlightParams, NotifyKettleBaseStatus};
 use crate::commands::serve::POLL_INTERVAL;
 use crate::lan_api::{DeviceColor, DeviceStatus as LanDeviceStatus, LanDevice};
 use crate::platform_api::{
@@ -40,6 +40,7 @@ pub struct Device {
     pub target_humidity_percent: Option<u8>,
     pub humidifier_work_mode: Option<u8>,
     pub humidifier_param_by_mode: HashMap<u8, u8>,
+    pub kettle_base_status: Option<NotifyKettleBaseStatus>,
 
     pub last_polled: Option<DateTime<Utc>>,
 
@@ -183,6 +184,10 @@ impl Device {
 
     pub fn set_target_humidity(&mut self, percent: u8) {
         self.target_humidity_percent.replace(percent);
+    }
+
+    pub fn set_kettle_base_status(&mut self, status: NotifyKettleBaseStatus) {
+        self.kettle_base_status.replace(status);
     }
 
     pub fn set_humidifier_work_mode_and_param(&mut self, mode: u8, param: u8) {

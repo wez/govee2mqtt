@@ -1,4 +1,5 @@
 pub mod base;
+pub mod binary_sensor;
 pub mod button;
 pub mod climate;
 pub mod cover;

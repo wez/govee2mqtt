@@ -224,6 +224,15 @@ impl PacketManager {
             g,
             b,
         ));
+        all_codecs.push(packet!(
+            &["H7170", "H7171", "H7173"],
+            NotifyKettleBaseStatus,
+            NotifyKettleBaseStatus,
+            0xaa,
+            0x17,
+            0x00,
+            status,
+        ));
         all_codecs.push(PacketCodec::new(
             &["Generic:Light"],
             SetSceneCode::encode,
@@ -360,6 +369,29 @@ pub struct HumidifierAutoMode {
     pub target_humidity: TargetHumidity,
 }
 
+/// Reported by the H717x kettles in the `aa 17 00 <status>` status frame.
+///
+/// Observed on an H7170 (firmware 1.00.24):
+///
+/// * `0x00` - sitting on the base
+/// * `0x01` - heating was interrupted because the kettle ran out of water
+///   (boil-dry protection). Sent together with the Govee Home app's
+///   "interrupted as it is running out of water" notification, and held
+///   until the kettle was lifted off the base.
+/// * `0x02` - lifted off the base
+#[derive(Clone, Copy, Default, Debug, PartialEq, Eq)]
+pub struct NotifyKettleBaseStatus {
+    pub status: u8,
+}
+
+impl NotifyKettleBaseStatus {
+    pub const OUT_OF_WATER: u8 = 0x01;
+
+    pub fn is_out_of_water(&self) -> bool {
+        self.status == Self::OUT_OF_WATER
+    }
+}
+
 #[derive(Clone, Default, Debug, PartialEq, Eq)]
 pub struct SetSceneCode {
     code: u16,
@@ -434,6 +466,7 @@ pub enum GoveeBlePacket {
     SetHumidifierMode(SetHumidifierMode),
     NotifyHumidifierAutoMode(HumidifierAutoMode),
     NotifyHumidifierNightlight(NotifyHumidifierNightlightParams),
+    NotifyKettleBaseStatus(NotifyKettleBaseStatus),
 }
 
 #[derive(Debug)]
@@ -578,6 +611,40 @@ mod test {
                 brightness: 100,
             }),
         );
+    }
+
+    fn decode_base64(sku: &str, b64: &str) -> GoveeBlePacket {
+        let bytes = data_encoding::BASE64.decode(b64.as_bytes()).unwrap();
+        MGR.decode_for_sku(sku, &bytes)
+    }
+
+    #[test]
+    fn kettle_base_status() {
+        // Captured from an H7170 IoT status report
+        let kettle =
+            |status| GoveeBlePacket::NotifyKettleBaseStatus(NotifyKettleBaseStatus { status });
+        // on the base
+        assert_eq!(
+            decode_base64("H7170", "qhcAAAAAAAAAAAAAAAAAAAAAAL0="),
+            kettle(0)
+        );
+        // boil-dry: heating interrupted, out of water
+        let dry = decode_base64("H7170", "qhcAAQAAAAAAAAAAAAAAAAAAALw=");
+        assert_eq!(dry, kettle(1));
+        match dry {
+            GoveeBlePacket::NotifyKettleBaseStatus(s) => assert!(s.is_out_of_water()),
+            _ => unreachable!(),
+        }
+        // lifted off the base
+        assert_eq!(
+            decode_base64("H7170", "qhcAAgAAAAAAAAAAAAAAAAAAAL8="),
+            kettle(2)
+        );
+        // Not decoded for unrelated devices
+        assert!(matches!(
+            decode_base64("H7160", "qhcAAQAAAAAAAAAAAAAAAAAAALw="),
+            GoveeBlePacket::Generic(_)
+        ));
     }
 
     #[test]

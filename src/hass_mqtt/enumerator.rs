@@ -1,4 +1,5 @@
 use crate::hass_mqtt::base::{Device, EntityConfig, Origin};
+use crate::hass_mqtt::binary_sensor::KettleOutOfWater;
 use crate::hass_mqtt::button::ButtonConfig;
 use crate::hass_mqtt::climate::TargetTemperatureEntity;
 use crate::hass_mqtt::humidifier::Humidifier;
@@ -165,6 +166,10 @@ pub async fn enumerate_entities_for_device(
         DeviceType::Humidifier | DeviceType::Dehumidifier
     ) {
         entities.add(Humidifier::new(d, state).await?);
+    }
+
+    if d.device_type() == DeviceType::Kettle {
+        entities.add(KettleOutOfWater::new(d, state));
     }
 
     if d.device_type() != DeviceType::Light {
