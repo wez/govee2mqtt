@@ -1,4 +1,7 @@
-use crate::ble::{NotifyHumidifierNightlightParams, NotifyKettleBaseStatus};
+use crate::ble::{
+    NotifyHumidifierNightlightParams, NotifyKettleBaseStatus, NotifyKettleHeatingState,
+    NotifyKettleKeepWarm,
+};
 use crate::commands::serve::POLL_INTERVAL;
 use crate::lan_api::{DeviceColor, DeviceStatus as LanDeviceStatus, LanDevice};
 use crate::platform_api::{
@@ -44,6 +47,8 @@ pub struct Device {
     /// When the kettle was last seen going from off its base to on it.
     /// Only known once that transition has been observed while running.
     pub kettle_placed_on_base: Option<DateTime<Utc>>,
+    pub kettle_heating_state: Option<NotifyKettleHeatingState>,
+    pub kettle_keep_warm: Option<NotifyKettleKeepWarm>,
 
     pub last_polled: Option<DateTime<Utc>>,
 
@@ -198,6 +203,22 @@ impl Device {
             self.kettle_placed_on_base.replace(Utc::now());
         }
         self.kettle_base_status.replace(status);
+    }
+
+    pub fn set_kettle_heating_state(&mut self, state: NotifyKettleHeatingState) {
+        self.kettle_heating_state.replace(state);
+    }
+
+    pub fn set_kettle_keep_warm(&mut self, keep_warm: NotifyKettleKeepWarm) {
+        self.kettle_keep_warm.replace(keep_warm);
+    }
+
+    /// Minutes of keep-warm left, while the kettle is keeping warm.
+    pub fn kettle_keep_warm_remaining(&self) -> Option<u8> {
+        if !self.kettle_heating_state?.is_keeping_warm() {
+            return None;
+        }
+        Some(self.kettle_keep_warm?.remaining_minutes)
     }
 
     pub fn set_humidifier_work_mode_and_param(&mut self, mode: u8, param: u8) {
@@ -612,7 +633,28 @@ impl Device {
 
 #[cfg(test)]
 mod test {
-    use crate::ble::NotifyKettleBaseStatus;
+    use crate::ble::{NotifyKettleBaseStatus, NotifyKettleHeatingState, NotifyKettleKeepWarm};
+
+    #[test]
+    fn kettle_keep_warm_remaining() {
+        let mut device = Device::new("H7170", "AA:BB");
+        let state = |state| NotifyKettleHeatingState { state };
+        let countdown = |remaining_minutes| NotifyKettleKeepWarm {
+            enabled: 1,
+            total_minutes: 120,
+            remaining_minutes,
+        };
+
+        assert_eq!(device.kettle_keep_warm_remaining(), None);
+        device.set_kettle_heating_state(state(1));
+        device.set_kettle_keep_warm(countdown(120));
+        assert_eq!(device.kettle_keep_warm_remaining(), None);
+        device.set_kettle_heating_state(state(2));
+        device.set_kettle_keep_warm(countdown(97));
+        assert_eq!(device.kettle_keep_warm_remaining(), Some(97));
+        device.set_kettle_heating_state(state(0));
+        assert_eq!(device.kettle_keep_warm_remaining(), None);
+    }
 
     #[test]
     fn kettle_placed_on_base() {

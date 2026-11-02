@@ -9,7 +9,8 @@ use crate::hass_mqtt::number::WorkModeNumber;
 use crate::hass_mqtt::scene::SceneConfig;
 use crate::hass_mqtt::select::{SceneModeSelect, WorkModeSelect};
 use crate::hass_mqtt::sensor::{
-    CapabilitySensor, DeviceStatusDiagnostic, GlobalFixedDiagnostic, KettlePlacedOnBase,
+    CapabilitySensor, DeviceStatusDiagnostic, GlobalFixedDiagnostic, KettleHeatingState,
+    KettleKeepWarmRemaining, KettlePlacedOnBase,
 };
 use crate::hass_mqtt::switch::CapabilitySwitch;
 use crate::hass_mqtt::work_mode::ParsedWorkMode;
@@ -174,6 +175,8 @@ pub async fn enumerate_entities_for_device(
         entities.add(KettleOutOfWater::new(d, state));
         entities.add(KettleOnBase::new(d, state));
         entities.add(KettlePlacedOnBase::new(d, state));
+        entities.add(KettleHeatingState::new(d, state));
+        entities.add(KettleKeepWarmRemaining::new(d, state));
     }
 
     if d.device_type() != DeviceType::Light {

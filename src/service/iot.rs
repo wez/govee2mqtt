@@ -445,6 +445,12 @@ async fn run_iot_subscriber(
                                             GoveeBlePacket::NotifyKettleBaseStatus(status) => {
                                                 device.set_kettle_base_status(status);
                                             }
+                                            GoveeBlePacket::NotifyKettleHeatingState(heating) => {
+                                                device.set_kettle_heating_state(heating);
+                                            }
+                                            GoveeBlePacket::NotifyKettleKeepWarm(keep_warm) => {
+                                                device.set_kettle_keep_warm(keep_warm);
+                                            }
                                             GoveeBlePacket::Generic(_) => {
                                                 // Ignore packets that we can't decode
                                             }

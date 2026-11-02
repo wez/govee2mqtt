@@ -368,3 +368,122 @@ impl EntityInstance for KettlePlacedOnBase {
         }
     }
 }
+
+/// Whether an H717x kettle is idle, heating, or keeping warm.
+pub struct KettleHeatingState {
+    sensor: SensorConfig,
+    device_id: String,
+    state: StateHandle,
+}
+
+impl KettleHeatingState {
+    pub fn new(device: &ServiceDevice, state: &StateHandle) -> Self {
+        let unique_id = format!(
+            "sensor-{id}-kettle-heating-state",
+            id = topic_safe_id(device)
+        );
+
+        Self {
+            sensor: SensorConfig {
+                base: EntityConfig {
+                    availability_topic: availability_topic(),
+                    name: Some("Heating State".to_string()),
+                    entity_category: None,
+                    origin: Origin::default(),
+                    device: Device::for_device(device),
+                    unique_id: unique_id.clone(),
+                    device_class: None,
+                    icon: Some("mdi:kettle-steam".to_string()),
+                },
+                state_topic: format!("gv2mqtt/sensor/{unique_id}/state"),
+                state_class: None,
+                unit_of_measurement: None,
+                json_attributes_topic: None,
+            },
+            device_id: device.id.to_string(),
+            state: state.clone(),
+        }
+    }
+}
+
+#[async_trait]
+impl EntityInstance for KettleHeatingState {
+    async fn publish_config(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
+        self.sensor.publish(state, client).await
+    }
+
+    async fn notify_state(&self, client: &HassClient) -> anyhow::Result<()> {
+        let device = self
+            .state
+            .device_by_id(&self.device_id)
+            .await
+            .expect("device to exist");
+
+        match device.kettle_heating_state.and_then(|s| s.label()) {
+            Some(label) => self.sensor.notify_state(client, label).await,
+            None => Ok(()),
+        }
+    }
+}
+
+/// Minutes of keep-warm left on an H717x kettle, or unknown while it is
+/// not keeping warm.
+pub struct KettleKeepWarmRemaining {
+    sensor: SensorConfig,
+    device_id: String,
+    state: StateHandle,
+}
+
+impl KettleKeepWarmRemaining {
+    pub fn new(device: &ServiceDevice, state: &StateHandle) -> Self {
+        let unique_id = format!(
+            "sensor-{id}-kettle-keep-warm-remaining",
+            id = topic_safe_id(device)
+        );
+
+        Self {
+            sensor: SensorConfig {
+                base: EntityConfig {
+                    availability_topic: availability_topic(),
+                    name: Some("Keep Warm Remaining".to_string()),
+                    entity_category: None,
+                    origin: Origin::default(),
+                    device: Device::for_device(device),
+                    unique_id: unique_id.clone(),
+                    device_class: Some("duration"),
+                    icon: Some("mdi:timer-sand".to_string()),
+                },
+                state_topic: format!("gv2mqtt/sensor/{unique_id}/state"),
+                state_class: None,
+                unit_of_measurement: Some("min"),
+                json_attributes_topic: None,
+            },
+            device_id: device.id.to_string(),
+            state: state.clone(),
+        }
+    }
+}
+
+#[async_trait]
+impl EntityInstance for KettleKeepWarmRemaining {
+    async fn publish_config(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
+        self.sensor.publish(state, client).await
+    }
+
+    async fn notify_state(&self, client: &HassClient) -> anyhow::Result<()> {
+        let device = self
+            .state
+            .device_by_id(&self.device_id)
+            .await
+            .expect("device to exist");
+
+        if device.kettle_heating_state.is_none() {
+            return Ok(());
+        }
+        match device.kettle_keep_warm_remaining() {
+            Some(minutes) => self.sensor.notify_state(client, &minutes.to_string()).await,
+            // Home Assistant's MQTT sensor treats "None" as unknown
+            None => self.sensor.notify_state(client, "None").await,
+        }
+    }
+}

@@ -233,6 +233,25 @@ impl PacketManager {
             0x00,
             status,
         ));
+        all_codecs.push(packet!(
+            &["H7170", "H7171", "H7173"],
+            NotifyKettleHeatingState,
+            NotifyKettleHeatingState,
+            0xaa,
+            0x19,
+            state,
+        ));
+        all_codecs.push(packet!(
+            &["H7170", "H7171", "H7173"],
+            NotifyKettleKeepWarm,
+            NotifyKettleKeepWarm,
+            0xaa,
+            0x22,
+            enabled,
+            0x00,
+            total_minutes,
+            remaining_minutes,
+        ));
         all_codecs.push(PacketCodec::new(
             &["Generic:Light"],
             SetSceneCode::encode,
@@ -399,6 +418,60 @@ impl NotifyKettleBaseStatus {
     }
 }
 
+/// Reported by the H717x kettles in the `aa 19 <state>` frame of their
+/// status report. The kettle also pushes longer `aa 19` frames when the
+/// state changes; those are followed by a status report, so only the
+/// status form is decoded.
+///
+/// Observed on an H7170 (firmware 1.00.24):
+///
+/// * `0x00` - idle (not heating)
+/// * `0x01` - heating to the target temperature
+/// * `0x02` - target reached, keeping warm. The kettle sends nothing
+///   when it briefly reheats during keep-warm.
+#[derive(Clone, Copy, Default, Debug, PartialEq, Eq)]
+pub struct NotifyKettleHeatingState {
+    pub state: u8,
+}
+
+impl NotifyKettleHeatingState {
+    pub const IDLE: u8 = 0x00;
+    pub const HEATING: u8 = 0x01;
+    pub const KEEPING_WARM: u8 = 0x02;
+
+    /// A human readable label, or None for values not yet understood.
+    pub fn label(&self) -> Option<&'static str> {
+        match self.state {
+            Self::IDLE => Some("Idle"),
+            Self::HEATING => Some("Heating"),
+            Self::KEEPING_WARM => Some("Keeping warm"),
+            _ => None,
+        }
+    }
+
+    pub fn is_keeping_warm(&self) -> bool {
+        self.state == Self::KEEPING_WARM
+    }
+}
+
+/// Reported by the H717x kettles in the `aa 22 <enabled> 00 <total>
+/// <remaining>` status frame. On an H7170 the total was 120 minutes and
+/// the remaining minutes counted down by one per minute during
+/// keep-warm, then reset to the total once the kettle started heating
+/// again.
+#[derive(Clone, Copy, Default, Debug, PartialEq, Eq)]
+pub struct NotifyKettleKeepWarm {
+    pub enabled: u8,
+    pub total_minutes: u8,
+    pub remaining_minutes: u8,
+}
+
+impl NotifyKettleKeepWarm {
+    pub fn elapsed_minutes(&self) -> u8 {
+        self.total_minutes.saturating_sub(self.remaining_minutes)
+    }
+}
+
 #[derive(Clone, Default, Debug, PartialEq, Eq)]
 pub struct SetSceneCode {
     code: u16,
@@ -474,6 +547,8 @@ pub enum GoveeBlePacket {
     NotifyHumidifierAutoMode(HumidifierAutoMode),
     NotifyHumidifierNightlight(NotifyHumidifierNightlightParams),
     NotifyKettleBaseStatus(NotifyKettleBaseStatus),
+    NotifyKettleHeatingState(NotifyKettleHeatingState),
+    NotifyKettleKeepWarm(NotifyKettleKeepWarm),
 }
 
 #[derive(Debug)]
@@ -623,6 +698,53 @@ mod test {
     fn decode_base64(sku: &str, b64: &str) -> GoveeBlePacket {
         let bytes = data_encoding::BASE64.decode(b64.as_bytes()).unwrap();
         MGR.decode_for_sku(sku, &bytes)
+    }
+
+    #[test]
+    fn kettle_heating_state() {
+        // Captured from H7170 IoT status reports
+        let state =
+            |state| GoveeBlePacket::NotifyKettleHeatingState(NotifyKettleHeatingState { state });
+        assert_eq!(
+            decode_base64("H7170", "qhkAAAAAAAAAAAAAAAAAAAAAALM="),
+            state(0)
+        );
+        assert_eq!(
+            decode_base64("H7170", "qhkBAAAAAAAAAAAAAAAAAAAAALI="),
+            state(1)
+        );
+        let warm = decode_base64("H7170", "qhkCAAAAAAAAAAAAAAAAAAAAALE=");
+        assert_eq!(warm, state(2));
+        match warm {
+            GoveeBlePacket::NotifyKettleHeatingState(s) => {
+                assert!(s.is_keeping_warm());
+                assert_eq!(s.label(), Some("Keeping warm"));
+            }
+            _ => unreachable!(),
+        }
+        // The ptReal pushes carry extra bytes and are left undecoded;
+        // a status report always follows them.
+        assert!(matches!(
+            decode_base64("H7170", "qhkENToyNjoxAAAAWHABEJx6AGg="),
+            GoveeBlePacket::Generic(_)
+        ));
+    }
+
+    #[test]
+    fn kettle_keep_warm() {
+        let decoded = decode_base64("H7170", "qiIBAHhiAAAAAAAAAAAAAAAAAJM=");
+        assert_eq!(
+            decoded,
+            GoveeBlePacket::NotifyKettleKeepWarm(NotifyKettleKeepWarm {
+                enabled: 1,
+                total_minutes: 120,
+                remaining_minutes: 98,
+            })
+        );
+        match decoded {
+            GoveeBlePacket::NotifyKettleKeepWarm(k) => assert_eq!(k.elapsed_minutes(), 22),
+            _ => unreachable!(),
+        }
     }
 
     #[test]
