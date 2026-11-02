@@ -41,6 +41,9 @@ pub struct Device {
     pub humidifier_work_mode: Option<u8>,
     pub humidifier_param_by_mode: HashMap<u8, u8>,
     pub kettle_base_status: Option<NotifyKettleBaseStatus>,
+    /// When the kettle was last seen going from off its base to on it.
+    /// Only known once that transition has been observed while running.
+    pub kettle_placed_on_base: Option<DateTime<Utc>>,
 
     pub last_polled: Option<DateTime<Utc>>,
 
@@ -187,6 +190,13 @@ impl Device {
     }
 
     pub fn set_kettle_base_status(&mut self, status: NotifyKettleBaseStatus) {
+        let was_off_base = self
+            .kettle_base_status
+            .map(|prior| !prior.is_on_base())
+            .unwrap_or(false);
+        if was_off_base && status.is_on_base() {
+            self.kettle_placed_on_base.replace(Utc::now());
+        }
         self.kettle_base_status.replace(status);
     }
 
@@ -602,6 +612,29 @@ impl Device {
 
 #[cfg(test)]
 mod test {
+    use crate::ble::NotifyKettleBaseStatus;
+
+    #[test]
+    fn kettle_placed_on_base() {
+        let mut device = Device::new("H7170", "AA:BB");
+        let status = |status| NotifyKettleBaseStatus { status };
+
+        // First report on the base: we did not see it being put down
+        device.set_kettle_base_status(status(0));
+        assert!(device.kettle_placed_on_base.is_none());
+
+        // Lifted, then put back
+        device.set_kettle_base_status(status(2));
+        assert!(device.kettle_placed_on_base.is_none());
+        device.set_kettle_base_status(status(0));
+        let placed = device.kettle_placed_on_base.expect("placed");
+
+        // Repeated on-base and out-of-water reports keep the time
+        device.set_kettle_base_status(status(0));
+        device.set_kettle_base_status(status(1));
+        assert_eq!(device.kettle_placed_on_base, Some(placed));
+    }
+
     use super::*;
 
     #[test]

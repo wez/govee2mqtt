@@ -98,3 +98,60 @@ impl EntityInstance for KettleOutOfWater {
         }
     }
 }
+
+/// On while an H717x kettle is sitting on its base, off once it is lifted.
+/// Like [KettleOutOfWater] it stays unknown until the first IoT status report.
+pub struct KettleOnBase {
+    sensor: BinarySensorConfig,
+    device_id: String,
+    state: StateHandle,
+}
+
+impl KettleOnBase {
+    pub fn new(device: &ServiceDevice, state: &StateHandle) -> Self {
+        let unique_id = format!(
+            "binary_sensor-{id}-kettle-on-base",
+            id = topic_safe_id(device)
+        );
+
+        Self {
+            sensor: BinarySensorConfig {
+                base: EntityConfig {
+                    availability_topic: availability_topic(),
+                    name: Some("On Base".to_string()),
+                    entity_category: None,
+                    origin: Origin::default(),
+                    device: Device::for_device(device),
+                    unique_id: unique_id.clone(),
+                    device_class: None,
+                    icon: Some("mdi:kettle".to_string()),
+                },
+                state_topic: format!("gv2mqtt/binary_sensor/{unique_id}/state"),
+                payload_on: "ON",
+                payload_off: "OFF",
+            },
+            device_id: device.id.to_string(),
+            state: state.clone(),
+        }
+    }
+}
+
+#[async_trait]
+impl EntityInstance for KettleOnBase {
+    async fn publish_config(&self, state: &StateHandle, client: &HassClient) -> anyhow::Result<()> {
+        self.sensor.publish(state, client).await
+    }
+
+    async fn notify_state(&self, client: &HassClient) -> anyhow::Result<()> {
+        let device = self
+            .state
+            .device_by_id(&self.device_id)
+            .await
+            .expect("device to exist");
+
+        match device.kettle_base_status {
+            Some(status) => self.sensor.notify_state(client, status.is_on_base()).await,
+            None => Ok(()),
+        }
+    }
+}

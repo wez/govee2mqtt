@@ -386,9 +386,16 @@ pub struct NotifyKettleBaseStatus {
 
 impl NotifyKettleBaseStatus {
     pub const OUT_OF_WATER: u8 = 0x01;
+    pub const OFF_BASE: u8 = 0x02;
 
     pub fn is_out_of_water(&self) -> bool {
         self.status == Self::OUT_OF_WATER
+    }
+
+    /// The kettle reports out-of-water while it is still sitting on
+    /// the base, so anything other than off-base counts as on the base.
+    pub fn is_on_base(&self) -> bool {
+        self.status != Self::OFF_BASE
     }
 }
 
@@ -632,7 +639,10 @@ mod test {
         let dry = decode_base64("H7170", "qhcAAQAAAAAAAAAAAAAAAAAAALw=");
         assert_eq!(dry, kettle(1));
         match dry {
-            GoveeBlePacket::NotifyKettleBaseStatus(s) => assert!(s.is_out_of_water()),
+            GoveeBlePacket::NotifyKettleBaseStatus(s) => {
+                assert!(s.is_out_of_water());
+                assert!(s.is_on_base());
+            }
             _ => unreachable!(),
         }
         // lifted off the base

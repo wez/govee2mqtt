@@ -1,5 +1,5 @@
 use crate::hass_mqtt::base::{Device, EntityConfig, Origin};
-use crate::hass_mqtt::binary_sensor::KettleOutOfWater;
+use crate::hass_mqtt::binary_sensor::{KettleOnBase, KettleOutOfWater};
 use crate::hass_mqtt::button::ButtonConfig;
 use crate::hass_mqtt::climate::TargetTemperatureEntity;
 use crate::hass_mqtt::humidifier::Humidifier;
@@ -8,7 +8,9 @@ use crate::hass_mqtt::light::DeviceLight;
 use crate::hass_mqtt::number::WorkModeNumber;
 use crate::hass_mqtt::scene::SceneConfig;
 use crate::hass_mqtt::select::{SceneModeSelect, WorkModeSelect};
-use crate::hass_mqtt::sensor::{CapabilitySensor, DeviceStatusDiagnostic, GlobalFixedDiagnostic};
+use crate::hass_mqtt::sensor::{
+    CapabilitySensor, DeviceStatusDiagnostic, GlobalFixedDiagnostic, KettlePlacedOnBase,
+};
 use crate::hass_mqtt::switch::CapabilitySwitch;
 use crate::hass_mqtt::work_mode::ParsedWorkMode;
 use crate::platform_api::{DeviceCapability, DeviceCapabilityKind, DeviceType};
@@ -170,6 +172,8 @@ pub async fn enumerate_entities_for_device(
 
     if d.device_type() == DeviceType::Kettle {
         entities.add(KettleOutOfWater::new(d, state));
+        entities.add(KettleOnBase::new(d, state));
+        entities.add(KettlePlacedOnBase::new(d, state));
     }
 
     if d.device_type() != DeviceType::Light {
