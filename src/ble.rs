@@ -224,6 +224,34 @@ impl PacketManager {
             g,
             b,
         ));
+        all_codecs.push(packet!(
+            &["H7170", "H7171", "H7173"],
+            NotifyKettleBaseStatus,
+            NotifyKettleBaseStatus,
+            0xaa,
+            0x17,
+            0x00,
+            status,
+        ));
+        all_codecs.push(packet!(
+            &["H7170", "H7171", "H7173"],
+            NotifyKettleHeatingState,
+            NotifyKettleHeatingState,
+            0xaa,
+            0x19,
+            state,
+        ));
+        all_codecs.push(packet!(
+            &["H7170", "H7171", "H7173"],
+            NotifyKettleKeepWarm,
+            NotifyKettleKeepWarm,
+            0xaa,
+            0x22,
+            enabled,
+            0x00,
+            total_minutes,
+            remaining_minutes,
+        ));
         all_codecs.push(PacketCodec::new(
             &["Generic:Light"],
             SetSceneCode::encode,
@@ -360,6 +388,84 @@ pub struct HumidifierAutoMode {
     pub target_humidity: TargetHumidity,
 }
 
+/// Reported by the H717x kettles in the `aa 17 00 <status>` status frame.
+///
+/// Observed on an H7170 (firmware 1.00.24):
+///
+/// * `0x00` - sitting on the base
+/// * `0x01` - heating was interrupted because the kettle ran out of water
+///   (boil-dry protection). Sent together with the Govee Home app's
+///   "interrupted as it is running out of water" notification, and held
+///   until the kettle was lifted off the base.
+/// * `0x02` - lifted off the base
+#[derive(Clone, Copy, Default, Debug, PartialEq, Eq)]
+pub struct NotifyKettleBaseStatus {
+    pub status: u8,
+}
+
+impl NotifyKettleBaseStatus {
+    pub const OUT_OF_WATER: u8 = 0x01;
+    pub const OFF_BASE: u8 = 0x02;
+
+    pub fn is_out_of_water(&self) -> bool {
+        self.status == Self::OUT_OF_WATER
+    }
+
+    /// The kettle reports out-of-water while it is still sitting on
+    /// the base, so anything other than off-base counts as on the base.
+    pub fn is_on_base(&self) -> bool {
+        self.status != Self::OFF_BASE
+    }
+}
+
+/// Reported by the H717x kettles in the `aa 19 <state>` frame of their
+/// status report. The kettle also pushes longer `aa 19` frames when the
+/// state changes; those are followed by a status report, so only the
+/// status form is decoded.
+///
+/// Observed on an H7170 (firmware 1.00.24):
+///
+/// * `0x00` - idle (not heating)
+/// * `0x01` - heating to the target temperature
+/// * `0x02` - target reached, keeping warm. The kettle sends nothing
+///   when it briefly reheats during keep-warm.
+#[derive(Clone, Copy, Default, Debug, PartialEq, Eq)]
+pub struct NotifyKettleHeatingState {
+    pub state: u8,
+}
+
+impl NotifyKettleHeatingState {
+    pub const IDLE: u8 = 0x00;
+    pub const HEATING: u8 = 0x01;
+    pub const KEEPING_WARM: u8 = 0x02;
+
+    /// A human readable label, or None for values not yet understood.
+    pub fn label(&self) -> Option<&'static str> {
+        match self.state {
+            Self::IDLE => Some("Idle"),
+            Self::HEATING => Some("Heating"),
+            Self::KEEPING_WARM => Some("Keeping warm"),
+            _ => None,
+        }
+    }
+
+    pub fn is_keeping_warm(&self) -> bool {
+        self.state == Self::KEEPING_WARM
+    }
+}
+
+/// Reported by the H717x kettles in the `aa 22 <enabled> 00 <total>
+/// <remaining>` status frame. On an H7170 the total was 120 minutes and
+/// the remaining minutes counted down by one per minute during
+/// keep-warm, then reset to the total once the kettle started heating
+/// again.
+#[derive(Clone, Copy, Default, Debug, PartialEq, Eq)]
+pub struct NotifyKettleKeepWarm {
+    pub enabled: u8,
+    pub total_minutes: u8,
+    pub remaining_minutes: u8,
+}
+
 #[derive(Clone, Default, Debug, PartialEq, Eq)]
 pub struct SetSceneCode {
     code: u16,
@@ -434,6 +540,9 @@ pub enum GoveeBlePacket {
     SetHumidifierMode(SetHumidifierMode),
     NotifyHumidifierAutoMode(HumidifierAutoMode),
     NotifyHumidifierNightlight(NotifyHumidifierNightlightParams),
+    NotifyKettleBaseStatus(NotifyKettleBaseStatus),
+    NotifyKettleHeatingState(NotifyKettleHeatingState),
+    NotifyKettleKeepWarm(NotifyKettleKeepWarm),
 }
 
 #[derive(Debug)]
@@ -578,6 +687,86 @@ mod test {
                 brightness: 100,
             }),
         );
+    }
+
+    fn decode_base64(sku: &str, b64: &str) -> GoveeBlePacket {
+        let bytes = data_encoding::BASE64.decode(b64.as_bytes()).unwrap();
+        MGR.decode_for_sku(sku, &bytes)
+    }
+
+    #[test]
+    fn kettle_heating_state() {
+        // Captured from H7170 IoT status reports
+        let state =
+            |state| GoveeBlePacket::NotifyKettleHeatingState(NotifyKettleHeatingState { state });
+        assert_eq!(
+            decode_base64("H7170", "qhkAAAAAAAAAAAAAAAAAAAAAALM="),
+            state(0)
+        );
+        assert_eq!(
+            decode_base64("H7170", "qhkBAAAAAAAAAAAAAAAAAAAAALI="),
+            state(1)
+        );
+        let warm = decode_base64("H7170", "qhkCAAAAAAAAAAAAAAAAAAAAALE=");
+        assert_eq!(warm, state(2));
+        match warm {
+            GoveeBlePacket::NotifyKettleHeatingState(s) => {
+                assert!(s.is_keeping_warm());
+                assert_eq!(s.label(), Some("Keeping warm"));
+            }
+            _ => unreachable!(),
+        }
+        // The ptReal pushes carry extra bytes and are left undecoded;
+        // a status report always follows them.
+        assert!(matches!(
+            decode_base64("H7170", "qhkENToyNjoxAAAAWHABEJx6AGg="),
+            GoveeBlePacket::Generic(_)
+        ));
+    }
+
+    #[test]
+    fn kettle_keep_warm() {
+        let decoded = decode_base64("H7170", "qiIBAHhiAAAAAAAAAAAAAAAAAJM=");
+        assert_eq!(
+            decoded,
+            GoveeBlePacket::NotifyKettleKeepWarm(NotifyKettleKeepWarm {
+                enabled: 1,
+                total_minutes: 120,
+                remaining_minutes: 98,
+            })
+        );
+    }
+
+    #[test]
+    fn kettle_base_status() {
+        // Captured from an H7170 IoT status report
+        let kettle =
+            |status| GoveeBlePacket::NotifyKettleBaseStatus(NotifyKettleBaseStatus { status });
+        // on the base
+        assert_eq!(
+            decode_base64("H7170", "qhcAAAAAAAAAAAAAAAAAAAAAAL0="),
+            kettle(0)
+        );
+        // boil-dry: heating interrupted, out of water
+        let dry = decode_base64("H7170", "qhcAAQAAAAAAAAAAAAAAAAAAALw=");
+        assert_eq!(dry, kettle(1));
+        match dry {
+            GoveeBlePacket::NotifyKettleBaseStatus(s) => {
+                assert!(s.is_out_of_water());
+                assert!(s.is_on_base());
+            }
+            _ => unreachable!(),
+        }
+        // lifted off the base
+        assert_eq!(
+            decode_base64("H7170", "qhcAAgAAAAAAAAAAAAAAAAAAAL8="),
+            kettle(2)
+        );
+        // Not decoded for unrelated devices
+        assert!(matches!(
+            decode_base64("H7160", "qhcAAQAAAAAAAAAAAAAAAAAAALw="),
+            GoveeBlePacket::Generic(_)
+        ));
     }
 
     #[test]

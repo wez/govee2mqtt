@@ -1,4 +1,7 @@
-use crate::ble::NotifyHumidifierNightlightParams;
+use crate::ble::{
+    NotifyHumidifierNightlightParams, NotifyKettleBaseStatus, NotifyKettleHeatingState,
+    NotifyKettleKeepWarm,
+};
 use crate::commands::serve::POLL_INTERVAL;
 use crate::lan_api::{DeviceColor, DeviceStatus as LanDeviceStatus, LanDevice};
 use crate::platform_api::{
@@ -40,6 +43,12 @@ pub struct Device {
     pub target_humidity_percent: Option<u8>,
     pub humidifier_work_mode: Option<u8>,
     pub humidifier_param_by_mode: HashMap<u8, u8>,
+    pub kettle_base_status: Option<NotifyKettleBaseStatus>,
+    /// When the kettle was last seen going from off its base to on it.
+    /// Only known once that transition has been observed while running.
+    pub kettle_placed_on_base: Option<DateTime<Utc>>,
+    pub kettle_heating_state: Option<NotifyKettleHeatingState>,
+    pub kettle_keep_warm: Option<NotifyKettleKeepWarm>,
 
     pub last_polled: Option<DateTime<Utc>>,
 
@@ -183,6 +192,33 @@ impl Device {
 
     pub fn set_target_humidity(&mut self, percent: u8) {
         self.target_humidity_percent.replace(percent);
+    }
+
+    pub fn set_kettle_base_status(&mut self, status: NotifyKettleBaseStatus) {
+        let was_off_base = self
+            .kettle_base_status
+            .map(|prior| !prior.is_on_base())
+            .unwrap_or(false);
+        if was_off_base && status.is_on_base() {
+            self.kettle_placed_on_base.replace(Utc::now());
+        }
+        self.kettle_base_status.replace(status);
+    }
+
+    pub fn set_kettle_heating_state(&mut self, state: NotifyKettleHeatingState) {
+        self.kettle_heating_state.replace(state);
+    }
+
+    pub fn set_kettle_keep_warm(&mut self, keep_warm: NotifyKettleKeepWarm) {
+        self.kettle_keep_warm.replace(keep_warm);
+    }
+
+    /// Minutes of keep-warm left, while the kettle is keeping warm.
+    pub fn kettle_keep_warm_remaining(&self) -> Option<u8> {
+        if !self.kettle_heating_state?.is_keeping_warm() {
+            return None;
+        }
+        Some(self.kettle_keep_warm?.remaining_minutes)
     }
 
     pub fn set_humidifier_work_mode_and_param(&mut self, mode: u8, param: u8) {
@@ -597,6 +633,50 @@ impl Device {
 
 #[cfg(test)]
 mod test {
+    use crate::ble::{NotifyKettleBaseStatus, NotifyKettleHeatingState, NotifyKettleKeepWarm};
+
+    #[test]
+    fn kettle_keep_warm_remaining() {
+        let mut device = Device::new("H7170", "AA:BB");
+        let state = |state| NotifyKettleHeatingState { state };
+        let countdown = |remaining_minutes| NotifyKettleKeepWarm {
+            enabled: 1,
+            total_minutes: 120,
+            remaining_minutes,
+        };
+
+        assert_eq!(device.kettle_keep_warm_remaining(), None);
+        device.set_kettle_heating_state(state(1));
+        device.set_kettle_keep_warm(countdown(120));
+        assert_eq!(device.kettle_keep_warm_remaining(), None);
+        device.set_kettle_heating_state(state(2));
+        device.set_kettle_keep_warm(countdown(97));
+        assert_eq!(device.kettle_keep_warm_remaining(), Some(97));
+        device.set_kettle_heating_state(state(0));
+        assert_eq!(device.kettle_keep_warm_remaining(), None);
+    }
+
+    #[test]
+    fn kettle_placed_on_base() {
+        let mut device = Device::new("H7170", "AA:BB");
+        let status = |status| NotifyKettleBaseStatus { status };
+
+        // First report on the base: we did not see it being put down
+        device.set_kettle_base_status(status(0));
+        assert!(device.kettle_placed_on_base.is_none());
+
+        // Lifted, then put back
+        device.set_kettle_base_status(status(2));
+        assert!(device.kettle_placed_on_base.is_none());
+        device.set_kettle_base_status(status(0));
+        let placed = device.kettle_placed_on_base.expect("placed");
+
+        // Repeated on-base and out-of-water reports keep the time
+        device.set_kettle_base_status(status(0));
+        device.set_kettle_base_status(status(1));
+        assert_eq!(device.kettle_placed_on_base, Some(placed));
+    }
+
     use super::*;
 
     #[test]

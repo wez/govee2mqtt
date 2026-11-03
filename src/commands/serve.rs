@@ -1,5 +1,5 @@
 use crate::lan_api::Client as LanClient;
-use crate::platform_api::GoveeApiClient;
+use crate::platform_api::{DeviceType, GoveeApiClient};
 use crate::service::device::Device;
 use crate::service::hass::spawn_hass_integration;
 use crate::service::http::run_http_server;
@@ -89,6 +89,16 @@ async fn poll_single_device(state: &StateHandle, device: &Device) -> anyhow::Res
     }
 
     state.poll_platform_api(device).await?;
+
+    // The platform API doesn't report a kettle's heating state or its
+    // keep-warm countdown, and the kettle only pushes those when
+    // something changes. While it is on, also ask for an IoT status
+    // report, which doesn't count against the platform API quota.
+    if device.device_type() == DeviceType::Kettle
+        && device.device_state().map(|s| s.on).unwrap_or(false)
+    {
+        state.poll_iot_api(device).await?;
+    }
 
     Ok(())
 }
