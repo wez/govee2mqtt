@@ -109,10 +109,13 @@ impl HassArguments {
 #[derive(Clone)]
 pub struct HassClient {
     client: Client,
+    registration: Arc<tokio::sync::Mutex<()>>,
 }
 
 impl HassClient {
-    async fn register_with_hass(&self, state: &StateHandle) -> anyhow::Result<()> {
+    pub(crate) async fn register_with_hass(&self, state: &StateHandle) -> anyhow::Result<()> {
+        // Discovery recovery and HA birth messages can request registration together.
+        let _registration = self.registration.lock().await;
         let entities = enumerate_all_entites(state).await?;
 
         // Register the configs
@@ -672,6 +675,7 @@ pub async fn spawn_hass_integration(
     state
         .set_hass_client(HassClient {
             client: client.clone(),
+            registration: Arc::new(tokio::sync::Mutex::new(())),
         })
         .await;
 

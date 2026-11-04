@@ -13,7 +13,7 @@ use std::time::Duration;
 pub static CACHE: Lazy<ArcSwap<Cache>> =
     Lazy::new(|| open_cache().expect("failed to initialize cache").into());
 
-fn cache_file_name() -> PathBuf {
+pub(crate) fn cache_file_name() -> PathBuf {
     let cache_dir = std::env::var("GOVEE_CACHE_DIR")
         .ok()
         .map(PathBuf::from)

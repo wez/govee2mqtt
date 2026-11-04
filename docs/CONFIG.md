@@ -23,6 +23,22 @@ here](https://developer.govee.com/reference/apply-you-govee-api-key).
 *Concerned about sharing your credentials? See [Privacy](PRIVACY.md) for
 information about how data is used and retained by `govee2mqtt`*
 
+## Persistent Device Database
+
+`govee2mqtt` keeps device names and rooms in a JSON file so that an API outage does not prevent startup or change the names used for Home Assistant discovery. Devices that support the LAN API can still be controlled while the cloud APIs are unavailable. Devices that require a cloud API remain unavailable until that API recovers.
+
+|CLI|ENV|AddOn|Purpose|
+|---|---|-----|-------|
+|`--device-db`|`GOVEE_DEVICE_DB`|Set to `/data/devices.json` by the add-on|Path to the persistent device database. The CLI option takes precedence over the environment variable.|
+
+For standalone use, the default is `govee2mqtt/devices.json` under the operating system's cache directory (`~/.cache` on Linux). The Docker image sets `XDG_CACHE_HOME=/data`, so its default is `/data/govee2mqtt/devices.json`. Keep this file on a persistent volume. The Purge Caches button clears the separate SQLite API cache and leaves the device database intact.
+
+On the first run after upgrading, names are initialized using the existing discovery rules: Platform API names when available, otherwise computed names, with rooms from the undocumented API. Later API updates are recorded under `api_info` without replacing these names or rooms. If discovery fails before a device is known, LAN discovery uses a name such as `H6072_0011`, which stays in the database when the cloud returns.
+
+To change a device's stored name or room, stop `govee2mqtt`, back up the file, edit its `name` or `room` field, and restart. Set `room` to `null` to clear it. Home Assistant maintains its own entity registry; editing this file does not explicitly rename an existing Home Assistant entity ID. A malformed file or an unsupported schema version stops startup with an error. Preserve the original file before repairing or restoring it.
+
+Writes are atomic and handled by a single background writer. New LAN devices trigger a save, while ordinary LAN status responses do not write the file on every packet. API discovery is retried on the existing ten-minute schedule even when it fails during startup, using the APIs' existing caches. This does not enforce LAN-only routing or prevent every cloud rate limit.
+
 ## LAN API Control
 
 A number of Govee's devices support a local control protocol that doesn't require
