@@ -109,10 +109,13 @@ impl HassArguments {
 #[derive(Clone)]
 pub struct HassClient {
     client: Client,
+    registration: Arc<tokio::sync::Mutex<()>>,
 }
 
 impl HassClient {
-    async fn register_with_hass(&self, state: &StateHandle) -> anyhow::Result<()> {
+    pub(crate) async fn register_with_hass(&self, state: &StateHandle) -> anyhow::Result<()> {
+        // Discovery recovery and HA birth messages can request registration together.
+        let _registration = self.registration.lock().await;
         let entities = enumerate_all_entites(state).await?;
 
         // Register the configs
@@ -467,19 +470,11 @@ async fn mqtt_switch_command(
 }
 
 pub fn mired_to_kelvin(mired: u32) -> u32 {
-    if mired == 0 {
-        0
-    } else {
-        1000000 / mired
-    }
+    1000000u32.checked_div(mired).unwrap_or(0)
 }
 
 pub fn kelvin_to_mired(kelvin: u32) -> u32 {
-    if kelvin == 0 {
-        0
-    } else {
-        1000000 / kelvin
-    }
+    1000000u32.checked_div(kelvin).unwrap_or(0)
 }
 
 /// HASS is advising us that its status has changed
@@ -672,6 +667,7 @@ pub async fn spawn_hass_integration(
     state
         .set_hass_client(HassClient {
             client: client.clone(),
+            registration: Arc::new(tokio::sync::Mutex::new(())),
         })
         .await;
 

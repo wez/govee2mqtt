@@ -91,4 +91,4 @@ env | grep GOVEE_ | sed -r 's/_(EMAIL|KEY|PASSWORD)=.*/_\1=REDACTED/'
 set -x
 
 cd /app
-exec /app/govee serve
+exec /app/govee serve --device-db=/data/devices.json

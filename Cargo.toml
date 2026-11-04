@@ -41,6 +41,7 @@ thiserror = "2.0.18"
 arc-swap = "1.8.2"
 async-trait = "0.1.77"
 parking_lot = "0.12.1"
+tempfile = "3.14"
 
 [dependencies.mosquitto-rs]
 version="0.11.1"

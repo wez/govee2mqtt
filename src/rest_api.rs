@@ -250,14 +250,14 @@ mod test {
     #[test]
     fn list_devices() {
         let resp: GetDevicesResponse =
-            from_json(&include_str!("../test-data/rest-list-devices.json")).unwrap();
+            from_json(include_str!("../test-data/rest-list-devices.json")).unwrap();
         k9::assert_matches_snapshot!(format!("{resp:#?}"));
     }
 
     #[test]
     fn list_appliances() {
         let resp: GetDevicesResponse =
-            from_json(&include_str!("../test-data/rest-appliances.json")).unwrap();
+            from_json(include_str!("../test-data/rest-appliances.json")).unwrap();
         k9::assert_matches_snapshot!(format!("{resp:#?}"));
     }
 }

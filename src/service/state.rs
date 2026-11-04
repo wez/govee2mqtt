@@ -1,4 +1,5 @@
 use crate::ble::{Base64HexBytes, SetHumidifierMode, SetHumidifierNightlightParams};
+use crate::device_database::DeviceDatabaseHandle;
 use crate::lan_api::{Client as LanClient, DeviceStatus as LanDeviceStatus, LanDevice};
 use crate::platform_api::{DeviceCapability, DeviceType, GoveeApiClient};
 use crate::service::coordinator::Coordinator;
@@ -26,6 +27,7 @@ pub struct State {
     hass_client: Mutex<Option<HassClient>>,
     hass_discovery_prefix: Mutex<String>,
     temperature_scale: Mutex<TemperatureScale>,
+    device_database: Mutex<Option<DeviceDatabaseHandle>>,
 }
 
 pub type StateHandle = Arc<State>;
@@ -183,6 +185,34 @@ impl State {
     #[allow(dead_code)]
     pub async fn get_undoc_client(&self) -> Option<GoveeUndocumentedApi> {
         self.undoc_client.lock().await.clone()
+    }
+
+    /// Set the device database handle
+    pub async fn set_device_database(&self, db: DeviceDatabaseHandle) {
+        self.device_database.lock().await.replace(db);
+    }
+
+    /// Get a clone of the device database handle
+    pub async fn get_device_database(&self) -> Option<DeviceDatabaseHandle> {
+        self.device_database.lock().await.clone()
+    }
+
+    /// Apply canonical names and rooms after refreshing API-specific metadata.
+    pub async fn apply_device_database(&self) {
+        if let Some(db) = self.get_device_database().await {
+            for persisted in db.list_devices() {
+                let mut device = self.device_mut(&persisted.sku, &persisted.id).await;
+                device.name = Some(persisted.name);
+                device.room = persisted.room;
+            }
+        }
+    }
+
+    pub async fn save_device_database(&self) -> anyhow::Result<()> {
+        if let Some(db) = self.get_device_database().await {
+            db.save().await?;
+        }
+        Ok(())
     }
 
     pub async fn poll_iot_api(self: &Arc<Self>, device: &Device) -> anyhow::Result<bool> {

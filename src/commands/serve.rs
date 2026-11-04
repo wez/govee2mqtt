@@ -1,3 +1,4 @@
+use crate::device_database::{DeviceDatabase, DeviceDatabaseHandle, DiscoverySource, StartupMode};
 use crate::lan_api::Client as LanClient;
 use crate::platform_api::GoveeApiClient;
 use crate::service::device::Device;
@@ -11,7 +12,8 @@ use crate::UndocApiArguments;
 use anyhow::Context;
 use chrono::Utc;
 use once_cell::sync::Lazy;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
+use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::time::{sleep, Duration};
 
@@ -22,6 +24,11 @@ pub struct ServeCommand {
     /// The port on which the HTTP API will listen
     #[arg(long, default_value_t = 8056)]
     http_port: u16,
+
+    /// Path to the persistent device database file.
+    /// May also be set with GOVEE_DEVICE_DB. Defaults to ~/.cache/govee2mqtt/devices.json.
+    #[arg(long)]
+    device_db: Option<PathBuf>,
 }
 
 async fn poll_single_device(state: &StateHandle, device: &Device) -> anyhow::Result<()> {
@@ -110,6 +117,7 @@ async fn enumerate_devices_via_platform_api(
     state: StateHandle,
     client: Option<GoveeApiClient>,
 ) -> anyhow::Result<()> {
+    let initial_discovery = client.is_some();
     let client = match client {
         Some(client) => client,
         None => match state.get_platform_client().await {
@@ -120,9 +128,27 @@ async fn enumerate_devices_via_platform_api(
 
     log::info!("Querying platform API for device list");
     for info in client.get_devices().await? {
+        if let Some(db) = state.get_device_database().await {
+            db.update_from_api(
+                &info.device,
+                &info.sku,
+                &info.device_name,
+                None, // Platform API doesn't provide room info
+                DiscoverySource::PlatformApi,
+            );
+        }
+
         let mut device = state.device_mut(&info.sku, &info.device).await;
         device.set_http_device_info(info);
     }
+
+    if !initial_discovery {
+        state.apply_device_database().await;
+        if let Err(err) = state.save_device_database().await {
+            log::warn!("Failed to save device database: {err:#}");
+        }
+    }
+
     Ok(())
 }
 
@@ -131,10 +157,11 @@ async fn enumerate_devices_via_undo_api(
     client: Option<GoveeUndocumentedApi>,
     args: &UndocApiArguments,
 ) -> anyhow::Result<()> {
-    let (client, needs_start) = match client {
-        Some(client) => (client, true),
+    let initial_discovery = client.is_some();
+    let client = match client {
+        Some(client) => client,
         None => match state.get_undoc_client().await {
-            Some(client) => (client, false),
+            Some(client) => client,
             None => return Ok(()),
         },
     };
@@ -146,80 +173,153 @@ async fn enumerate_devices_via_undo_api(
     for group in info.groups {
         group_by_id.insert(group.group_id, group.group_name);
     }
-    for entry in info.devices {
-        let mut device = state.device_mut(&entry.sku, &entry.device).await;
+    for entry in &info.devices {
         let room_name = group_by_id.get(&entry.group_id).map(|name| name.as_str());
-        device.set_undoc_device_info(entry, room_name);
+
+        // This provides room information that platform API doesn't have
+        if let Some(db) = state.get_device_database().await {
+            db.update_from_api(
+                &entry.device,
+                &entry.sku,
+                &entry.device_name,
+                room_name,
+                DiscoverySource::UndocApi,
+            );
+        }
+
+        let mut device = state.device_mut(&entry.sku, &entry.device).await;
+        device.set_undoc_device_info(entry.clone(), room_name);
     }
 
-    if needs_start {
+    if !initial_discovery {
+        state.apply_device_database().await;
+        if let Err(err) = state.save_device_database().await {
+            log::warn!("Failed to save device database: {err:#}");
+        }
+    }
+
+    if state.get_iot_client().await.is_none() {
         start_iot_client(args, state.clone(), Some(acct)).await?;
     }
     Ok(())
 }
 
-const ISSUE_76_EXPLANATION: &str = "Startup cannot automatically continue because entity names\n\
-    could become inconsistent especially across frequent similar\n\
-    intermittent issues if/as they occur on an ongoing basis.\n\
-    Please see https://github.com/wez/govee2mqtt/issues/76\n\
-    A workaround is to remove the Govee API credentials from your\n\
-    configuration, which will cause this govee2mqtt to use only\n\
-    the LAN API. Two consequences of that will be loss of control\n\
-    over devices that do not support the LAN API, and also devices\n\
-    changing entity ID to less descriptive names due to lack of\n\
-    metadata availability via the LAN API.";
+async fn initialize_device_database(
+    state: &StateHandle,
+    db: &DeviceDatabaseHandle,
+    initial_device_ids: &HashSet<String>,
+) -> anyhow::Result<()> {
+    for device in state.devices().await {
+        if !initial_device_ids.contains(&device.id) {
+            db.initialize_identity(
+                &device.id,
+                device.name(),
+                device.room_name().map(str::to_string),
+            );
+        }
+    }
+    state.apply_device_database().await;
+    state.save_device_database().await
+}
+
+async fn register_recovered_devices(state: &StateHandle) -> bool {
+    let Some(hass) = state.get_hass_client().await else {
+        return false;
+    };
+    match hass.register_with_hass(state).await {
+        Ok(()) => true,
+        Err(err) => {
+            log::warn!("Registering devices after API recovery: {err:#}");
+            false
+        }
+    }
+}
 
 impl ServeCommand {
     pub async fn run(&self, args: &crate::Args) -> anyhow::Result<()> {
         log::info!("Starting service. version {}", govee_version());
         let state = Arc::new(crate::service::state::State::new());
 
-        // First, use the HTTP APIs to determine the list of devices and
-        // their names.
+        let db_path = match &self.device_db {
+            Some(path) => path.clone(),
+            None => {
+                crate::opt_env_var("GOVEE_DEVICE_DB")?.unwrap_or_else(DeviceDatabase::default_path)
+            }
+        };
+        let cache_path = crate::cache::cache_file_name();
+        let startup_mode = StartupMode::detect(&db_path, &cache_path);
 
-        if let Ok(client) = args.api_args.api_client() {
-            if let Err(err) =
-                enumerate_devices_via_platform_api(state.clone(), Some(client.clone())).await
-            {
-                anyhow::bail!(
-                    "Error during initial platform API discovery: {err:#}\n{ISSUE_76_EXPLANATION}"
+        log::info!("Device database path: {:?}", db_path);
+        match &startup_mode {
+            StartupMode::FreshInstall => {
+                log::info!("Fresh install detected - no existing device data");
+            }
+            StartupMode::Upgrade => {
+                log::info!(
+                    "Upgrade detected - device database will be populated on next API success"
                 );
             }
+            StartupMode::Normal => {
+                log::info!("Normal startup - loading existing device data");
+            }
+        }
 
-            // only record the client after we've completed the
-            // initial platform disco attempt
-            state.set_platform_client(client).await;
+        let device_db = DeviceDatabaseHandle::open(db_path.clone())
+            .context("Failed to open device database")?;
 
-            // spawn periodic discovery task
+        state.set_device_database(device_db.clone()).await;
+
+        let discovery_start = chrono::Utc::now();
+
+        let initial_device_ids: HashSet<_> =
+            device_db.list_devices().into_iter().map(|d| d.id).collect();
+        let initial_device_count = device_db.len();
+        if initial_device_count > 0 {
+            log::info!(
+                "Loading {} devices from persistent database",
+                initial_device_count
+            );
+            for persisted in device_db.list_devices() {
+                let mut device = state.device_mut(&persisted.sku, &persisted.id).await;
+                device.name = Some(persisted.name.clone());
+                device.room = persisted.room.clone();
+            }
+        }
+
+        if let Ok(client) = args.api_args.api_client() {
+            state.set_platform_client(client.clone()).await;
+            let result = enumerate_devices_via_platform_api(state.clone(), Some(client)).await;
+            let mut needs_registration = result.is_err();
+            if let Err(err) = result {
+                log::warn!(
+                    "Platform API discovery failed: {err:#}; will retry during periodic discovery"
+                );
+            }
             let state = state.clone();
             tokio::spawn(async move {
                 loop {
                     sleep(Duration::from_secs(600)).await;
                     if let Err(err) = enumerate_devices_via_platform_api(state.clone(), None).await
                     {
+                        needs_registration = true;
                         log::error!("Error during periodic platform API discovery: {err:#}");
+                    } else if needs_registration {
+                        needs_registration = !register_recovered_devices(&state).await;
                     }
                 }
             });
         }
+
         if let Ok(client) = args.undoc_args.api_client() {
-            if let Err(err) = enumerate_devices_via_undo_api(
-                state.clone(),
-                Some(client.clone()),
-                &args.undoc_args,
-            )
-            .await
-            {
-                anyhow::bail!(
-                    "Error during initial undoc API discovery: {err:#}\n{ISSUE_76_EXPLANATION}"
+            state.set_undoc_client(client.clone()).await;
+            let result =
+                enumerate_devices_via_undo_api(state.clone(), Some(client), &args.undoc_args).await;
+            let mut needs_registration = result.is_err();
+            if let Err(err) = result {
+                log::warn!(
+                    "Undoc API discovery failed: {err:#}; will retry during periodic discovery"
                 );
             }
-
-            // only record the client after we've completed the
-            // initial undoc disco attempt
-            state.set_undoc_client(client).await;
-
-            // spawn periodic discovery task
             let state = state.clone();
             let args = args.undoc_args.clone();
             tokio::spawn(async move {
@@ -228,18 +328,54 @@ impl ServeCommand {
                     if let Err(err) =
                         enumerate_devices_via_undo_api(state.clone(), None, &args).await
                     {
+                        needs_registration = true;
                         log::error!("Error during periodic undoc API discovery: {err:#}");
+                    } else if needs_registration {
+                        needs_registration = !register_recovered_devices(&state).await;
                     }
                 }
             });
         }
 
-        // Now start LAN discovery
+        // Preserve the pre-database naming rules on upgrade: Platform names and
+        // Undoc rooms, or computed names without Platform metadata. Once stored,
+        // these fields no longer change when a different API becomes available.
+        if let Err(err) = initialize_device_database(&state, &device_db, &initial_device_ids).await
+        {
+            log::warn!("Failed to save device database: {err:#}");
+        }
+
+        let stale_devices: Vec<_> = device_db
+            .list_devices()
+            .into_iter()
+            .filter(|d| {
+                d.last_api_sync()
+                    .map(|ts| ts < discovery_start)
+                    .unwrap_or(true)
+            })
+            .collect();
+
+        if !stale_devices.is_empty() {
+            log::warn!(
+                "{} device(s) using cached data (no recent API sync):",
+                stale_devices.len()
+            );
+            for device in &stale_devices {
+                log::warn!(
+                    "  {} ({}) - last sync: {:?}",
+                    device.name,
+                    device.sku,
+                    device.last_api_sync()
+                );
+            }
+            log::warn!("LAN-capable devices should still be controllable");
+        }
 
         let options = args.lan_disco_args.to_disco_options()?;
         if !options.is_empty() {
             log::info!("Starting LAN discovery");
             let state = state.clone();
+            let db_for_lan = device_db.clone();
             let (client, mut scan) = LanClient::new(options).await?;
 
             state.set_lan_client(client.clone()).await;
@@ -247,10 +383,16 @@ impl ServeCommand {
             tokio::spawn(async move {
                 while let Some(lan_device) = scan.recv().await {
                     log::trace!("LAN disco: {lan_device:?}");
-                    state
-                        .device_mut(&lan_device.sku, &lan_device.device)
-                        .await
-                        .set_lan_device(lan_device.clone());
+
+                    let persisted =
+                        db_for_lan.handle_lan_discovery(&lan_device.device, &lan_device.sku);
+                    {
+                        let mut device =
+                            state.device_mut(&lan_device.sku, &lan_device.device).await;
+                        device.name = Some(persisted.name);
+                        device.room = persisted.room;
+                        device.set_lan_device(lan_device.clone());
+                    }
 
                     let state = state.clone();
                     let client = client.clone();
@@ -353,5 +495,137 @@ impl ServeCommand {
         run_http_server(state.clone(), self.http_port)
             .await
             .with_context(|| format!("Starting HTTP service on port {}", self.http_port))
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::platform_api::HttpDeviceInfo;
+    use crate::undoc_api::DeviceEntry;
+
+    fn api_metadata() -> (HttpDeviceInfo, DeviceEntry) {
+        let platform: serde_json::Value =
+            serde_json::from_str(include_str!("../../test-data/list_devices.json")).unwrap();
+        let undoc: serde_json::Value =
+            serde_json::from_str(include_str!("../../test-data/undoc-device-list.json")).unwrap();
+        let mut info: HttpDeviceInfo = serde_json::from_value(platform["data"][0].clone()).unwrap();
+        info.device_name = "Kitchen Light".into();
+        let mut entry: DeviceEntry = serde_json::from_value(undoc["devices"][0].clone()).unwrap();
+        entry.device = info.device.clone();
+        entry.sku = info.sku.clone();
+        (info, entry)
+    }
+
+    #[tokio::test]
+    async fn first_discovery_and_offline_restart_keep_the_same_mqtt_identity() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("devices.json");
+        let db = DeviceDatabaseHandle::open(path.clone()).unwrap();
+        let state = Arc::new(crate::service::state::State::new());
+        state.set_device_database(db.clone()).await;
+        let (info, entry) = api_metadata();
+        let id = info.device.clone();
+        db.update_from_api(
+            &id,
+            &info.sku,
+            &info.device_name,
+            None,
+            DiscoverySource::PlatformApi,
+        );
+        db.update_from_api(
+            &id,
+            &entry.sku,
+            &entry.device_name,
+            Some("Kitchen"),
+            DiscoverySource::UndocApi,
+        );
+        {
+            let mut device = state.device_mut(&info.sku, &id).await;
+            device.set_http_device_info(info);
+            device.set_undoc_device_info(entry, Some("Kitchen"));
+        }
+
+        initialize_device_database(&state, &db, &HashSet::new())
+            .await
+            .unwrap();
+        let original = state.device_by_id(&id).await.unwrap();
+        let mqtt = crate::hass_mqtt::base::Device::for_device(&original);
+        let restored = Arc::new(crate::service::state::State::new());
+        restored
+            .set_device_database(DeviceDatabaseHandle::open(path).unwrap())
+            .await;
+        restored.apply_device_database().await;
+        let device = restored.device_by_id(&id).await.unwrap();
+        let offline_mqtt = crate::hass_mqtt::base::Device::for_device(&device);
+
+        assert_eq!(device.name(), "Kitchen Light");
+        assert_eq!(device.room_name(), Some("Kitchen"));
+        assert!(device.http_device_info.is_none());
+        assert_eq!(offline_mqtt.identifiers, mqtt.identifiers);
+        assert_eq!(offline_mqtt.name, mqtt.name);
+        assert_eq!(offline_mqtt.suggested_area, mqtt.suggested_area);
+    }
+
+    #[tokio::test]
+    async fn undoc_only_upgrade_preserves_the_previous_computed_name() {
+        let dir = tempfile::tempdir().unwrap();
+        let db = DeviceDatabaseHandle::open(dir.path().join("devices.json")).unwrap();
+        let state = Arc::new(crate::service::state::State::new());
+        state.set_device_database(db.clone()).await;
+        let (_, entry) = api_metadata();
+        let id = entry.device.clone();
+        db.update_from_api(
+            &id,
+            &entry.sku,
+            &entry.device_name,
+            Some("Kitchen"),
+            DiscoverySource::UndocApi,
+        );
+        let expected;
+        {
+            let mut device = state.device_mut(&entry.sku, &id).await;
+            device.set_undoc_device_info(entry, Some("Kitchen"));
+            expected = device.name();
+        }
+
+        initialize_device_database(&state, &db, &HashSet::new())
+            .await
+            .unwrap();
+
+        assert_eq!(state.device_by_id(&id).await.unwrap().name(), expected);
+        assert_eq!(db.get_device(&id).unwrap().name, expected);
+        assert_eq!(db.get_device(&id).unwrap().room.as_deref(), Some("Kitchen"));
+    }
+
+    #[tokio::test]
+    async fn api_recovery_preserves_a_lan_name_and_an_explicitly_cleared_room() {
+        let dir = tempfile::tempdir().unwrap();
+        let db = DeviceDatabaseHandle::open(dir.path().join("devices.json")).unwrap();
+        let state = Arc::new(crate::service::state::State::new());
+        state.set_device_database(db.clone()).await;
+        let (info, entry) = api_metadata();
+        let id = info.device.clone();
+        db.handle_lan_discovery(&id, &info.sku);
+        db.initialize_identity(&id, "Chosen name".into(), None);
+        {
+            let mut device = state.device_mut(&info.sku, &id).await;
+            device.set_http_device_info(info.clone());
+            device.set_undoc_device_info(entry, Some("Cloud room"));
+        }
+        db.update_from_api(
+            &id,
+            &info.sku,
+            "New cloud name",
+            Some("Cloud room"),
+            DiscoverySource::PlatformApi,
+        );
+
+        state.apply_device_database().await;
+
+        let device = state.device_by_id(&id).await.unwrap();
+        assert_eq!(device.name(), "Chosen name");
+        assert_eq!(device.room_name(), None);
+        assert!(device.http_device_info.is_some());
     }
 }

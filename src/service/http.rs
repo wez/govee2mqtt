@@ -11,48 +11,50 @@ use serde::Serialize;
 use std::net::IpAddr;
 use tower_http::services::ServeDir;
 
-fn response_with_code<T: ToString + std::fmt::Display>(code: StatusCode, err: T) -> Response {
+type JsonResponse = (StatusCode, Json<serde_json::Value>);
+
+fn response_with_code<T: ToString + std::fmt::Display>(code: StatusCode, err: T) -> JsonResponse {
     if !code.is_success() {
         log::error!("err: {err:#}");
     }
 
-    let mut response = Json(serde_json::json!({
-        "code": code.as_u16(),
-        "msg": format!("{err:#}")
-    }))
-    .into_response();
-    *response.status_mut() = code;
-    response
+    (
+        code,
+        Json(serde_json::json!({
+            "code": code.as_u16(),
+            "msg": format!("{err:#}")
+        })),
+    )
 }
 
-fn generic<T: ToString + std::fmt::Display>(err: T) -> Response {
+fn generic<T: ToString + std::fmt::Display>(err: T) -> JsonResponse {
     response_with_code(StatusCode::INTERNAL_SERVER_ERROR, err)
 }
 
-fn not_found<T: ToString + std::fmt::Display>(err: T) -> Response {
+fn not_found<T: ToString + std::fmt::Display>(err: T) -> JsonResponse {
     response_with_code(StatusCode::NOT_FOUND, err)
 }
 
-fn bad_request<T: ToString + std::fmt::Display>(err: T) -> Response {
+fn bad_request<T: ToString + std::fmt::Display>(err: T) -> JsonResponse {
     response_with_code(StatusCode::BAD_REQUEST, err)
 }
 
 async fn resolve_device_for_control(
     state: &StateHandle,
     id: &str,
-) -> Result<Coordinator, Response> {
+) -> Result<Coordinator, JsonResponse> {
     state
         .resolve_device_for_control(id)
         .await
         .map_err(not_found)
 }
 
-async fn resolve_device_read_only(state: &StateHandle, id: &str) -> Result<Device, Response> {
+async fn resolve_device_read_only(state: &StateHandle, id: &str) -> Result<Device, JsonResponse> {
     state.resolve_device_read_only(id).await.map_err(not_found)
 }
 
 /// Returns a json array of device information
-async fn list_devices(State(state): State<StateHandle>) -> Result<Response, Response> {
+async fn list_devices(State(state): State<StateHandle>) -> Result<Response, JsonResponse> {
     let mut devices = state.devices().await;
     devices.sort_by_key(|d| (d.room_name().map(|name| name.to_string()), d.name()));
 
@@ -85,7 +87,7 @@ async fn list_devices(State(state): State<StateHandle>) -> Result<Response, Resp
 async fn device_power_on(
     State(state): State<StateHandle>,
     Path(id): Path<String>,
-) -> Result<Response, Response> {
+) -> Result<Response, JsonResponse> {
     let device = resolve_device_for_control(&state, &id).await?;
 
     state
@@ -93,14 +95,14 @@ async fn device_power_on(
         .await
         .map_err(generic)?;
 
-    Ok(response_with_code(StatusCode::OK, "ok"))
+    Ok(response_with_code(StatusCode::OK, "ok").into_response())
 }
 
 /// Turns off a given device
 async fn device_power_off(
     State(state): State<StateHandle>,
     Path(id): Path<String>,
-) -> Result<Response, Response> {
+) -> Result<Response, JsonResponse> {
     let device = resolve_device_for_control(&state, &id).await?;
 
     state
@@ -108,14 +110,14 @@ async fn device_power_off(
         .await
         .map_err(generic)?;
 
-    Ok(response_with_code(StatusCode::OK, "ok"))
+    Ok(response_with_code(StatusCode::OK, "ok").into_response())
 }
 
 /// Sets the brightness level of a given device
 async fn device_set_brightness(
     State(state): State<StateHandle>,
     Path((id, level)): Path<(String, u8)>,
-) -> Result<Response, Response> {
+) -> Result<Response, JsonResponse> {
     let device = resolve_device_for_control(&state, &id).await?;
 
     state
@@ -123,14 +125,14 @@ async fn device_set_brightness(
         .await
         .map_err(generic)?;
 
-    Ok(response_with_code(StatusCode::OK, "ok"))
+    Ok(response_with_code(StatusCode::OK, "ok").into_response())
 }
 
 /// Sets the color temperature of a given device
 async fn device_set_color_temperature(
     State(state): State<StateHandle>,
     Path((id, kelvin)): Path<(String, u32)>,
-) -> Result<Response, Response> {
+) -> Result<Response, JsonResponse> {
     let device = resolve_device_for_control(&state, &id).await?;
 
     state
@@ -138,14 +140,14 @@ async fn device_set_color_temperature(
         .await
         .map_err(generic)?;
 
-    Ok(response_with_code(StatusCode::OK, "ok"))
+    Ok(response_with_code(StatusCode::OK, "ok").into_response())
 }
 
 /// Sets the RGB color of a given device
 async fn device_set_color(
     State(state): State<StateHandle>,
     Path((id, color)): Path<(String, String)>,
-) -> Result<Response, Response> {
+) -> Result<Response, JsonResponse> {
     let color = csscolorparser::parse(&color)
         .map_err(|err| bad_request(format!("error parsing color '{color}': {err}")))?;
     let [r, g, b, _a] = color.to_rgba8();
@@ -157,14 +159,14 @@ async fn device_set_color(
         .await
         .map_err(generic)?;
 
-    Ok(response_with_code(StatusCode::OK, "ok"))
+    Ok(response_with_code(StatusCode::OK, "ok").into_response())
 }
 
 /// Activates the named scene for a given device
 async fn device_set_scene(
     State(state): State<StateHandle>,
     Path((id, scene)): Path<(String, String)>,
-) -> Result<Response, Response> {
+) -> Result<Response, JsonResponse> {
     let device = resolve_device_for_control(&state, &id).await?;
 
     state
@@ -172,14 +174,14 @@ async fn device_set_scene(
         .await
         .map_err(generic)?;
 
-    Ok(response_with_code(StatusCode::OK, "ok"))
+    Ok(response_with_code(StatusCode::OK, "ok").into_response())
 }
 
 /// Returns a JSON array of the available scene names for a given device
 async fn device_list_scenes(
     State(state): State<StateHandle>,
     Path(id): Path<String>,
-) -> Result<Response, Response> {
+) -> Result<Response, JsonResponse> {
     let device = resolve_device_read_only(&state, &id).await?;
 
     let scenes = state.device_list_scenes(&device).await.map_err(generic)?;
@@ -187,7 +189,7 @@ async fn device_list_scenes(
     Ok(Json(scenes).into_response())
 }
 
-async fn list_one_clicks(State(state): State<StateHandle>) -> Result<Response, Response> {
+async fn list_one_clicks(State(state): State<StateHandle>) -> Result<Response, JsonResponse> {
     let undoc = state
         .get_undoc_client()
         .await
@@ -201,7 +203,7 @@ async fn list_one_clicks(State(state): State<StateHandle>) -> Result<Response, R
 async fn activate_one_click(
     State(state): State<StateHandle>,
     Path(name): Path<String>,
-) -> Result<Response, Response> {
+) -> Result<Response, JsonResponse> {
     let undoc = state
         .get_undoc_client()
         .await
@@ -222,7 +224,7 @@ async fn activate_one_click(
 
     iot.activate_one_click(item).await.map_err(generic)?;
 
-    Ok(response_with_code(StatusCode::OK, "ok"))
+    Ok(response_with_code(StatusCode::OK, "ok").into_response())
 }
 
 async fn redirect_to_index() -> Response {
@@ -262,6 +264,40 @@ fn test_build_router() {
     // This next line will panic if axum decides that
     // the syntax is bad.
     let _ = build_router(StateHandle::default());
+}
+
+#[cfg(test)]
+#[tokio::test]
+async fn handler_errors_keep_their_status_and_json_body() {
+    let state = StateHandle::default();
+    let missing_device = device_power_on(State(state.clone()), Path("missing".into()))
+        .await
+        .unwrap_err();
+    let unavailable_api = list_one_clicks(State(state)).await.unwrap_err();
+
+    for (error, status, message) in [
+        (
+            missing_device,
+            StatusCode::NOT_FOUND,
+            "device 'missing' not found",
+        ),
+        (
+            unavailable_api,
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Undoc API client is not available",
+        ),
+    ] {
+        let response = error.into_response();
+        assert_eq!(response.status(), status);
+        assert_eq!(response.headers()["content-type"], "application/json");
+        let body = axum::body::to_bytes(response.into_body(), 1024)
+            .await
+            .unwrap();
+        k9::assert_equal!(
+            serde_json::from_slice::<serde_json::Value>(&body).unwrap(),
+            serde_json::json!({"code": status.as_u16(), "msg": message})
+        );
+    }
 }
 
 pub async fn run_http_server(state: StateHandle, port: u16) -> anyhow::Result<()> {
