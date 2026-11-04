@@ -121,11 +121,9 @@ impl Device {
     /// Priority: persistent database name > Govee App name > computed name.
     /// The database name is the source of truth for Home Assistant entity naming.
     pub fn name(&self) -> String {
-        // Database name is the definitive source of truth
         if let Some(name) = &self.name {
             return name.clone();
         }
-        // Fallback to API name if available (fresh discovery)
         if let Some(name) = self.govee_name() {
             return name.to_string();
         }
@@ -141,12 +139,10 @@ impl Device {
     }
 
     pub fn room_name(&self) -> Option<&str> {
-        // Database room is the definitive source of truth
         if self.name.is_some() {
             // None is also authoritative: the user may have cleared the room.
             return self.room.as_deref();
         }
-        // Fallback to API room if available (fresh discovery)
         if let Some(info) = &self.undoc_device_info {
             return info.room_name.as_deref();
         }
@@ -381,7 +377,7 @@ impl Device {
             candidates.push(state);
         }
 
-        candidates.sort_by(|a, b| a.updated.cmp(&b.updated));
+        candidates.sort_by_key(|a| a.updated);
 
         candidates.pop()
     }

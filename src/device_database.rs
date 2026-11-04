@@ -1,28 +1,5 @@
-//! Persistent Device Database
-//!
-//! Provides stable device identity and naming across API outages by storing
-//! device metadata in a local JSON file.
-//!
-//! ## Design Principles
-//!
-//! 1. **Database is source of truth for naming** - Entity IDs come from database,
-//!    not from the API that discovered the device
-//! 2. **API enriches, doesn't replace** - API metadata updates database but
-//!    doesn't overwrite user customizations
-//! 3. **LAN devices match to database** - LAN-discovered devices are matched
-//!    to existing database entries by device_id
-//! 4. **Separate from cache** - Database persists when cache is cleared
-//!
-//! ## File Format
-//!
-//! The database is stored as a pretty-printed JSON file. The path is configured
-//! via the `--device-db` CLI argument.
-//!
-//! Default locations:
-//! - `/data/devices.json` (Home Assistant add-on, explicitly set via CLI in run.sh)
-//! - `~/.cache/govee2mqtt/devices.json` (standalone, when --device-db is not specified)
-//!
-//! Writes are atomic (write to temp file, then rename) to prevent corruption.
+//! Stable device names and rooms, kept separately from the disposable API cache.
+//! API refreshes update per-source metadata without replacing the stored identity.
 
 use anyhow::Context;
 use chrono::{DateTime, Utc};
@@ -251,29 +228,32 @@ impl DeviceDatabase {
                 log::info!("No device database found at {:?}, starting fresh", path);
                 Ok(DeviceDatabase::default())
             }
-            Err(err) => Err(err.into()),
+            Err(err) => Err(err).with_context(|| format!("Reading device database {path:?}")),
         }
     }
 
     /// Save database atomically (write temp file, then rename)
     pub fn save(&self, path: &Path) -> anyhow::Result<()> {
-        // Create parent directory if needed
         let parent = path
             .parent()
             .filter(|parent| !parent.as_os_str().is_empty())
             .unwrap_or_else(|| Path::new("."));
-        fs::create_dir_all(parent)?;
+        fs::create_dir_all(parent)
+            .with_context(|| format!("Creating device database directory {parent:?}"))?;
 
-        let contents = serde_json::to_string_pretty(self)?;
+        let contents = serde_json::to_string_pretty(self)
+            .with_context(|| format!("Serializing device database for {path:?}"))?;
 
-        // Use NamedTempFile for robust atomic writes:
-        // - Creates file with unique name (avoids collisions)
-        // - Cleans up on drop if persist() fails
-        // - Handles symlink race conditions
-        let mut file = NamedTempFile::new_in(parent)?;
-        file.write_all(contents.as_bytes())?;
-        file.as_file().sync_all()?;
-        file.persist(path)?;
+        // Keep the temporary file on the same filesystem so replacement is atomic.
+        let mut file = NamedTempFile::new_in(parent)
+            .with_context(|| format!("Creating temporary device database in {parent:?}"))?;
+        file.write_all(contents.as_bytes())
+            .with_context(|| format!("Writing temporary device database for {path:?}"))?;
+        file.as_file()
+            .sync_all()
+            .with_context(|| format!("Syncing temporary device database for {path:?}"))?;
+        file.persist(path)
+            .with_context(|| format!("Replacing device database {path:?}"))?;
 
         log::debug!(
             "Saved device database with {} devices to {:?}",
@@ -329,10 +309,8 @@ impl DeviceDatabase {
         let now = Utc::now();
 
         if let Some(existing) = self.devices.get_mut(device_id) {
-            // Update existing device
             existing.sku = sku.to_string();
 
-            // Update per-API tracking
             existing.api_info.insert(
                 source.clone(),
                 PersistedApiInfo {
@@ -348,7 +326,6 @@ impl DeviceDatabase {
                 source
             );
         } else {
-            // New device
             self.devices.insert(
                 device_id.to_string(),
                 PersistedDevice::new_from_api(device_id, sku, api_name, api_room, source.clone()),
@@ -362,16 +339,13 @@ impl DeviceDatabase {
         }
     }
 
-    /// Handle LAN-discovered device
-    /// If known: update last_seen
-    /// If unknown: create minimal entry with SKU-based name
+    /// Record LAN contact without changing a known device's identity.
     pub fn handle_lan_discovery(&mut self, device_id: &str, sku: &str) -> &PersistedDevice {
         let now = Utc::now();
 
         self.devices
             .entry(device_id.to_string())
             .and_modify(|d| {
-                // Update LAN API tracking
                 d.api_info.insert(
                     DiscoverySource::Lan,
                     PersistedApiInfo {
@@ -545,48 +519,80 @@ mod tests {
     }
 
     #[test]
-    fn test_database_roundtrip() {
+    fn database_roundtrip_preserves_the_json_contract() {
         let dir = TempDir::new().unwrap();
         let path = dir.path().join("test_devices.json");
 
         let mut db = DeviceDatabase::default();
+        db.handle_lan_discovery("0022", "H6072");
         db.update_from_api(
-            "AA:BB:CC:DD:EE:FF:00:11",
+            "0011",
             "H6072",
             "Test Light",
             Some("Living Room"),
             DiscoverySource::PlatformApi,
         );
+        db.update_from_api("0011", "H6072", "App name", None, DiscoverySource::UndocApi);
+        let fixed_time = "2025-01-01T00:00:00Z".parse::<DateTime<Utc>>().unwrap();
+        for device in db.devices.values_mut() {
+            device.first_seen = fixed_time;
+            for info in device.api_info.values_mut() {
+                info.last_sync = fixed_time;
+            }
+        }
 
         db.save(&path).unwrap();
 
-        let loaded = DeviceDatabase::load(&path).unwrap();
-        assert_eq!(loaded.devices.len(), 1);
-
-        let device = loaded.devices.get("AA:BB:CC:DD:EE:FF:00:11").unwrap();
-        assert_eq!(device.name, "Test Light");
-        assert_eq!(device.room, Some("Living Room".to_string()));
-        assert!(device.api_info.contains_key(&DiscoverySource::PlatformApi));
+        let contents = fs::read_to_string(&path).unwrap();
+        k9::snapshot!(
+            k9::MultilineString(contents.clone()),
+            r#"
+{
+  "version": 2,
+  "devices": {
+    "0011": {
+      "id": "0011",
+      "sku": "H6072",
+      "name": "Test Light",
+      "room": "Living Room",
+      "first_seen": "2025-01-01T00:00:00Z",
+      "api_info": {
+        "platform_api": {
+          "name": "Test Light",
+          "room": "Living Room",
+          "last_sync": "2025-01-01T00:00:00Z"
+        },
+        "undoc_api": {
+          "name": "App name",
+          "last_sync": "2025-01-01T00:00:00Z"
+        }
+      }
+    },
+    "0022": {
+      "id": "0022",
+      "sku": "H6072",
+      "name": "H6072_0022",
+      "first_seen": "2025-01-01T00:00:00Z",
+      "api_info": {
+        "lan": {
+          "last_sync": "2025-01-01T00:00:00Z"
+        }
+      }
     }
-
-    #[test]
-    fn test_lan_discovery_new_device() {
-        let mut db = DeviceDatabase::default();
-        let device = db.handle_lan_discovery("AA:BB:CC:DD:EE:FF:00:11", "H6072");
-
-        assert_eq!(device.name, "H6072_0011");
-        assert_eq!(device.sku, "H6072");
-        assert!(device.api_info.contains_key(&DiscoverySource::Lan));
+  }
+}
+"#
+        );
+        let loaded = DeviceDatabase::load(&path).unwrap();
+        k9::assert_equal!(serde_json::to_string_pretty(&loaded).unwrap(), contents);
     }
 
     #[test]
     fn api_enriches_a_lan_device_without_changing_its_identity() {
         let mut db = DeviceDatabase::default();
 
-        // First, LAN discovery
         db.handle_lan_discovery("AA:BB:CC:DD:EE:FF:00:11", "H6072");
 
-        // Then API enriches it
         db.update_from_api(
             "AA:BB:CC:DD:EE:FF:00:11",
             "H6072",
@@ -598,7 +604,6 @@ mod tests {
         let device = db.get("AA:BB:CC:DD:EE:FF:00:11").unwrap();
         assert_eq!(device.name, "H6072_0011");
         assert_eq!(device.room, None);
-        // Should have both LAN and Platform API entries
         assert!(device.api_info.contains_key(&DiscoverySource::Lan));
         assert!(device.api_info.contains_key(&DiscoverySource::PlatformApi));
     }
@@ -618,20 +623,17 @@ mod tests {
         let db_path = dir.path().join("devices.json");
         let cache_path = dir.path().join("cache.sqlite");
 
-        // Fresh install
         assert_eq!(
             StartupMode::detect(&db_path, &cache_path),
             StartupMode::FreshInstall
         );
 
-        // Upgrade (cache exists, no DB)
         std::fs::write(&cache_path, "").unwrap();
         assert_eq!(
             StartupMode::detect(&db_path, &cache_path),
             StartupMode::Upgrade
         );
 
-        // Normal (DB exists)
         std::fs::write(&db_path, "{}").unwrap();
         assert_eq!(
             StartupMode::detect(&db_path, &cache_path),
@@ -640,29 +642,27 @@ mod tests {
     }
 
     #[test]
-    fn test_last_api_sync() {
-        let mut db = DeviceDatabase::default();
-
-        // Add via LAN first
-        db.handle_lan_discovery("AA:BB:CC:DD:EE:FF:00:11", "H6072");
-        let device = db.get("AA:BB:CC:DD:EE:FF:00:11").unwrap();
-        let lan_sync = device.last_api_sync();
-
-        // Update via Platform API
-        std::thread::sleep(std::time::Duration::from_millis(10));
-        db.update_from_api(
-            "AA:BB:CC:DD:EE:FF:00:11",
-            "H6072",
-            "Test",
-            None,
+    fn last_api_sync_uses_the_newest_source_timestamp() {
+        let older = "2025-01-01T00:00:00Z".parse::<DateTime<Utc>>().unwrap();
+        let newer = "2025-01-02T00:00:00Z".parse::<DateTime<Utc>>().unwrap();
+        let mut device = PersistedDevice::new_minimal("0011", "H6072", DiscoverySource::Lan);
+        device
+            .api_info
+            .get_mut(&DiscoverySource::Lan)
+            .unwrap()
+            .last_sync = newer;
+        device.api_info.insert(
             DiscoverySource::PlatformApi,
+            PersistedApiInfo {
+                name: None,
+                room: None,
+                last_sync: older,
+            },
         );
-        let device = db.get("AA:BB:CC:DD:EE:FF:00:11").unwrap();
-        let platform_sync = device.last_api_sync();
 
-        // Platform sync should be newer
-        assert!(platform_sync > lan_sync);
+        assert_eq!(device.last_api_sync(), Some(newer));
     }
+
     #[test]
     fn api_refresh_preserves_user_edits_and_tracks_each_source() {
         let mut db = DeviceDatabase::default();
@@ -698,11 +698,6 @@ mod tests {
     }
 
     #[test]
-    fn new_database_uses_current_version() {
-        assert_eq!(DeviceDatabase::default().version, 2);
-    }
-
-    #[test]
     fn future_and_malformed_databases_remain_untouched() {
         let dir = TempDir::new().unwrap();
         for (index, contents) in [
@@ -724,20 +719,67 @@ mod tests {
         let dir = TempDir::new().unwrap();
         for version in [0, 1] {
             let path = dir.path().join(format!("{version}.json"));
-            let mut db = DeviceDatabase::default();
-            db.update_from_api("0011", "H6072", "Cloud", None, DiscoverySource::PlatformApi);
-            let mut value = serde_json::to_value(db).unwrap();
-            value["version"] = version.into();
-            value["devices"]["0011"]["user_name"] = "Chosen".into();
-            value["devices"]["0011"]["user_room"] = "Kitchen".into();
-            fs::write(&path, serde_json::to_vec(&value).unwrap()).unwrap();
+            let legacy = serde_json::json!({
+                "version": version,
+                "devices": {
+                    "0011": {
+                        "id": "0011",
+                        "sku": "H6072",
+                        "name": "Cloud",
+                        "room": "Cloud room",
+                        "user_name": "Chosen",
+                        "user_room": "Kitchen",
+                        "first_seen": "2025-01-01T00:00:00Z",
+                        "api_info": {
+                            "platform_api": {
+                                "name": "Cloud",
+                                "last_sync": "2025-01-02T00:00:00Z"
+                            }
+                        }
+                    }
+                }
+            });
+            fs::write(&path, serde_json::to_vec(&legacy).unwrap()).unwrap();
 
             let loaded = DeviceDatabase::load(&path).unwrap();
 
-            assert_eq!(loaded.version, 2);
-            assert_eq!(loaded.get_display_name("0011"), Some("Chosen"));
-            assert_eq!(loaded.get_room("0011"), Some("Kitchen"));
+            k9::snapshot!(
+                k9::MultilineString(serde_json::to_string_pretty(&loaded).unwrap()),
+                r#"
+{
+  "version": 2,
+  "devices": {
+    "0011": {
+      "id": "0011",
+      "sku": "H6072",
+      "name": "Chosen",
+      "room": "Kitchen",
+      "first_seen": "2025-01-01T00:00:00Z",
+      "api_info": {
+        "platform_api": {
+          "name": "Cloud",
+          "last_sync": "2025-01-02T00:00:00Z"
         }
+      }
+    }
+  }
+}
+"#
+            );
+        }
+    }
+
+    #[test]
+    fn database_read_failure_identifies_the_path_and_preserves_the_cause() {
+        let dir = TempDir::new().unwrap();
+
+        let err = DeviceDatabase::load(dir.path()).unwrap_err();
+
+        assert_eq!(
+            err.to_string(),
+            format!("Reading device database {:?}", dir.path())
+        );
+        assert!(err.downcast_ref::<std::io::Error>().is_some());
     }
 
     #[tokio::test]
@@ -793,8 +835,14 @@ mod tests {
         fs::create_dir(&path).unwrap(); // A directory cannot be replaced by the JSON file.
         db.handle_lan_discovery("0011", "H6072");
 
-        assert!(db.save().await.is_err());
+        let err = db.save().await.unwrap_err();
 
+        assert_eq!(
+            err.to_string(),
+            format!("Replacing device database {path:?}")
+        );
+        assert!(err.downcast_ref::<tempfile::PersistError>().is_some());
+        drop(err);
         assert_eq!(db.get_device("0011").unwrap().name, "H6072_0011");
         assert!(path.is_dir());
         assert_eq!(fs::read_dir(dir.path()).unwrap().count(), 1);

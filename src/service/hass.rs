@@ -470,19 +470,11 @@ async fn mqtt_switch_command(
 }
 
 pub fn mired_to_kelvin(mired: u32) -> u32 {
-    if mired == 0 {
-        0
-    } else {
-        1000000 / mired
-    }
+    1000000u32.checked_div(mired).unwrap_or(0)
 }
 
 pub fn kelvin_to_mired(kelvin: u32) -> u32 {
-    if kelvin == 0 {
-        0
-    } else {
-        1000000 / kelvin
-    }
+    1000000u32.checked_div(kelvin).unwrap_or(0)
 }
 
 /// HASS is advising us that its status has changed

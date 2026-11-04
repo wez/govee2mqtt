@@ -128,7 +128,6 @@ async fn enumerate_devices_via_platform_api(
 
     log::info!("Querying platform API for device list");
     for info in client.get_devices().await? {
-        // Update device database with API-discovered device
         if let Some(db) = state.get_device_database().await {
             db.update_from_api(
                 &info.device,
@@ -177,7 +176,6 @@ async fn enumerate_devices_via_undo_api(
     for entry in &info.devices {
         let room_name = group_by_id.get(&entry.group_id).map(|name| name.as_str());
 
-        // Update device database with undoc API-discovered device
         // This provides room information that platform API doesn't have
         if let Some(db) = state.get_device_database().await {
             db.update_from_api(
@@ -242,7 +240,6 @@ impl ServeCommand {
         log::info!("Starting service. version {}", govee_version());
         let state = Arc::new(crate::service::state::State::new());
 
-        // Initialize the device database for persistent device storage
         let db_path = match &self.device_db {
             Some(path) => path.clone(),
             None => {
@@ -272,11 +269,8 @@ impl ServeCommand {
 
         state.set_device_database(device_db.clone()).await;
 
-        // Record discovery start time to detect stale devices later
         let discovery_start = chrono::Utc::now();
 
-        // Step 1: Always load devices from persistent database first
-        // The database is the source of truth for device naming
         let initial_device_ids: HashSet<_> =
             device_db.list_devices().into_iter().map(|d| d.id).collect();
         let initial_device_count = device_db.len();
@@ -291,9 +285,6 @@ impl ServeCommand {
                 device.room = persisted.room.clone();
             }
         }
-
-        // Step 2: Attempt API discovery to refresh/update device metadata
-        // API updates will set last_api_sync timestamps
 
         if let Ok(client) = args.api_args.api_client() {
             state.set_platform_client(client.clone()).await;
@@ -354,8 +345,6 @@ impl ServeCommand {
             log::warn!("Failed to save device database: {err:#}");
         }
 
-        // Step 3: Check which devices didn't get API updates during discovery
-        // These are using cached data from the persistent database
         let stale_devices: Vec<_> = device_db
             .list_devices()
             .into_iter()
@@ -382,8 +371,6 @@ impl ServeCommand {
             log::warn!("LAN-capable devices should still be controllable");
         }
 
-        // Now start LAN discovery
-
         let options = args.lan_disco_args.to_disco_options()?;
         if !options.is_empty() {
             log::info!("Starting LAN discovery");
@@ -397,8 +384,6 @@ impl ServeCommand {
                 while let Some(lan_device) = scan.recv().await {
                     log::trace!("LAN disco: {lan_device:?}");
 
-                    // Update device database with LAN-discovered device
-                    // This ensures LAN-only devices get persisted even without API
                     let persisted =
                         db_for_lan.handle_lan_discovery(&lan_device.device, &lan_device.sku);
                     {
