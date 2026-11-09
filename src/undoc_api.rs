@@ -283,11 +283,14 @@ impl GoveeUndocumentedApi {
         Ok(resp)
     }
 
+    #[allow(dead_code)]
     pub fn invalidate_community_login(&self) {
         crate::cache::invalidate_key("undoc-api", "community-login").ok();
     }
 
-    /// Login to community-api.govee.com and return the bearer token
+    /// Login to community-api.govee.com and return the bearer token.
+    /// No longer used for Tap-to-Run: Govee rejects this token on exec-plat/home.
+    #[allow(dead_code)]
     pub async fn login_community(&self) -> anyhow::Result<String> {
         cache_get(
             CacheGetOptions {
@@ -412,9 +415,14 @@ impl GoveeUndocumentedApi {
         }])
     }
 
+    /// Fetch the saved Tap-to-Run (one-click) shortcuts.
+    /// `account_token` must be the main app2.govee.com account token.
+    /// Govee used to accept the community-api.govee.com token here, but
+    /// since early November 2026 it rejects that one with
+    /// `{"status":401,"message":"authorization token is invalid"}`.
     pub async fn get_saved_one_click_shortcuts(
         &self,
-        community_token: &str,
+        account_token: &str,
     ) -> anyhow::Result<Vec<OneClickComponent>> {
         cache_get(
             CacheGetOptions {
@@ -433,7 +441,7 @@ impl GoveeUndocumentedApi {
                         Method::GET,
                         "https://app2.govee.com/bff-app/v1/exec-plat/home",
                     )
-                    .header("Authorization", format!("Bearer {community_token}"))
+                    .header("Authorization", format!("Bearer {account_token}"))
                     .header("appVersion", APP_VERSION)
                     .header("clientId", &self.client_id)
                     .header("clientType", "1")
@@ -444,7 +452,7 @@ impl GoveeUndocumentedApi {
                     .await?;
 
                 if response.status() == reqwest::StatusCode::UNAUTHORIZED {
-                    self.invalidate_community_login();
+                    self.invalidate_account_login();
                 }
 
                 let resp: OneClickResponse = http_response_body(response).await?;
@@ -456,8 +464,8 @@ impl GoveeUndocumentedApi {
     }
 
     pub async fn parse_one_clicks(&self) -> anyhow::Result<Vec<ParsedOneClick>> {
-        let token = self.login_community().await?;
-        let res = self.get_saved_one_click_shortcuts(&token).await?;
+        let acct = self.login_account_cached().await?;
+        let res = self.get_saved_one_click_shortcuts(&acct.token).await?;
         let mut result = vec![];
 
         for group in res {

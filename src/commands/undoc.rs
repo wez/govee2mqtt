@@ -20,8 +20,8 @@ impl UndocCommand {
         match &self.cmd {
             SubCommand::DumpOneClick {} => {
                 let client = args.undoc_args.api_client()?;
-                let token = client.login_community().await?;
-                let res = client.get_saved_one_click_shortcuts(&token).await?;
+                let acct = client.login_account_cached().await?;
+                let res = client.get_saved_one_click_shortcuts(&acct.token).await?;
 
                 println!("{res:#?}");
             }
