@@ -4,7 +4,7 @@ use crate::lan_api::{DeviceColor, DeviceStatus as LanDeviceStatus, LanDevice};
 use crate::platform_api::{
     DeviceCapability, DeviceCapabilityState, DeviceType, HttpDeviceInfo, HttpDeviceState,
 };
-use crate::service::quirks::{resolve_quirk, Quirk, BULB};
+use crate::service::quirks::{resolve_quirk, Quirk, BULB, DEFAULT_COLOR_TEMP_RANGE};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
@@ -520,18 +520,38 @@ impl Device {
     }
 
     pub fn get_color_temperature_range(&self) -> Option<(u32, u32)> {
-        if let Some(quirk) = self.resolve_quirk() {
-            return quirk.color_temp_range;
+        let quirk = self.resolve_quirk();
+
+        // The range reported by the Platform API reflects what the
+        // device actually supports, unless the quirk tells us that the
+        // platform metadata for this SKU is unreliable.
+        let platform_range = if quirk.as_ref().is_some_and(|q| q.avoid_platform_api) {
+            None
+        } else {
+            self.http_device_info
+                .as_ref()
+                .and_then(|info| info.get_color_temperature_range())
+        };
+
+        if let Some(quirk) = quirk {
+            return match quirk.color_temp_range {
+                None => None,
+                // The generic default is just a guess; prefer the real
+                // range when Govee tells us what it is. Sending a value
+                // outside the supported range can leave some devices
+                // (eg: H60C1) on but emitting no light.
+                Some(range) if range == DEFAULT_COLOR_TEMP_RANGE => platform_range.or(Some(range)),
+                // An explicit per-SKU range always wins
+                Some(range) => Some(range),
+            };
         }
 
         if self.lan_device.is_some() {
             // LAN API support suggests that it is a light
-            return Some((2000, 9000));
+            return platform_range.or(Some(DEFAULT_COLOR_TEMP_RANGE));
         }
 
-        self.http_device_info
-            .as_ref()
-            .and_then(|info| info.get_color_temperature_range())
+        platform_range
     }
 
     pub fn supports_brightness(&self) -> bool {
@@ -609,5 +629,69 @@ mod test {
 
         let device = Device::new("H6127", "ce");
         assert_eq!(device.name(), "H6127_CE");
+    }
+
+    fn http_info_with_color_temp(sku: &str, min: u32, max: u32) -> HttpDeviceInfo {
+        serde_json::from_value(serde_json::json!({
+            "sku": sku,
+            "device": "AA:BB:CC:DD:EE:FF:42:2A",
+            "type": "devices.types.light",
+            "capabilities": [{
+                "type": "devices.capabilities.color_setting",
+                "instance": "colorTemperatureK",
+                "parameters": {
+                    "dataType": "INTEGER",
+                    "range": {"min": min, "max": max, "precision": 1}
+                }
+            }]
+        }))
+        .unwrap()
+    }
+
+    fn lan_device(sku: &str) -> LanDevice {
+        serde_json::from_value(serde_json::json!({
+            "ip": "127.0.0.1",
+            "device": "AA:BB:CC:DD:EE:FF:42:2A",
+            "sku": sku,
+            "bleVersionHard": "",
+            "bleVersionSoft": "",
+            "wifiVersionHard": "",
+            "wifiVersionSoft": "",
+        }))
+        .unwrap()
+    }
+
+    #[test]
+    fn color_temp_unknown_lan_sku_prefers_platform_range() {
+        // An SKU with no quirk entry, discovered via LAN, that the
+        // Platform API says supports 2700-6500K (eg: H60C1)
+        let mut device = Device::new("H60C1", "AA:BB:CC:DD:EE:FF:42:2A");
+        device.lan_device = Some(lan_device("H60C1"));
+        assert_eq!(
+            device.get_color_temperature_range(),
+            Some(DEFAULT_COLOR_TEMP_RANGE)
+        );
+
+        device.http_device_info = Some(http_info_with_color_temp("H60C1", 2700, 6500));
+        assert_eq!(device.get_color_temperature_range(), Some((2700, 6500)));
+    }
+
+    #[test]
+    fn color_temp_explicit_quirk_range_wins() {
+        // H6022 has an explicit quirk range; it must not be overridden
+        let mut device = Device::new("H6022", "AA:BB:CC:DD:EE:FF:42:2A");
+        device.http_device_info = Some(http_info_with_color_temp("H6022", 2000, 9000));
+        assert_eq!(device.get_color_temperature_range(), Some((2700, 6500)));
+    }
+
+    #[test]
+    fn color_temp_broken_platform_is_ignored() {
+        // H6141 has bogus platform metadata, so stick with the quirk default
+        let mut device = Device::new("H6141", "AA:BB:CC:DD:EE:FF:42:2A");
+        device.http_device_info = Some(http_info_with_color_temp("H6141", 2700, 6500));
+        assert_eq!(
+            device.get_color_temperature_range(),
+            Some(DEFAULT_COLOR_TEMP_RANGE)
+        );
     }
 }

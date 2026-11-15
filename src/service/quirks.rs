@@ -114,7 +114,7 @@ impl Quirk {
     }
 
     pub fn with_color_temp(mut self) -> Self {
-        self.color_temp_range = Some((2000, 9000));
+        self.color_temp_range = Some(DEFAULT_COLOR_TEMP_RANGE);
         self
     }
 
@@ -156,6 +156,10 @@ impl Quirk {
 }
 
 static QUIRKS: Lazy<HashMap<String, Quirk>> = Lazy::new(load_quirks);
+
+/// The color temperature range assumed for lights when nothing more
+/// specific is known about the device.
+pub const DEFAULT_COLOR_TEMP_RANGE: (u32, u32) = (2000, 9000);
 
 const STRIP: &str = "mdi:led-strip-variant";
 const STRIP_ALT: &str = "mdi:led-strip";
