@@ -631,11 +631,14 @@ async fn next_mqtt_event(
     disconnected_since: Option<tokio::time::Instant>,
 ) -> anyhow::Result<Option<Event>> {
     let event = match disconnected_since {
-        Some(since) => tokio::time::timeout_at(since + MQTT_RECONNECT_GRACE, subscriber.recv())
-            .await
-            .map_err(|_| {
-                anyhow::anyhow!("MQTT connection was not restored within {MQTT_RECONNECT_GRACE:?}")
-            })?,
+        Some(since) => {
+            match tokio::time::timeout_at(since + MQTT_RECONNECT_GRACE, subscriber.recv()).await {
+                Ok(event) => event,
+                Err(_) => anyhow::bail!(
+                    "MQTT connection was not restored within {MQTT_RECONNECT_GRACE:?}"
+                ),
+            }
+        }
         None => subscriber.recv().await,
     };
     Ok(event.ok())
