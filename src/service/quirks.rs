@@ -203,6 +203,9 @@ fn load_quirks() -> HashMap<String, Quirk> {
         Quirk::light("H6154", STRIP).with_iot_api_support(false),
         // <https://github.com/wez/govee2mqtt/issues/49>
         Quirk::light("H6176", STRIP).with_iot_api_support(false),
+        // Envisual TV Backlight T2: no LAN API. Without a quirk the IoT API is
+        // never used and on/off goes via the much slower Platform API.
+        Quirk::light("H605C", TV_BACK),
         // Platform API probably shouldn't return this device (I suppose,
         // aside from letting us find out its name), and we need to know
         // that it is definitely BLE-only
