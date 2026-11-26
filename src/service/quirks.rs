@@ -21,6 +21,13 @@ impl HumidityUnits {
     }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum LocalSegmentProtocol {
+    /// Govee Glide Hexa (H6061/H6066) `ptReal` 20-byte frames:
+    /// RGB bitmask at bytes 9..=10, brightness bitmask at bytes 5..=6.
+    HexaPtReal,
+}
+
 #[derive(Clone, Debug)]
 pub struct Quirk {
     pub sku: Cow<'static, str>,
@@ -31,6 +38,8 @@ pub struct Quirk {
     pub avoid_platform_api: bool,
     pub ble_only: bool,
     pub lan_api_capable: bool,
+    pub local_segment_protocol: Option<LocalSegmentProtocol>,
+    pub default_segment_count: Option<u32>,
     pub device_type: DeviceType,
     pub platform_temperature_sensor_units: Option<TemperatureUnits>,
     pub platform_humidity_sensor_units: Option<HumidityUnits>,
@@ -56,6 +65,8 @@ impl Quirk {
             ble_only: false,
             icon: icon.into(),
             lan_api_capable: false,
+            local_segment_protocol: None,
+            default_segment_count: None,
             device_type,
             platform_temperature_sensor_units: None,
             platform_humidity_sensor_units: None,
@@ -125,6 +136,16 @@ impl Quirk {
 
     pub fn with_lan_api(mut self) -> Self {
         self.lan_api_capable = true;
+        self
+    }
+
+    pub fn with_local_segments(
+        mut self,
+        protocol: LocalSegmentProtocol,
+        default_segment_count: u32,
+    ) -> Self {
+        self.local_segment_protocol = Some(protocol);
+        self.default_segment_count = Some(default_segment_count);
         self
     }
 
@@ -291,10 +312,13 @@ fn load_quirks() -> HashMap<String, Quirk> {
         Quirk::lan_api_capable_light("H6051", DESK),
         Quirk::lan_api_capable_light("H6056", STRIP_ALT),
         Quirk::lan_api_capable_light("H6059", NIGHTLIGHT),
-        Quirk::lan_api_capable_light("H6061", HEX),
+        Quirk::lan_api_capable_light("H6061", HEX)
+            .with_local_segments(LocalSegmentProtocol::HexaPtReal, 10),
         Quirk::lan_api_capable_light("H6062", STRIP),
         Quirk::lan_api_capable_light("H6065", STRIP),
-        Quirk::lan_api_capable_light("H6066", HEX),
+        // Same Glide Hexa protocol as H6061; not yet hardware-verified
+        Quirk::lan_api_capable_light("H6066", HEX)
+            .with_local_segments(LocalSegmentProtocol::HexaPtReal, 10),
         Quirk::lan_api_capable_light("H6067", TRIANGLE),
         Quirk::lan_api_capable_light("H6073", FLOOR_LAMP),
         Quirk::lan_api_capable_light("H6076", FLOOR_LAMP),

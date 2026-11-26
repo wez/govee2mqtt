@@ -249,6 +249,33 @@ impl LanDevice {
             .await
     }
 
+    pub async fn send_segments_rgb(
+        &self,
+        segments: &[u32],
+        color: DeviceColor,
+    ) -> anyhow::Result<()> {
+        let encoded =
+            crate::ble::encode_hexa_segment_rgb(segments, color.r, color.g, color.b)?.base64();
+        self.send_real(encoded).await
+    }
+
+    pub async fn send_segment_rgb(&self, segment: u32, color: DeviceColor) -> anyhow::Result<()> {
+        self.send_segments_rgb(&[segment], color).await
+    }
+
+    pub async fn send_segments_brightness(
+        &self,
+        segments: &[u32],
+        percent: u8,
+    ) -> anyhow::Result<()> {
+        let encoded = crate::ble::encode_hexa_segment_brightness(segments, percent)?.base64();
+        self.send_real(encoded).await
+    }
+
+    pub async fn send_segment_brightness(&self, segment: u32, percent: u8) -> anyhow::Result<()> {
+        self.send_segments_brightness(&[segment], percent).await
+    }
+
     pub async fn send_color_temperature_kelvin(
         &self,
         color_temperature_kelvin: u32,

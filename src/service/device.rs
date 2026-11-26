@@ -4,7 +4,7 @@ use crate::lan_api::{DeviceColor, DeviceStatus as LanDeviceStatus, LanDevice};
 use crate::platform_api::{
     DeviceCapability, DeviceCapabilityState, DeviceType, HttpDeviceInfo, HttpDeviceState,
 };
-use crate::service::quirks::{resolve_quirk, Quirk, BULB};
+use crate::service::quirks::{resolve_quirk, LocalSegmentProtocol, Quirk, BULB};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
@@ -593,6 +593,36 @@ impl Device {
     pub fn is_controllable(&self) -> bool {
         !matches!(self.is_ble_only_device(), Some(true))
     }
+
+    pub fn local_segment_protocol(&self) -> Option<LocalSegmentProtocol> {
+        self.resolve_quirk().and_then(|q| q.local_segment_protocol)
+    }
+
+    pub fn supports_local_segments(&self) -> bool {
+        self.lan_device.is_some() && self.local_segment_protocol().is_some()
+    }
+
+    pub fn supports_segmented_rgb(&self) -> Option<std::ops::Range<u32>> {
+        if let Some(range) = self
+            .http_device_info
+            .as_ref()
+            .and_then(|info| info.supports_segmented_rgb())
+        {
+            return Some(range);
+        }
+
+        if self.lan_device.is_some() {
+            if let Some(quirk) = self.resolve_quirk() {
+                if quirk.local_segment_protocol.is_some() {
+                    if let Some(count) = quirk.default_segment_count {
+                        return Some(0..count);
+                    }
+                }
+            }
+        }
+
+        None
+    }
 }
 
 #[cfg(test)]
@@ -609,5 +639,44 @@ mod test {
 
         let device = Device::new("H6127", "ce");
         assert_eq!(device.name(), "H6127_CE");
+    }
+
+    #[test]
+    fn lan_only_hexa_segment_discovery() {
+        let mut device = Device::new("H6061", "5B:83:D3:21:C5:C6:32:46");
+        // Without LAN device or HTTP device info, no local segments active yet
+        assert!(!device.supports_local_segments());
+        assert_eq!(device.supports_segmented_rgb(), None);
+
+        // Attach a LAN device (pure LAN-only mode, no GOVEE_API_KEY / http_device_info)
+        device.set_lan_device(LanDevice {
+            ip: "192.168.1.105".parse().unwrap(),
+            device: "5B:83:D3:21:C5:C6:32:46".to_string(),
+            sku: "H6061".to_string(),
+            ble_version_hard: "3.01.01".to_string(),
+            ble_version_soft: "1.03.08".to_string(),
+            wifi_version_hard: "1.00.10".to_string(),
+            wifi_version_soft: "1.02.11".to_string(),
+        });
+        assert!(device.supports_local_segments());
+        assert_eq!(
+            device.local_segment_protocol(),
+            Some(LocalSegmentProtocol::HexaPtReal)
+        );
+        assert_eq!(device.supports_segmented_rgb(), Some(0..10));
+
+        // Non-Hexa LAN device should NOT claim local segment support
+        let mut other = Device::new("H6072", "AA:BB:CC:DD:EE:FF:00:01");
+        other.set_lan_device(LanDevice {
+            ip: "192.168.1.106".parse().unwrap(),
+            device: "AA:BB:CC:DD:EE:FF:00:01".to_string(),
+            sku: "H6072".to_string(),
+            ble_version_hard: String::new(),
+            ble_version_soft: String::new(),
+            wifi_version_hard: String::new(),
+            wifi_version_soft: String::new(),
+        });
+        assert!(!other.supports_local_segments());
+        assert_eq!(other.supports_segmented_rgb(), None);
     }
 }
