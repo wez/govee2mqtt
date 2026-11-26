@@ -28,6 +28,16 @@ enum SubCommand {
     Color {
         color: csscolorparser::Color,
     },
+    /// Set RGB color of a single 0-based segment via local ptReal (H6061/H6066)
+    SegmentRgb {
+        segment: u32,
+        color: csscolorparser::Color,
+    },
+    /// Set brightness (0..100) of a single 0-based segment via local ptReal (H6061/H6066)
+    SegmentBrightness {
+        segment: u32,
+        percent: u8,
+    },
     /// Send a BLE-encoded govee packet
     /// eg: `0x33 1 0` is power off, `0x33 1 1` is power on.
     /// More usefully: you can send scene or music mode commands
@@ -71,6 +81,15 @@ impl LanControlCommand {
                 device
                     .send_color_rgb(crate::lan_api::DeviceColor { r, g, b })
                     .await?;
+            }
+            SubCommand::SegmentRgb { segment, color } => {
+                let [r, g, b, _a] = color.to_rgba8();
+                device
+                    .send_segment_rgb(*segment, crate::lan_api::DeviceColor { r, g, b })
+                    .await?;
+            }
+            SubCommand::SegmentBrightness { segment, percent } => {
+                device.send_segment_brightness(*segment, *percent).await?;
             }
             SubCommand::Scene { list, scene } => {
                 let mut scene_code_by_name = BTreeMap::new();

@@ -570,6 +570,75 @@ impl State {
         anyhow::bail!("Unable to control color for {device}");
     }
 
+    pub async fn device_set_segment_rgb(
+        self: &Arc<Self>,
+        device: &Device,
+        segment: u32,
+        r: u8,
+        g: u8,
+        b: u8,
+    ) -> anyhow::Result<()> {
+        if let Some(lan_dev) = &device.lan_device {
+            if let Some(crate::service::quirks::LocalSegmentProtocol::HexaPtReal) =
+                device.local_segment_protocol()
+            {
+                let color = crate::lan_api::DeviceColor { r, g, b };
+                log::info!("Using LAN API to set {device} segment {segment} color");
+                lan_dev.send_segment_rgb(segment, color).await?;
+                return Ok(());
+            }
+        }
+
+        if let Some(client) = self.get_platform_client().await {
+            if let Some(info) = &device.http_device_info {
+                log::info!("Using Platform API to set {device} segment {segment} color");
+                client.set_segment_rgb(info, segment, r, g, b).await?;
+                return Ok(());
+            }
+        }
+
+        anyhow::bail!("Unable to control segment {segment} color for {device}");
+    }
+
+    pub async fn device_set_segment_brightness(
+        self: &Arc<Self>,
+        device: &Device,
+        segment: u32,
+        percent: u8,
+    ) -> anyhow::Result<()> {
+        if let Some(lan_dev) = &device.lan_device {
+            if let Some(crate::service::quirks::LocalSegmentProtocol::HexaPtReal) =
+                device.local_segment_protocol()
+            {
+                if percent == 0 {
+                    // On H6061, brightness=0 leaves a dim glow; rgb=(0,0,0) turns the panel off.
+                    log::info!("Using LAN API to turn {device} segment {segment} off");
+                    lan_dev
+                        .send_segment_rgb(segment, crate::lan_api::DeviceColor { r: 0, g: 0, b: 0 })
+                        .await?;
+                } else {
+                    log::info!(
+                        "Using LAN API to set {device} segment {segment} brightness to {percent}%"
+                    );
+                    lan_dev.send_segment_brightness(segment, percent).await?;
+                }
+                return Ok(());
+            }
+        }
+
+        if let Some(client) = self.get_platform_client().await {
+            if let Some(info) = &device.http_device_info {
+                log::info!("Using Platform API to set {device} segment {segment} brightness");
+                client
+                    .set_segment_brightness(info, segment, percent)
+                    .await?;
+                return Ok(());
+            }
+        }
+
+        anyhow::bail!("Unable to control segment {segment} brightness for {device}");
+    }
+
     pub async fn poll_after_control(self: &Arc<Self>, id: String) {
         let Some(device) = self.device_by_id(&id).await else {
             return;

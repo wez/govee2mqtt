@@ -491,6 +491,48 @@ fn finish(mut data: Vec<u8>) -> Vec<u8> {
     data
 }
 
+/// Build the 2-byte little-endian bitmask for 0-based segment indices (`0..16`).
+pub fn build_segment_bitmask(segments: &[u32]) -> anyhow::Result<[u8; 2]> {
+    if segments.is_empty() {
+        anyhow::bail!("at least one segment index is required");
+    }
+    let mut mask: u16 = 0;
+    for &seg in segments {
+        if seg >= 16 {
+            anyhow::bail!("segment index {seg} out of range 0..16 for 2-byte bitmask");
+        }
+        mask |= 1u16 << seg;
+    }
+    Ok(mask.to_le_bytes())
+}
+
+/// Encode a 20-byte `ptReal` segment RGB frame (`0x33 0x05 0x15 0x01`) for Govee Glide Hexa
+/// (H6061/H6066), placing the 2-byte little-endian segment bitmask at bytes 9..=10.
+pub fn encode_hexa_segment_rgb(
+    segments: &[u32],
+    r: u8,
+    g: u8,
+    b: u8,
+) -> anyhow::Result<Base64HexBytes> {
+    let [mask_lo, mask_hi] = build_segment_bitmask(segments)?;
+    Ok(Base64HexBytes::with_bytes(vec![
+        0x33, 0x05, 0x15, 0x01, r, g, b, 0x00, 0x00, mask_lo, mask_hi,
+    ]))
+}
+
+/// Encode a 20-byte `ptReal` segment brightness frame (`0x33 0x05 0x15 0x02`) for Govee Glide Hexa
+/// (H6061/H6066), placing the 2-byte little-endian segment bitmask at bytes 5..=6.
+pub fn encode_hexa_segment_brightness(
+    segments: &[u32],
+    brightness: u8,
+) -> anyhow::Result<Base64HexBytes> {
+    let [mask_lo, mask_hi] = build_segment_bitmask(segments)?;
+    let clamped = brightness.min(100);
+    Ok(Base64HexBytes::with_bytes(vec![
+        0x33, 0x05, 0x15, 0x02, clamped, mask_lo, mask_hi,
+    ]))
+}
+
 impl DecodePacketParam for bool {
     fn decode_param<'a>(&mut self, data: &'a [u8]) -> anyhow::Result<&'a [u8]> {
         let mut byte = 0u8;
@@ -614,5 +656,91 @@ a3 ff 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 5c
 33 05 04 d4 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 e6
 "
         );
+    }
+
+    #[test]
+    fn hexa_segment_rgb_vectors() {
+        // H6061 ptReal vectors (0-based segment indices)
+        // Panel 1 (seg 0) Red
+        assert_eq!(
+            encode_hexa_segment_rgb(&[0], 255, 0, 0).unwrap().base64(),
+            vec!["MwUVAf8AAAAAAQAAAAAAAAAAANw="]
+        );
+        // Panel 4 (seg 3) Yellow
+        assert_eq!(
+            encode_hexa_segment_rgb(&[3], 255, 255, 0).unwrap().base64(),
+            vec!["MwUVAf//AAAACAAAAAAAAAAAACo="]
+        );
+        // Panel 5 (seg 4) Cyan
+        assert_eq!(
+            encode_hexa_segment_rgb(&[4], 0, 255, 255).unwrap().base64(),
+            vec!["MwUVAQD//wAAEAAAAAAAAAAAADI="]
+        );
+        // Panel 6 (seg 5) Magenta
+        assert_eq!(
+            encode_hexa_segment_rgb(&[5], 255, 0, 255).unwrap().base64(),
+            vec!["MwUVAf8A/wAAIAAAAAAAAAAAAAI="]
+        );
+        // Panel 6 (seg 5) Off rgb=(0,0,0)
+        assert_eq!(
+            encode_hexa_segment_rgb(&[5], 0, 0, 0).unwrap().base64(),
+            vec!["MwUVAQAAAAAAIAAAAAAAAAAAAAI="]
+        );
+        // Panel 9 (seg 8) Red (high bitmask byte 10 = 0x01)
+        assert_eq!(
+            encode_hexa_segment_rgb(&[8], 255, 0, 0).unwrap().base64(),
+            vec!["MwUVAf8AAAAAAAEAAAAAAAAAANw="]
+        );
+        // Panel 10 (seg 9) Blue (high bitmask byte 10 = 0x02)
+        assert_eq!(
+            encode_hexa_segment_rgb(&[9], 0, 0, 255).unwrap().base64(),
+            vec!["MwUVAQAA/wAAAAIAAAAAAAAAAN8="]
+        );
+    }
+
+    #[test]
+    fn hexa_segment_brightness_vectors() {
+        // Panel 1 (seg 0) 100%
+        assert_eq!(
+            encode_hexa_segment_brightness(&[0], 100).unwrap().base64(),
+            vec!["MwUVAmQBAAAAAAAAAAAAAAAAAEQ="]
+        );
+        // Panels 4,5,6 (segs 3,4,5) 100%
+        assert_eq!(
+            encode_hexa_segment_brightness(&[3, 4, 5], 100)
+                .unwrap()
+                .base64(),
+            vec!["MwUVAmQ4AAAAAAAAAAAAAAAAAH0="]
+        );
+        // Panels 9,10 (segs 8,9) 100%
+        assert_eq!(
+            encode_hexa_segment_brightness(&[8, 9], 100)
+                .unwrap()
+                .base64(),
+            vec!["MwUVAmQAAwAAAAAAAAAAAAAAAEY="]
+        );
+        // Panel 4 (seg 3) 10%
+        assert_eq!(
+            encode_hexa_segment_brightness(&[3], 10).unwrap().base64(),
+            vec!["MwUVAgoIAAAAAAAAAAAAAAAAACM="]
+        );
+        // Panel 5 (seg 4) 0%
+        assert_eq!(
+            encode_hexa_segment_brightness(&[4], 0).unwrap().base64(),
+            vec!["MwUVAgAQAAAAAAAAAAAAAAAAADE="]
+        );
+        // Clamping > 100 to 100
+        assert_eq!(
+            encode_hexa_segment_brightness(&[0], 250).unwrap().base64(),
+            vec!["MwUVAmQBAAAAAAAAAAAAAAAAAEQ="]
+        );
+    }
+
+    #[test]
+    fn hexa_segment_validation() {
+        assert!(encode_hexa_segment_rgb(&[], 255, 0, 0).is_err());
+        assert!(encode_hexa_segment_rgb(&[16], 255, 0, 0).is_err());
+        assert!(encode_hexa_segment_brightness(&[], 100).is_err());
+        assert!(encode_hexa_segment_brightness(&[16], 100).is_err());
     }
 }
